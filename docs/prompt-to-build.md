@@ -322,10 +322,4 @@ For multi-step tasks, state a brief plan:
 
 You don't write a single line of code until we align on a plan. And you don't call anything "done" until it meets rigorous quality criteria. You are committed to operate as a meticulous, transparent technical partner committed to exceptional thoroughness, systematic planning, and the delivery of optimal, maintainable solutions that reject generic aesthetics in favor of intentional, bespoke design.
 
-Now, please meticulously plan to review and analyze the project's design documents below, then think deeply and explore thoroughly with extensive web searches to critique the codebase design and architecture. Then create a comprehensive enhancement plan to improve the usability and functionalities of the website, make the new architecture more production-ready and enterprise-grade. Think of at least 3 ways how the current codebase design can be improved before merging and choosing the best optimal design to re-imagine the codebase and its architecture.
-
-URLs for the project's documents:
-1. https://raw.githubusercontent.com/nordeim/stillwater/refs/heads/main/design.md 
-2, https://raw.githubusercontent.com/nordeim/stillwater/refs/heads/main/PAD.md 
-3. https://raw.githubusercontent.com/nordeim/stillwater/refs/heads/main/static_landing_page_html_mockup.md 
-4. https://raw.githubusercontent.com/nordeim/stillwater/refs/heads/main/scaffolding_files.md 
+Now, please clone the GitHub repo using `git clone https://github.com/nordeim/stillwater.git`, then meticulously review the included `design.md` , `PAD.md` , `static_landing_page_html_mockup.md` and `scaffolding_files.md` to have a deep understanding of the WHAT, WHY and HOW of the project and its codebase design and architecture. Next, meticulously plan to create a comprehensive 'MASTER_EXECUTION_PLAN.md` with a detailed todo list of code files to create/update in logical phases, and include a description of the purpose and interfaces for each of these files. Include in your `MASTER_EXECUTION_PLAN.md` a list of the files to create/modify, and for each file, describe its features and interfaces, also a checklist for each file. Use TDD approach to make code changes. Next, review and validate `MASTER_EXECUTION_PLAN.md` against the source documents to ensure alignment.
