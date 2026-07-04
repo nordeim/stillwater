@@ -1,0 +1,84 @@
+# ══════════════════════════════════════════════════════════════════
+# Stillwater — Local Development Services
+# ══════════════════════════════════════════════════════════════════
+# Usage:
+#   Start:   docker compose up -d
+#   Stop:    docker compose down
+#   Reset:   docker compose down -v  (WARNING: deletes all data)
+#   Logs:    docker compose logs -f postgres
+# ══════════════════════════════════════════════════════════════════
+
+version: "3.9"
+
+services:
+
+  # ─── PostgreSQL 17 ───────────────────────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    container_name: stillwater_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stillwater_dev
+      POSTGRES_USER: stillwater
+      POSTGRES_PASSWORD: stillwater_local_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Init scripts: run once on first container creation
+      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stillwater -d stillwater_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - stillwater_net
+
+  # ─── Redis 7 (rate limiting, idempotency keys) ───────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: stillwater_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass stillwater_redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "stillwater_redis_dev", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - stillwater_net
+
+  # ─── Adminer (lightweight DB GUI — dev only) ─────────────────────
+  adminer:
+    image: adminer:latest
+    container_name: stillwater_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - stillwater_net
+    profiles:
+      # Only starts with: docker compose --profile tools up -d
+      - tools
+
+# ─── Named Volumes ─────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ─── Networks ──────────────────────────────────────────────────────
+networks:
+  stillwater_net:
+    driver: bridge

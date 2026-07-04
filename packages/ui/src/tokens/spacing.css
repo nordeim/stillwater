@@ -1,0 +1,25 @@
+/* Stillwater — Spacing Scale (PAD §11.5) */
+/* 4px base, Fibonacci-influenced progression */
+
+:root {
+  --space-px: 1px;
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;   /* primary component gap */
+  --space-8: 48px;
+  --space-9: 64px;   /* section padding */
+  --space-10: 96px;
+  --space-11: 128px;
+  --space-12: 192px; /* large section breaks */
+  --space-13: 256px;
+
+  /* Max widths */
+  --max-width-content: 1280px;
+  --max-width-narrow: 720px;
+  --max-width-wide: 1440px;
+}

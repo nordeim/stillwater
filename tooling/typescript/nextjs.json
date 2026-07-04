@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Next.js App Router",
+  "extends": "./base.json",
+  "compilerOptions": {
+    /* Next.js 16 requires these overrides */
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "jsx": "preserve",
+    "allowJs": true,
+    "moduleResolution": "Bundler",
+
+    /* React Compiler support (stable in Next.js 16) */
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+
+    /* Path mapping for @/ — defined in each app's tsconfig */
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "out",
+    "dist",
+    ".turbo"
+  ]
+}

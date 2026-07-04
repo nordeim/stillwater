@@ -1,57 +1,77 @@
-# ── Original repo entries (preserved) ──
+# ─── Dependencies ──────────────────────────────────────────
 node_modules/
+.pnp
+.pnp.js
+
+# ─── Environment ───────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# NOTE: .env.example is COMMITTED intentionally — never add secrets to it
+
+# ─── Build Outputs ─────────────────────────────────────────
 .next/
-venv/
-.venv/
-.venv
-vendor/
-bak.git/
-plan/
-backup/
-nohup.out
-.windsurfrules
-upload/
-.agent
-.gemini
-.claude
-.agents
+dist/
+out/
+build/
 
-# ── Next.js ──
-/out/
-next-env.d.ts
+# ─── Turbo ─────────────────────────────────────────────────
+.turbo/
+
+# ─── Testing ───────────────────────────────────────────────
+coverage/
+playwright-report/
+test-results/
+.playwright/
+
+# ─── Database ──────────────────────────────────────────────
+# migrations are committed; snapshots are not
+drizzle/**/meta/_journal.json
+!drizzle/**/migrations/
+
+# ─── TypeScript ────────────────────────────────────────────
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 
-# ── Production ──
-/build
+# ─── Package Manager ───────────────────────────────────────
+.pnpm-store/
 
-# ── Misc ──
-.DS_Store
-*.pem
+# ─── IDEs & Editors ────────────────────────────────────────
 .idea/
-.vscode/*
+.vscode/
 !.vscode/extensions.json
+!.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# ── Debug logs ──
+# ─── OS ────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ─── Vercel ────────────────────────────────────────────────
+.vercel
+
+# ─── Sentry ────────────────────────────────────────────────
+.sentryclirc
+
+# ─── Logs ──────────────────────────────────────────────────
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# ── Env files ──
-.env*
-!.env.example
-
-# ── Vercel ──
-.vercel
-
-# ── Playwright ──
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-
-# ── Vitest ──
-/coverage/
-
-# ── Husky (internal) ──
-.husky/_/
+# ─── Misc ──────────────────────────────────────────────────
+*.pem
+.cache/

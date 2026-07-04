@@ -1,0 +1,6 @@
+/* Stillwater — Font barrel import */
+/* Import this file to load all @font-face declarations */
+
+@import './cormorant/cormorant.css';
+@import './dm-sans/dm-sans.css';
+@import './berkeley-mono/berkeley-mono.css';

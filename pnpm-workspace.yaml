@@ -1,0 +1,20 @@
+# Stillwater Monorepo — pnpm workspace configuration
+# All packages and apps declared here are linked locally via workspace: protocol
+
+packages:
+  # Primary applications
+  - "apps/*"
+
+  # Shared packages (libraries consumed by apps and services)
+  - "packages/*"
+
+  # Background job workers (Trigger.dev)
+  - "services/*"
+
+  # Shared tooling configurations (ESLint, TypeScript, Tailwind)
+  - "tooling/*"
+
+# Custom condition for monorepo source-resolution (D15)
+# Without this, pnpm resolves @stillwater/* packages to non-existent dist/
+customConditions:
+  - "@stillwater/source"

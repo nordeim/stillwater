@@ -255,9 +255,9 @@ C4Container
   Person(user, "User", "Member, Instructor, Staff, or Visitor")
 
   Container_Boundary(web, "Web Application (apps/web)") {
-    Container(nextjs, "Next.js 15 App", "TypeScript, React 19", "Serves marketing pages (ISR), member app (SSR/CSR), admin dashboard (SSR)")
+    Container(nextjs, "Next.js 16 App", "TypeScript, React 19", "Serves marketing pages (ISR), member app (SSR/CSR), admin dashboard (SSR)")
     Container(trpc, "tRPC API Layer", "tRPC v11, Zod", "Type-safe API procedures consumed by the Next.js app")
-    Container(middleware, "Edge Middleware", "Next.js Middleware", "Auth gating, RBAC enforcement, i18n routing")
+    Container(proxy, "Node.js Proxy", "Next.js 16 proxy.ts", "Auth cookie check, RBAC route protection, i18n routing (replaces Edge Middleware per ADR-009)")
   }
 
   Container_Boundary(data, "Data Layer (packages/db)") {
@@ -340,9 +340,9 @@ sequenceDiagram
 
 | Layer | Technology | Version | Rationale | Rejected Alternatives |
 |-------|-----------|---------|-----------|----------------------|
-| **Frontend Framework** | Next.js | 15.x | App Router, RSC, streaming, ISR, middleware — the complete solution | Remix (less ecosystem), Nuxt (different team skills) |
+| **Frontend Framework** | Next.js | 16.x | App Router, Turbopack stable, React Compiler, `proxy.ts` (replaces middleware), streaming, ISR — the complete solution | Remix (less ecosystem), Nuxt (different team skills) |
 | **UI Library** | React | 19.x | Concurrent features, `use()`, Server Components | — |
-| **Language** | TypeScript | 5.5+ | Strict mode end-to-end; mandatory | — |
+| **Language** | TypeScript | 5.7+ | Strict mode end-to-end; `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables` | — |
 | **Styling** | Tailwind CSS | v4.x | Utility-first, zero dead CSS in production, v4's native CSS variables | CSS Modules (verbose), styled-components (runtime cost) |
 | **Component Primitives** | Radix UI | latest | Fully accessible, unstyled, composable | Headless UI (fewer components), Ark UI (less mature) |
 | **API Layer** | tRPC | v11 | End-to-end type safety, no code generation, integrates natively with Next.js | REST (no type safety bridge), GraphQL (overkill, complex) |
@@ -350,7 +350,7 @@ sequenceDiagram
 | **Database** | PostgreSQL | 17 | Advisory locks for bookings, JSONB for metadata, proven at scale | MySQL (weaker advisory lock support), SQLite (not for prod) |
 | **Database Host** | Neon | latest | Serverless PostgreSQL, branching for preview envs, zero cold starts | Supabase (more opinionated), RDS (heavy setup) |
 | **Cache / Rate Limit** | Upstash Redis | latest | Serverless Redis, per-request billing, edge-compatible | Redis Cloud (needs VPC), Memcached (no sorted sets) |
-| **Auth** | Auth.js | v5 | First-class Next.js support, Drizzle adapter, magic link + OAuth | Clerk (vendor lock-in, cost), NextAuth v4 (legacy) |
+| **Auth** | Better Auth | v1.6.23 | Type-safe, framework-agnostic, Drizzle adapter, magic link + OAuth, server-component native; stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31) | Auth.js v5 (still beta, maintenance handover to Better Auth team Sept 2025), Clerk (vendor lock-in, cost), NextAuth v4 (legacy) |
 | **Background Jobs** | Trigger.dev | v3 | Durable execution, retries, scheduling, excellent DX | Inngest (similar but fewer features), BullMQ (self-hosted complexity) |
 | **CMS** | Sanity | v3 | GROQ queries, real-time collaborative editing, webhook-driven ISR | Contentful (expensive), Payload CMS (self-hosted complexity) |
 | **Payments** | Stripe | latest | Industry standard, Billing API, webhooks, tax support | Paddle (US restrictions), Braintree (complex) |
@@ -372,7 +372,7 @@ sequenceDiagram
 ```
 Node.js:    >= 22.x LTS  (required for native fetch, ESM stability)
 pnpm:       9.x          (workspace protocol support)
-TypeScript: 5.5+         (const type parameters, inferred type predicates)
+TypeScript: 5.7+         (const type parameters, inferred type predicates, `erasableSyntaxOnly`)
 ```
 
 ---
@@ -384,7 +384,7 @@ TypeScript: 5.5+         (const type parameters, inferred type predicates)
 ```
 stillwater/                              # Repository root
 ├── apps/
-│   └── web/                             # Next.js 15 application
+│   └── web/                             # Next.js 16 application (Turbopack, React Compiler, proxy.ts)
 │       ├── app/
 │       │   ├── (marketing)/             # Route group: public, no auth
 │       │   │   ├── page.tsx             # / — Home
@@ -444,8 +444,8 @@ stillwater/                              # Repository root
 │       │   │   │   └── settings/
 │       │   │   │       └── page.tsx
 │       │   │
-│       │   ├── auth/                    # Auth.js route handlers
-│       │   │   └── [...nextauth]/
+│       │   ├── auth/                    # Better Auth route handlers
+│       │   │   └── [...all]/
 │       │   │       └── route.ts
 │       │   │
 │       │   ├── api/
@@ -484,13 +484,13 @@ stillwater/                              # Repository root
 │       │   ├── trpc/
 │       │   │   ├── client.ts            # tRPC client setup
 │       │   │   └── server.ts            # Server-side tRPC caller
-│       │   ├── auth.ts                  # Auth.js client helpers
+│       │   ├── auth.ts                  # Better Auth server helpers (requireAuth, requireRole)
 │       │   ├── sanity/
 │       │   │   ├── client.ts
 │       │   │   └── queries.ts           # GROQ queries
 │       │   └── utils.ts
 │       │
-│       ├── middleware.ts                # Edge: auth + RBAC + i18n
+│       ├── proxy.ts                     # Next.js 16 proxy: auth cookie check + RBAC + i18n (replaces middleware.ts per ADR-009)
 │       ├── next.config.ts
 │       ├── tailwind.config.ts
 │       └── package.json
@@ -566,11 +566,11 @@ stillwater/                              # Repository root
 │   │   │   └── root.ts                 # Root router: merges all sub-routers
 │   │   └── package.json
 │   │
-│   ├── auth/                           # Auth.js v5 configuration
+│   ├── auth/                           # Better Auth v1.6.23 configuration
 │   │   ├── src/
 │   │   │   ├── config.ts
-│   │   │   ├── providers.ts
-│   │   │   └── adapter.ts
+│   │   │   ├── client.ts
+│   │   │   └── types.ts
 │   │   └── package.json
 │   │
 │   ├── email/                          # React Email templates
@@ -1034,7 +1034,7 @@ export const ownerProcedure     = t.procedure.use(enforceIsAuthed).use(enforceIs
 
 export interface TRPCContext {
   db:      DrizzleDB;            // Database client
-  session: Session | null;       // Auth.js session
+  session: Session | null;       // Better Auth session
   jobs:    TriggerClient;        // Background job client
   redis:   Redis;                // Upstash Redis client
   req:     Request;              // Raw request (for headers, IP)
@@ -1058,7 +1058,7 @@ flowchart TD
   C --> G[User chooses auth method]
   G --> H[Google OAuth]
   G --> I[Magic Link via Resend]
-  H --> J[Auth.js callback]
+  H --> J[Better Auth callback]
   I --> J
   J --> K{User exists in DB?}
   K -- No --> L[Create User + Member records]
@@ -1090,7 +1090,7 @@ flowchart TD
 ### 9.3 Session Token Shape
 
 ```typescript
-// Extended by Auth.js callbacks
+// Extended by Better Auth session callback
 interface StillwaterSession {
   user: {
     id:                  string;
@@ -1108,7 +1108,7 @@ interface StillwaterSession {
 ### 9.4 Middleware Route Protection
 
 ```typescript
-// apps/web/middleware.ts
+// apps/web/proxy.ts (Next.js 16 — replaces middleware.ts per ADR-009)
 
 const ROUTE_ROLE_MAP: Record<string, StudioRole[]> = {
   '/dashboard':        ['member', 'instructor', 'staff', 'manager', 'owner'],
@@ -2816,6 +2816,69 @@ Unknown error                  "Something unexpected happened. We've been
 
 ---
 
+### ADR-008: Better Auth over Auth.js v5
+
+**Date:** 2026-07-04
+**Status:** Accepted (validated against `guide_auth-v5_vs_better-auth.md` July 2026)
+
+**Context:** Authentication library choice for the Stillwater platform. Auth.js v5 (formerly NextAuth) has been the de facto Next.js auth library, but its v5 rewrite has been in beta for over a year (5.0.0-beta.31 as of July 2026) and has never left the beta channel since the rewrite began. The npm "latest" tag still points to legacy v4.24.14. In September 2025, the Better Auth team took over Auth.js maintenance and now also patches security issues for Auth.js. Auth.js's own guidance for new projects now points to Better Auth. Better Auth is at stable v1.6.23 with v1.7.0-beta in testing, and is documented as "fully compatible with Next.js 16."
+
+**Decision:** Better Auth v1.6.23 (replaces Auth.js v5).
+
+**Rationale:**
+- Stable (non-beta) release line — Auth.js v5 has been beta for 18+ months with no stable cut.
+- Verified Next.js 16 compatibility (Better Auth docs explicitly state this; Auth.js v5 has open GitHub issues #13302 and #13388 reporting peer-dependency conflicts and server-action configuration failures on Next.js 16).
+- Active maintenance by the original Better Auth team, who also now patch Auth.js security issues.
+- TypeScript-first, plugin-based architecture with first-class support for RBAC, 2FA, and organizations.
+- Drizzle adapter support (same as Auth.js, but with stricter typing).
+- Session enrichment via `session.sessionData` callback — attaches `memberId` + `roles` from `role_assignments` table.
+- Google OAuth + Magic Link (via Resend) providers built-in.
+- Framework-agnostic core with dedicated Next.js adapter — future-proof if Stillwater ever adds a mobile app or separate admin SPA.
+
+**Trade-offs:**
+- API surface differs from Auth.js — requires migration learning:
+  - `auth.api.getSession({ headers: await headers() })` instead of header-implicit `auth()`.
+  - `authClient.signIn.social({ provider: "google" })` instead of `signIn("google")` from `next-auth/react`.
+  - `authClient.useSession()` returns `{ data, error, refetch, isPending }` instead of `{ data, status, update }`.
+  - Route handler at `/api/auth/[...all]/route.ts` instead of `/api/auth/[...nextauth]/route.ts`.
+  - Handler export: `toNextJsHandler(auth)` instead of `export const { handlers } = NextAuth(...)`.
+- Database schema uses stricter typing with renamed fields/tables (User: `emailVerified` boolean not timestamp; Session: `token`/`expiresAt` instead of `sessionToken`/`expires`, adds `ipAddress`/`userAgent`; Account: camelCase, `accountId`/`providerId`; `VerificationToken` → `Verification` with single `id` PK and `value` field).
+- 2-layer auth pattern mandated: `proxy.ts` does cookie-existence-only check via `getSessionCookie()`; full session validation + RBAC via `auth.api.getSession()` in Server Component layouts (per Auth0 + Better Auth + Next.js 16 guidance).
+- Smaller community than Auth.js (mitigated by active Discord + excellent docs).
+
+**Rejected:** Auth.js v5 (still beta at 5.0.0-beta.31; never left beta since rewrite; Next.js 16 friction per GitHub #13302, #13388; maintenance handover to Better Auth team Sept 2025). Clerk (vendor lock-in, cost, less type safety). NextAuth v4 (legacy, no App Router support). Supertokens (self-hosted complexity).
+
+**Source:** `scaffolding_files.md` preamble (lines 1–9); `guide_auth-v5_vs_better-auth.md` (July 2026 research validation); `MASTER_EXECUTION_PLAN.md` §2 discrepancy D1, D37, D38, D39, D40.
+
+---
+
+### ADR-009: `proxy.ts` Replaces `middleware.ts` (Next.js 16)
+
+**Date:** 2026-07-04
+**Status:** Accepted (Next.js 16 platform change)
+
+**Context:** Next.js 16 renamed `middleware.ts` to `proxy.ts` to clarify its role as a network boundary rather than a place for heavy business logic. The exported function must be named `proxy` (not `middleware`). This is a Next.js 16 platform change, not an auth-library decision — it applies regardless of whether Better Auth (ADR-008) or Auth.js is used. Auth0's official Next.js 16 guidance recommends keeping `proxy.ts` lightweight (cookie-existence-only check) and pushing full session validation + RBAC into Server Components/Actions where the stable Node.js runtime is available.
+
+**Decision:** Use `apps/web/proxy.ts` (not `middleware.ts`). Export `proxy` function (not `middleware`).
+
+**Rationale:**
+- Next.js 16 network-boundary clarification — `proxy.ts` runs on Node.js runtime (not Edge), enabling full Better Auth API access when needed.
+- Official Next.js 16 rename; `middleware.ts` is deprecated and will be removed.
+- Aligns with Better Auth's documented "fully compatible with Next.js 16" guidance.
+- Enables the 2-layer auth pattern: `proxy.ts` does cookie-only optimistic check via `getSessionCookie()` (Edge-compatible, no DB access); Server Component layouts do full validation via `auth.api.getSession({ headers })` + RBAC via `requireRole()`.
+- The 2-layer pattern is the Auth0 + Better Auth + Next.js 16 consensus — proxy.ts is "not intended for full session management or complex authorization" (Auth0).
+
+**Trade-offs:**
+- All documentation, tutorials, and Stack Overflow answers referencing `middleware.ts` are now stale — engineers must learn the new pattern.
+- The 2-layer pattern requires RBAC enforcement at layout boundaries (`(studio)/layout.tsx`, `(admin)/layout.tsx`, nested revenue/settings layouts) rather than a single middleware check — more files to maintain but better separation of concerns.
+- `proxy.ts` running on Node.js runtime (not Edge) means slightly higher latency per request than Edge middleware would have — acceptable for a yoga studio (500 RPS target per Goal G4).
+
+**Rejected:** Keep `middleware.ts` (deprecated in Next.js 16; will be removed). Use Edge runtime for proxy.ts (Better Auth requires Node.js for `auth.api.getSession()`; cookie-only check is Edge-compatible but full validation is not). Put full auth + RBAC in proxy.ts (violates Auth0 + Better Auth + Next.js 16 guidance; causes DB round-trip on every request; defeats proxy's purpose as lightweight gating layer).
+
+**Source:** `scaffolding_files.md` preamble (lines 1–9); Next.js 16 blog post (`https://nextjs.org/blog/next-16#proxy`); `guide_auth-v5_vs_better-auth.md` §Route Protection Pattern Changes; `MASTER_EXECUTION_PLAN.md` §2 discrepancy D2, D36.
+
+---
+
 ## 30. Glossary
 
 | Term | Definition |
@@ -2852,12 +2915,12 @@ DATABASE_URL=                    # Neon PostgreSQL connection string (pooled)
 DATABASE_URL_UNPOOLED=           # Neon direct connection (for migrations)
 
 # ─────────────────────────────────────────────
-# Authentication (Auth.js v5)
+# Authentication (Better Auth v1.6.23)
 # ─────────────────────────────────────────────
-AUTH_SECRET=                     # 32+ char random string; generate: openssl rand -base64 32
-AUTH_GOOGLE_ID=                  # Google OAuth client ID
-AUTH_GOOGLE_SECRET=              # Google OAuth client secret
-AUTH_RESEND_KEY=                 # Resend API key (for magic link emails)
+BETTER_AUTH_SECRET=             # 32+ char random string; generate: openssl rand -base64 32
+BETTER_AUTH_URL=                 # Auth callback base URL (e.g., http://localhost:3000)
+GOOGLE_CLIENT_ID=                # Google OAuth client ID
+GOOGLE_CLIENT_SECRET=            # Google OAuth client secret
 
 # ─────────────────────────────────────────────
 # Stripe
@@ -2974,7 +3037,7 @@ services:
     environment:
       POSTGRES_DB:       stillwater_dev
       POSTGRES_USER:     stillwater
-      POSTGRES_PASSWORD: stillwater_local
+      POSTGRES_PASSWORD: stillwater_local_dev
     ports:
       - '5432:5432'
     volumes:

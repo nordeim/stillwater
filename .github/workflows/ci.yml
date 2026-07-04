@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '9.15.4'
+
+jobs:
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: stillwater_dev
+          POSTGRES_USER: stillwater
+          POSTGRES_PASSWORD: stillwater_local_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        env:
+          DATABASE_URL_UNPOOLED: postgresql://stillwater:stillwater_local_dev@localhost:5432/stillwater_dev
+        run: pnpm db:migrate
+
+      - name: Seed database
+        env:
+          DATABASE_URL_UNPOOLED: postgresql://stillwater:stillwater_local_dev@localhost:5432/stillwater_dev
+        run: pnpm db:seed
+
+      # Gate 1: Type safety
+      - name: Type check
+        run: pnpm check-types
+
+      # Gate 2: Lint
+      - name: Lint
+        run: pnpm lint
+
+      # Gate 3: Unit + integration tests
+      - name: Test with coverage
+        env:
+          DATABASE_URL: postgresql://stillwater:stillwater_local_dev@localhost:5432/stillwater_dev
+          DATABASE_URL_UNPOOLED: postgresql://stillwater:stillwater_local_dev@localhost:5432/stillwater_dev
+          UPSTASH_REDIS_REST_URL: http://localhost:6379
+          UPSTASH_REDIS_REST_TOKEN: test-token
+        run: pnpm test:coverage
+
+      # Gate 4: Build
+      - name: Build
+        run: pnpm build
+
+      # Gate 5: E2E tests
+      - name: E2E tests
+        run: pnpm test:e2e
+
+      # Gate 8: Security audit
+      - name: Security audit
+        run: pnpm audit --audit-level=high
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

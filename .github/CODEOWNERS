@@ -1,0 +1,32 @@
+# Default owner — reviewed on every PR
+* @nordeim
+
+# Database layer — requires DB team review
+/packages/db/ @nordeim
+
+# API layer — requires backend review
+/packages/api/ @nordeim
+/packages/payments/ @nordeim
+/services/workers/ @nordeim
+
+# UI layer — requires frontend review
+/packages/ui/ @nordeim
+/apps/web/src/components/ @nordeim
+/apps/web/src/app/ @nordeim
+
+# Auth — requires security review
+/packages/auth/ @nordeim
+/apps/web/proxy.ts @nordeim
+
+# Config — requires DevOps review
+/tooling/ @nordeim
+/.github/ @nordeim
+/docker-compose.yml @nordeim
+/infrastructure/ @nordeim
+
+# Documentation
+/PAD.md @nordeim
+/MASTER_EXECUTION_PLAN.md @nordeim
+/stillwater_SKILL.md @nordeim
+/CLAUDE.md @nordeim
+/README.md @nordeim

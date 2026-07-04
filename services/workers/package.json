@@ -1,0 +1,25 @@
+{
+  "name": "@stillwater/workers",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "trigger dev",
+    "deploy": "trigger deploy",
+    "clean": "rm -rf .turbo",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@stillwater/config": "workspace:*",
+    "@stillwater/db": "workspace:*",
+    "@stillwater/email": "workspace:*",
+    "@trigger.dev/sdk": "^3.3.17",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@stillwater/eslint-config": "workspace:*",
+    "@stillwater/typescript-config": "workspace:*",
+    "@types/node": "^22.13.4",
+    "typescript": "^5.7.3"
+  }
+}

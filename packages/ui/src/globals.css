@@ -1,0 +1,93 @@
+/* Stillwater — Global Stylesheet */
+/* Imported by apps/web/src/app/globals.css via: @import '@stillwater/ui/globals'; */
+
+/* Load all design tokens */
+@import './tokens/index.css';
+
+/* Load all font face declarations */
+@import './fonts/index.css';
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  min-height: 100vh;
+}
+
+/* ── Focus visible (WCAG 2.2 AAA) ──────────────────────────── */
+/* With --radius: 0 (sharp edges), focus rings are the ONLY
+   interactive affordance — they must be prominent (3px). */
+:focus-visible {
+  outline: 3px solid var(--color-water-500);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+/* ── Headings ──────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  line-height: var(--leading-display);
+  text-wrap: balance;
+}
+
+/* ── Links ─────────────────────────────────────────────────── */
+a {
+  color: var(--color-action);
+  text-decoration: none;
+  transition: color var(--duration-quick) var(--ease-gentle);
+}
+
+a:hover {
+  color: var(--color-action-hover);
+}
+
+/* ── Images ────────────────────────────────────────────────── */
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ── Inputs ────────────────────────────────────────────────── */
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* ── Accessibility utilities ───────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

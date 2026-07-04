@@ -1,0 +1,58 @@
+/* Stillwater — Warm Mineral Color Palette (PAD §11.4) */
+/* DO NOT use raw hex values in components — always use these tokens */
+
+:root {
+  /* Stone — foundation */
+  --color-stone-950: #0F0D0B;
+  --color-stone-900: #1C1915;
+  --color-stone-800: #2E2B26;
+  --color-stone-700: #3D3832;
+  --color-stone-600: #544F48;
+  --color-stone-500: #6E6760;
+  --color-stone-400: #8C7B6E;
+  --color-stone-300: #B0A49A;
+  --color-stone-200: #D4CFC9;
+  --color-stone-100: #E8E3DC;
+  --color-stone-50: #F5F0E8;
+
+  /* Clay — primary action (terracotta) */
+  --color-clay-600: #8A4030;
+  --color-clay-500: #9E5E44;
+  --color-clay-400: #C4856A;
+  --color-clay-300: #D9A48F;
+  --color-clay-200: #EDD4C8;
+  --color-clay-100: #F7EDE8;
+
+  /* Water — accent (muted teal) */
+  --color-water-700: #4A7280;
+  --color-water-600: #5D8A99;
+  --color-water-500: #7B9EA8;
+  --color-water-400: #9BBAC5;
+  --color-water-300: #B8CDD4;
+  --color-water-100: #E8F0F3;
+
+  /* Sand — surfaces */
+  --color-sand: #F5F0E8;
+  --color-sand-warm: #EDE5D8;
+  --color-sand-deep: #E2D8CB;
+
+  /* Status colors */
+  --color-success: #4A7C59;
+  --color-warning: #C4913A;
+  --color-error: #B85450;
+  --color-info: var(--color-water-500);
+
+  /* Semantic aliases */
+  --color-background: var(--color-sand);
+  --color-surface: var(--color-sand-warm);
+  --color-border: var(--color-stone-200);
+  --color-text-primary: var(--color-stone-900);
+  --color-text-secondary: var(--color-stone-400);
+  --color-text-tertiary: var(--color-stone-300);
+  --color-action: var(--color-clay-400);
+  --color-action-hover: var(--color-clay-500);
+  --color-accent: var(--color-water-500);
+
+  /* Fog — alias for stone-200 (fixes D9 malformed token in PAD) */
+  --color-fog: #D4CFC9;
+}

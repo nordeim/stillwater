@@ -20,7 +20,7 @@
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
 | Methodology | TDD (`RED → GREEN → REFACTOR → COMMIT`, one cycle per commit)     |
-| Sources     | `design.md`, `PAD.md`, `scaffolding_files.md`, `static_landing_page_html_mockup.md` |
+| Sources     | `design.md`, `PAD.md`, `scaffolding_files.md`, `static_landing_page_html_mockup.md`, `guide_auth-v5_vs_better-auth.md` |
 
 ### Change Log
 
@@ -73,7 +73,7 @@ Stillwater is the operational backbone and digital face of a boutique yoga studi
 2. **Members** — authenticated practitioners who book classes, manage subscriptions, view attendance history
 3. **Studio operations** — staff, managers, and the owner who manage classes, schedules, instructors, members, and revenue
 
-The platform exposes ~19 routes organised into three Next.js App Router route groups: `(marketing)`, `(studio)`, `(admin)`.
+The platform exposes ~33 routes organised into three Next.js App Router route groups: `(marketing)` (9 routes), `(studio)` (6 routes), `(admin)` (10 routes), plus auth (4 routes) and API (4 routes).
 
 ### 1.2 WHY — The Problem Being Solved
 
@@ -166,6 +166,8 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 | D38| Auth.js v5 beta status (guide G6)    | ADR-008 context says "Sept 2025 handover" (incomplete) | Guide confirms Auth.js v5 still beta at 5.0.0-beta.31; never left beta since rewrite; Better Auth team now patches Auth.js security | **Update ADR-008 context** with full timeline + dual-maintenance fact |
 | D39| Better Auth client API differences (guide G4) | Files don't document `authClient.signIn.social()` / `authClient.useSession()` return shape | Guide documents the centralized `authClient` API | **Document client API** in F2-02 + stillwater_SKILL.md §Lesson 3 |
 | D40| Better Auth DB schema differences (guide G5) | Files don't document table/field renames | Guide documents User/Session/Account/Verification schema changes | **Document schema migration** in stillwater_SKILL.md §Lesson 3 + Phase 1 schema files |
+| D41| PAD staleness — 14 stale references | PAD.md references Auth.js v5, `middleware.ts`, `[...nextauth]`, `AUTH_SECRET`, "Next.js 15", "stillwater_local" throughout | This document (PLAN) correctly uses Better Auth v1.6.23 + `proxy.ts` + `BETTER_AUTH_SECRET` | **Update PAD.md** in 14 locations: §4.1 ("Next.js 15"→"Next.js 16"), §5.1 table (Auth.js→Better Auth, Next.js 15→16, TS 5.5→5.7), §5.2 (TS 5.5→5.7), §6.1 (`middleware.ts`→`proxy.ts`, `[...nextauth]`→`[...all]`, "Auth.js v5"→"Better Auth"), §8.5 (comment), §9.1 diagram, §9.3 comment, §9.4 (`middleware.ts`→`proxy.ts`), Appendix A (env var names), Appendix C (docker password) |
+| D42| Missing `@dnd-kit/core` and `recharts` in `apps/web/package.json` scaffolding | Neither package listed in scaffolding deps | Phase 9 F9-07 references `@dnd-kit/core` for drag-and-drop calendar; F9-14 references `recharts` for revenue charts | **Add** `"@dnd-kit/core": "^6.0.0"` and `"recharts": "^2.15.0"` to `apps/web/package.json` dependencies in Phase 0 (or at Phase 9 start) |
 
 ---
 ## 3. Architectural Principles (non-negotiable)
@@ -309,7 +311,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 ### Phase ordering rationale
 - Phase 0 first because every other phase imports from `@stillwater/*` packages
 - Phase 1 before Phase 2 because Better Auth needs the `user` + `member` + `role_assignment` tables
-- Phase 2 before Phase 3 because tRPC `protectedProcedure` / `staffProcedure` / `ownerProcedure` middleware needs `auth.api.getSession()`
+- Phase 2 before Phase 3 because tRPC `protectedProcedure` / `staffProcedure` / `ownerProcedure` middleware needs `auth.api.getSession()` (in tRPC context — Node.js runtime, NOT in proxy.ts which uses cookie-only `getSessionCookie()` per D36)
 - Phase 3 before Phases 4-9 because every UI page consumes tRPC procedures
 - Phase 7 (Stripe) before Phase 6 (member dashboard membership mgmt) because the dashboard's "Manage Subscription" button calls `paymentsRouter.getPortalUrl`
 - Phase 8 (background jobs) after Phase 7 because `membership-credit-grant` fires on Stripe `invoice.paid`
@@ -344,6 +346,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 - [ ] `docker compose up -d` starts postgres + redis with healthy status
 - [ ] `pnpm db:migrate` runs (no-op since no schema yet, but exits 0)
 - [ ] `customConditions` declaration visible in `pnpm-workspace.yaml` (D15)
+- [ ] `@dnd-kit/core` and `recharts` present in `apps/web/package.json` dependencies (D42)
 - [ ] CI workflow `ci.yml` runs and passes on a feature branch
 
 #### Files to PLACE on disk (from scaffolding_files.md)
@@ -364,12 +367,12 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 12 | `/tooling/typescript/package.json`                  | [SCAFFOLD] | verbatim                                                    |
 | 13 | `/tooling/tailwind/base.ts`                         | [SCAFFOLD] | verbatim from L866–1042                                     |
 | 14 | `/tooling/tailwind/package.json`                    | [SCAFFOLD] | verbatim                                                    |
-| 15 | `/apps/web/package.json`                            | [PATCH]    | add 3 `@tailwindcss/*` devDeps (D16); add `test`/`test:e2e` scripts (D22); replace `next lint` with `eslint .` (D23) |
+| 15 | `/apps/web/package.json`                            | [PATCH]    | add 3 `@tailwindcss/*` devDeps (D16); add `test`/`test:e2e` scripts (D22); replace `next lint` with `eslint .` (D23); add `@dnd-kit/core` + `recharts` deps (D42) |
 | 16 | `/apps/web/tsconfig.json`                           | [SCAFFOLD] | verbatim                                                    |
 | 17 | `/apps/web/next.config.ts`                          | [PATCH]    | move `experimental.serverComponentsExternalPackages` → top-level `serverExternalPackages` (D21) |
 | 18 | `/apps/web/postcss.config.mjs`                      | [SCAFFOLD] | verbatim                                                    |
 | 19 | `/apps/web/tailwind.config.ts`                      | [SCAFFOLD] | verbatim                                                    |
-| 20 | `/apps/web/proxy.ts`                                | [SCAFFOLD] | verbatim — Phase 2 patches real `auth.api.getSession` call  |
+| 20 | `/apps/web/proxy.ts`                                | [SCAFFOLD] | verbatim — Phase 2 replaces auth logic entirely with cookie-only `getSessionCookie()` pattern (F2-13; D36) |
 | 21 | `/apps/web/components.json`                         | [SCAFFOLD] | verbatim                                                    |
 | 22 | `/packages/db/package.json`                         | [SCAFFOLD] | verbatim                                                    |
 | 23 | `/packages/db/tsconfig.json`                        | [SCAFFOLD] | verbatim                                                    |
@@ -4266,6 +4269,8 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 ### 7.1 PAD.md section-by-section coverage
 
 > **External validation:** `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms ADR-008 (Better Auth v1.6.23 stable) and ADR-009 (`proxy.ts` rename). The guide additionally mandates a **2-layer auth pattern** (cookie-only `proxy.ts` + Server Component `requireAuth()`/`requireRole()`) which has been incorporated into Phase 2 (F2-13 rewrite + F2-16 through F2-19 new layout files). See discrepancy D36 below.
+>
+> **⚠ PAD staleness notice:** PAD.md contains 14 stale references to Auth.js v5, `middleware.ts`, `[...nextauth]`, and old env var names (`AUTH_SECRET`, `AUTH_GOOGLE_ID`). These are tracked as discrepancy D41 in §2.1. The PLAN's own specifications are correct and take precedence over PAD where they conflict. PAD.md must be updated before Phase 0 implementation begins (see §10.1 step 3).
 
 | PAD § | Topic                                  | Satisfied by (file / phase)                                                |
 |-------|----------------------------------------|----------------------------------------------------------------------------|
@@ -4291,7 +4296,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 | 20    | Performance Targets                    | Phase 10 + per-route bundle budgets                                        |
 | 21    | Accessibility                          | Phase 11 (WCAG AAA audit) + per-component tests                            |
 | 22    | Deployment & Environments              | Phase 0 (CI workflows), Phase 10 (Vercel + Neon)                           |
-| 23    | ADRs                                   | ADR-001 to ADR-007 (existing) + ADR-008 (Better Auth) + ADR-009 (proxy.ts) |
+| 23    | ADRs                                   | ADR-001 to ADR-007 (existing) + ADR-008 (Better Auth v1.6.23) + ADR-009 (proxy.ts) — ✅ all 9 ADRs now in PAD.md §29 |
 | 24    | Glossary                               | This document Appendix C                                                   |
 
 ### 7.2 scaffolding_files.md coverage
@@ -4317,7 +4322,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 | `/apps/web/next.config.ts`                       | 0     | [PATCH] move `serverComponentsExternalPackages` to top-level (D21) |
 | `/apps/web/postcss.config.mjs`                   | 0     | [SCAFFOLD]                  |
 | `/apps/web/tailwind.config.ts`                   | 0     | [SCAFFOLD]                  |
-| `/apps/web/proxy.ts`                             | 0     | [SCAFFOLD] (Phase 2 patches with real `auth.api.getSession` call) |
+| `/apps/web/proxy.ts`                             | 0     | [SCAFFOLD] (Phase 2 replaces auth logic entirely — F2-13, D36; cookie-only `getSessionCookie()`) |
 | `/apps/web/components.json`                      | 0     | [SCAFFOLD]                  |
 | `/packages/db/package.json`                      | 0     | [SCAFFOLD]                  |
 | `/packages/db/tsconfig.json`                     | 0     | [SCAFFOLD]                  |
@@ -4402,7 +4407,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 
 The following items require explicit project-owner sign-off before IMPLEMENT begins.
 
-1. **Better Auth vs Auth.js** — CONFIRMED by `guide_auth-v5_vs_better-auth.md` (July 2026): Better Auth v1.6.23 stable is the correct choice for greenfield Next.js 16 projects. Auth.js v5 remains in beta (5.0.0-beta.31) and has friction with Next.js 16 (peer-dependency conflicts, server-action configuration errors — GitHub issues #13302, #13388). ADR-008 stands. If you still prefer Auth.js v5, Phase 2 changes substantially and you accept beta-status risk.
+1. **Better Auth vs Auth.js** — ✅ RESOLVED. `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms: Better Auth v1.6.23 stable is correct for greenfield Next.js 16. Auth.js v5 still beta (5.0.0-beta.31), with confirmed friction (GitHub #13302 peer-dep conflicts, #13388 server-action failures). Better Auth team also patches Auth.js security. ADR-008 stands. **No action required — this question is answered.**
 2. **`proxy.ts` rename** — Confirm ADR-009 (adopt Next.js 16 rename). If your Next.js version is < 16, revert to `middleware.ts`.
 3. **Self-hosted fonts** — Confirm self-hosting Cormorant Garamond + DM Sans + Berkeley Mono (license files must be acquired for Berkeley Mono — it's a paid font; if unavailable, fall back to JetBrains Mono).
 4. **Sanity Cloud hosting** — Confirm Sanity Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed) vs self-hosted at `studio.stillwater.studio` (Next.js app inside monorepo).
@@ -4419,8 +4424,9 @@ The following items require explicit project-owner sign-off before IMPLEMENT beg
 
 ### 10.1 Immediate (pre-IMPLEMENT)
 1. **VALIDATE checkpoint** — Project owner reviews this document and answers Open Questions §9
-2. **ADR-008 and ADR-009** drafted and added to PAD.md (Better Auth + proxy.ts rename)
-3. **Phase 0 smoke test** — `git init`, place all scaffolding files, apply D15-D24 patches, run `pnpm install && pnpm dev`; verify `http://localhost:3000` returns a 200 (even if it's a placeholder page)
+2. **ADR-008 and ADR-009** ✅ COMPLETE — drafted and added to PAD.md §29 (Better Auth v1.6.23 + proxy.ts rename; see `PAD.md` lines after ADR-007)
+3. **PAD.md stale references resolved** — Update 14 locations per D41 (Next.js 15→16, Auth.js→Better Auth v1.6.23, TypeScript 5.5→5.7, `middleware.ts`→`proxy.ts`, `[...nextauth]`→`[...all]`, `AUTH_SECRET`→`BETTER_AUTH_SECRET`, `AUTH_GOOGLE_ID`→`GOOGLE_CLIENT_ID`, `AUTH_GOOGLE_SECRET`→`GOOGLE_CLIENT_SECRET`, `AUTH_RESEND_KEY`→`RESEND_API_KEY`, `stillwater_local`→`stillwater_local_dev`)
+4. **Phase 0 smoke test** — `git init`, place all scaffolding files, apply D15-D24 patches, run `pnpm install && pnpm dev`; verify `http://localhost:3000` returns a 200 (even if it's a placeholder page)
 
 ### 10.2 First IMPLEMENT cycle (Phase 0 only)
 - Create the repo structure from scaffolding_files.md

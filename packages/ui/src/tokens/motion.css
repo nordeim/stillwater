@@ -1,0 +1,28 @@
+/* Stillwater — Motion System (PAD §11.6) */
+
+:root {
+  /* Easing curves */
+  --ease-gentle: cubic-bezier(0.16, 1, 0.3, 1);     /* Expo out — snappy settle */
+  --ease-breathe: cubic-bezier(0.45, 0, 0.55, 1);   /* Sine in-out — organic */
+  --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);        /* Material standard */
+
+  /* Durations */
+  --duration-instant: 100ms;
+  --duration-quick: 150ms;    /* Hover states */
+  --duration-standard: 300ms; /* Transitions */
+  --duration-slow: 600ms;     /* Page reveals */
+  --duration-crawl: 900ms;    /* Decorative/ambient */
+}
+
+/* Reduced motion — global override (WCAG 2.2 AAA) */
+/* Use 0.01ms, NOT 0ms — some browsers treat 0ms as "use default" */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

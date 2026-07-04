@@ -1,0 +1,99 @@
+/**
+ * Stillwater — App Global CSS (Tailwind v4 CSS-first)
+ *
+ * Import order matters:
+ *   1. @stillwater/ui/globals — design tokens + fonts + reset
+ *   2. tailwindcss — Tailwind v4 utilities (scans content paths)
+ *   3. @theme — maps tokens to Tailwind theme variables
+ */
+
+@import '@stillwater/ui/globals';
+@import 'tailwindcss';
+
+/* ── Tailwind v4 Theme Mapping ─────────────────────────────── */
+/* Maps Stillwater design tokens to Tailwind's theme namespace
+   so utilities like bg-stone-50, font-display, duration-quick
+   generate correctly. */
+
+@theme {
+  /* Colors — Stone */
+  --color-stone-950: var(--color-stone-950);
+  --color-stone-900: var(--color-stone-900);
+  --color-stone-800: var(--color-stone-800);
+  --color-stone-700: var(--color-stone-700);
+  --color-stone-600: var(--color-stone-600);
+  --color-stone-500: var(--color-stone-500);
+  --color-stone-400: var(--color-stone-400);
+  --color-stone-300: var(--color-stone-300);
+  --color-stone-200: var(--color-stone-200);
+  --color-stone-100: var(--color-stone-100);
+  --color-stone-50: var(--color-stone-50);
+
+  /* Colors — Clay */
+  --color-clay-600: var(--color-clay-600);
+  --color-clay-500: var(--color-clay-500);
+  --color-clay-400: var(--color-clay-400);
+  --color-clay-300: var(--color-clay-300);
+  --color-clay-200: var(--color-clay-200);
+  --color-clay-100: var(--color-clay-100);
+
+  /* Colors — Water */
+  --color-water-700: var(--color-water-700);
+  --color-water-600: var(--color-water-600);
+  --color-water-500: var(--color-water-500);
+  --color-water-400: var(--color-water-400);
+  --color-water-300: var(--color-water-300);
+  --color-water-100: var(--color-water-100);
+
+  /* Colors — Sand */
+  --color-sand: var(--color-sand);
+  --color-sand-warm: var(--color-sand-warm);
+  --color-sand-deep: var(--color-sand-deep);
+
+  /* Status colors */
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+
+  /* Fonts */
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  /* Spacing (4px base) */
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --spacing-7: var(--space-7);
+  --spacing-8: var(--space-8);
+  --spacing-9: var(--space-9);
+  --spacing-10: var(--space-10);
+  --spacing-11: var(--space-11);
+  --spacing-12: var(--space-12);
+  --spacing-13: var(--space-13);
+
+  /* Border radius — sharp edges by design (PAD §11.1) */
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-full: 9999px; /* ONLY for avatars and status dots */
+
+  /* Motion easings */
+  --ease-gentle: var(--ease-gentle);
+  --ease-breathe: var(--ease-breathe);
+  --ease-sharp: var(--ease-sharp);
+
+  /* Motion durations */
+  --duration-instant: var(--duration-instant);
+  --duration-quick: var(--duration-quick);
+  --duration-standard: var(--duration-standard);
+  --duration-slow: var(--duration-slow);
+  --duration-crawl: var(--duration-crawl);
+}

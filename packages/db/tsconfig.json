@@ -1,0 +1,10 @@
+{
+  "extends": "@stillwater/typescript-config/library",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": ".turbo/tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".turbo"]
+}
