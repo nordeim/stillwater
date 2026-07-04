@@ -79,6 +79,14 @@ Awesome meticulous review, analysis and planning. Please keep up the good work. 
 
 ---
 
+Awesome meticulous job so far. Please keep up the good work. Now, please meticulously plan to search for relevant Next.js and frontend design skills in the included `skills/` folder, read the selected skills' content and extract out programming best practices and tips, pitfalls to avoid as well as patterns and anti-patterns that are useful for building the project codebase given the specifications in the original project souce documents. Extract out the relevant details from the selected source skill files and compile these information into a new skill file named `stillwater_SKILL.md`. The goal is to distill programming knowledge and best practices that are useful and helpful in achieving optimal results when building the project codebase.
+
+---
+
+Please meticulously plan to do a deep research with extensive web searches on the latest release version of the respective Auth.js v5 and Better Auth packages for a Next.js 16 project as well as research the programming differences between these two packages, particularly on the code change patterns when migrating from Auth.js v5 to Better Auth. Based on your deep research findings, compile the information into a programming and best practices guide that is compatible with the latest release versions of both packages.
+
+---
+
 yes, please meticulously plan to proceed with T1 to T2 in sequence. first create a comprehensive remediation plan with a detailed ToDo list, then validate the remediation plan against the codebase to check for alignment before proceeding to execute it meticulously.
 
 ---
