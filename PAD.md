@@ -1229,7 +1229,7 @@ REQUIRED:
 /* Scale: Display → Heading → Body → Caption */
 --font-display:   'Cormorant Garamond', Georgia, serif;  /* Serenity, luxury */
 --font-body:      'DM Sans', system-ui, sans-serif;       /* Clarity, function */
---font-mono:      'Berkeley Mono', 'Courier New', mono;   /* Data, precision */
+--font-mono:      'JetBrains Mono', 'Courier New', mono;   /* Data, precision */
 
 /* Type Scale (fluid, clamp-based) */
 --text-display-2xl: clamp(3.5rem, 8vw, 7rem);     /* Hero statements */

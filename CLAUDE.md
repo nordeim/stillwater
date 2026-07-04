@@ -67,7 +67,7 @@ Follow this six-phase workflow for all implementation tasks:
 - **Advisory Locks for Concurrency** — `pg_advisory_xact_lock()` for booking (ADR-004). Never optimistic locking for limited-capacity resources.
 - **Idempotent Webhooks** — `payment_events.stripe_event_id` UNIQUE INDEX + `pg_advisory_lock` for Stripe event processing.
 - **Side Effects in Background Jobs** — Emails, notifications, digests never run synchronously in API routes. Always trigger a Trigger.dev task.
-- **Self-Hosted Fonts** — Cormorant Garamond + DM Sans + Berkeley Mono. Zero FOUT, zero third-party font CDN in production.
+- **Self-Hosted Fonts** — Cormorant Garamond + DM Sans + JetBrains Mono. Zero FOUT, zero third-party font CDN in production.
 
 ---
 
@@ -637,7 +637,7 @@ Enforced at two layers:
 - **Self-signed Stripe webhook**: Always verify signature via `stripe.webhooks.constructEvent`
 - **`middleware.ts` filename**: Renamed to `proxy.ts` in Next.js 16 (ADR-009)
 - **`next lint`**: Deprecated in Next.js 16 — use `eslint .` directly
-- **Google Fonts CDN in production**: Self-host via `next/font/local` (Cormorant + DM Sans + Berkeley Mono)
+- **Google Fonts CDN in production**: Self-host via `next/font/local` (Cormorant + DM Sans + JetBrains Mono)
 - **Mockup `--sp-N` spacing tokens**: Use PAD's `--space-N` naming (off-by-one from index 5)
 
 ---

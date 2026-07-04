@@ -1,4 +1,5 @@
 # ─── Dependencies ──────────────────────────────────────────
+backup/
 node_modules/
 .pnp
 .pnp.js

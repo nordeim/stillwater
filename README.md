@@ -39,7 +39,7 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 | ✉️ | **11 background jobs**               | Trigger.dev v3 tasks for confirmations, reminders, waitlist, digest, attendance — all retried & durable |
 | 📝 | **Sanity marketing CMS**             | Webhook-triggered ISR; editors publish without deploys                                                 |
 | ♿ | **WCAG 2.2 Level AAA**               | 7:1 contrast, full keyboard nav, screen-reader semantics, reduced-motion respect                       |
-| 🎨 | **"Editorial Calm" design system**   | Warm Mineral palette (stone/clay/water/sand), Cormorant Garamond + DM Sans + Berkeley Mono, sharp edges |
+| 🎨 | **"Editorial Calm" design system**   | Warm Mineral palette (stone/clay/water/sand), Cormorant Garamond + DM Sans + JetBrains Mono, sharp edges |
 | 📊 | **Observability stack**              | Sentry errors, PostHog analytics (17 events), Axiom logs, Checkly synthetics                           |
 | ⚡ | **Edge ISR + Turbopack**             | Marketing pages < 80kb gzipped; LCP < 1.5s; Lighthouse A11y = 100                                       |
 
@@ -450,7 +450,7 @@ The "Stillwater" identity follows an **Editorial Calm** direction inspired by Ki
 |---------------------|------------------|--------------------------------|
 | Cormorant Garamond  | Display / headings | Georgia, serif               |
 | DM Sans             | Body             | system-ui, sans-serif          |
-| Berkeley Mono       | Data / admin     | ui-monospace, SFMono-Regular   |
+| JetBrains Mono       | Data / admin     | ui-monospace, SFMono-Regular   |
 
 Type scale uses 9 fluid `clamp()` tokens (e.g., `--text-display-2xl: clamp(3.5rem, 8vw, 7rem)`).
 

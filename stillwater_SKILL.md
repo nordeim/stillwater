@@ -66,7 +66,7 @@ The following are lint- and review-enforceable. A PR violating any rule auto-fai
 | Rule | Enforcement |
 |------|-------------|
 | ❌ NO purple-to-pink gradients on hero sections | ESLint rule banning `from-purple-*`, `from-violet-*`, `from-fuchsia-*` |
-| ❌ NO Inter/Roboto/system-ui as the only typeface | `next/font/local` self-hosts Cormorant Garamond + DM Sans + Berkeley Mono |
+| ❌ NO Inter/Roboto/system-ui as the only typeface | `next/font/local` self-hosts Cormorant Garamond + DM Sans + JetBrains Mono |
 | ❌ NO drop shadows on cards as the primary depth signal | ESLint rule banning `shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-xl` (skeleton + toast exceptions only) |
 | ❌ NO "Book a Free Trial" pill CTAs | `borderRadius.DEFAULT: 0` — sharp rectangles only |
 | ❌ NO stock photography of people meditating in beige rooms | SVG illustrations + Cloudflare Images of actual studio |
@@ -79,7 +79,7 @@ The following are lint- and review-enforceable. A PR violating any rule auto-fai
 | ❌ NO hero split (left/right symmetric) | Asymmetric 3-col: `1fr 1px minmax(280px, 38%)` |
 | ✅ Whitespace as luxury signal | `--space-13: 256px` for major section breaks |
 | ✅ Cormorant Garamond for all display/headings | `--font-display` token |
-| ✅ Berkeley Mono for data/admin tables | `--font-mono` token, `font-variant-numeric: tabular-nums` |
+| ✅ JetBrains Mono for data/admin tables | `--font-mono` token, `font-variant-numeric: tabular-nums` |
 | ✅ Sharp edges by design | `--radius: 0` propagates through all shadcn components |
 | ✅ Color contrast 7:1 (WCAG 2.2 Level AAA) | `scripts/contrast-check.ts` runs in CI |
 
@@ -375,7 +375,7 @@ All design tokens live in `apps/web/src/app/globals.css` via the `@theme` direct
   /* ── Typography ── */
   --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-body:    'DM Sans', system-ui, -apple-system, sans-serif;
-  --font-mono:    'Berkeley Mono', 'SF Mono', 'Cascadia Code', monospace;
+  --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
 
   /* ── Type scale (9 fluid tokens) ── */
   --text-display-2xl: clamp(3.5rem, 8vw, 7rem);
@@ -451,10 +451,10 @@ All design tokens live in `apps/web/src/app/globals.css` via the `@theme` direct
 | `--text-body-md` | DM Sans | 1rem | 400 | 1.65 | 0 | Default body |
 | `--text-body-sm` | DM Sans | 0.875rem | 400 | 1.6 | 0 | Captions, labels |
 | `--text-caption` | DM Sans | 0.75rem | 400 | 1.4 | 0.06em | Fine print |
-| (overline) | Berkeley Mono | 0.6875rem | 500 | 1.4 | 0.2em | Section labels ("PHILOSOPHY", "SCHEDULE") |
-| (data label) | Berkeley Mono | 0.75rem | 500 | 1.4 | 0.1em | Admin table cells, captions |
+| (overline) | JetBrains Mono | 0.6875rem | 500 | 1.4 | 0.2em | Section labels ("PHILOSOPHY", "SCHEDULE") |
+| (data label) | JetBrains Mono | 0.75rem | 500 | 1.4 | 0.1em | Admin table cells, captions |
 
-**Critical:** Apply `text-wrap: balance` to every Cormorant Garamond heading (prevents ugly orphaned words). Apply `text-wrap: pretty` to every DM Sans paragraph. Apply `font-variant-numeric: tabular-nums lining-nums` to Berkeley Mono in any data table.
+**Critical:** Apply `text-wrap: balance` to every Cormorant Garamond heading (prevents ugly orphaned words). Apply `text-wrap: pretty` to every DM Sans paragraph. Apply `font-variant-numeric: tabular-nums lining-nums` to JetBrains Mono in any data table.
 
 ### 4.3 Color Usage Hierarchy (60-30-10)
 
@@ -499,7 +499,7 @@ const berkeleyMono = localFont({
 });
 ```
 
-> ⚠️ **Berkeley Mono licensing:** Berkeley Mono is a paid font. If the license is not acquired, fall back to `"JetBrains Mono"` or `"IBM Plex Mono"` (both open-source) — but this changes the editorial character. Confirm license before build.
+> ⚠️ **JetBrains Mono licensing:** JetBrains Mono is a paid font. If the license is not acquired, fall back to `"JetBrains Mono"` or `"IBM Plex Mono"` (both open-source) — but this changes the editorial character. Confirm license before build.
 
 ### 4.5 Keyframes & Custom Utilities
 
@@ -2127,7 +2127,7 @@ curl -N "https://stillwater.studio/api/schedule/stream?sessionId=<known-id>"
 
 **Context:** The mockup loads Cormorant Garamond + DM Sans via Google Fonts CDN. PAD mandates self-hosted fonts (zero FOUT, zero third-party font CDN in production).
 
-**What to do differently:** Self-host all three font families (Cormorant Garamond, DM Sans, Berkeley Mono) via `next/font/local`. Place woff2 files in `packages/ui/src/fonts/<family>/`.
+**What to do differently:** Self-host all three font families (Cormorant Garamond, DM Sans, JetBrains Mono) via `next/font/local`. Place woff2 files in `packages/ui/src/fonts/<family>/`.
 
 **Fix references:** D34 in `MASTER_EXECUTION_PLAN.md` §2.3, §4.4 of this SKILL.md.
 
@@ -2435,7 +2435,7 @@ Document this cycle in the PR.
 ### 14.7 Design Conventions
 
 - Warm Mineral palette only (no Tailwind defaults)
-- Cormorant Garamond + DM Sans + Berkeley Mono (no Inter/Roboto)
+- Cormorant Garamond + DM Sans + JetBrains Mono (no Inter/Roboto)
 - Sharp edges (`--radius: 0`)
 - Self-hosted fonts via `next/font/local`
 - `text-wrap: balance` on all headings

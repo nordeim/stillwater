@@ -4,7 +4,7 @@
   /* Font families */
   --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-body: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Berkeley Mono', 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
 
   /* Type scale (9 fluid tokens — clamp-based) */
   --text-display-2xl: clamp(3.5rem, 8vw, 7rem);
