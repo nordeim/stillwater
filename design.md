@@ -264,6 +264,15 @@ stillwater/
 
 ### 🎨 LAYER 2: DESIGN SYSTEM — "Stillwater" Identity
 
+> ⚠️ **Phase 1 Proposal — Partially Superseded.** The color token names, spacing scale stops, font-mono choice, and missing tokens documented below were refined in PAD.md §11.2–§11.5. The **hex values are still accurate**, but the **token names have changed**.
+> - **Colors:** Named tokens (`--color-stone-deep`, `--color-clay`, `--color-fog`) → numbered scale (`--color-stone-950`…`--color-stone-50`, `--color-clay-100`…`--color-clay-600`). See PAD.md §11.3.
+> - **Spacing:** 11-stop scale → 13-stop scale (added `--space-px: 1px`, `--space-0-5: 2px`, `--space-5: 20px`, `--space-13: 256px`). See PAD.md §11.4.
+> - **Motion:** Added `--ease-sharp`, `--duration-instant: 100ms`, `--duration-crawl: 900ms`. See PAD.md §11.5.
+> - **Font-mono:** `'Berkeley Mono'` (paid, unlicensed) → `'JetBrains Mono'` (Apache 2.0, open-source). See PAD.md §11.2.
+> - **Added:** Semantic alias tokens (`--color-background`, `--color-surface`, `--color-action`, etc.) + status colors (`--color-success`, `--color-warning`, `--color-error`, `--color-info`). See PAD.md §11.3.
+>
+> The block below is preserved as a historical record. **For the authoritative tokens, see PAD.md §11 and stillwater_SKILL.md §4 + §19.**
+
 **Aesthetic Direction:** *Editorial Calm* — Inspired by high-end wellness editorial (Kinfolk magazine meets Japanese spatial design). Anti-generic by strict principle.
 
 ```
@@ -563,7 +572,17 @@ export const processWaitlistPromotion = task({
 
 ---
 
-### 🔐 LAYER 6: AUTH & RBAC — Auth.js v5 + Database Permissions
+### 🔐 LAYER 6: AUTH & RBAC — Better Auth + proxy.ts
+
+> ⚠️ **SUPERSEDED — This section's original Auth.js v5 + `middleware.ts` code has been replaced.** See:
+> - **ADR-008** (PAD.md §29): Better Auth v1.6.23 replaces Auth.js v5 (accepted 2026-07-04)
+> - **ADR-009** (PAD.md §29): `proxy.ts` replaces `middleware.ts` (Next.js 16 platform change)
+> - **stillwater_SKILL.md §5.6**: Current 2-layer auth pattern with `getSessionCookie()` + `auth.api.getSession()`
+>
+> The code block below is preserved as a historical record of the Phase 1 proposal. **Do not implement it.** Use the Better Auth + proxy.ts pattern documented in SKILL.md §5.6.
+
+<details>
+<summary>Original Phase 1 proposal (Auth.js v5 + middleware.ts — DO NOT USE)</summary>
 
 ```typescript
 // packages/auth/config.ts
@@ -617,6 +636,8 @@ export default auth(async (req) => {
   }
 });
 ```
+
+</details>
 
 ---
 
@@ -754,10 +775,10 @@ ARCHITECTURE DECISIONS — Awaiting Confirmation:
       → Which CMS approach?
 
 □ 5. BACKGROUND JOBS
-      Plan: Trigger.dev v3 (cloud, generous free tier)
+      Plan: Trigger.dev v4 (cloud, GA August 2025; v3 deprecated — new v3 deploys stop April 1, 2026)
       Alternative: Inngest (similar)
       Alternative: BullMQ + Redis (self-hosted)
-      → Confirm Trigger.dev?
+      → Confirm Trigger.dev v4?
 
 □ 6. EMAIL
       Plan: React Email + Resend (2,400 emails/day free)

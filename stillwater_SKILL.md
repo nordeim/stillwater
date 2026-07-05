@@ -108,7 +108,7 @@ Source: `avant-garde-design-v4/references/12-anti-generic-checklist.md` §2.0. B
 - [ ] **5. Tactile Interaction:** Elements feel physically reactive (hover state shifts surface color, not shadow; click has `transition-colors` not `scale-105`).
 - [ ] **6. Radical Color:** Palette deviates from the standard "SaaS Blue/Indigo" (Warm Mineral palette: sand, stone, clay, water — no Tailwind defaults).
 - [ ] **7. Narrative Flow:** The page tells a story, rather than just listing features (editorial layout: hero → single instructor profile → schedule, not a 3-column feature grid).
-- [ ] **8. Typography Soul:** Fonts are selected for character, not just legibility (Cormorant Garamond for editorial gravitas; DM Sans for neutral body; JetBrains/Berkeley Mono for data precision).
+- [ ] **8. Typography Soul:** Fonts are selected for character, not just legibility (Cormorant Garamond for editorial gravitas; DM Sans for neutral body; JetBrains Mono for data precision).
 - [ ] **9. Invisible UX:** Micro-interactions serve the user, not just the eyes (reduced-motion respected globally; focus rings only on `:focus-visible`, not `:focus`).
 - [ ] **10. Strategic Alignment:** The aesthetic directly supports the "Compass" position (Editorial Calm = Kinfolk × 間; every choice traces back to this thesis).
 
@@ -421,7 +421,7 @@ All design tokens live in `apps/web/src/app/globals.css` via the `@theme` direct
   /* ── Typography ── */
   --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-body:    'DM Sans', system-ui, -apple-system, sans-serif;
-  --font-mono:    var(--font-berkeley-mono), 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+  --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
 
   /* ── Type scale (9 fluid tokens) ── */
   --text-display-2xl: clamp(3.5rem, 8vw, 7rem);
@@ -544,15 +544,15 @@ const dmSans = localFont({
   weight: '100 1000',
 });
 
-const berkeleyMono = localFont({
-  src: '../../packages/ui/src/fonts/berkeley-mono/BerkeleyMono-Variable.woff2',
-  variable: '--font-berkeley-mono',
+const jetbrainsMono = localFont({
+  src: '../../packages/ui/src/fonts/jetbrains-mono/JetBrainsMono-Variable.woff2',
+  variable: '--font-jetbrains-mono',
   display: 'swap',
   weight: '400 700',
 });
 ```
 
-> ⚠️ **Berkeley Mono licensing:** Berkeley Mono is a paid commercial font. If the license is not acquired, fall back to `"JetBrains Mono"` (Apache 2.0, open-source) or `"IBM Plex Mono"` (OFL, open-source) — but this changes the editorial character. The `@theme --font-mono` token above references `var(--font-berkeley-mono)` first (the self-hosted variable declared in `next/font/local` below), then falls back to open-source alternatives. Confirm the Berkeley Mono license before build; if unlicensed, remove the `berkeleyMono` `localFont` declaration and the `var(--font-berkeley-mono)` reference from `--font-mono`.
+> **Font-mono choice:** Stillwater uses **JetBrains Mono** (Apache 2.0, open-source) for the mono font family — matching PAD.md §11.2 and `packages/ui/src/tokens/typography.css`. The original design.md Phase 1 proposal suggested Berkeley Mono (paid commercial font), but the license was not acquired, so JetBrains Mono was chosen as the open-source fallback. This also aligns with `packages/ui/src/fonts/jetbrains-mono/` which contains the self-hosted woff2 files.
 
 ### 4.5 Keyframes & Custom Utilities
 

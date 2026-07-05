@@ -342,26 +342,26 @@ sequenceDiagram
 
 | Layer | Technology | Version | Rationale | Rejected Alternatives |
 |-------|-----------|---------|-----------|----------------------|
-| **Frontend Framework** | Next.js | `^16.2.0` | App Router, Turbopack stable, React Compiler, `proxy.ts` (replaces `middleware.ts` — also shifts from Edge to Node.js runtime by default), streaming, ISR, top-level `cacheComponents: true` (NOT under `experimental`) | Remix (less ecosystem), Nuxt (different team skills) |
+| **Frontend Framework** | Next.js | `^16.2.0` | App Router, Turbopack stable, React Compiler (opt-in via `reactCompiler: true` — NOT default), `proxy.ts` (replaces `middleware.ts` — runs on Edge runtime by default, same as middleware did), streaming, ISR, top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16) | Remix (less ecosystem), Nuxt (different team skills) |
 | **UI Library** | React | `^19.2.3` | Concurrent features, `use()`, Server Components. ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3. | — |
 | **Language** | TypeScript | `^5.9.0` | Strict mode end-to-end; `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (requires `import type`), `erasableSyntaxOnly: true` (FORBIDS `enum` and `namespace`) | — |
-| **Styling** | Tailwind CSS | `^4.1.0` | Utility-first, zero dead CSS in production, v4's CSS-first `@theme`, `@source` directives for monorepo content scanning | CSS Modules (verbose), styled-components (runtime cost) |
+| **Styling** | Tailwind CSS | `^4.3.0` | Utility-first, zero dead CSS in production, v4's CSS-first `@theme`, `@source` directives for monorepo content scanning; `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) | CSS Modules (verbose), styled-components (runtime cost) |
 | **Component Primitives** | Radix UI | latest | Fully accessible, unstyled, composable | Headless UI (fewer components), Ark UI (less mature) |
 | **API Layer** | tRPC | v11 | End-to-end type safety, no code generation, integrates natively with Next.js | REST (no type safety bridge), GraphQL (overkill, complex) |
-| **ORM** | Drizzle ORM | `^0.45.0` | Type-safe SQL, zero magic, excellent PostgreSQL support, fast. `db.$count` and relational query API require ≥0.30. | Prisma (slower, heavier, type gen required), Kysely (more verbose) |
+| **ORM** | Drizzle ORM | `^0.45.0` | Type-safe SQL, zero magic, excellent PostgreSQL support, fast. `db.$count` requires ≥0.34; relational query API v1 (`db.query.*`) since 0.28; v2 (`defineRelations()`) requires ≥1.0.0-beta. | Prisma (slower, heavier, type gen required), Kysely (more verbose) |
 | **Database** | PostgreSQL | 17 | Advisory locks for bookings, JSONB for metadata, proven at scale | MySQL (weaker advisory lock support), SQLite (not for prod) |
 | **Database Host** | Neon | latest | Serverless PostgreSQL, branching for preview envs, zero cold starts | Supabase (more opinionated), RDS (heavy setup) |
 | **Cache / Rate Limit** | Upstash Redis | latest | Serverless Redis, per-request billing, edge-compatible | Redis Cloud (needs VPC), Memcached (no sorted sets) |
 | **Auth** | Better Auth | v1.6.23 | Type-safe, framework-agnostic, Drizzle adapter, magic link + OAuth, server-component native; stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31) | Auth.js v5 (still beta, maintenance handover to Better Auth team Sept 2025), Clerk (vendor lock-in, cost), NextAuth v4 (legacy) |
 | **Background Jobs** | Trigger.dev | **v4** | Durable execution, retries, scheduling, excellent DX. **v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025.** | Inngest (similar but fewer features), BullMQ (self-hosted complexity) |
 | **CMS** | Sanity | v3 | GROQ queries, real-time collaborative editing, webhook-driven ISR | Contentful (expensive), Payload CMS (self-hosted complexity) |
-| **Payments** | Stripe | `^22.3.0` | Industry standard, Billing API, webhooks, tax support. ⚠️ **"Basil" API (2025-03-31)** — `current_period_end` moved from top-level to `items.data[0].current_period_end`. SDK v22+ uses camelCase (`currentPeriodEnd` not `current_period_end`). | Paddle (US restrictions), Braintree (complex) |
-| **Email Templates** | React Email | latest | JSX email templates, preview server, TypeScript | MJML (XML, not TypeScript), Handlebars (no type safety) |
-| **Email Delivery** | Resend | latest | Built for developers, React Email native integration, generous free tier | SendGrid (complex API), Postmark (no React Email native) |
-| **Monorepo** | Turborepo | latest | Incremental builds, task caching, excellent pnpm support | Nx (heavier), Lerna (legacy) |
-| **Package Manager** | pnpm | `9.15.4` (≥9.0.0) | Workspace support, fast, disk-efficient. `custom-conditions=@stillwater/source` in `.npmrc`. | npm (slow workspaces), yarn (inconsistent behavior) |
+| **Payments** | Stripe | `^22.3.0` | Industry standard, Billing API, webhooks, tax support. ⚠️ **"Dahlia" API (2026-06-24)** pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward). SDK exposes **snake_case** to match API wire format (NOT camelCase — use `current_period_end`, not `currentPeriodEnd`). | Paddle (US restrictions), Braintree (complex) |
+| **Email Templates** | React Email | `^0.0.36` | JSX email templates, preview server, TypeScript | MJML (XML, not TypeScript), Handlebars (no type safety) |
+| **Email Delivery** | Resend | `^4.1.2` | Built for developers, React Email native integration, generous free tier | SendGrid (complex API), Postmark (no React Email native) |
+| **Monorepo** | Turborepo | `^2.10.0` | Incremental builds, task caching, excellent pnpm support; graceful shutdown + deferred input hashing (2.10+) | Nx (heavier), Lerna (legacy) |
+| **Package Manager** | pnpm | `^11.0.0` | Workspace support, fast, disk-efficient. `custom-conditions=@stillwater/source` in `.npmrc`. pnpm 9.x is EOL — use 11.x+. | npm (slow workspaces), yarn (inconsistent behavior) |
 | **Testing: Unit/Integration** | Vitest | latest | Fast, ESM native, compatible with Vite ecosystem | Jest (slower, ESM friction) |
-| **Validation** | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs. Zod v4 `.url()` accepts any scheme → compose with `.refine()`. | yup (less TypeScript-native), Joi (older) |
+| **Validation** | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs. Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https:$/ })` (v4 native) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()`. | yup (less TypeScript-native), Joi (older) |
 | **Testing: E2E** | Playwright | latest | Cross-browser, reliable, component testing support | Cypress (slower, no Firefox) |
 | **Analytics** | PostHog | latest | Self-hostable, GDPR-friendly, feature flags, funnels | Mixpanel (cost), Amplitude (cost), GA4 (privacy concerns) |
 | **Logging** | Axiom | latest | Structured logs, fast queries, Next.js native integration | Datadog (cost), Papertrail (limited) |
@@ -373,7 +373,7 @@ sequenceDiagram
 
 ```
 Node.js:    >= 22.x LTS  (required for native fetch, ESM stability)
-pnpm:       9.15.4       (workspace protocol support; ≥9.0.0 floor)
+pnpm:       11.0.0       (workspace protocol support; pnpm 9.x is EOL — use 11.x+)
 TypeScript: ^5.9.0       (const type parameters, inferred type predicates, `erasableSyntaxOnly`, `verbatimModuleSyntax`)
 ```
 
@@ -2896,7 +2896,7 @@ Unknown error                  "Something unexpected happened. We've been
 **Decision:** Use `apps/web/proxy.ts` (not `middleware.ts`). Export `proxy` function (not `middleware`).
 
 **Rationale:**
-- Next.js 16 network-boundary clarification — `proxy.ts` runs on Node.js runtime (not Edge), enabling full Better Auth API access when needed.
+- Next.js 16 network-boundary clarification — `proxy.ts` runs on **Edge runtime by default** (same as middleware did in Next.js 15). Cookie-existence-only check via `getSessionCookie()` is Edge-compatible (no DB access). Full session validation requires Node.js runtime and belongs in Server Component layouts via `auth.api.getSession({ headers })`.
 - Official Next.js 16 rename; `middleware.ts` is deprecated and will be removed.
 - Aligns with Better Auth's documented "fully compatible with Next.js 16" guidance.
 - Enables the 2-layer auth pattern: `proxy.ts` does cookie-only optimistic check via `getSessionCookie()` (Edge-compatible, no DB access); Server Component layouts do full validation via `auth.api.getSession({ headers })` + RBAC via `requireRole()`.
@@ -2905,7 +2905,7 @@ Unknown error                  "Something unexpected happened. We've been
 **Trade-offs:**
 - All documentation, tutorials, and Stack Overflow answers referencing `middleware.ts` are now stale — engineers must learn the new pattern.
 - The 2-layer pattern requires RBAC enforcement at layout boundaries (`(studio)/layout.tsx`, `(admin)/layout.tsx`, nested revenue/settings layouts) rather than a single middleware check — more files to maintain but better separation of concerns.
-- `proxy.ts` running on Node.js runtime (not Edge) means slightly higher latency per request than Edge middleware would have — acceptable for a yoga studio (500 RPS target per Goal G4).
+- `proxy.ts` runs on Edge runtime by default (same as middleware did) — the 2-layer pattern exists because Edge cannot do DB access. Full validation + RBAC in Server Component layouts (Node.js runtime) via `requireAuth()` / `requireRole()`.
 
 **Rejected:** Keep `middleware.ts` (deprecated in Next.js 16; will be removed). Use Edge runtime for proxy.ts (Better Auth requires Node.js for `auth.api.getSession()`; cookie-only check is Edge-compatible but full validation is not). Put full auth + RBAC in proxy.ts (violates Auth0 + Better Auth + Next.js 16 guidance; causes DB round-trip on every request; defeats proxy's purpose as lightweight gating layer).
 
@@ -2991,8 +2991,9 @@ UPSTASH_REDIS_REST_TOKEN=
 # ─────────────────────────────────────────────
 # Observability
 # ─────────────────────────────────────────────
-SENTRY_DSN=                      # From Sentry project settings
+SENTRY_DSN=                      # Server-side Sentry DSN (optional)
 SENTRY_AUTH_TOKEN=               # For source map uploads in CI
+NEXT_PUBLIC_SENTRY_DSN=          # Client-side Sentry DSN (optional)
 NEXT_PUBLIC_POSTHOG_KEY=
 NEXT_PUBLIC_POSTHOG_HOST=        # https://app.posthog.com or self-hosted
 AXIOM_TOKEN=
@@ -3003,9 +3004,11 @@ AXIOM_DATASET=
 # ─────────────────────────────────────────────
 CLOUDFLARE_ACCOUNT_ID=
 CLOUDFLARE_IMAGES_TOKEN=
-CLOUDFLARE_R2_ACCESS_KEY=
-CLOUDFLARE_R2_SECRET_KEY=
+CLOUDFLARE_R2_ACCESS_KEY_ID=         # NOTE: _ID suffix (not _ACCESS_KEY)
+CLOUDFLARE_R2_SECRET_ACCESS_KEY=     # NOTE: _ACCESS_ in middle (not _SECRET_KEY)
 CLOUDFLARE_R2_BUCKET=
+CLOUDFLARE_R2_ENDPOINT=              # e.g., https://<account>.r2.cloudflarestorage.com
+NEXT_PUBLIC_CLOUDFLARE_IMAGES_URL=   # Public base URL for CF Images
 
 # ─────────────────────────────────────────────
 # App Configuration

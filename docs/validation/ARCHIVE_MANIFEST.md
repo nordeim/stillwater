@@ -1,41 +1,48 @@
-# Archive Manifest — Stillwater SKILL.md Alignment
+# Archive Manifest — PAD.md / design.md / SKILL.md Alignment
 
 **Archive created:** 2026-07-05
-**Archive file:** `stillwater_alignment_v1.3.0.tar.gz`
-**Purpose:** Refresh the `nordeim/stillwater` GitHub repo with the corrected SKILL.md, bumped `package.json` files, updated `tsconfig.json`, migrated `env.ts`, and all validation/audit/remediation reports.
+**Archive file:** `stillwater_pad_design_skill_alignment_v1.tar.gz`
+**Purpose:** Refresh the `nordeim/stillwater` GitHub repo with the aligned PAD.md, design.md, stillwater_SKILL.md, and corrected CSS token files, plus all validation/remediation reports.
 
 ---
 
 ## What This Archive Contains
 
-This archive contains every file modified or created during the SKILL.md alignment session. All paths are relative to the repo root, so you can extract this archive directly over your local repo checkout.
+This archive contains every file modified or created during the PAD.md ↔ design.md ↔ SKILL.md alignment remediation. All paths are relative to the repo root.
 
-### Updated Source Files (7 files)
+### Updated Documents (3 files)
 
 | Path | Change Summary |
 |------|----------------|
-| `stillwater_SKILL.md` | v1.2.0 → v1.3.0; 14 factual corrections (Stripe API version, Zod v4 API, env count, source-skill count, Better Auth `trustHost`, React Compiler, pnpm/Turbo versions, Tailwind version, tsconfig flag provenance, `serverExternalPackages` move) |
-| `package.json` | root: `turbo ^2.3.3 → ^2.10.0`, `typescript ^5.7.3 → ^5.9.0`, `packageManager pnpm@9.15.4 → pnpm@11.0.0` |
-| `apps/web/package.json` | `next ^16.0.0 → ^16.2.0`, `react/react-dom ^19.0.0 → ^19.2.3`, `stripe ^17.6.0 → ^22.3.0`, `zod ^3.24.1 → ^4.4.0`, `tailwindcss ^4.0.6 → ^4.3.0`, `@tailwindcss/postcss ^4.0.6 → ^4.3.0` |
-| `packages/db/package.json` | `drizzle-orm ^0.40.1 → ^0.45.0`, `drizzle-kit ^0.30.1 → ^0.31.0`, `zod ^3.24.1 → ^4.4.0`, `typescript ^5.7.3 → ^5.9.0` |
-| `packages/auth/package.json` | `zod ^3.24.1 → ^4.4.0`, `typescript ^5.7.3 → ^5.9.0` |
-| `tooling/typescript/base.json` | Added `verbatimModuleSyntax: true` and `erasableSyntaxOnly: true` to `compilerOptions` |
-| `packages/config/src/env.ts` | Line 70: `code: z.ZodIssueCode.custom` → `code: 'custom'` (Zod v3 → v4 API migration) |
+| `PAD.md` | §5.1: 9 rows corrected (Next.js, Tailwind, Drizzle, pnpm, Stripe, Zod, Turborepo, React Email, Resend). §5.2: pnpm 11.0.0. ADR-009: proxy.ts runtime corrected to Edge. Appendix A: Cloudflare env var names fixed + 3 missing vars added. |
+| `design.md` | LAYER 2: "Partially Superseded" banner added. LAYER 6: renamed to "Better Auth + proxy.ts", superseded banner + `<details>` collapse for Auth.js v5 code. Phase 3: Trigger.dev v3 → v4. |
+| `stillwater_SKILL.md` | §1.4 item 8: "JetBrains/Berkeley Mono" → "JetBrains Mono". §4.1: `--font-mono` Berkeley Mono reference removed. §4.4: `berkeleyMono` → `jetbrainsMono` localFont; licensing warning replaced with concise provenance note. |
+
+### Updated CSS Token Files (4 files)
+
+| Path | Change Summary |
+|------|----------------|
+| `packages/ui/src/tokens/colors.css` | Header: PAD §11.4 → §11.3 (off-by-one fix) |
+| `packages/ui/src/tokens/typography.css` | Header: PAD §11.3 → §11.2 (off-by-one fix) |
+| `packages/ui/src/tokens/spacing.css` | Header: PAD §11.5 → §11.4 (off-by-one fix) |
+| `packages/ui/src/tokens/motion.css` | Header: PAD §11.6 → §11.5 (off-by-one fix) |
 
 ### Reports (4 files in `docs/validation/`)
 
 | Path | Description |
 |------|-------------|
-| `docs/validation/stillwater_SKILL_validation_report.md` | Initial independent validation report (78/100, identified 4 P0 + 2 P1 + 3 P2 + 3 P3 findings) |
-| `docs/validation/stillwater_SKILL_remediation_report.md` | Remediation report documenting every change, before/after, and rationale |
-| `docs/validation/stillwater_SKILL_post_fix_audit_report.md` | Post-fix audit report with 34 automated verification checks (all pass) |
+| `docs/validation/PAD_vs_design_vs_SKILL_alignment_report.md` | Initial alignment validation report (19 findings: 4 P0 + 5 P1 + 6 P2 + 4 P3) |
+| `docs/validation/PAD_design_SKILL_remediation_report.md` | Remediation report documenting every change with before/after + rationale |
 | `docs/validation/ARCHIVE_MANIFEST.md` | This manifest |
+| `docs/validation/stillwater_SKILL_validation_report.md` | Prior SKILL.md validation (from the first remediation pass — included for context) |
+| `docs/validation/stillwater_SKILL_remediation_report.md` | Prior SKILL.md remediation report (from the first pass — included for context) |
+| `docs/validation/stillwater_SKILL_post_fix_audit_report.md` | Prior SKILL.md post-fix audit (from the first pass — included for context) |
 
-### Helper Script (1 file in `scripts/`)
+### Helper Script (1 file)
 
 | Path | Description |
 |------|-------------|
-| `scripts/verify_alignment.py` | Re-runnable verification script; cross-checks SKILL.md §2.1 against `package.json` files, tsconfig flags, and env.ts Zod API. Exits 0 on pass, non-zero on failure. Safe for CI. |
+| `scripts/verify_pad_alignment.py` | Re-runnable verification script for PAD/design/SKILL alignment; 34 checks, all pass |
 
 ---
 
@@ -48,34 +55,48 @@ This archive contains every file modified or created during the SKILL.md alignme
 cd /path/to/your/stillwater
 
 # Extract the archive (overwrites existing files)
-tar -xzf /path/to/stillwater_alignment_v1.3.0.tar.gz
+tar -xzf /path/to/stillwater_pad_design_skill_alignment_v1.tar.gz
 
 # Verify the changes
 git status
 git diff --stat
 
 # Run the verification script
-python3 scripts/verify_alignment.py
+python3 scripts/verify_pad_alignment.py
 
-# If all checks pass, commit
+# If all 34 checks pass, commit
 git add -A
-git commit -m "fix: align SKILL.md with source skills + bump deps to verified versions
+git commit -m "fix: align PAD.md + design.md with SKILL.md v1.3.0 + source skills
 
-- SKILL.md v1.2.0 → v1.3.0: 14 factual corrections (Stripe Dahlia not Basil,
-  Zod v4 { error } not { message }, 34 env vars not 25, 21 source skills not 12,
-  Better Auth has no trustHost, React Compiler opt-in, pnpm 11, Turbo 2.10,
-  Tailwind 4.3, tsconfig flag provenance, serverExternalPackages moved in Next 15)
-- Bump next ^16.2.0, react ^19.2.3, stripe ^22.3.0, zod ^4.4.0, tailwindcss ^4.3.0
-- Bump typescript ^5.9.0, turbo ^2.10.0, drizzle-orm ^0.45.0, pnpm 11.0.0
-- Add verbatimModuleSyntax + erasableSyntaxOnly to tsconfig
-- Migrate env.ts from Zod v3 ZodIssueCode.custom to v4 'custom' literal
-- Add docs/validation/ reports + scripts/verify_alignment.py
+PAD.md §5.1 (Tech Stack):
+- Stripe: 'Basil' API → 'Dahlia' API (2026-06-24); camelCase → snake_case
+- pnpm: 9.15.4 → ^11.0.0 (pnpm 9.x is EOL)
+- Tailwind: ^4.1.0 → ^4.3.0
+- Zod: added z.url({ protocol }) v4-native guidance + { error } param
+- Turborepo: 'latest' → ^2.10.0
+- React Email: 'latest' → ^0.0.36
+- Resend: 'latest' → ^4.1.2
+- Drizzle: $count floor ≥0.30 → ≥0.34
+- Next.js: proxy.ts runtime corrected to Edge; React Compiler opt-in;
+  serverExternalPackages attributed to Next.js 15
 
-Verified via 34 automated checks (scripts/verify_alignment.py).
+PAD.md ADR-009: proxy.ts runtime corrected from 'Node.js' to 'Edge'
+PAD.md Appendix A: Cloudflare env var names fixed + 3 missing vars added
 
-Refs: docs/validation/stillwater_SKILL_validation_report.md
-       docs/validation/stillwater_SKILL_remediation_report.md
-       docs/validation/stillwater_SKILL_post_fix_audit_report.md"
+design.md LAYER 2: 'Partially Superseded' banner (color/spacing/font tokens)
+design.md LAYER 6: renamed to 'Better Auth + proxy.ts'; Auth.js v5 code
+  collapsed with superseded banner citing ADR-008/009
+design.md Phase 3: Trigger.dev v3 → v4
+
+SKILL.md §4.4: Berkeley Mono → JetBrains Mono (font dir doesn't exist)
+
+CSS token files: off-by-one PAD section refs fixed (colors/typography/
+spacing/motion .css)
+
+Verified via 34 automated checks (scripts/verify_pad_alignment.py).
+
+Refs: docs/validation/PAD_vs_design_vs_SKILL_alignment_report.md
+       docs/validation/PAD_design_SKILL_remediation_report.md"
 
 # Push to GitHub
 git push origin main
@@ -84,100 +105,60 @@ git push origin main
 ### Option B: Inspect before extracting
 
 ```bash
-# List archive contents without extracting
-tar -tzf /path/to/stillwater_alignment_v1.3.0.tar.gz
-
-# Extract to a temp directory for review
-mkdir -p /tmp/stillwater_review
-tar -xzf /path/to/stillwater_alignment_v1.3.0.tar.gz -C /tmp/stillwater_review
-diff -ru /path/to/your/stillwater /tmp/stillwater_review
+tar -tzf /path/to/stillwater_pad_design_skill_alignment_v1.tar.gz
 ```
 
 ---
 
 ## Post-Extraction Steps
 
-After extracting the archive and committing the changes, run the following to complete the alignment:
+After extracting and committing, no further action is required. The three documents are now mutually aligned and consistent with the codebase.
+
+If you also want to re-verify the prior SKILL.md alignment (from the first remediation pass), you can run:
 
 ```bash
-# 1. Regenerate the lockfile with bumped versions
-pnpm install
-
-# 2. Check for breaking API changes (Zod v3→v4, Stripe v17→v22 are major upgrades)
-pnpm check-types
-
-# 3. If @t3-oss/env-core has Zod v4 peer-dependency issues, bump it:
-#    Check packages/config/package.json for @t3-oss/env-core version
-#    pnpm --filter @stillwater/config add @t3-oss/env-core@latest
-
-# 4. Re-run the verification script to confirm everything still aligns
 python3 scripts/verify_alignment.py
-
-# 5. Run the full test suite
-pnpm test
 ```
+
+(This script was included in the prior `stillwater_alignment_v1.3.0.tar.gz` archive. If you don't have it, the checks it performs are documented in `docs/validation/stillwater_SKILL_post_fix_audit_report.md`.)
 
 ---
 
 ## Verification
 
-To confirm the archive is complete and uncorrupted, check the SHA256 checksum:
+To confirm the archive is complete and uncorrupted:
 
 ```bash
-sha256sum /path/to/stillwater_alignment_v1.3.0.tar.gz
-# Should match the checksum reported by the assistant
+sha256sum /path/to/stillwater_pad_design_skill_alignment_v1.tar.gz
 ```
 
-The archive contains **12 files** total (7 source files + 4 reports + 1 manifest + 1 script = 13, but the manifest is this file so it's 12 + this manifest = 13 files). List them with:
+The archive contains **13 files** total. List them with:
 
 ```bash
-tar -tzf /path/to/stillwater_alignment_v1.3.0.tar.gz | sort
-```
-
-Expected output:
-```
-ARCHIVE_MANIFEST.md
-apps/web/package.json
-docs/validation/ARCHIVE_MANIFEST.md
-docs/validation/stillwater_SKILL_post_fix_audit_report.md
-docs/validation/stillwater_SKILL_remediation_report.md
-docs/validation/stillwater_SKILL_validation_report.md
-package.json
-packages/auth/package.json
-packages/config/src/env.ts
-packages/db/package.json
-scripts/verify_alignment.py
-stillwater_SKILL.md
-tooling/typescript/base.json
+tar -tzf /path/to/stillwater_pad_design_skill_alignment_v1.tar.gz | sort
 ```
 
 ---
 
 ## Reports Summary
 
-### 1. Validation Report (`stillwater_SKILL_validation_report.md`)
-The initial independent validation. Scored the document 78/100 and identified:
-- 4 P0 Critical (Zod v3/v4, Stripe v17/v22, env count 25/34, tsconfig flags)
-- 2 P1 High (source-skill count contradiction, "forward-looking" framing)
-- 3 P2 Medium (version drift, line citation, DATABASE_URL validation cell)
-- 3 P3 Low (editorialization, catalog reference)
+### 1. Alignment Validation Report (`PAD_vs_design_vs_SKILL_alignment_report.md`)
+The initial validation identifying 19 findings across the three documents:
+- 4 P0 Critical (PAD.md stale Stripe/pnpm/Tailwind/env vars)
+- 5 P1 High (design.md stale Auth.js/middleware/Trigger.dev v3 + token naming + font-mono)
+- 6 P2 Medium (Zod guidance, version pins, CSS header refs, Drizzle floor)
+- 4 P3 Low (missing tokens, ADR-009 runtime claim)
 
-### 2. Remediation Report (`stillwater_SKILL_remediation_report.md`)
-Documents every change made, with before/after for each finding. Includes:
-- P0-1 through P0-4 (all resolved)
-- P1-5 and P1-6 (all resolved)
-- P2-7 (resolved), P2-8 and P2-9 (deferred as P3 cosmetic)
-- P3-10 (deferred), P3-11 (resolved)
-- 4 additional web-research-resolved corrections (Better Auth `trustHost`, React Compiler, `serverExternalPackages` move, pnpm/Turbo staleness)
+### 2. Remediation Report (`PAD_design_SKILL_remediation_report.md`)
+Documents every change made, with before/after for each finding. All P0, P1, and in-scope P2 findings resolved. P3 deferred items documented with rationale.
 
-### 3. Post-Fix Audit Report (`stillwater_SKILL_post_fix_audit_report.md`)
-Verifies every remediation claim via 34 automated checks. All pass. Includes the full check matrix and re-run instructions.
+### 3. Prior SKILL.md Reports (3 files)
+Included for context — these document the first remediation pass that aligned SKILL.md with the source skills and the codebase.
 
 ---
 
 ## Questions?
 
-If anything in this archive is unclear, refer to:
-- `docs/validation/stillwater_SKILL_remediation_report.md` for the "why" behind each change
-- `docs/validation/stillwater_SKILL_post_fix_audit_report.md` for the verification evidence
-- `scripts/verify_alignment.py` for the deterministic check logic
+Refer to:
+- `docs/validation/PAD_design_SKILL_remediation_report.md` for the "why" behind each change
+- `scripts/verify_pad_alignment.py` for the deterministic check logic (34 checks, all pass)
