@@ -53,6 +53,4 @@
   --color-action-hover: var(--color-clay-500);
   --color-accent: var(--color-water-500);
 
-  /* Fog — alias for stone-200 (fixes D9 malformed token in PAD) */
-  --color-fog: #D4CFC9;
 }

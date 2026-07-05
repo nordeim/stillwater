@@ -87,6 +87,10 @@ the dev server is live at URL `https://storyintovideo.jesspete.shop`, please met
 
 ---
 
+please meticulously plan to review/analyze and validate the findings and recommendations in /home/project/stillwater/MEP_final_audit_report-1.md and /home/project/stillwater/MEP_final_audit_report-1.md against the codebase and against the source documents /home/project/stillwater/PAD.md and /home/project/stillwater/MASTER_EXECUTION_PLAN.md
+
+---
+
 please meticulously plan to review and validate @storyintovideo_SKILL.md against the codebase for alignment, and also validate against the prior versions of SKILL.md @storyintovideo_SKILL-v7.md and @storyintovideo_SKILL-v8.md to check for regressions caused by accidental ommissions of still valid and useful details and sections. all SKILL files I referred to are in the current project folder: `/home/project/story-into-video-prod/storyintovideo_SKILL.md` , `/home/project/story-into-video-prod/storyintovideo_SKILL-v7.md` and `/home/project/story-into-video-prod/storyintovideo_SKILL-v8.md`
 
 ---

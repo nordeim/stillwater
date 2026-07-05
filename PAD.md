@@ -65,7 +65,7 @@ Now — implementing the full document:
 
 ---
 
-> **Document Status:** `ACTIVE — v1.1.0`
+> **Document Status:** `ACTIVE — v1.2.0`
 > **Classification:** Internal Engineering Reference
 > **Audience:** Engineers, Architects, Technical Leads, DevOps
 > **Owner:** Engineering Lead
@@ -79,6 +79,7 @@ Now — implementing the full document:
 |---------|------------|------------------|----------|-------------------------------|
 | 1.0.0   | 2025-07-04 | Claw Code / Arch | Active   | Initial comprehensive draft   |
 | 1.1.0   | 2026-07-05 | Claw Code / Audit | Active | 5 critical audit fixes (C1–C5) + 11 version-alignment fixes |
+| 1.2.0   | 2026-07-05 | Claw Code / Validation | Active | Fix 2 stale "Auth.js" refs in §20.1 OWASP table; fix malformed D9 color token; remove orphaned --color-fog |
 
 ### How to Maintain This Document
 
@@ -1266,7 +1267,7 @@ REQUIRED:
   --color-stone-500: #6E6760;   /* Placeholder, disabled */
   --color-stone-400: #8C7B6E;   /* Secondary text */
   --color-stone-300: #B0A49A;
-  --color-stone-200: --color-fog: #D4CFC9;  /* Borders */
+  --color-stone-200: #D4CFC9;  /* Borders */
   --color-stone-100: #E8E3DC;
   --color-stone-50:  #F5F0E8;   /* Page background (warm white) */
 
@@ -1942,12 +1943,12 @@ Connection Pool Size: max 10 per serverless instance (Neon limit)
 | OWASP Risk | Mitigation in Stillwater |
 |-----------|--------------------------|
 | A01: Broken Access Control | RBAC at middleware + procedure level; no client-side role trust |
-| A02: Cryptographic Failures | HTTPS enforced; session tokens encrypted (Auth.js); secrets in env vars only |
+| A02: Cryptographic Failures | HTTPS enforced; session tokens encrypted (Better Auth); secrets in env vars only |
 | A03: Injection | Drizzle ORM parameterized queries everywhere; no raw SQL string interpolation |
 | A04: Insecure Design | Threat model documented; STRIDE analysis for booking + payment flows |
 | A05: Security Misconfiguration | `.env.example` documents all vars; no defaults in production config |
 | A06: Vulnerable Components | Dependabot + `pnpm audit` in CI; weekly automated PRs |
-| A07: Auth Failures | Auth.js with secure cookie settings; magic link with expiry; rate limiting on auth endpoints |
+| A07: Auth Failures | Better Auth with secure cookie settings; magic link with expiry; rate limiting on auth endpoints |
 | A08: Software Integrity | Stripe signature verification on all webhooks; Sanity webhook secret |
 | A09: Logging Failures | All mutations logged in Axiom with userId; payment events in DB audit log |
 | A10: SSRF | No user-supplied URLs followed server-side; allowlist for external requests |
