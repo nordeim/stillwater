@@ -50,3 +50,41 @@ The fix is straightforward: Section 15.3 should also use `pg_advisory_xact_lock(
 Aside from the lock type issue, the PAD's webhook flow — verify signature, check for duplicate event ID, process, then record — matches the industry-standard "verify → parse → handle idempotently" sequence recommended by webhook infrastructure providers. The unique index on `stripe_event_id` as a duplicate-detection backstop is also a widely recommended pattern. [webhook-architecture](https://www.webhook-architecture.com/webhook-architecture-fundamentals-design-patterns/idempotency-in-webhooks/)
 
 Given the scope remaining, I'd suggest the next validation pass target the Trigger.dev job timeout/retry configuration (Section 17) and the Accessibility/WCAG AAA contrast claims (Section 22), since those are the next areas most likely to contain unverified or stale numeric claims.
+
+---
+
+I've completed the validation pass on Section 17 (Trigger.dev) and Section 22-related accessibility claims. Here's the assessment: the retry configuration is accurate, but the per-job "Timeout" column in the job catalog table reflects a misunderstanding of how Trigger.dev's `maxDuration` actually works, and the WCAG AAA/Lighthouse 100 claim conflates two different things.
+
+## Trigger.dev Retry Config Is Accurate, but the Timeout Column Is Misleading
+
+The `trigger.config.ts` retry block in Section 17.2 is syntactically and semantically correct — Trigger.dev's SDK does support exactly this shape (`maxAttempts`, `minTimeoutInMs`, `maxTimeoutInMs`, `factor`, `randomize`) as the default retry policy applied to all tasks, matching real-world production configs. However, the "Timeout" column in the Job Catalog table (17.1) — listing values like "30s," "60s," "120s" per job — doesn't correspond to any config shown; Trigger.dev calls this parameter `maxDuration`, not "timeout," and it must be explicitly set either in `trigger.config.ts` globally or per-task, since tasks execute indefinitely by default if unset. The PAD's `trigger.config.ts` snippet never sets a `maxDuration` value at all, so the "30s/60s/120s" figures in the table are aspirational labels with no corresponding implementation — engineers following this PAD literally would get unbounded task execution rather than the documented timeouts. [trigger](https://trigger.dev/docs/errors-retrying)
+
+Also worth flagging: `maxDuration` measures **active CPU time**, not wall-clock time, and explicitly excludes time spent waiting on `triggerAndWait` or `batchTriggerAndWait` calls. Since several PAD jobs (e.g., `waitlist-promotion` chaining into `waitlist-expiry`) involve inter-job waiting, engineers need to understand this distinction or their timeout budgeting will be wrong. [trigger](https://trigger.dev/docs/runs/max-duration)
+
+| PAD claim | Verification | Status |
+|---|---|---|
+| Retry config shape (maxAttempts, backoff factor, etc.) | Matches real Trigger.dev SDK examples  [github](https://github.com/crafter-station/text0/blob/main/trigger.config.ts) | ✅ Accurate |
+| Per-job "Timeout" column (30s/60s/120s) | No `maxDuration` set anywhere in config; tasks run indefinitely by default  [trigger](https://trigger.dev/docs/runs/max-duration) | ⚠️ Misleading — not actually implemented as documented |
+| `maxDuration` = wall-clock timeout | False — it's active CPU time, excludes `triggerAndWait` waits  [trigger](https://trigger.dev/docs/runs/max-duration) | ⚠️ Nuance missing from PAD |
+
+## Lighthouse 100 + WCAG AAA Claim Conflates Two Different Standards
+
+Goal G6 states "Lighthouse Accessibility score: 100; WCAG AAA compliant" as if these are equivalent or that one implies the other — this is a well-documented misconception. Lighthouse's accessibility audit wraps only axe-core's automated rule set, which independent analyses estimate catches roughly 30-42% of real WCAG issues; a perfect 100 score explicitly does **not** mean WCAG compliance at any level, let alone AAA. Lighthouse cannot evaluate several things AAA compliance requires: alt-text quality (only presence), focus order matching visual order, full keyboard contracts on custom widgets, correct ARIA live-region announcements, or real screen-reader behavior. [disabilityworld](https://www.disabilityworld.org/toolkit/glossary/lighthouse/)
+
+Separately, the numeric contrast ratios cited elsewhere in the PAD's accessibility checklist (7:1 for normal text) are correctly stated per WCAG 2.1 Success Criterion 1.4.6 (AAA enhanced contrast). So the specific ratio is right, but the PAD's framing that a Lighthouse 100 score serves as evidence of "WCAG AAA compliant" is a false equivalence that could give the team false confidence — actual AAA compliance requires manual testing (keyboard-only navigation, screen reader testing) that automated tooling cannot verify. I'd recommend the PAD explicitly decouple these two success metrics and add a manual audit requirement (e.g., quarterly screen-reader pass) alongside the automated Lighthouse gate. [kordu](https://kordu.tools/blog/wcag-contrast-ratios-explained-aa-vs-aaa/)
+
+## Summary of This Pass
+
+| Section | Area | Verdict |
+|---|---|---|
+| 17.1/17.2 | Trigger.dev retry backoff | Accurate implementation |
+| 17.1 | Per-job timeout table | Not backed by actual config — `maxDuration` never set |
+| 17.2 | `maxDuration` semantics | PAD doesn't clarify it's CPU time, not wall-clock |
+| G6 / Accessibility | Lighthouse 100 = WCAG AAA | False equivalence — Lighthouse ≠ compliance proof |
+| Accessibility | 7:1 contrast ratio (AAA) | Numerically correct per W3C spec |
+
+Across all four validation passes so far, the pattern is consistent: the PAD's high-level technology choices and version claims are current and well-researched, but several implementation-level details (advisory lock scope, SSE `maxDuration`, Trigger.dev per-job timeouts, and the Lighthouse/WCAG equivalence) contain gaps between what's stated and what the shown code/config would actually produce. If you'd like, the next logical areas to check are the CI/CD pipeline claims (Section 26) and the i18n/SEO sections (23-24), which I haven't touched yet.
+
+---
+
+https://www.perplexity.ai/search/3b1a992a-d60e-416f-a93a-0ae8c9a51e4f 
