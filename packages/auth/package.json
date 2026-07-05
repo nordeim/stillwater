@@ -24,11 +24,11 @@
     "@stillwater/config": "workspace:*",
     "@stillwater/db": "workspace:*",
     "better-auth": "^1.6.23",
-    "zod": "^4.4.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@stillwater/typescript-config": "workspace:*",
-    "@types/node": "^22.13.4",
-    "typescript": "^5.9.0"
+    "@types/node": "^26.1.0",
+    "typescript": "^6.0.3"
   }
 }
