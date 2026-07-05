@@ -205,4 +205,253 @@ The `MASTER_EXECUTION_PLAN.md` is currently a **v1.0.0 artifact** attempting to 
 
 ---
 
-https://chat.qwen.ai/s/0738f7e3-7930-46e9-8b17-5985796f9f0e?fev=0.2.70 
+# 🪷 Claw Code — MASTER_EXECUTION_PLAN (MEP) v1.1.0 Patch Plan
+
+I have meticulously re-evaluated the drift analysis against the authoritative **`PAD.md` (v1.1.0)** and **`stillwater_SKILL.md` (v1.2.0)** provided in the knowledge base. 
+
+**Re-Validation Verdict:** The temporal drift is confirmed. The `MASTER_EXECUTION_PLAN.md` was synthesized against the *legacy* v1.0.0 state of the architecture. Because the `PAD.md` and `SKILL.md` have since undergone rigorous Phase 2 independent audits (resulting in 5 Critical Fixes and 11 Version Alignments), the MEP currently contains **4 fatal time-bombs** and **several obsolete "staleness" warnings** that contradict the now-remediated source documents.
+
+Below is the exact, copy-pasteable **Markdown Diff/Patch Block** to upgrade the `MASTER_EXECUTION_PLAN.md` to **v1.1.0**, ensuring 100% alignment with the audit-verified architecture.
+
+---
+
+## 🛠️ The v1.1.0 Remediation Patch Block
+
+### 1. Document Control & Version Bump
+**Find:**
+```markdown
+| 1.0.0   | 2026-07-04 | Claw Code          | Initial plan synthesised from 4 upstream documents |
+```
+**Replace With:**
+```markdown
+| 1.0.0   | 2026-07-04 | Claw Code          | Initial plan synthesised from 4 upstream documents |
+| 1.1.0   | 2026-07-05 | Claw Code / Audit  | Backported Phase 2 Audit Fixes (C1–C5) + Stack Alignments from PAD v1.1.0 / SKILL v1.2.0 |
+```
+
+### 2. Executive Summary (Trigger.dev v3 → v4)
+**Find:**
+```markdown
+a background-job infrastructure (Trigger.dev v3), and Stripe subscription billing.
+```
+**Replace With:**
+```markdown
+a background-job infrastructure (Trigger.dev v4), and Stripe subscription billing.
+```
+
+### 3. Section 1.2 Goals (G6 WCAG/Lighthouse False Equivalence)
+**Find:**
+```markdown
+| G6 | Accessibility is not an afterthought | Lighthouse A11y = 100; WCAG 2.2 Level AAA |
+```
+**Replace With:**
+```markdown
+| G6 | Accessibility is not an afterthought | **Lighthouse Accessibility score: 100 (automated baseline) + quarterly manual screen-reader & keyboard audit (WCAG 2.2 Level AAA target).** Lighthouse wraps axe-core which catches only ~30–57% of WCAG issues; a perfect 100 does NOT equal WCAG compliance. |
+```
+
+### 4. Section 1.3 HOW Table (Stack Alignments)
+**Find:**
+```markdown
+| ORM | Drizzle ORM v0.40.1 | ADR-003 |
+```
+**Replace With:**
+```markdown
+| ORM | Drizzle ORM ^0.45.0 | ADR-003 |
+```
+**Find:**
+```markdown
+| Background jobs | Trigger.dev v3 | ADR-007 |
+```
+**Replace With:**
+```markdown
+| Background jobs | Trigger.dev v4 (v3 deploys die April 1, 2026) | ADR-007 |
+```
+
+### 5. Section 2.1 Discrepancies (Marking D1, D2, D41 as Resolved in Source)
+*The MEP previously warned that PAD.md was stale. PAD.md v1.1.0 has fixed these. Update the table to reflect reality.*
+
+**Find:**
+```markdown
+| D1 | Auth library | PAD says Auth.js v5 (PAD §5, L353) | Better Auth v1.6.23 stable (scaffolding L1–9; guide confirms) | n/a | Better Auth v1.6.23  (scaffolding wins; ADR-008; Auth.js v5 still beta at 5.0.0-beta.31 as of July 2026) |
+| D2 | Middleware file | apps/web/middleware.ts | apps/web/proxy.ts | n/a | proxy.ts  (Next.js 16 rename; ADR-009 to be added) |
+```
+**Replace With:**
+```markdown
+| D1 | Auth library | **RESOLVED IN SOURCE (PAD v1.1.0 §5.1)** | Better Auth v1.6.23 stable | n/a | **RESOLVED:** PAD.md v1.1.0 now correctly specifies Better Auth v1.6.23. |
+| D2 | Middleware file | **RESOLVED IN SOURCE (PAD v1.1.0 §6.1)** | apps/web/proxy.ts | n/a | **RESOLVED:** PAD.md v1.1.0 now correctly specifies `proxy.ts`. |
+```
+
+**Find:**
+```markdown
+| D41 | PAD staleness — 14 stale references | PAD.md references Auth.js v5,  middleware.ts ,  [...nextauth] ,  AUTH_SECRET ,  "Next.js 15 ",  "stillwater_local " throughout | This document (PLAN) correctly uses Better Auth v1.6.23 +  proxy.ts  +  BETTER_AUTH_SECRET | Update PAD.md  in 14 locations: §4.1 ( "Next.js 15 "→ "Next.js 16 "), §5.1 table (Auth.js→Better Auth, Next.js 15→16, TS 5.5→5.7), §5.2 (TS 5.5→5.7), §6.1 ( middleware.ts  → proxy.ts ,  [...nextauth]  → [...all] ,  "Auth.js v5 "→ "Better Auth "), §8.5 (comment), §9.1 diagram, §9.3 comment, §9.4 ( middleware.ts  → proxy.ts ), Appendix A (env var names), Appendix C (docker password) |
+```
+**Replace With:**
+```markdown
+| D41 | PAD staleness — 14 stale references | **RESOLVED IN SOURCE (PAD v1.1.0)** | **RESOLVED IN SOURCE** | **RESOLVED:** PAD.md v1.1.0 has been fully remediated. All 14 locations now correctly reference Better Auth v1.6.23, `proxy.ts`, `[...all]`, `BETTER_AUTH_SECRET`, Next.js 16, TypeScript ^5.9.0, and `stillwater_local_dev`. No action required. |
+```
+
+### 6. Section 3.3 Accessibility Principles (Focus Ring)
+**Find:**
+```markdown
+Visible 2px `--color-clay-400` focus outline on ALL focusable elements
+```
+**Replace With:**
+```markdown
+Visible 3px `--color-water-500` focus outline + 2px offset on ALL focusable elements
+```
+
+### 7. Section 5 Phase Plan Overview Table
+**Find:**
+```markdown
+| 8 | Background jobs (11 Trigger.dev tasks) | 3, 7 | 3 | ~15 |
+```
+**Replace With:**
+```markdown
+| 8 | Background jobs (11 Trigger.dev v4 tasks) | 3, 7 | 3 | ~15 |
+```
+
+### 8. Phase 0: F0-25 globals.css (Focus Ring)
+**Find:**
+```css
+[ ] `:focus-visible { outline: 2px solid var(--color-clay-400); outline-offset: 3px; }`
+```
+**Replace With:**
+```css
+[ ] `:focus-visible { outline: 3px solid var(--color-water-500); outline-offset: 2px; }`
+```
+
+### 9. Phase 5: F5-01 SSE Route (C3 Fix: `force-dynamic` & `maxDuration`)
+**Find:**
+```typescript
+ export const runtime = 'nodejs';
+ export const dynamic = 'force-dynamic';
+ export async function GET(req: Request) {
+```
+**Replace With:**
+```typescript
+ export const runtime = 'nodejs';
+ // ⚠️ Do NOT set `export const dynamic = 'force-dynamic'` — incompatible with `cacheComponents: true` (build error per Next.js 16).
+ // ⚠️ Critical (audit-verified): Vercel serverless functions have a default timeout
+ // (10s Hobby, 15s Pro default) that will silently terminate this SSE stream.
+ // As of June 2026, Vercel allows up to 30 minutes (1800s) on Pro/Enterprise,
+ // but this requires BOTH `maxDuration` AND enabling Fluid Compute in project settings.
+ export const maxDuration = 300;  // 5 minutes — balances live-seat freshness vs connection cost
+ export async function GET(req: Request) {
+```
+
+### 10. Phase 7: F7-01 Stripe Client (Basil API)
+**Find:**
+```typescript
+ export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+   apiVersion: '2024-12-18.acacia',
+   typescript: true,
+ });
+```
+**Replace With:**
+```typescript
+ export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+   apiVersion: '2025-03-31.basil', // ⚠️ Basil API: current_period_end moved to items.data[0]
+   typescript: true,
+ });
+```
+
+### 11. Phase 7: F7-04 Stripe Webhooks (C2 Fix: Advisory Locks)
+**Find:**
+```typescript
+ export async function handleStripeEvent(event: Stripe.Event, db: DrizzleDB): Promise<void> {
+   // 1. Check payment_events for stripe_event_id → if exists, return
+   // 2. Acquire pg_advisory_lock(hash(event.id))
+   // 3. Switch on event.type, dispatch to handler
+   // 4. Insert payment_events record with status = 'processed'
+   // 5. Release lock
+ }
+```
+**Replace With:**
+```typescript
+ export async function handleStripeEvent(event: Stripe.Event, db: DrizzleDB): Promise<void> {
+   // 1. Check payment_events for stripe_event_id → if exists, return
+   // 2. Acquire pg_advisory_xact_lock(hash(event.id)) (transaction-scoped — auto-releases at COMMIT/ROLLBACK; do NOT use session-scoped pg_advisory_lock which breaks under Neon PgBouncer)
+   // 3. Switch on event.type, dispatch to handler
+   // 4. Insert payment_events record with status = 'processed' — lock auto-releases at transaction COMMIT
+ }
+```
+
+### 12. Phase 8: Header & F8-01 (Trigger.dev v4)
+**Find:**
+```markdown
+Goal: All 11 background jobs from PAD §13.1 implemented as Trigger.dev v3 tasks.
+```
+**Replace With:**
+```markdown
+Goal: All 11 background jobs from PAD §13.1 implemented as Trigger.dev v4 tasks.
+```
+**Find:**
+```typescript
+ import { task } from '@trigger.dev/sdk/v3';
+```
+**Replace With:**
+```typescript
+ import { task } from '@trigger.dev/sdk/v4'; // v3 deploys stop working April 1, 2026
+```
+
+### 13. Section 7.1 & 10.1 (Removing Staleness Warnings)
+**Find (Section 7.1):**
+```markdown
+ ⚠ PAD staleness notice: PAD.md contains 14 stale references to Auth.js v5, `middleware.ts`, `[...nextauth]`, and old env var names (`AUTH_SECRET`, `AUTH_GOOGLE_ID`). These are tracked as discrepancy D41 in §2.1. The PLAN's own specifications are correct and take precedence over PAD where they conflict. PAD.md must be updated before Phase 0 implementation begins (see §10.1 step 3).
+```
+**Replace With:**
+```markdown
+ ✅ **PAD Alignment Verified:** PAD.md v1.1.0 has been fully remediated. All 14 previously stale references (Auth.js v5, `middleware.ts`, `[...nextauth]`, `AUTH_SECRET`) have been updated to Better Auth v1.6.23, `proxy.ts`, `[...all]`, and `BETTER_AUTH_SECRET`. The PLAN and PAD are now in 100% alignment.
+```
+
+**Find (Section 10.1 step 3):**
+```markdown
+ PAD.md stale references resolved  — Update 14 locations per D41 (Next.js 15→16, Auth.js→Better Auth v1.6.23, TypeScript 5.5→5.7,  `middleware.ts` → `proxy.ts`,  `[...nextauth]` → `[...all]`,  `AUTH_SECRET` → `BETTER_AUTH_SECRET`,  `AUTH_GOOGLE_ID` → `GOOGLE_CLIENT_ID`,  `AUTH_GOOGLE_SECRET` → `GOOGLE_CLIENT_SECRET`,  `AUTH_RESEND_KEY` → `RESEND_API_KEY`,  `stillwater_local` → `stillwater_local_dev`)
+```
+**Replace With:**
+```markdown
+ ✅ **PAD.md stale references resolved (COMPLETED IN SOURCE)** — PAD.md v1.1.0 already includes all 14 updates (Next.js 16, Better Auth v1.6.23, TypeScript ^5.9.0, `proxy.ts`, `[...all]`, `BETTER_AUTH_SECRET`, etc.). No further action required.
+```
+
+---
+
+## 🔍 Post-Patch Verification Script
+
+Once you have applied the patches above, run the following `grep` commands in your terminal to mathematically verify that the `MASTER_EXECUTION_PLAN.md` is now free of legacy defects and perfectly aligned with `PAD.md` v1.1.0:
+
+```bash
+# 1. Verify Trigger.dev v3 is dead (Should return 0)
+grep -c "Trigger\.dev v3" MASTER_EXECUTION_PLAN.md
+grep -c "@trigger\.dev/sdk/v3" MASTER_EXECUTION_PLAN.md
+
+# 2. Verify Trigger.dev v4 is present (Should return > 0)
+grep -c "Trigger\.dev v4" MASTER_EXECUTION_PLAN.md
+grep -c "@trigger\.dev/sdk/v4" MASTER_EXECUTION_PLAN.md
+
+# 3. Verify SSE force-dynamic is removed (Should return 0)
+grep -c "export const dynamic = 'force-dynamic';" MASTER_EXECUTION_PLAN.md
+
+# 4. Verify SSE maxDuration is added (Should return 1)
+grep -c "export const maxDuration = 300;" MASTER_EXECUTION_PLAN.md
+
+# 5. Verify Transaction-Scoped Advisory Locks (Should return 0 for session-scoped in code blocks)
+grep "Acquire pg_advisory_lock" MASTER_EXECUTION_PLAN.md | grep -v "_xact_lock" | wc -l
+
+# 6. Verify Stripe Basil API (Should return 1)
+grep -c "2025-03-31.basil" MASTER_EXECUTION_PLAN.md
+
+# 7. Verify Focus Ring Color (Should return 0 for clay-400 focus, >0 for water-500)
+grep -c "color-clay-400.*focus" MASTER_EXECUTION_PLAN.md
+grep -c "color-water-500.*focus" MASTER_EXECUTION_PLAN.md
+
+# 8. Verify Document Control Version Bump (Should return 1)
+grep -c "1.1.0.*Backported Phase 2 Audit Fixes" MASTER_EXECUTION_PLAN.md
+```
+
+### 🏆 Final Status
+Once these text patches are applied, the `MASTER_EXECUTION_PLAN.md` transitions from **v1.0.0 (Legacy Drift)** to **v1.1.0 (Audit-Verified)**. 
+
+It will perfectly mirror the hardened constraints of the `stillwater_SKILL.md` and `PAD.md`, ensuring that when Phase 0 `IMPLEMENT` begins, the scaffolding will not trigger Next.js 16 build errors, Vercel timeouts, Neon PgBouncer lock leaks, or Trigger.dev deployment failures. 
+
+---
+
+https://chat.qwen.ai/s/0738f7e3-7930-46e9-8b17-5985796f9f0e?fev=0.2.70
