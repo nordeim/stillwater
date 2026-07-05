@@ -102,7 +102,7 @@ The demographic skews 35–65 years, with high representation of visual impairme
 | Booking concurrency                         | PostgreSQL advisory locks              | ADR-004 |
 | Marketing CMS                               | Sanity v3 (marketing content only)     | ADR-005 |
 | Real-time seat availability                 | SSE via Next.js streaming              | ADR-006 |
-| Background jobs                             | Trigger.dev v4                         | ADR-007 |
+| Background jobs                             | Trigger.dev v4 (v3 deploys stop April 1, 2026) | ADR-007 |
 | Auth (supersedes PAD per scaffolding)       | **Better Auth** v1.6.23 stable (replaces Auth.js v5 beta) | NEW — ADR-008; validated by `guide_auth-v5_vs_better-auth.md` (July 2026) |
 | Middleware file (Next.js 16 rename)         | `proxy.ts` (replaces `middleware.ts`)  | NEW — ADR-009 |
 | Test strategy                               | TDD mandatory; Vitest + Playwright     | (this doc) |
@@ -117,8 +117,8 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 
 | #  | Topic                       | PAD says                       | Scaffolding says                       | Mockup says                  | **Canonical resolution**                                                       |
 |----|-----------------------------|--------------------------------|----------------------------------------|------------------------------|--------------------------------------------------------------------------------|
-| D1 | Auth library                | Auth.js v5 (PAD §5, L353)      | Better Auth v1.6.23 stable (scaffolding L1–9; guide confirms) | n/a                          | **Better Auth v1.6.23** (scaffolding wins; ADR-008; Auth.js v5 still beta at 5.0.0-beta.31 as of July 2026) |
-| D2 | Middleware file             | `apps/web/middleware.ts`       | `apps/web/proxy.ts`                    | n/a                          | **`proxy.ts`** (Next.js 16 rename; ADR-009 to be added)                         |
+| D1 | Auth library                | **RESOLVED IN SOURCE (PAD v1.1.0 §5.1)** | Better Auth v1.6.23 stable (scaffolding L1–9; guide confirms) | n/a                          | **RESOLVED:** PAD.md v1.1.0 now correctly specifies Better Auth v1.6.23. Original conflict: Auth.js v5 (PAD §5, L353) vs Better Auth (scaffolding). | 
+| D2 | Middleware file             | **RESOLVED IN SOURCE (PAD v1.1.0 §6.1)** | `apps/web/proxy.ts`                    | n/a                          | **RESOLVED:** PAD.md v1.1.0 now correctly specifies `proxy.ts`. Original conflict: `apps/web/middleware.ts` vs `apps/web/proxy.ts`. |
 | D3 | Worker file count           | 11 jobs in catalog (PAD §13.1) | 7 worker files in tree (L610–617)      | n/a                          | **11 files** (catalog is canonical; missing 4 files to be created)              |
 | D4 | Email template count        | 13 templates in catalog        | 8 template files in tree (L579–586)    | n/a                          | **13 files** (catalog is canonical; missing 5 to be created)                    |
 | D5 | `enums.ts` file             | Referenced at `schema/enums.ts`| Missing from tree                      | n/a                          | **Create `packages/db/src/schema/enums.ts`** (export Drizzle `pgEnum`s)         |
@@ -2417,7 +2417,7 @@ pnpm lighthouse ci -- --url /
 - **Purpose:** Booking flow page. CSR (real-time seat data).
 - **Interface:**
   ```typescript
-  export const dynamic = 'force-dynamic'; // CSR
+  export const dynamic = 'force-dynamic'; // CSR — booking PAGE (not the SSE endpoint; F5-01 does NOT use this per C3 fix)
 
   export default async function BookingPage({ params }: { params: { sessionId: string } }) {
     const session = await requireAuth();
@@ -2944,7 +2944,9 @@ pnpm test --filter=@stillwater/payments -- --coverage
 ```
 
 
-### Phase 8 — Background Jobs (11 Trigger.dev Tasks)
+### Phase 8 — Background Jobs (11 Trigger.dev v4 Tasks)
+
+> ⚠️ **Trigger.dev v3 deprecation:** v3 deploys stop working April 1, 2026. All tasks MUST use `@trigger.dev/sdk/v4`.
 
 **Goal:** All 11 background jobs from PAD §13.1 implemented as Trigger.dev v4 tasks. Jobs are durable, retried, and observable in Trigger.dev dashboard.
 
