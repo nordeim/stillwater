@@ -205,7 +205,7 @@ The `MASTER_EXECUTION_PLAN.md` is currently a **v1.0.0 artifact** attempting to 
 
 ---
 
-# 🪷 Claw Code — MASTER_EXECUTION_PLAN (MEP) v1.1.0 Patch Plan
+# MASTER_EXECUTION_PLAN (MEP) v1.1.0 Patch Plan
 
 I have meticulously re-evaluated the drift analysis against the authoritative **`PAD.md` (v1.1.0)** and **`stillwater_SKILL.md` (v1.2.0)** provided in the knowledge base. 
 
