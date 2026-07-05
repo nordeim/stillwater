@@ -1,4 +1,4 @@
-# 🪷 Claw Code — Architectural Validation & Alignment Report
+# Architectural Validation & Alignment Report
 **Target:** `PAD.md` (Project Architecture Document v1.1.0)
 **Baseline References:** `stillwater_SKILL.md` (v1.2.0), `design.md`, `PAD_audit_report-1/2.md`, `PAD_validation_report.md`
 **Date:** 2026-07-05
@@ -93,7 +93,7 @@ The `PAD.md` is a masterclass in architectural documentation. It successfully br
 
 ---
 
-# 🪷 Claw Code — MASTER_EXECUTION_PLAN (MEP) Validation & Drift Report
+# MASTER_EXECUTION_PLAN (MEP) Validation & Drift Report
 **Target:** `MASTER_EXECUTION_PLAN.md` (v1.0.0)
 **Baseline References:** `PAD.md` (v1.1.0), `stillwater_SKILL.md` (v1.2.0), Audit Reports
 **Date:** 2026-07-05
