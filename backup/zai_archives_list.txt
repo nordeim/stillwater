@@ -1,0 +1,8 @@
+-rw-rw-r-- 1 pete pete   114291 Jul  5 23:26 backup/stillwater_mep_alignment_v1.2.0.tar.gz
+-rw-rw-r-- 1 pete pete   176715 Jul  5 23:01 backup/stillwater_pad_design_skill_alignment_v1.tar.gz
+-rw-rw-r-- 1 pete pete   108890 Jul  5 22:08 backup/stillwater_alignment_v1.3.0.tar.gz
+-rw-rw-r-- 1 pete pete   178287 Jul  5 10:31 backup/stillwater_docs_refresh_2026-07-05.tar.gz
+-rw-rw-r-- 1 pete pete 50617957 Jul  5 01:58 backup/stillwater-v1.tar.gz
+-rw-rw-r-- 1 pete pete  1181543 Jul  5 01:58 backup/stillwater-v3.tar.gz
+-rw-rw-r-- 1 pete pete   298542 Jul  5 01:32 backup/stillwater-v2.tar.gz
+-rw-rw-r-- 1 pete pete 50617957 Jul  5 00:29 backup/stillwater.tar.gz
