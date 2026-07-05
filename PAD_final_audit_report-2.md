@@ -93,4 +93,116 @@ The `PAD.md` is a masterclass in architectural documentation. It successfully br
 
 ---
 
+# 🪷 Claw Code — MASTER_EXECUTION_PLAN (MEP) Validation & Drift Report
+**Target:** `MASTER_EXECUTION_PLAN.md` (v1.0.0)
+**Baseline References:** `PAD.md` (v1.1.0), `stillwater_SKILL.md` (v1.2.0), Audit Reports
+**Date:** 2026-07-05
+
+---
+
+## 1. Executive Summary & Verdict
+
+I have conducted a meticulous, line-level cross-reference of the `MASTER_EXECUTION_PLAN.md` (MEP) against the fully remediated `PAD.md` (v1.1.0) and the authoritative `stillwater_SKILL.md` (v1.2.0). 
+
+**The Verdict: CONDITIONALLY APPROVED — Requires Phase 2 Audit Backport.**
+
+The MEP is a masterclass in project synthesis. It brilliantly resolves the 42 discrepancies between the original `design.md`, `scaffolding_files.md`, and the legacy `PAD.md`. Its 13-phase TDD breakdown, file inventories, and integration of the 2-layer Auth pattern (D36) are exceptional. 
+
+**However, the MEP suffers from "Temporal Drift."** It was synthesized against the *legacy* (v1.0.0) state of the architecture. It completely misses the **5 Critical Fixes (C1–C5)** and **11 Version-Alignment Fixes** that were applied to the `PAD.md` and `SKILL.md` during the Phase 2 independent audit cycle. If executed as written, the MEP will introduce 4 production-breaking "time-bombs" that the audits specifically eradicated.
+
+Below is the meticulous drift analysis and the required remediation matrix to bring the MEP into v1.1.0 alignment.
+
+---
+
+## 2. Critical Drift Analysis (The "Time-Bombs")
+
+These are severe architectural regressions in the MEP that contradict the audit-verified fixes in `PAD.md` v1.1.0. If implemented as written in the MEP, the application will fail to deploy, leak database connections, or timeout in production.
+
+| # | MEP Defect (Current State) | PAD/SKILL Remediated State (v1.1.0/v1.2.0) | Impact if Unfixed |
+|---|----------------------------|--------------------------------------------|-------------------|
+| **C1** | **Trigger.dev v3**<br>MEP §1.3, §5, Phase 8, and F8-01 explicitly specify `@trigger.dev/sdk/v3`. | **Trigger.dev v4**<br>PAD §5.1 & ADR-007 mandate v4. v3 deploys stop working **April 1, 2026**. | **Fatal:** CI/CD will fail to deploy workers; background jobs will be dead on arrival. |
+| **C2** | **SSE `force-dynamic`**<br>MEP F5-01 includes `export const dynamic = 'force-dynamic';`. | **Removed**<br>PAD §13.2 (C3 Fix) removed this. It is incompatible with Next.js 16 `cacheComponents: true` and causes a build error. | **Fatal:** `pnpm build` will fail with a `blocking-route` or cache config error. |
+| **C3** | **SSE Missing `maxDuration`**<br>MEP F5-01 lacks a timeout export. | **`maxDuration = 300`**<br>PAD §13.2 (C3 Fix) added this. Vercel's default 10s/15s timeout will silently kill the 10s polling stream. | **High:** Live seat availability will silently disconnect after 15 seconds. |
+| **C4** | **Session-Scoped Advisory Lock**<br>MEP F7-04 (Stripe Webhook) uses `pg_advisory_lock(hash(event.id))`. | **Transaction-Scoped**<br>PAD §15.3 (C2 Fix) mandates `pg_advisory_xact_lock`. Session-scoped locks leak under Neon's PgBouncer transaction pooling. | **High:** Database connection pool exhaustion and locked webhook processing. |
+
+---
+
+## 3. Stack & Version Misalignments
+
+The MEP pins several dependencies to versions that were updated during the PAD/SKILL hardening phase. Using the MEP's versions will result in missing features, security vulnerabilities, or API breakage.
+
+| Layer | MEP Specification | PAD/SKILL v1.1.0/v1.2.0 Specification | Drift Consequence |
+|-------|-------------------|---------------------------------------|-------------------|
+| **Drizzle ORM** | `v0.40.1` (MEP §1.3) | `^0.45.0` | Misses `db.$count` and modern relational query APIs used in MEP's own code snippets. |
+| **TypeScript** | `5.7` (MEP §1.3, §5.2) | `^5.9.0` | Misses `erasableSyntaxOnly` and `verbatimModuleSyntax` flags mandated in `tsconfig`. |
+| **Stripe API** | `2024-12-18.acacia` (MEP F7-01) | `2025-03-31.basil` (SDK `^22.3.0`) | MEP code uses `current_period_end` (snake_case). Basil API moved this to `items.data[0].currentPeriodEnd` (camelCase). Webhooks will throw undefined errors. |
+| **React** | Not pinned to CVE floor | `^19.2.3` | MEP misses the critical floor for **CVE-2025-55182** ("React2Shell" RCE). |
+
+---
+
+## 4. Design System & Accessibility Drift
+
+The MEP contains legacy design tokens that were explicitly corrected to meet WCAG AAA standards and the "Editorial Calm" anti-generic mandate.
+
+| Element | MEP Specification | PAD/SKILL Remediated State |
+|---------|-------------------|----------------------------|
+| **Focus Ring** | `2px solid --color-clay-400` (MEP §3.3, F0-25) | **`3px solid --color-water-500` + `2px offset`** (PAD §22.2, SKILL §8.3). Clay-400 fails contrast on certain backgrounds; Water-500 is the canonical affordance color. |
+| **WCAG Goal (G6)** | "Lighthouse A11y = 100" | **100 + Quarterly Manual Audit**. PAD explicitly decoupled Lighthouse from WCAG AAA compliance due to axe-core's 57% detection limit. |
+
+---
+
+## 5. Structural & Methodological Strengths (What MEP Got Right)
+
+Despite the version drift, the MEP's structural engineering is flawless. The following elements are **100% aligned** with the advanced architectural patterns and should be preserved exactly as written:
+
+1.  **2-Layer Auth Pattern (D36, F2-13):** The MEP correctly identified that the scaffolded `proxy.ts` was doing heavy DB lookups. Its rewrite to use `getSessionCookie()` (Edge-compatible) while pushing `requireAuth()` to Server Component layouts is perfect and aligns with ADR-008/009.
+2.  **Phase 0 Scaffolding Patches (D15-D24):** The MEP's identification of the 10 scaffolding bugs (e.g., `customConditions`, `serverExternalPackages` top-level move, Postgres password mismatch) is exhaustive and accurate.
+3.  **TDD Test Mapping:** The mapping of specific Test IDs (BOOK-001 to BOOK-006, STRIPE-001 to STRIPE-005) to the exact files and phases is a brilliant execution strategy.
+4.  **Mockup Port Strategy (Phase 12):** The systematic mapping of the static HTML mockup's inline CSS/JS to React hooks (`useScrollProgress`, `useNavScrollHide`) and Tailwind v4 tokens is highly actionable.
+
+---
+
+## 6. Required Remediation Matrix (The "Backport" Plan)
+
+To elevate the `MASTER_EXECUTION_PLAN.md` to v1.1.0 and make it safe for Phase 0 implementation, the following precise edits must be applied to the document:
+
+### 6.1. Global Find & Replace
+*   **Find:** `Trigger.dev v3` / `@trigger.dev/sdk/v3`
+    **Replace with:** `Trigger.dev v4` / `@trigger.dev/sdk/v4` *(Note: Add a warning that v3 deploys die April 1, 2026).*
+*   **Find:** `Drizzle ORM v0.40.1`
+    **Replace with:** `Drizzle ORM ^0.45.0`
+*   **Find:** `TypeScript 5.7`
+    **Replace with:** `TypeScript ^5.9.0`
+*   **Find:** `--color-clay-400` (in the context of focus outlines/rings)
+    **Replace with:** `--color-water-500` (and update thickness to 3px + 2px offset).
+
+### 6.2. Specific File/Phase Patches
+*   **Phase 5 (F5-01 SSE Route):**
+    *   *Delete:* `export const dynamic = 'force-dynamic';`
+    *   *Add:* `export const maxDuration = 300; // 5 mins, requires Vercel Fluid Compute`
+    *   *Add Comment:* Warning about `cacheComponents: true` incompatibility.
+*   **Phase 7 (F7-04 Stripe Webhooks):**
+    *   *Change:* `pg_advisory_lock(hash(event.id))` $\rightarrow$ `pg_advisory_xact_lock(hash(event.id))`
+    *   *Update Logic:* Remove the manual "Release lock" step, as `_xact_lock` auto-releases on COMMIT/ROLLBACK.
+*   **Phase 7 (F7-01 Stripe Client):**
+    *   *Change:* `apiVersion: '2024-12-18.acacia'` $\rightarrow$ `apiVersion: '2025-03-31.basil'`
+*   **Phase 0 (F0-25 globals.css):**
+    *   *Change:* `:focus-visible { outline: 2px solid var(--color-clay-400); ... }` $\rightarrow$ `:focus-visible { outline: 3px solid var(--color-water-500); outline-offset: 2px; ... }`
+*   **Section 1.2 (Goal G6):**
+    *   *Update:* Add the caveat that Lighthouse 100 is an automated baseline, and true WCAG AAA requires quarterly manual screen-reader audits (axe-core only catches ~57% of issues).
+
+---
+
+## 7. Next Steps & Execution Strategy
+
+The `MASTER_EXECUTION_PLAN.md` is currently a **v1.0.0 artifact** attempting to execute a **v1.1.0 architecture**. 
+
+**My Recommendation:**
+1.  **Approve the MEP's 13-Phase Structure:** The sequencing, dependency mapping, and TDD mandates are perfect. Do not rewrite the phases.
+2.  **Apply the Remediation Matrix:** Execute the 6.1 and 6.2 patches above to backport the Phase 2 Audit fixes into the MEP.
+3.  **Bump MEP Version:** Update the MEP Document Control to `v1.1.0` with the changelog note: *"Backported Phase 2 Audit Fixes (C1-C5) and Stack Alignments from PAD v1.1.0 / SKILL v1.2.0."*
+4.  **Proceed to Phase 0:** Once the text patches are applied, the MEP is cleared for immediate `IMPLEMENT` execution.
+
+---
+
 https://chat.qwen.ai/s/0738f7e3-7930-46e9-8b17-5985796f9f0e?fev=0.2.70 
