@@ -14,13 +14,13 @@
 
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
-| Version     | 1.1.0                                                              |
-| Status      | ACTIVE — PLAN (verified against PAD v1.1.0 / SKILL v1.2.0)        |
+| Version     | 1.2.0                                                              |
+| Status      | ACTIVE — PLAN (verified against PAD v1.3.0 / SKILL v1.3.0; re-validated 2026-07-05) |
 | Date        | 2026-07-04                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
 | Methodology | TDD (`RED → GREEN → REFACTOR → COMMIT`, one cycle per commit)     |
-| Sources     | `design.md`, `PAD.md`, `scaffolding_files.md`, `static_landing_page_html_mockup.md`, `guide_auth-v5_vs_better-auth.md` |
+| Sources     | `design.md`, `PAD.md`, `scaffolding_files.md`, `static_landing_page_mockup.html`, `static_landing_page_html_mockup.md`, `guide_auth-v5_vs_better-auth.md` |
 
 ### Change Log
 
@@ -28,6 +28,7 @@
 |---------|------------|------------|-----------------------------------------------------|
 | 1.0.0   | 2026-07-04 | Claw Code  | Initial plan synthesised from 4 upstream documents |
 | 1.1.0   | 2026-07-05 | Claw Code / Audit | Backported Phase 2 Audit Fixes (C1–C5) + Stack Alignments from PAD v1.1.0 / SKILL v1.2.0 |
+| 1.2.0   | 2026-07-05 | Claw Code / Validation | Re-validated against PAD v1.3.0 / SKILL v1.3.0: fixed Stripe apiVersion (Basil→Dahlia), env count (25→34), berkeley-mono→jetbrains-mono across D25/D34/D41/F0-23/F0-24/Phase 12/§3.2/Open Questions; marked D9 + proxy.ts questions as resolved; added .html mockup to Source Document Map |
 
 ### Source Document Map
 
@@ -36,7 +37,8 @@
 | `design.md`                             | 813     | Phase 1 architecture critique across 3 paths + merged optimal arch     | Conceptual framing, 12-phase skeleton      |
 | `PAD.md`                                | 3,109   | Definitive Project Architecture Document (31 sections, 7 ADRs)         | All architectural decisions, schema, API   |
 | `scaffolding_files.md`                  | 2,298   | Phase 0 IMPLEMENT — 39 ready-to-paste config files                     | Phase 0 file contents, version pins        |
-| `static_landing_page_html_mockup.md`    | 3,056   | Landing page design spec + complete self-contained HTML mockup         | Phase 12 landing-page port                 |
+| `static_landing_page_mockup.html`     | 2,927   | Standalone HTML mockup — **visual/aesthetic reference** for Phase 12 side-by-side comparison | Phase 12 visual fidelity |
+| `static_landing_page_html_mockup.md`    | 3,056   | Landing page design spec + complete self-contained HTML mockup         | Phase 12 landing-page port (conceptual guidance)                 |
 
 ---
 
@@ -125,7 +127,7 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 | D6 | `members.stripeCustomerId`  | Referenced in payment mapping  | Missing from MEMBER table def          | n/a                          | **Add column** `stripeCustomerId text UNIQUE` to MEMBER table                   |
 | D7 | Worker naming mismatch      | `class-reminder-24h`, `-1h`    | `class-reminder.ts` (singular)         | n/a                          | **Two files**: `class-reminder-24h.ts`, `class-reminder-1h.ts`                  |
 | D8 | Worker naming mismatch      | `membership-expiry-warn`       | `membership-renewal.ts`                | n/a                          | **Rename**: `membership-expiry-warn.ts` (catalog wins)                          |
-| D9 | Color token bug (PAD L1268) | `--color-stone-200: --color-fog: #D4CFC9;` (malformed) | n/a                     | n/a                          | **Fix**: `--color-stone-200: #D4CFC9;` and define `--color-fog: #D4CFC9;`        |
+| D9 | Color token bug (PAD L1268) | `--color-stone-200: --color-fog: #D4CFC9;` (malformed) | n/a                     | n/a                          | **RESOLVED IN SOURCE (PAD v1.2.0):** Malformed token fixed; orphaned `--color-fog` removed entirely (it was a Phase 1 design.md named token never implemented in the numbered scale). No action required. |
 | D10| `ActiveSubscriptionSummary` type | Referenced (L1102), undefined  | n/a                                    | n/a                          | **Define** in `packages/auth/src/types.ts`                                     |
 | D11| `DrizzleDB` type            | Referenced (L1036), undefined  | n/a                                    | n/a                          | **Define** in `packages/db/src/index.ts` as `typeof db`                         |
 | D12| Refund workflow             | Not specified                  | n/a                                    | n/a                          | **Add** `paymentsRouter.refund` (staff-only) + Stripe refund event handler     |
@@ -151,7 +153,7 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 
 | #  | Topic                            | PAD says                              | Mockup says                                              | **Canonical resolution**                                          |
 |----|----------------------------------|---------------------------------------|----------------------------------------------------------|-------------------------------------------------------------------|
-| D25| Berkeley Mono font               | Defined as `--font-mono`              | Not loaded, not used                                     | **Adopt PAD spec**: self-host Berkeley Mono; apply to admin/data  |
+| D25| ~~Berkeley Mono font~~ → **JetBrains Mono** | Defined as `--font-mono` (PAD §11.2) | Not loaded, not used | **Adopt PAD spec (updated):** self-host JetBrains Mono (Apache 2.0, open-source Google Font — no license required). Berkeley Mono was the Phase 1 proposal (design.md LAYER 2) but is a paid commercial font that was never acquired. JetBrains Mono is the chosen free alternative. See PAD.md §11.2 and SKILL.md §4.4. |
 | D26| Spacing scale naming             | `--space-1` … `--space-13`            | `--sp-1` … `--sp-11` (off-by-one from index 5)           | **Adopt PAD naming**; remap mockup `--sp-5+` to `--space-6+`      |
 | D27| Motion duration naming           | `--duration-quick` / `standard` / `slow` | `--dur-quick` / `std` / `slow`                       | **Adopt PAD naming**                                              |
 | D28| Mockup type scale not tokenised  | PAD has `--text-display-2xl` etc.     | Mockup uses inline `clamp()`                             | **Adopt PAD tokens** for port                                     |
@@ -160,14 +162,14 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 | D31| Section numbering skips 01       | n/a                                   | Philosophy is unnumbered; Schedule starts at 02          | **Add `01` to Philosophy section header**                         |
 | D32| Mockup missing mobile nav        | n/a                                   | `nav__links` hidden at 768px, no hamburger               | **Implement Radix Dialog-based mobile drawer in Phase 12**        |
 | D33| Mockup missing OG / JSON-LD      | PAD §23 specifies full OG + JSON-LD   | Only `<title>` + `<meta description>`                    | **Implement full PAD SEO spec in Phase 11**                       |
-| D34| Mockup uses Google Fonts CDN     | PAD §11.3 mandates self-hosted fonts  | Comment says "self-hosted in prod"                       | **Self-host** Cormorant + DM Sans + Berkeley Mono in `packages/ui/src/fonts/` |
+| D34| Mockup uses Google Fonts CDN     | PAD §11.3 mandates self-hosted fonts  | Comment says "self-hosted in prod"                       | **Self-host** Cormorant + DM Sans + JetBrains Mono in `packages/ui/src/fonts/` (all three are free Google Fonts already downloaded). Berkeley Mono was the Phase 1 proposal but is paid — use JetBrains Mono instead (see D25). |
 | D35| Mockup schedule: Thu–Sun items not expandable | n/a                        | 11 of 18 items use `onclick="return false"`              | **Wire all items** to live tRPC schedule data in Phase 5           |
 | D36| proxy.ts auth pattern (guide G2)     | Scaffolded proxy.ts calls `auth.api.getSession()` (full DB validation on Edge) | `guide_auth-v5_vs_better-auth.md` mandates cookie-only `getSessionCookie()` in proxy | **Refactor proxy.ts** to cookie-existence-only check; move full validation + RBAC to Server Component layouts (Phase 2 F2-13 rewrite + F2-16 through F2-19) |
 | D37| Better Auth version pin (guide G1)   | Files pin `^1.2.0` (outdated)       | Guide confirms stable v1.6.23 (1.7.0-beta in testing)   | **Update version pin** to `^1.6.23` across all files              |
 | D38| Auth.js v5 beta status (guide G6)    | ADR-008 context says "Sept 2025 handover" (incomplete) | Guide confirms Auth.js v5 still beta at 5.0.0-beta.31; never left beta since rewrite; Better Auth team now patches Auth.js security | **Update ADR-008 context** with full timeline + dual-maintenance fact |
 | D39| Better Auth client API differences (guide G4) | Files don't document `authClient.signIn.social()` / `authClient.useSession()` return shape | Guide documents the centralized `authClient` API | **Document client API** in F2-02 + stillwater_SKILL.md §Lesson 3 |
 | D40| Better Auth DB schema differences (guide G5) | Files don't document table/field renames | Guide documents User/Session/Account/Verification schema changes | **Document schema migration** in stillwater_SKILL.md §Lesson 3 + Phase 1 schema files |
-| D41| PAD staleness — 14 stale references | **RESOLVED IN SOURCE (PAD v1.1.0 §5.1, §6.1)** | **RESOLVED IN SOURCE** | **RESOLVED:** PAD.md v1.1.0 has been fully remediated. All 14 locations now correctly reference Better Auth v1.6.23, `proxy.ts`, `[...all]`, `BETTER_AUTH_SECRET`, Next.js 16, TypeScript ^5.9.0, and `stillwater_local_dev`. No action required. |
+| D41| PAD staleness — 14 stale references | **RESOLVED IN SOURCE (PAD v1.1.0 §5.1, §6.1)** | **RESOLVED IN SOURCE** | **RESOLVED (v1.1.0) + FURTHER UPDATED (v1.3.0):** PAD.md v1.1.0 fixed the 14 Auth.js/middleware references. PAD.md v1.3.0 additionally fixed: Stripe API version (Basil→Dahlia), pnpm (9→11), Tailwind (4.1→4.3), Zod v4 guidance, version pins (Turborepo/React Email/Resend), Drizzle $count floor (≥0.30→≥0.34), ADR-009 proxy.ts runtime (Node.js→Edge), Appendix A Cloudflare env var names + 3 missing vars, §5.1 Next.js row corrections. The MEP has been updated to reflect these in v1.2.0 (see Change Log). **No further action required.** |
 | D42| Missing `@dnd-kit/core` and `recharts` in `apps/web/package.json` scaffolding | Neither package listed in scaffolding deps | Phase 9 F9-07 references `@dnd-kit/core` for drag-and-drop calendar; F9-14 references `recharts` for revenue charts | **Add** `"@dnd-kit/core": "^6.0.0"` and `"recharts": "^2.15.0"` to `apps/web/package.json` dependencies in Phase 0 (or at Phase 9 start) |
 
 ---
@@ -195,7 +197,7 @@ These principles are inherited from the Claw Code operational framework and the 
 - ✗ Predictable 3-column feature card grids
 - ✗ Sticky nav with logo left / links center / CTA right (use single-line rule nav)
 - ✗ Lotus / mandala decorative icons
-- ✓ Typographic hierarchy as primary structural tool (Cormorant Garamond display + DM Sans body + Berkeley Mono data)
+- ✓ Typographic hierarchy as primary structural tool (Cormorant Garamond display + DM Sans body + JetBrains Mono data)
 - ✓ Whitespace as luxury signal, not empty space
 - ✓ Asymmetric editorial grid breaks
 - ✓ Color temperature that changes how the user feels
@@ -500,7 +502,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
     },
     runtimeEnv: {
       DATABASE_URL: process.env.DATABASE_URL,
-      // ... all 25 vars mapped to process.env
+      // ... all 34 vars mapped to process.env
       NODE_ENV: process.env.NODE_ENV,
     },
   });
@@ -621,7 +623,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
   - [ ] All Sand tokens (DEFAULT, warm, deep)
   - [ ] Status colors (success, warning, error, info) — using PAD hex values
   - [ ] Semantic aliases (`--color-background`, `--color-surface`, `--color-border`, `--color-text-primary`, `--color-text-secondary`, `--color-action`, `--color-action-hover`, `--color-accent`)
-  - [ ] `--color-fog` defined separately (D9 fix)
+  - [ ] ~~`--color-fog` defined separately (D9 fix)~~ — D9 RESOLVED IN SOURCE (PAD v1.2.0); `--color-fog` removed entirely
 
 ##### F0-17. `/packages/ui/src/tokens/typography.css`
 - **Purpose:** Type scale + line heights + font family declarations.
@@ -675,19 +677,21 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
   - [ ] Download DM Sans woff2 (Regular 400, Italic 400, Medium 500, Bold 700)
   - [ ] Place + create `dm-sans.css` with `@font-face` declarations
 
-##### F0-23. `/packages/ui/src/fonts/berkeley-mono/` (directory + .woff2)
-- **Purpose:** Self-hosted Berkeley Mono (data/admin mono font). ⚠️ Berkeley Mono is a **paid font** — Open Question §9.7.
-- **Interface:** Same pattern.
+##### F0-23. `/packages/ui/src/fonts/jetbrains-mono/` (directory + .woff2)
+- **Purpose:** Self-hosted JetBrains Mono (data/admin mono font). Apache 2.0, open-source — **no license required**. This is a free Google Font already downloaded and present in the repo.
+- **Interface:** Same pattern as Cormorant + DM Sans (directory + `jetbrains-mono.css` with `@font-face` declarations).
+- **TDD test file:** n/a (font files; verified by visual smoke test in Phase 12).
 - **Checklist:**
-  - [ ] Acquire license (or fall back to JetBrains Mono per §9.7)
-  - [ ] Place woff2 files
-  - [ ] Create `berkeley-mono.css` with `@font-face`
+  - [ ] 18 woff2 files already present in `packages/ui/src/fonts/jetbrains-mono/` (verified)
+  - [ ] Create `jetbrains-mono.css` with `@font-face` declarations for regular, medium, bold weights (latin + latin-ext subsets)
+  - [ ] `--font-mono` token in `typography.css` references `'JetBrains Mono'` as primary (matches PAD.md §11.2)
+  - [ ] **Do NOT** create a `berkeley-mono/` directory — Berkeley Mono is a paid commercial font (not a Google Font) and was never acquired. JetBrains Mono is the chosen open-source alternative.
 
 ##### F0-24. `/packages/ui/src/fonts/index.css`
 - **Purpose:** Barrel import for all font CSS.
 - **Interface:** `@import` statements.
 - **Checklist:**
-  - [ ] Imports Cormorant, DM Sans, Berkeley Mono (or fallback)
+  - [ ] Imports Cormorant, DM Sans, JetBrains Mono
 
 ##### F0-25. `/packages/ui/src/globals.css`
 - **Purpose:** Global stylesheet imported by `apps/web/src/app/globals.css`. Aggregates tokens + fonts + base reset.
@@ -2729,7 +2733,7 @@ pnpm test:e2e -- --grep "dashboard|membership|profile"
   import { env } from '@stillwater/config/env';
 
   export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-03-31.basil', // ⚠️ Basil API: current_period_end moved to items.data[0]
+    apiVersion: '2026-06-24.dahlia', // ⚠️ Dahlia API (SDK v22 default): current_period_end at items.data[0]
     typescript: true,
   });
   ```
@@ -3972,7 +3976,7 @@ pnpm lighthouse ci
 
 ### Phase 12 — Landing Page Port (Mockup → Production Next.js)
 
-**Goal:** The static HTML mockup in `static_landing_page_html_mockup.md` is faithfully ported to a production Next.js page using the shared design system, Radix primitives, Framer Motion, Sanity-backed content, and live tRPC schedule data.
+**Goal:** The static HTML mockup in `static_landing_page_mockup.html` (visual reference) and `static_landing_page_html_mockup.md` (design rationale) is faithfully ported to a production Next.js page using the shared design system, Radix primitives, Framer Motion, Sanity-backed content, and live tRPC schedule data.
 
 **Dependencies:** Phase 4 (Sanity + marketing route group), Phase 11 (SEO + OG).
 
@@ -3981,9 +3985,10 @@ pnpm lighthouse ci
 **Acceptance criteria:**
 - [ ] Visual fidelity: side-by-side comparison shows no regressions
 - [ ] All marketing copy from mockup reproduced verbatim OR moved to Sanity
-- [ ] Self-hosted fonts (Cormorant + DM Sans + Berkeley Mono)
+- [ ] Self-hosted fonts (Cormorant + DM Sans + JetBrains Mono — all free Google Fonts)
 - [ ] All 9 fluid clamp() values use PAD tokens (D28)
 - [ ] Spacing uses `--space-N` (D26), not mockup `--sp-N`
+- [ ] Color tokens use `--color-` prefix (e.g., `--color-stone-950`), not mockup's unprefixed `--stone-950`
 - [ ] Motion uses `--duration-*` (D27), not `--dur-*`
 - [ ] Beginner badge uses `--color-success` (D29)
 - [ ] Mobile nav drawer implemented (D32)
@@ -4278,7 +4283,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 
 > **External validation:** `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms ADR-008 (Better Auth v1.6.23 stable) and ADR-009 (`proxy.ts` rename). The guide additionally mandates a **2-layer auth pattern** (cookie-only `proxy.ts` + Server Component `requireAuth()`/`requireRole()`) which has been incorporated into Phase 2 (F2-13 rewrite + F2-16 through F2-19 new layout files). See discrepancy D36 below.
 >
-> **✅ PAD Alignment Verified:** PAD.md v1.1.0 has been fully remediated. All 14 previously stale references (Auth.js v5, `middleware.ts`, `[...nextauth]`, `AUTH_SECRET`, "Next.js 15", "stillwater_local") have been updated to Better Auth v1.6.23, `proxy.ts`, `[...all]`, and `BETTER_AUTH_SECRET`. The PLAN and PAD are now in 100% alignment. Phase 0 can proceed.
+> **⚠️ PAD Alignment Partially Verified:** PAD.md v1.1.0 alignment confirmed (14 Auth.js/middleware references). PAD.md v1.3.0 introduced additional corrections (Stripe Dahlia, pnpm 11, Tailwind 4.3, env vars 34, ADR-009 Edge runtime, JetBrains Mono) that have been incorporated into MEP v1.2.0. The PLAN and PAD are now in alignment. Phase 0 can proceed.
 
 | PAD § | Topic                                  | Satisfied by (file / phase)                                                |
 |-------|----------------------------------------|----------------------------------------------------------------------------|
@@ -4416,12 +4421,12 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 The following items require explicit project-owner sign-off before IMPLEMENT begins.
 
 1. **Better Auth vs Auth.js** — ✅ RESOLVED. `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms: Better Auth v1.6.23 stable is correct for greenfield Next.js 16. Auth.js v5 still beta (5.0.0-beta.31), with confirmed friction (GitHub #13302 peer-dep conflicts, #13388 server-action failures). Better Auth team also patches Auth.js security. ADR-008 stands. **No action required — this question is answered.**
-2. **`proxy.ts` rename** — Confirm ADR-009 (adopt Next.js 16 rename). If your Next.js version is < 16, revert to `middleware.ts`.
-3. **Self-hosted fonts** — Confirm self-hosting Cormorant Garamond + DM Sans + Berkeley Mono (license files must be acquired for Berkeley Mono — it's a paid font; if unavailable, fall back to JetBrains Mono).
+2. **`proxy.ts` rename** — ✅ RESOLVED. Next.js 16.2.0 is pinned in `apps/web/package.json`; `apps/web/proxy.ts` exists in the repo. ADR-009 adopted. No reversion needed.
+3. **Self-hosted fonts** — ✅ RESOLVED. Self-hosting Cormorant Garamond + DM Sans + JetBrains Mono (all free Google Fonts, already downloaded to `packages/ui/src/fonts/`). Berkeley Mono (paid) was the Phase 1 proposal but was never acquired — JetBrains Mono (Apache 2.0) is the chosen free alternative. See PAD.md §11.2 and SKILL.md §4.4.
 4. **Sanity Cloud hosting** — Confirm Sanity Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed) vs self-hosted at `studio.stillwater.studio` (Next.js app inside monorepo).
 5. **Stripe refund workflow** — Confirm staff-initiated refunds via Stripe Dashboard vs in-app refund flow (D12). If in-app, scope addition ~2 days.
 6. **Mobile nav drawer** — Confirm Radix Dialog-based drawer (D32). If you prefer a different pattern (Sheet, Drawer primitive), specify now.
-7. **Berkeley Mono license** — Berkeley Mono is a paid font. If not acquired, fallback options: (a) JetBrains Mono, (b) IBM Plex Mono, (c) Geist Mono. Confirm preference.
+7. **~~Berkeley Mono license~~** — ✅ RESOLVED. JetBrains Mono (Apache 2.0, open-source Google Font) selected. No license acquisition needed. The `packages/ui/src/fonts/jetbrains-mono/` directory already contains 18 woff2 files.
 8. **Refund workflow scope** — In-app refund UI in Phase 7 vs defer to v2?
 9. **Test data PII** — Vitest integration tests against Testcontainers Postgres — confirm no real member data leaks into test fixtures.
 10. **Production cutover strategy** — Big-bang deploy vs feature-flag-gated progressive rollout? Affects Phase 10.

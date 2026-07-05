@@ -1,48 +1,41 @@
-# Archive Manifest — PAD.md / design.md / SKILL.md Alignment
+# Archive Manifest — MASTER_EXECUTION_PLAN.md Alignment
 
 **Archive created:** 2026-07-05
-**Archive file:** `stillwater_pad_design_skill_alignment_v1.tar.gz`
-**Purpose:** Refresh the `nordeim/stillwater` GitHub repo with the aligned PAD.md, design.md, stillwater_SKILL.md, and corrected CSS token files, plus all validation/remediation reports.
+**Archive file:** `stillwater_mep_alignment_v1.2.0.tar.gz`
+**Purpose:** Refresh the `nordeim/stillwater` GitHub repo with the updated `MASTER_EXECUTION_PLAN.md` (v1.1.0 → v1.2.0) and all validation/remediation reports from the full 4-document alignment session.
 
 ---
 
 ## What This Archive Contains
 
-This archive contains every file modified or created during the PAD.md ↔ design.md ↔ SKILL.md alignment remediation. All paths are relative to the repo root.
+This archive contains the updated MASTER_EXECUTION_PLAN.md plus every report produced during the full alignment session (SKILL.md → PAD.md/design.md → MEP). All paths are relative to the repo root.
 
-### Updated Documents (3 files)
-
-| Path | Change Summary |
-|------|----------------|
-| `PAD.md` | §5.1: 9 rows corrected (Next.js, Tailwind, Drizzle, pnpm, Stripe, Zod, Turborepo, React Email, Resend). §5.2: pnpm 11.0.0. ADR-009: proxy.ts runtime corrected to Edge. Appendix A: Cloudflare env var names fixed + 3 missing vars added. |
-| `design.md` | LAYER 2: "Partially Superseded" banner added. LAYER 6: renamed to "Better Auth + proxy.ts", superseded banner + `<details>` collapse for Auth.js v5 code. Phase 3: Trigger.dev v3 → v4. |
-| `stillwater_SKILL.md` | §1.4 item 8: "JetBrains/Berkeley Mono" → "JetBrains Mono". §4.1: `--font-mono` Berkeley Mono reference removed. §4.4: `berkeleyMono` → `jetbrainsMono` localFont; licensing warning replaced with concise provenance note. |
-
-### Updated CSS Token Files (4 files)
+### Updated Document (1 file)
 
 | Path | Change Summary |
 |------|----------------|
-| `packages/ui/src/tokens/colors.css` | Header: PAD §11.4 → §11.3 (off-by-one fix) |
-| `packages/ui/src/tokens/typography.css` | Header: PAD §11.3 → §11.2 (off-by-one fix) |
-| `packages/ui/src/tokens/spacing.css` | Header: PAD §11.5 → §11.4 (off-by-one fix) |
-| `packages/ui/src/tokens/motion.css` | Header: PAD §11.6 → §11.5 (off-by-one fix) |
+| `MASTER_EXECUTION_PLAN.md` | v1.1.0 → v1.2.0: 3 P0 fixes (Stripe apiVersion Basil→Dahlia, env count 25→34, F0-23 berkeley-mono→jetbrains-mono), 7 P1 fixes (D25/D34/D41 resolutions, Phase 12 acceptance, §3.2, Open Questions §9.7, §7.1 alignment claim), 3 P2 fixes (Source Document Map adds .html mockup, D9 marked resolved, color token prefix criterion), 1 P3 fix (proxy.ts question resolved). All Berkeley Mono references updated to JetBrains Mono (free Google Font already in repo). |
 
-### Reports (4 files in `docs/validation/`)
+### Reports (8 files in `docs/validation/`)
 
 | Path | Description |
 |------|-------------|
-| `docs/validation/PAD_vs_design_vs_SKILL_alignment_report.md` | Initial alignment validation report (19 findings: 4 P0 + 5 P1 + 6 P2 + 4 P3) |
-| `docs/validation/PAD_design_SKILL_remediation_report.md` | Remediation report documenting every change with before/after + rationale |
+| `docs/validation/MEP_vs_source_docs_alignment_report.md` | MEP alignment validation report (16 findings: 3 P0 + 7 P1 + 4 P2 + 1 P3) |
+| `docs/validation/MEP_remediation_report.md` | MEP remediation report documenting every change with before/after + rationale |
+| `docs/validation/PAD_vs_design_vs_SKILL_alignment_report.md` | PAD/design/SKILL alignment validation (19 findings — prior pass) |
+| `docs/validation/PAD_design_SKILL_remediation_report.md` | PAD/design/SKILL remediation report (prior pass) |
+| `docs/validation/stillwater_SKILL_validation_report.md` | Initial SKILL.md validation (78/100, 4 P0 findings — first pass) |
+| `docs/validation/stillwater_SKILL_remediation_report.md` | SKILL.md remediation report (first pass) |
+| `docs/validation/stillwater_SKILL_post_fix_audit_report.md` | SKILL.md post-fix audit (34 checks, all pass — first pass) |
 | `docs/validation/ARCHIVE_MANIFEST.md` | This manifest |
-| `docs/validation/stillwater_SKILL_validation_report.md` | Prior SKILL.md validation (from the first remediation pass — included for context) |
-| `docs/validation/stillwater_SKILL_remediation_report.md` | Prior SKILL.md remediation report (from the first pass — included for context) |
-| `docs/validation/stillwater_SKILL_post_fix_audit_report.md` | Prior SKILL.md post-fix audit (from the first pass — included for context) |
 
-### Helper Script (1 file)
+### Helper Scripts (3 files in `scripts/`)
 
 | Path | Description |
 |------|-------------|
-| `scripts/verify_pad_alignment.py` | Re-runnable verification script for PAD/design/SKILL alignment; 34 checks, all pass |
+| `scripts/verify_mep_alignment.py` | MEP alignment verification (26 checks, all pass) |
+| `scripts/verify_pad_alignment.py` | PAD/design/SKILL alignment verification (34 checks, all pass — prior pass) |
+| `scripts/verify_alignment.py` | SKILL.md vs package.json alignment verification (34 checks, all pass — first pass) |
 
 ---
 
@@ -51,76 +44,78 @@ This archive contains every file modified or created during the PAD.md ↔ desig
 ### Option A: Extract over an existing repo checkout (recommended)
 
 ```bash
-# From your local stillwater repo root
 cd /path/to/your/stillwater
 
 # Extract the archive (overwrites existing files)
-tar -xzf /path/to/stillwater_pad_design_skill_alignment_v1.tar.gz
+tar -xzf /path/to/stillwater_mep_alignment_v1.2.0.tar.gz
 
 # Verify the changes
 git status
 git diff --stat
 
-# Run the verification script
+# Run the MEP verification script
+python3 scripts/verify_mep_alignment.py
+
+# (Optional) Run the prior verification scripts to confirm full alignment
 python3 scripts/verify_pad_alignment.py
+python3 scripts/verify_alignment.py
 
-# If all 34 checks pass, commit
+# If all checks pass, commit
 git add -A
-git commit -m "fix: align PAD.md + design.md with SKILL.md v1.3.0 + source skills
+git commit -m "fix: align MASTER_EXECUTION_PLAN.md with updated source docs (v1.1.0 → v1.2.0)
 
-PAD.md §5.1 (Tech Stack):
-- Stripe: 'Basil' API → 'Dahlia' API (2026-06-24); camelCase → snake_case
-- pnpm: 9.15.4 → ^11.0.0 (pnpm 9.x is EOL)
-- Tailwind: ^4.1.0 → ^4.3.0
-- Zod: added z.url({ protocol }) v4-native guidance + { error } param
-- Turborepo: 'latest' → ^2.10.0
-- React Email: 'latest' → ^0.0.36
-- Resend: 'latest' → ^4.1.2
-- Drizzle: $count floor ≥0.30 → ≥0.34
-- Next.js: proxy.ts runtime corrected to Edge; React Compiler opt-in;
-  serverExternalPackages attributed to Next.js 15
+P0 fixes (implementation code):
+- Phase 7 F7-01: Stripe apiVersion '2025-03-31.basil' → '2026-06-24.dahlia'
+- Phase 0 F0-06: env var count '25 vars' → '34 vars'
+- Phase 0 F0-23: berkeley-mono/ → jetbrains-mono/ (free Google Font, no license needed)
 
-PAD.md ADR-009: proxy.ts runtime corrected from 'Node.js' to 'Edge'
-PAD.md Appendix A: Cloudflare env var names fixed + 3 missing vars added
+P1 fixes (stale discrepancy resolutions):
+- D25/D34: Berkeley Mono → JetBrains Mono (free Google Font already in repo)
+- D41: acknowledges PAD v1.3.0 corrections (Stripe, pnpm, Tailwind, env vars, etc.)
+- Phase 12 acceptance: Berkeley Mono → JetBrains Mono
+- §3.2 design principles: Berkeley Mono → JetBrains Mono
+- Open Questions §9.7: Q2 (proxy.ts), Q3 (fonts), Q7 (Berkeley Mono) all ✅ RESOLVED
+- §7.1: '100% alignment' → 'partially verified, now in alignment'
 
-design.md LAYER 2: 'Partially Superseded' banner (color/spacing/font tokens)
-design.md LAYER 6: renamed to 'Better Auth + proxy.ts'; Auth.js v5 code
-  collapsed with superseded banner citing ADR-008/009
-design.md Phase 3: Trigger.dev v3 → v4
+P2 fixes (documentation hygiene):
+- Source Document Map: added static_landing_page_mockup.html as visual reference
+- D9: marked RESOLVED IN SOURCE (PAD v1.2.0 already fixed malformed --color-fog)
+- Phase 12 acceptance: added color token prefix remapping criterion
 
-SKILL.md §4.4: Berkeley Mono → JetBrains Mono (font dir doesn't exist)
+P3 fix:
+- Open Question §9.7 Q2 (proxy.ts): marked ✅ RESOLVED
 
-CSS token files: off-by-one PAD section refs fixed (colors/typography/
-spacing/motion .css)
+Verified via 26 automated checks (scripts/verify_mep_alignment.py).
 
-Verified via 34 automated checks (scripts/verify_pad_alignment.py).
+Refs: docs/validation/MEP_vs_source_docs_alignment_report.md
+       docs/validation/MEP_remediation_report.md"
 
-Refs: docs/validation/PAD_vs_design_vs_SKILL_alignment_report.md
-       docs/validation/PAD_design_SKILL_remediation_report.md"
-
-# Push to GitHub
 git push origin main
 ```
 
 ### Option B: Inspect before extracting
 
 ```bash
-tar -tzf /path/to/stillwater_pad_design_skill_alignment_v1.tar.gz
+tar -tzf /path/to/stillwater_mep_alignment_v1.2.0.tar.gz | sort
 ```
 
 ---
 
 ## Post-Extraction Steps
 
-After extracting and committing, no further action is required. The three documents are now mutually aligned and consistent with the codebase.
+After extracting and committing, no further action is required. The five-document hierarchy is now fully aligned:
 
-If you also want to re-verify the prior SKILL.md alignment (from the first remediation pass), you can run:
-
-```bash
-python3 scripts/verify_alignment.py
 ```
-
-(This script was included in the prior `stillwater_alignment_v1.3.0.tar.gz` archive. If you don't have it, the checks it performs are documented in `docs/validation/stillwater_SKILL_post_fix_audit_report.md`.)
+design.md (historical intent, with superseded banners)
+    ↓
+PAD.md (authoritative architecture, v1.3.0-equivalent)
+    ↓
+stillwater_SKILL.md (agent-facing distillation, v1.3.0)
+    ↓
+MASTER_EXECUTION_PLAN.md (execution plan, v1.2.0 — now aligned with all three)
+    ↓
+static_landing_page_mockup.html (visual/aesthetic reference for Phase 12)
+```
 
 ---
 
@@ -129,36 +124,24 @@ python3 scripts/verify_alignment.py
 To confirm the archive is complete and uncorrupted:
 
 ```bash
-sha256sum /path/to/stillwater_pad_design_skill_alignment_v1.tar.gz
+sha256sum /path/to/stillwater_mep_alignment_v1.2.0.tar.gz
 ```
 
-The archive contains **13 files** total. List them with:
+The archive contains **12 files** total. List them with:
 
 ```bash
-tar -tzf /path/to/stillwater_pad_design_skill_alignment_v1.tar.gz | sort
+tar -tzf /path/to/stillwater_mep_alignment_v1.2.0.tar.gz | sort
 ```
 
 ---
 
-## Reports Summary
+## Font Note (User Caveat)
 
-### 1. Alignment Validation Report (`PAD_vs_design_vs_SKILL_alignment_report.md`)
-The initial validation identifying 19 findings across the three documents:
-- 4 P0 Critical (PAD.md stale Stripe/pnpm/Tailwind/env vars)
-- 5 P1 High (design.md stale Auth.js/middleware/Trigger.dev v3 + token naming + font-mono)
-- 6 P2 Medium (Zod guidance, version pins, CSS header refs, Drizzle floor)
-- 4 P3 Low (missing tokens, ADR-009 runtime claim)
+Per the user's directive: "use the actual installed Google fonts under the `packages/ui/src/fonts/` folder, these are free fonts that I can download."
 
-### 2. Remediation Report (`PAD_design_SKILL_remediation_report.md`)
-Documents every change made, with before/after for each finding. All P0, P1, and in-scope P2 findings resolved. P3 deferred items documented with rationale.
+Verified font directories in the repo:
+- `packages/ui/src/fonts/cormorant/` — 25 woff2 files (Cormorant Garamond, Google Font, OFL)
+- `packages/ui/src/fonts/dm-sans/` — 8 woff2 files (DM Sans, Google Font, OFL)
+- `packages/ui/src/fonts/jetbrains-mono/` — 18 woff2 files (JetBrains Mono, Google Font, Apache 2.0)
 
-### 3. Prior SKILL.md Reports (3 files)
-Included for context — these document the first remediation pass that aligned SKILL.md with the source skills and the codebase.
-
----
-
-## Questions?
-
-Refer to:
-- `docs/validation/PAD_design_SKILL_remediation_report.md` for the "why" behind each change
-- `scripts/verify_pad_alignment.py` for the deterministic check logic (34 checks, all pass)
+All three are **free Google Fonts** — no license acquisition needed. Berkeley Mono (paid commercial, NOT a Google Font) was the Phase 1 design.md proposal but was never acquired. JetBrains Mono is the chosen free alternative. The MEP now instructs agents to use the actual installed free fonts.
