@@ -67,7 +67,7 @@ const envSchema = {
         const weak = ['dev-secret', 'test-secret', 'ci-dummy', 'change-me', 'placeholder-secret'];
         if (weak.some((w) => val.toLowerCase().includes(w))) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: 'Weak secret rejected — use: openssl rand -base64 32',
           });
         }

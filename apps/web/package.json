@@ -46,19 +46,19 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.4.7",
     "lucide-react": "^0.475.0",
-    "next": "^16.0.0",
+    "next": "^16.2.0",
     "next-themes": "^0.4.4",
     "nuqs": "^2.4.1",
     "posthog-js": "^1.232.0",
-    "react": "^19.0.0",
+    "react": "^19.2.3",
     "react-day-picker": "^9.4.4",
-    "react-dom": "^19.0.0",
+    "react-dom": "^19.2.3",
     "react-hook-form": "^7.54.2",
     "server-only": "^0.0.1",
     "sonner": "^2.0.1",
-    "stripe": "^17.6.0",
+    "stripe": "^22.3.0",
     "tailwind-merge": "^2.6.0",
-    "zod": "^3.24.1"
+    "zod": "^4.4.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",
@@ -76,9 +76,9 @@
     "eslint": "^9.20.1",
     "jsdom": "^26.0.0",
     "postcss": "^8.5.2",
-    "tailwindcss": "^4.0.6",
+    "tailwindcss": "^4.3.0",
     "vitest": "^3.0.5",
-    "@tailwindcss/postcss": "^4.0.6",
+    "@tailwindcss/postcss": "^4.3.0",
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/container-queries": "^0.1.1"
   }

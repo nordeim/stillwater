@@ -3,13 +3,13 @@ name: stillwater
 description: >
   Project-specific skill file for the Stillwater yoga studio management platform.
   Distills programming knowledge, patterns, anti-patterns, pitfalls, and best
-  practices from 25+ source skills (Next.js 16 stack + frontend design + TDD +
+  practices from 21 source skills (Next.js 16 stack + frontend design + TDD +
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 1.2.0
+version: 1.3.0
 project_type: nextjs-monorepo
-framework_version: "Next.js 16.2, React 19.2, Tailwind v4.1, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
+framework_version: "Next.js 16.2, React 19.2, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-05
 ---
 
@@ -17,7 +17,7 @@ last_updated: 2026-07-05
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v1.0.0 — Phase 0 (scaffold) ready; Phases 1–12 pending per `MASTER_EXECUTION_PLAN.md`. Patterns captured here are forward-looking — they describe the conventions the codebase WILL enforce, not the state of the repo today.
+> **Status:** v1.3.0 — Phase 0 (scaffold) ready; Phases 1–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo have been bumped to match §2.1.
 
 ---
 
@@ -145,27 +145,27 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 
 | Layer | Technology | Version | Critical Note |
 |-------|-----------|---------|---------------|
-| Framework | Next.js (App Router, Turbopack, React Compiler) | `^16.2.0` | `proxy.ts` replaces `middleware.ts` (ADR-009); top-level `serverExternalPackages` (not under `experimental`); top-level `cacheComponents: true` (NOT under `experimental`) |
-| UI Runtime | React | `^19.2.3` | ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3; No `forwardRef` (ref as regular prop); React Compiler enabled |
-| Language | TypeScript | `^5.9.0` | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (requires `import type` for type-only imports), `erasableSyntaxOnly: true` (FORBIDS `enum` and `namespace` — use string unions or Drizzle `pgEnum()`) — see §13 for pitfalls |
-| Styling | Tailwind CSS | `^4.1.0` | CSS-first `@theme` in `globals.css`; NO `tailwind.config.js` required; `@source` directives required in monorepo (see §13.6) |
+| Framework | Next.js (App Router, Turbopack) | `^16.2.0` | `proxy.ts` replaces `middleware.ts` (ADR-009); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16); top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); React Compiler NOT default — requires explicit `reactCompiler: true` in `next.config.ts` |
+| UI Runtime | React | `^19.2.3` | ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3; No `forwardRef` (ref as regular prop in React 19); React Compiler requires explicit opt-in via `reactCompiler: true` in `next.config.ts` (NOT default) |
+| Language | TypeScript | `^5.9.0` | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (added TS 5.0; requires `import type` for type-only imports), `erasableSyntaxOnly: true` (added TS 5.8; FORBIDS `enum`, `namespace`, and parameter properties — use string unions or Drizzle `pgEnum()`) — see §13 for pitfalls |
+| Styling | Tailwind CSS | `^4.3.0` | CSS-first `@theme` in `globals.css`; NO `tailwind.config.js` required; `@source` directives required in monorepo (see §13.6); `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) |
 | Component Lib | Radix UI + shadcn/ui | latest | Initialize with `style: "new-york"`, `baseColor: "stone"`; `--radius: 0` overrides all defaults |
 | API Layer | tRPC | `^11.0.0` | 10 routers, 4 procedure tiers (public/protected/staff/owner); server caller for RSC, React Query for client |
-| ORM | Drizzle ORM | `^0.45.0` | Schema in TypeScript, no codegen; `neon-http` driver for serverless; `db.$count` and relational query API require ≥0.30 |
+| ORM | Drizzle ORM | `^0.45.0` | Schema in TypeScript, no codegen; `neon-http` driver for serverless; `db.$count` requires ≥0.34; relational query API v1 (`db.query.*`) since 0.28; v2 (`defineRelations()`) requires ≥1.0.0-beta |
 | Database | PostgreSQL | 17 (Neon) | 14 tables, 8 enums, 5 critical indexes; advisory locks for booking (ADR-004) |
 | Cache / Rate Limit | Upstash Redis | latest | Per-procedure rate limiting on `bookings.book` (10/min) and auth mutations |
 | Auth | Better Auth | `^1.6.23` | Replaces Auth.js v5 (ADR-008); stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31 as of July 2026); Drizzle adapter; Google + Magic Link; session enriched with `memberId` + `roles` |
 | Background Jobs | Trigger.dev | **v4** | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. |
-| Monorepo | Turborepo | `^2.3.3` | Task graph + remote caching; `@stillwater/source` custom condition |
-| Package Manager | pnpm | `9.15.4` | `custom-conditions=@stillwater/source` in `.npmrc`; `pnpm-workspace.yaml` with `packages: ['.']` |
+| Monorepo | Turborepo | `^2.10.0` | Task graph + remote caching; `@stillwater/source` custom condition; graceful shutdown + deferred input hashing (2.10+) |
+| Package Manager | pnpm | `^11.0.0` | `custom-conditions=@stillwater/source` in `.npmrc`; `pnpm-workspace.yaml` with `packages: ['.']`; pnpm 9.x is EOL — use 11.x+ |
 | CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005) |
-| Payments | Stripe | `^22.3.0` | "Basil" API (2025-03-31) — `current_period_end` moved to `items.data[0].current_period_end`; SDK v22+ uses camelCase (`currentPeriodEnd`); Subscriptions + credit packs + customer portal; idempotent webhooks (UNIQUE INDEX + `pg_advisory_xact_lock`) |
+| Payments | Stripe | `^22.3.0` | "Dahlia" API (2026-06-24) pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward); SDK exposes snake_case to match API wire format (NOT camelCase); Subscriptions + credit packs + customer portal; idempotent webhooks (UNIQUE INDEX + `pg_advisory_xact_lock`) |
 | Email Templates | React Email | `^0.0.36` | 13 templates, single-column 600px, CAN-SPAM compliant |
 | Email Delivery | Resend | `^4.1.2` | 2,400 emails/day free tier |
 | Observability | Sentry + PostHog + Axiom + Checkly | latest | Errors, 17 product analytics events, structured logs, uptime synthetics |
 | Deployment | Vercel + Neon | latest | Preview deploys per PR; production on `main` merge |
 | Testing | Vitest + Playwright | latest | TDD mandatory; 90% coverage on `packages/api/routers/*` |
-| Validation | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs; Zod v4 `.url()` accepts any scheme → compose with `.refine()` for protocol restriction; enum errors use `{ message }` not `{ errorMap }` |
+| Validation | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs; Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https:$/ })` (v4 native) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()` |
 
 ### 2.2 Runtime Requirements
 
@@ -245,10 +245,10 @@ pnpm dev
 | `/apps/web/proxy.ts` | Next.js 16 proxy (replaces middleware); RBAC route guard | None (Phase 2 patches real auth call) |
 | `/apps/web/components.json` | shadcn/ui config: `style: default`, `baseColor: stone` | None |
 | `/packages/db/drizzle.config.ts` | Uses `DATABASE_URL_UNPOOLED` for migrations | None |
-| `/packages/config/src/env.ts` | t3-env Zod-validated env schema (25 vars) | NEW file |
+| `/packages/config/src/env.ts` | t3-env Zod-validated env schema (34 vars) | NEW file |
 | `/services/workers/trigger.config.ts` | Trigger.dev v4 config (`@trigger.dev/sdk/v4`); 11 task IDs; `maxDuration: 120` (CPU budget) | None |
 
-### 3.3 Environment Variables (25 total)
+### 3.3 Environment Variables (34 total)
 
 All env vars validated via `t3-env` Zod schema in `packages/config/src/env.ts`. Server vs client prefix enforced (`NEXT_PUBLIC_*` for client). Direct `process.env.*` reads bypass validation — typos like `GOOGLE_CLIENTID` (missing underscore) silently return `undefined`.
 
@@ -277,7 +277,24 @@ All env vars validated via `t3-env` Zod schema in `packages/config/src/env.ts`. 
 | `NEXT_PUBLIC_APP_URL` | Public app URL (OAuth callbacks, sitemap, OG) | `z.string().url()` |
 | `NODE_ENV` | Environment | `z.enum(['development', 'test', 'production']).default('development')` |
 
-Plus 5 Sentry/PostHog/Axiom/Cloudflare vars (mostly `optional()` with build-context fallback).
+**Remaining 14 vars** (observability + Cloudflare — all validated in `packages/config/src/env.ts`):
+
+| Variable | Purpose | Validation |
+|----------|---------|------------|
+| `SENTRY_DSN` | Sentry server-side DSN | `z.string().url().optional()` |
+| `SENTRY_AUTH_TOKEN` | Sentry release auth | `z.string().optional()` |
+| `AXIOM_TOKEN` | Axiom structured logs | `z.string().optional()` |
+| `AXIOM_DATASET` | Axiom dataset name | `z.string().optional()` |
+| `CLOUDFLARE_ACCOUNT_ID` | CF account | `z.string()` |
+| `CLOUDFLARE_IMAGES_TOKEN` | CF Images API token | `z.string()` |
+| `CLOUDFLARE_R2_ACCESS_KEY_ID` | R2 access key | `z.string()` |
+| `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | R2 secret key | `z.string()` |
+| `CLOUDFLARE_R2_BUCKET` | R2 bucket name | `z.string()` |
+| `CLOUDFLARE_R2_ENDPOINT` | R2 endpoint URL | `z.string().url()` |
+| `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project key | `z.string()` |
+| `NEXT_PUBLIC_POSTHOG_HOST` | PostHog ingest host | `z.string().url()` |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry client-side DSN | `z.string().url().optional()` |
+| `NEXT_PUBLIC_CLOUDFLARE_IMAGES_URL` | CF Images public base URL | `z.string().url()` |
 
 ### 3.4 Env Module Build-Context Fallback
 
@@ -840,11 +857,11 @@ export const ownerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
 });
 ```
 
-#### 5.6.0 Better Auth `trustHost` + `BETTER_AUTH_URL` Host-Mismatch Warning
+#### 5.6.0 Better Auth `baseURL` + `BETTER_AUTH_URL` Host-Mismatch Warning
 
-Source: `nextjs16-react19-next-auth5-drizzle-orm/SKILL.md` lessons 42–43 (lines 1442–1444) — P0 production outage lesson.
+Source: `nextjs16-react19-next-auth5-drizzle-orm/SKILL.md` lessons 42–43 (lines 1442–1444) — P0 production outage lesson. Verified against Better Auth docs (July 2026): `trustHost` is a NextAuth.js/Auth.js v5 concept, NOT a Better Auth option. Better Auth trusts `baseURL` by default and uses `trustedOrigins` for additional allowed origins.
 
-**The Auth.js v5 problem (and Better Auth equivalent):** Without `trustHost: true`, the auth library falls back to `AUTH_URL` (Auth.js v5) or `BETTER_AUTH_URL` (Better Auth) for callback URLs. If `BETTER_AUTH_URL=http://localhost:3000` leaks to production (e.g., via a copied `.env.local`), auth redirects resolve to `localhost` → `ERR_CONNECTION_REFUSED` → users can't log in. This was a P0 production outage in the source skill.
+**The Auth.js v5 problem (and Better Auth equivalent):** In Auth.js v5, without `trustHost: true`, the library falls back to `AUTH_URL` for callback URLs. Better Auth does NOT have a `trustHost` option — instead, it uses `baseURL` (configured explicitly) for all callback URL construction. If `BETTER_AUTH_URL=http://localhost:3000` leaks to production (e.g., via a copied `.env.local`), auth redirects resolve to `localhost` → `ERR_CONNECTION_REFUSED` → users can't log in. This was a P0 production outage in the source skill.
 
 **Better Auth configuration:**
 
@@ -854,14 +871,20 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 export const auth = betterAuth({
-  // trustHost: true (Better Auth default in v1.6+) — uses the request's Host header
-  // for callback URLs instead of BETTER_AUTH_URL. Do NOT disable this.
-  // trustHost: true,  // implicit in v1.6+, but be explicit in case of downgrade
+  // Better Auth does NOT have a `trustHost` option (that's NextAuth/Auth.js v5).
+  // Instead, it trusts `baseURL` by default and uses `trustedOrigins` for
+  // additional allowed origins (e.g., for CORS on the auth API).
+  // See: https://better-auth.com/docs/reference/options
 
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
-  // Used for email links (magic link, password reset) — MUST match the production URL.
-  // In production: https://stillwater.studio
+  // Used for ALL callback URLs (magic link, password reset, OAuth redirects).
+  // MUST match the production URL. In production: https://stillwater.studio
   // In dev: http://localhost:3000
+
+  trustedOrigins: [
+    process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+  ],
+  // Additional origins allowed to call the auth API (CORS).
 
   // ... rest of config
 });
@@ -880,7 +903,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 ```
 
-**Reverse-proxy note:** If deploying behind Cloudflare Tunnel, a load balancer, or any reverse proxy, `trustHost: true` is mandatory. Without it, Better Auth reads `BETTER_AUTH_URL` instead of the `Host` header, which may not match the user-facing URL. Verify with a `curl` to the auth callback in staging.
+**Reverse-proxy note:** If deploying behind Cloudflare Tunnel, a load balancer, or any reverse proxy, ensure `baseURL` is set to the user-facing URL (NOT the internal proxy URL). Better Auth uses `baseURL` for all callback URL construction — it does NOT read the `Host` header (unlike Auth.js v5's `trustHost: true`). Verify with a `curl` to the auth callback in staging.
 
 ### 5.6.1 Auth-Specific Security Checklist
 
@@ -2639,7 +2662,7 @@ CI should never have production secrets. Use separate secrets for CI testing.
 
 ## §12. Lessons Learnt & How to Avoid Them
 
-> **Note:** v1.0.0 of this SKILL.md is forward-looking. The lessons below are distilled from the 12 source skills and the 35 reconciled discrepancies in `MASTER_EXECUTION_PLAN.md`. As Phases 0–12 are executed, this section will be updated with concrete lessons from actual bugs encountered.
+> **Note:** The lessons below are distilled from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and the 35 reconciled discrepancies in `MASTER_EXECUTION_PLAN.md`. As Phases 0–12 are executed, this section will be updated with concrete lessons from actual bugs encountered. The 21 cited source skills are: `nextjs16-tailwind4`, `nextjs16-react19-tailwind4-full-stack`, `nextjs16-react19-next-auth5-drizzle-orm`, `nextjs16-react19-postgres17`, `nextjs16-react19-tailwind4-auth5-video-gen`, `nextjs-react-expert`, `tailwind-patterns`, `avant-garde-design-v4`, `aesthetic`, `visual-design-foundations`, `frontend-design`, `tdd-workflow`, `test-driven-development`, `code-quality-standards`, `verification-and-review-protocol`, `debugging-and-error-recovery`, `ci-cd-and-automation`, `security-and-hardening`, `vulnerability-scanner`, `webapp-testing-journey`, `to-distill-project-into-skill`.
 
 ### Lesson 1: Source documents disagree — always reconcile before implementing
 
@@ -4573,7 +4596,7 @@ export interface SeatAvailabilityEvent {
 }
 ```
 
-### 20.5 Env Schema (25 vars)
+### 20.5 Env Schema (34 vars)
 
 ```typescript
 // packages/config/src/env.ts
@@ -5012,4 +5035,4 @@ Alerts:
 
 ---
 
-*End of `stillwater_SKILL.md` v1.0.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 12 source skills (4 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 5 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+*End of `stillwater_SKILL.md` v1.3.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
