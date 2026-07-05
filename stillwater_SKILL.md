@@ -470,6 +470,13 @@ All design tokens live in `apps/web/src/app/globals.css` via the `@theme` direct
 - `#fde68a`, `#fcd34d` (Tailwind default amber)
 - Any raw `#rrggbb` not in the Warm Mineral palette
 
+**Color format note:** Stillwater uses hex colors for simplicity with the Warm Mineral palette. Tailwind v4 and source skills (`nextjs16-tailwind4` §2.4, `tailwind-patterns` §7) recommend OKLCH for wider gamut and perceptually uniform gradients. If gradient support is added in the future, consider migrating brand tokens to OKLCH format:
+
+```css
+/* Example: OKLCH equivalent of clay-400 */
+--color-clay-400: oklch(0.65 0.08 50);  /* #C4856A */
+```
+
 ### 4.4 Self-Hosted Fonts (Zero FOUT)
 
 All three font families are self-hosted via `next/font/local` in `apps/web/src/app/layout.tsx`:
@@ -695,7 +702,7 @@ grep -r "rounded-lg\|rounded-xl\|rounded-2xl" apps/web/src/components/ui/ | grep
 **Button variant customization:**
 ```tsx
 const buttonVariants = cva(
-  "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-water-500 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-water-500 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -1938,6 +1945,36 @@ Error messages, stack traces, and log output from external sources (Stripe, Trig
 | 8 | Security audit | `pnpm audit --audit-level=high` | 0 high/critical vulnerabilities |
 
 > 🔴 **THE IRON LAW:** No completion claims without fresh verification evidence. Passing one gate is NOT evidence for any other gate. Run the command, read the raw output, then claim.
+>
+> **Gate Function:** `IDENTIFY command` → `RUN full command` → `READ output` → `VERIFY confirms claim` → `THEN claim`
+>
+> *Skipping any step is lying, not verifying.*
+>
+> **Red Flags (STOP IMMEDIATELY):**
+> - Using words like "should", "probably", "seems to"
+> - Expressing satisfaction ("Looks good to me") before running verification
+> - Committing or pushing without verification
+> - Trusting another agent's report without reading the raw logs yourself
+
+### 11.1.1 The Six-Axis Code Review (from `code-quality-standards`)
+
+Every PR must pass all six axes before merge. The 8 CI Gates above cover axes 1–5 technically; axis 6 (Aesthetic/UX Rigor) requires human review.
+
+| Axis | Focus | Stillwater Enforcement |
+|------|-------|------------------------|
+| 1. Correctness | Matches spec, edge cases, error paths | CI tests pass |
+| 2. Readability | Clear naming, straightforward logic | ESLint + code review |
+| 3. Architecture | Follows patterns, clean boundaries | Layer enforcement (§5.1) |
+| 4. Security | Input validation, no secrets, auth checks | Zod at every boundary |
+| 5. Performance | No N+1, no unbounded loops | Bundle size gate |
+| 6. **Aesthetic/UX Rigor** | Anti-Generic Litmus Test (§1.4) | Human review + Rejection Matrix |
+
+**The Anti-Generic Litmus Test** (for every major UI decision):
+1. **Why?** — Tie element to user need or psychological purpose.
+2. **Only?** — Challenge defaults. Is this the only way? Were alternatives considered?
+3. **Without?** — Enforce minimalism. Does removal diminish the core?
+
+A "no" or "unsure" answer to any of the three auto-fails the PR.
 
 ### 11.2 Pre-Commit Local Check
 
@@ -3300,6 +3337,42 @@ it('tests cached function', async () => {
 - Verify nav hamburger drawer opens/closes, focus trap works
 - Verify no horizontal scroll at any breakpoint
 - Test at 200% zoom (WCAG 1.4.10)
+
+### 17.4 Container Queries (Tailwind v4 Native)
+
+Tailwind v4 provides built-in container queries for **component-level responsive design**. Unlike viewport breakpoints (`md:`), container queries respond to the parent element's width.
+
+| Concept | Syntax | Description |
+|---------|--------|-------------|
+| Define container | `@container` on parent | Marks element as container |
+| Container breakpoint | `@sm:`, `@md:`, `@lg:` on children | Responds to container width |
+| Named containers | `@container/card` | Multiple containers in same tree |
+
+**When to use:**
+
+| Scenario | Use |
+|----------|-----|
+| Page-level layouts | Viewport breakpoints (`md:`, `lg:`) |
+| Component-level responsive | Container queries (`@container`) |
+| Reusable components (cards, panels) | Container queries (context-independent) |
+
+**Example — Schedule class card:**
+
+```tsx
+// Class card responds to its container width, not viewport
+<div className="@container">
+  <div className="@md:flex @md:items-center @md:gap-4">
+    <div className="@md:w-1/3">
+      {/* Time */}
+    </div>
+    <div className="@md:w-2/3">
+      {/* Class info */}
+    </div>
+  </div>
+</div>
+```
+
+**Stillwater usage:** Use container queries for components that appear in multiple layouts (class cards, instructor cards, membership tables) where the component should adapt to its container width, not the viewport.
 
 ---
 
