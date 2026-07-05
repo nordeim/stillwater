@@ -31,10 +31,10 @@
   "devDependencies": {
     "@stillwater/eslint-config": "workspace:*",
     "@stillwater/typescript-config": "workspace:*",
-    "prettier": "^3.4.2",
-    "prettier-plugin-tailwindcss": "^0.6.10",
-    "turbo": "^2.10.0",
-    "typescript": "^5.9.0"
+    "prettier": "^3.9.4",
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "turbo": "^2.10.3",
+    "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@11.0.0"
+  "packageManager": "pnpm@^11.10.0"
 }

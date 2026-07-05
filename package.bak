@@ -1,0 +1,40 @@
+{
+  "name": "stillwater",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stillwater Yoga Studio — Enterprise-grade platform",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\" --ignore-path .gitignore",
+    "check-types": "turbo check-types",
+    "test": "turbo test",
+    "test:e2e": "turbo test:e2e",
+    "test:coverage": "turbo test --coverage",
+    "clean": "turbo clean && rm -rf node_modules",
+    "db:generate": "turbo db:generate --filter=@stillwater/db",
+    "db:migrate": "turbo db:migrate --filter=@stillwater/db",
+    "db:push": "turbo db:push --filter=@stillwater/db",
+    "db:seed": "turbo db:seed --filter=@stillwater/db",
+    "db:studio": "turbo db:studio --filter=@stillwater/db",
+    "db:reset": "turbo db:reset --filter=@stillwater/db",
+    "jobs:dev": "turbo dev --filter=@stillwater/workers",
+    "jobs:deploy": "turbo deploy --filter=@stillwater/workers"
+  },
+  "devDependencies": {
+    "@stillwater/eslint-config": "workspace:*",
+    "@stillwater/typescript-config": "workspace:*",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.10",
+    "turbo": "^2.10.0",
+    "typescript": "^5.9.0"
+  },
+  "packageManager": "pnpm@11.0.0"
+}
