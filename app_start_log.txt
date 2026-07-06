@@ -1,0 +1,97 @@
+$ pnpm install
+Scope: all 13 workspace projects
+apps/web                                 | [WARN] deprecated recharts@2.15.4
+[WARN] 2 deprecated subdependencies found: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5
+Packages: +854
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1033, reused 822, downloaded 38, added 854, done
+node_modules/.pnpm/esbuild@0.18.20/node_modules/esbuild: Running postinstall script, done in 148ms
+node_modules/.pnpm/@sentry+cli@2.58.6/node_modules/@sentry/cli: Running postinstall script, done in 187ms
+node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild: Running postinstall script, done in 205ms
+node_modules/.pnpm/esbuild@0.28.1/node_modules/esbuild: Running postinstall script, done in 232ms
+
+devDependencies:
++ @stillwater/eslint-config 0.0.0 <- tooling/eslint
++ @stillwater/typescript-config 0.0.0 <- tooling/typescript
++ eslint 9.39.4 (10.6.0 is available)
++ prettier 3.9.4
++ prettier-plugin-tailwindcss 0.8.0
++ turbo 2.10.3
++ typescript 5.9.3 (6.0.3 is available)
+
+Done in 19.9s using pnpm v11.9.0
+
+$ pnpm check-types      # Should pass (only expected TS18003)
+pnpm lint             # Should pass (2/2 tasks, all rules active)
+pnpm dev --filter=web # Boots Next.js 16 on localhost:3000
+$ turbo check-types
+• turbo 2.10.3
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running check-types in 12 packages
+   • Remote caching disabled
+
+@stillwater/db:build: cache miss, executing a219f535c26ae9da
+@stillwater/config:build: cache miss, executing cfd93676dcca84f1
+@stillwater/db:check-types: cache miss, executing 4ae5746c7aa09d36
+@stillwater/config:check-types: cache miss, executing 24836ae868acd12b
+@stillwater/ui:check-types: cache miss, executing 334c7d16e4766fa5
+@stillwater/ui:build: cache miss, executing 94f591792edda7fc
+@stillwater/db:check-types: $ tsc --noEmit
+@stillwater/db:build: $ tsc --build
+@stillwater/ui:check-types: $ tsc --noEmit
+@stillwater/ui:build: $ tsc --build
+@stillwater/config:check-types: $ tsc --noEmit
+@stillwater/config:build: $ tsc --build
+@stillwater/db:check-types: error TS18003: No inputs were found in config file '/home/project/stillwater/packages/db/tsconfig.json'. Specified 'include' paths were '["src/**/*.ts"]' and 'exclude' paths were '["node_modules","dist",".turbo"]'.
+@stillwater/db:check-types: 
+@stillwater/db:check-types: 
+@stillwater/db:check-types: Found 1 error.
+@stillwater/db:check-types: 
+@stillwater/db:check-types: [ELIFECYCLE] Command failed with exit code 2.
+@stillwater/db:build: error TS18003: No inputs were found in config file '/home/project/stillwater/packages/db/tsconfig.json'. Specified 'include' paths were '["src/**/*.ts"]' and 'exclude' paths were '["node_modules","dist",".turbo"]'.
+@stillwater/db:build: 
+@stillwater/db:build: 
+@stillwater/db:build: Found 1 error.
+@stillwater/db:build: 
+@stillwater/db:build: [ELIFECYCLE] Command failed with exit code 1.
+@stillwater/ui:build: [ELIFECYCLE] Command failed.
+@stillwater/config:check-types: [ELIFECYCLE] Command failed.
+@stillwater/config:build: [ELIFECYCLE] Command failed.
+@stillwater/ui:check-types: [ELIFECYCLE] Command failed.
+@stillwater/db#check-types:  ERROR  command (/home/project/stillwater/packages/db) /usr/bin/pnpm run check-types exited (2)
+
+ Tasks:    0 successful, 6 total
+Cached:    0 cached, 6 total
+  Time:    2.718s 
+Failed:    @stillwater/db#check-types
+
+ ERROR  run failed: command  exited (2)
+[ELIFECYCLE] Command failed with exit code 2.
+$ turbo lint
+• turbo 2.10.3
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running lint in 12 packages
+   • Remote caching disabled
+
+@stillwater/workers:lint: cache miss, executing 9b46151daf6dea54
+@stillwater/web:lint: cache miss, executing d0ce45dd2303fad2
+@stillwater/workers:lint: $ eslint .
+@stillwater/web:lint: $ eslint .
+
+ Tasks:    2 successful, 2 total
+Cached:    0 cached, 2 total
+  Time:    9.296s 
+
+$ turbo dev --filter=web
+• turbo 2.10.3
+  × No package found with name 'web' in workspace
+
+[ELIFECYCLE] Command failed with exit code 1.
+
+$ docker ps
+CONTAINER ID   IMAGE                                 COMMAND                  CREATED         STATUS                   PORTS                                         NAMES
+aadb87182238   redis:7-alpine                        "docker-entrypoint.s…"   3 minutes ago   Up 3 minutes (healthy)   127.0.0.1:6379->6379/tcp                      stillwater_redis
+46097618131f   postgres:17-alpine                    "docker-entrypoint.s…"   3 minutes ago   Up 3 minutes (healthy)   127.0.0.1:5432->5432/tcp                      stillwater_postgres
+
