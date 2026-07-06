@@ -2,6 +2,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously review and analyze the research validation findings on `stillwater_SKILL.md` in the attached report files, then meticulously validate the findings against the codebase to check for alignment.
+
+---
+
 Awesome meticulous job so far. Please keep up the good work. Now, please meticulously create a tar archive of the entire (remediated/updated) codebase, including the updated docs and SKILL.md but excluding the `node_modules` , `.next` , `skills` and `.git` folders, so I can download and use it to refresh my GitHub repo.
 
 ---
