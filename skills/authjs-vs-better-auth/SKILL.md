@@ -8,12 +8,12 @@ version: 1.0.0
 
 Auth.js v5 remains in beta — it has never left the beta channel since the rewrite began, and npm's `latest` tag still points to the legacy v4.x stable line. Better Auth has a stable v1.x release line with a 1.7.0-beta channel in testing.
 
-| Aspect | Auth.js v5 | Better Auth |
-|---|---|---|
-| Release channel | `5.0.0-beta.26+` (npm `latest` = `v4.24.14`) | `1.6.23` stable; `1.7.0-beta` in testing |
-| Next.js 16 support | Peer-dependency conflicts on fresh installs | Fully compatible; `middleware` renamed to `proxy` |
-| Architecture | Framework wrapper (NextAuth-specific) | Framework-agnostic core with Next.js adapter |
-| Maintenance | Original NextAuth team; Better Auth team now also patches Auth.js security issues | Actively developed, TypeScript-first, plugin-based |
+| Aspect             | Auth.js v5                                                                        | Better Auth                                        |
+| ------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Release channel    | `5.0.0-beta.26+` (npm `latest` = `v4.24.14`)                                      | `1.6.23` stable; `1.7.0-beta` in testing           |
+| Next.js 16 support | Peer-dependency conflicts on fresh installs                                       | Fully compatible; `middleware` renamed to `proxy`  |
+| Architecture       | Framework wrapper (NextAuth-specific)                                             | Framework-agnostic core with Next.js adapter       |
+| Maintenance        | Original NextAuth team; Better Auth team now also patches Auth.js security issues | Actively developed, TypeScript-first, plugin-based |
 
 ## Next.js 16 Compatibility Notes
 
@@ -24,16 +24,17 @@ A GitHub issue confirms Next.js 16's middleware-to-proxy change initially broke 
 The two libraries diverge in initialization, session handling, and client APIs — migration requires more than find-and-replace.
 
 **Instance setup:**
+
 ```ts
 // Auth.js v5
-import NextAuth from "next-auth"
-import GitHub from "next-auth/providers/github"
+import NextAuth from 'next-auth';
+import GitHub from 'next-auth/providers/github';
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [GitHub],
-})
+});
 
 // Better Auth
-import { betterAuth } from "better-auth"
+import { betterAuth } from 'better-auth';
 export const auth = betterAuth({
   socialProviders: {
     github: {
@@ -41,44 +42,47 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     },
   },
-})
+});
 ```
 
 **Route handler:** rename `/app/api/auth/[...nextauth]` to `/app/api/auth/[...all]` and swap the handler export.
+
 ```ts
 // Auth.js v5
-import { handlers } from "@/lib/auth"
-export const { GET, POST } = handlers
+import { handlers } from '@/lib/auth';
+export const { GET, POST } = handlers;
 
 // Better Auth
-import { auth } from "@/lib/auth"
-import { toNextJsHandler } from "better-auth/next-js"
-export const { POST, GET } = toNextJsHandler(auth)
+import { auth } from '@/lib/auth';
+import { toNextJsHandler } from 'better-auth/next-js';
+export const { POST, GET } = toNextJsHandler(auth);
 ```
 
 **Client-side sign-in/sign-out/session:** Auth.js exposes discrete `signIn`, `signOut`, and `useSession` from `next-auth/react`. Better Auth centralizes everything on a single `authClient` object.
+
 ```ts
 // Auth.js v5
-import { signIn, signOut, useSession } from "next-auth/react"
-signIn("github")
-signOut()
-const { data, status, update } = useSession()
+import { signIn, signOut, useSession } from 'next-auth/react';
+signIn('github');
+signOut();
+const { data, status, update } = useSession();
 
 // Better Auth
-import { authClient } from "@/lib/auth-client"
-await authClient.signIn.social({ provider: "github" })
-await authClient.signOut()
-const { data, error, refetch, isPending } = authClient.useSession()
+import { authClient } from '@/lib/auth-client';
+await authClient.signIn.social({ provider: 'github' });
+await authClient.signOut();
+const { data, error, refetch, isPending } = authClient.useSession();
 ```
 
 **Server-side session:** Better Auth requires explicitly passing request headers; Auth.js's `auth()` call is header-implicit.
+
 ```ts
 // Auth.js v5
-const session = await auth()
+const session = await auth();
 
 // Better Auth
-import { headers } from "next/headers"
-const session = await auth.api.getSession({ headers: await headers() })
+import { headers } from 'next/headers';
+const session = await auth.api.getSession({ headers: await headers() });
 ```
 
 ## Database Schema Mapping
@@ -97,18 +101,18 @@ Keep `proxy.ts` lightweight — check only for a session cookie's existence. Pus
 
 ```ts
 // proxy.ts — cookie-only optimistic check
-import { getSessionCookie } from "better-auth/cookies"
+import { getSessionCookie } from 'better-auth/cookies';
 export async function proxy(request) {
-  const sessionCookie = getSessionCookie(request)
-  if (!sessionCookie) return redirectToSignIn()
+  const sessionCookie = getSessionCookie(request);
+  if (!sessionCookie) return redirectToSignIn();
 }
 
 // Full validation belongs in the page/route itself
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
-import { redirect } from "next/navigation"
-const session = await auth.api.getSession({ headers: await headers() })
-if (!session) redirect("/sign-in")
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+const session = await auth.api.getSession({ headers: await headers() });
+if (!session) redirect('/sign-in');
 ```
 
 Both Auth.js and Better Auth docs discourage using proxy/middleware as a full session-validation layer — per-page `getSession()` checks are required for real security guarantees.

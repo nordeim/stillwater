@@ -65,31 +65,31 @@ Stillwater is an enterprise-grade yoga studio management platform — a Turborep
 
 ### 1.2 The Design Thesis
 
-**"Editorial Calm"** — the intersection of high-end wellness editorial (Kinfolk magazine, Monocle) and Japanese spatial design philosophy (*ma* / 間 — negative space as active presence). Every pixel must earn its place. Whitespace is structural, not empty. Typography is the primary structural tool. Color temperature changes how the user feels, not just what they see.
+**"Editorial Calm"** — the intersection of high-end wellness editorial (Kinfolk magazine, Monocle) and Japanese spatial design philosophy (_ma_ / 間 — negative space as active presence). Every pixel must earn its place. Whitespace is structural, not empty. Typography is the primary structural tool. Color temperature changes how the user feels, not just what they see.
 
 ### 1.3 Non-Negotiable Design Rules
 
 The following are lint- and review-enforceable. A PR violating any rule auto-fails Axis 6 (Aesthetic) of the code review checklist.
 
-| Rule | Enforcement |
-|------|-------------|
-| ❌ NO purple-to-pink gradients on hero sections | ESLint rule banning `from-purple-*`, `from-violet-*`, `from-fuchsia-*` |
-| ❌ NO Inter/Roboto/system-ui as the only typeface | `next/font/local` self-hosts Cormorant Garamond + DM Sans + JetBrains Mono |
-| ❌ NO drop shadows on cards as the primary depth signal | ESLint rule banning `shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-xl` (skeleton + toast exceptions only) |
-| ❌ NO "Book a Free Trial" pill CTAs | `borderRadius.DEFAULT: 0` — sharp rectangles only |
-| ❌ NO stock photography of people meditating in beige rooms | SVG illustrations + Cloudflare Images of actual studio |
-| ❌ NO predictable 3-column feature card grids | Asymmetric editorial grid breaks (62/38, not 50/50) |
-| ❌ NO sticky nav with logo left, links center, CTA right | Single-line rule nav, flush wordmark left, CTA flush right |
-| ❌ NO lotus/mandala decorative icons | Geometric rule lines + negative space + `間` ornament only |
-| ❌ NO `bg-amber-*`, `bg-red-*`, `bg-blue-*` Tailwind defaults | Semantic tokens only (`bg-success`, `bg-warning`, `bg-error`, `bg-info`) |
-| ❌ NO glassmorphism / blur backdrops | Solid flat surfaces, surface color shifts for elevation |
-| ❌ NO mesh/aurora gradients as backgrounds | Solid Warm Mineral palette only |
-| ❌ NO hero split (left/right symmetric) | Asymmetric 3-col: `1fr 1px minmax(280px, 38%)` |
-| ✅ Whitespace as luxury signal | `--space-13: 256px` for major section breaks |
-| ✅ Cormorant Garamond for all display/headings | `--font-display` token |
-| ✅ JetBrains Mono for data/admin tables | `--font-mono` token, `font-variant-numeric: tabular-nums` |
-| ✅ Sharp edges by design | `--radius: 0` propagates through all shadcn components |
-| ✅ Color contrast 7:1 (WCAG 2.2 Level AAA) | `scripts/contrast-check.ts` runs in CI |
+| Rule                                                          | Enforcement                                                                                               |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| ❌ NO purple-to-pink gradients on hero sections               | ESLint rule banning `from-purple-*`, `from-violet-*`, `from-fuchsia-*`                                    |
+| ❌ NO Inter/Roboto/system-ui as the only typeface             | `next/font/local` self-hosts Cormorant Garamond + DM Sans + JetBrains Mono                                |
+| ❌ NO drop shadows on cards as the primary depth signal       | ESLint rule banning `shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-xl` (skeleton + toast exceptions only) |
+| ❌ NO "Book a Free Trial" pill CTAs                           | `borderRadius.DEFAULT: 0` — sharp rectangles only                                                         |
+| ❌ NO stock photography of people meditating in beige rooms   | SVG illustrations + Cloudflare Images of actual studio                                                    |
+| ❌ NO predictable 3-column feature card grids                 | Asymmetric editorial grid breaks (62/38, not 50/50)                                                       |
+| ❌ NO sticky nav with logo left, links center, CTA right      | Single-line rule nav, flush wordmark left, CTA flush right                                                |
+| ❌ NO lotus/mandala decorative icons                          | Geometric rule lines + negative space + `間` ornament only                                                |
+| ❌ NO `bg-amber-*`, `bg-red-*`, `bg-blue-*` Tailwind defaults | Semantic tokens only (`bg-success`, `bg-warning`, `bg-error`, `bg-info`)                                  |
+| ❌ NO glassmorphism / blur backdrops                          | Solid flat surfaces, surface color shifts for elevation                                                   |
+| ❌ NO mesh/aurora gradients as backgrounds                    | Solid Warm Mineral palette only                                                                           |
+| ❌ NO hero split (left/right symmetric)                       | Asymmetric 3-col: `1fr 1px minmax(280px, 38%)`                                                            |
+| ✅ Whitespace as luxury signal                                | `--space-13: 256px` for major section breaks                                                              |
+| ✅ Cormorant Garamond for all display/headings                | `--font-display` token                                                                                    |
+| ✅ JetBrains Mono for data/admin tables                       | `--font-mono` token, `font-variant-numeric: tabular-nums`                                                 |
+| ✅ Sharp edges by design                                      | `--radius: 0` propagates through all shadcn components                                                    |
+| ✅ Color contrast 7:1 (WCAG 2.2 Level AAA)                    | `scripts/contrast-check.ts` runs in CI                                                                    |
 
 ### 1.4 The Anti-Generic Mandate
 
@@ -98,6 +98,7 @@ The following are lint- and review-enforceable. A PR violating any rule auto-fai
 > — `MASTER_EXECUTION_PLAN.md` §1.1
 
 Every UI element must pass the **Anti-Generic Litmus Test**:
+
 1. **Why?** — Tie the element to a user need or psychological purpose.
 2. **Only?** — Challenge defaults. Is this the only way? Were alternatives considered?
 3. **Without?** — Enforce minimalism. Does removal diminish the core?
@@ -123,11 +124,11 @@ Source: `avant-garde-design-v4/references/12-anti-generic-checklist.md` §2.0. B
 
 Source: `avant-garde-design-v4/references/12-anti-generic-checklist.md` §3.0. Evaluate the design from 1–10 on these three metrics:
 
-| Metric | Score (1–10) | Question |
-|--------|--------------|---------|
-| **Memorability** | | Will the user remember this site in 24 hours? |
-| **Integrity** | | Does the code and UI feel like a cohesive whole? |
-| **Craftsmanship** | | Are the details (spacing, timing, contrast) flawless? |
+| Metric            | Score (1–10) | Question                                              |
+| ----------------- | ------------ | ----------------------------------------------------- |
+| **Memorability**  |              | Will the user remember this site in 24 hours?         |
+| **Integrity**     |              | Does the code and UI feel like a cohesive whole?      |
+| **Craftsmanship** |              | Are the details (spacing, timing, contrast) flawless? |
 
 **Pass threshold:** Minimum **24/30** total score. Below 24 = redesign. Axis 6 (Aesthetic/UX Rigor) in §11.1.1 enforces this gate at PR review.
 
@@ -135,12 +136,12 @@ Source: `avant-garde-design-v4/references/12-anti-generic-checklist.md` §3.0. E
 
 The Editorial Calm aesthetic rations the accent. Do NOT make every CTA solid clay.
 
-| Tier | Visual | When to use |
-|------|--------|-------------|
-| 1. Text link | Underline-offset-4, hover underline | Footer links, secondary nav |
-| 2. Outline button | 1px stone border, transparent bg, hover muted-sand | "View Full Schedule", "Browse other classes" |
-| 3. Filled button | Clay-500 bg, sand-100 text | "Start Your Practice", "Begin Free Trial" (max 1 per page section) |
-| 4. Editorial link | Cormorant italic + clay-400 + arrow | "Full profile →", "View all 8 instructors →" |
+| Tier              | Visual                                             | When to use                                                        |
+| ----------------- | -------------------------------------------------- | ------------------------------------------------------------------ |
+| 1. Text link      | Underline-offset-4, hover underline                | Footer links, secondary nav                                        |
+| 2. Outline button | 1px stone border, transparent bg, hover muted-sand | "View Full Schedule", "Browse other classes"                       |
+| 3. Filled button  | Clay-500 bg, sand-100 text                         | "Start Your Practice", "Begin Free Trial" (max 1 per page section) |
+| 4. Editorial link | Cormorant italic + clay-400 + arrow                | "Full profile →", "View all 8 instructors →"                       |
 
 The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A section with two filled CTAs is a design failure even if it passes lint.
 
@@ -150,55 +151,55 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 
 ### 2.1 Locked Versions
 
-| Layer | Technology | Version | Critical Note |
-|-------|-----------|---------|---------------|
-| Framework | Next.js (App Router, Turbopack) | `^16.2.0` | `proxy.ts` replaces `middleware.ts` (ADR-009); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16); top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); React Compiler NOT default — requires explicit `reactCompiler: true` in `next.config.ts` |
-| UI Runtime | React | `^19.2.3` | ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3; No `forwardRef` (ref as regular prop in React 19); React Compiler requires explicit opt-in via `reactCompiler: true` in `next.config.ts` (NOT default) |
-| Language | TypeScript | `^5.9.0` | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (added TS 5.0; requires `import type` for type-only imports), `erasableSyntaxOnly: true` (added TS 5.8; FORBIDS `enum`, `namespace`, and parameter properties — use string unions or Drizzle `pgEnum()`) — see §13 for pitfalls |
-| Styling | Tailwind CSS | `^4.3.0` | CSS-first `@theme` in `globals.css`; NO `tailwind.config.js` required; `@source` directives required in monorepo (see §13.6); `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) |
-| Component Lib | Radix UI + shadcn/ui | latest | Initialize with `style: "default"`, `baseColor: "stone"`; `--radius: 0` overrides all defaults |
-| API Layer | tRPC | `^11.0.0` | 10 routers, 4 procedure tiers (public/protected/staff/owner); server caller for RSC, React Query for client |
-| ORM | Drizzle ORM | `^0.45.0` | Schema in TypeScript, no codegen; `neon-http` driver for serverless; `db.$count` requires ≥0.34; relational query API v1 (`db.query.*`) since 0.28; v2 (`defineRelations()`) requires ≥1.0.0-beta |
-| Database | PostgreSQL | 17 (Neon) | 14 tables, 8 enums, 5 critical indexes; advisory locks for booking (ADR-004) |
-| Cache / Rate Limit | Upstash Redis | latest | Per-procedure rate limiting on `bookings.book` (10/min) and auth mutations |
-| Auth | Better Auth | `^1.6.23` | Replaces Auth.js v5 (ADR-008); stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31 as of July 2026); Drizzle adapter; Google + Magic Link; session enriched with `memberId` + `roles` |
-| Background Jobs | Trigger.dev | **v4** | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. **⚠️ SDK import (validated July 2026):** Per official Trigger.dev v4 docs: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file in `@trigger.dev/sdk@4.5.0`, but root import is the official v4 path and future-proofs against `/v3` removal). See §9.9 Gotcha 1 + §12 Lesson 16. |
-| Monorepo | Turborepo | `^2.10.0` | Task graph + remote caching; `@stillwater/source` custom condition; graceful shutdown + deferred input hashing (2.10+) |
-| Package Manager | pnpm | `^11.0.0` | `custom-conditions=@stillwater/source` in `.npmrc`; `pnpm-workspace.yaml` with `packages: ['.']`; pnpm 9.x is EOL — use 11.x+ |
-| CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005). Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed — MEP §9 Q4 resolved); config in `apps/studio/sanity.config.ts` |
-| Payments | Stripe | `^22.3.0` | "Dahlia" API (2026-06-24) pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward); SDK exposes snake_case to match API wire format (NOT camelCase); Subscriptions + credit packs + customer portal; idempotent webhooks (UNIQUE INDEX + `pg_advisory_xact_lock`). **v1 refund scope:** Stripe Dashboard only — in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved; D12 updated). |
-| Email Templates | React Email | `^6.6.6` | 13 templates, single-column 600px, CAN-SPAM compliant. ⚠️ v6.0.0 paradigm shift (April 16, 2026): all imports from `react-email` root (NOT `@react-email/components` or `@react-email/render` which are deprecated). v6 bundle is 1.8MB (514KB gzipped) — see `react_email_suggestion.md` Alternative A (Resend Native Templates) for Trigger.dev workers. Pending ADR-010 will formalize the Resend Native Templates decision. See §9.9 Gotcha 3 + §12 Lesson 18. |
-| Email Delivery | Resend | `^6.17.1` | 2,400 emails/day free tier. Supports Resend Native Templates (template ID + variables API) as zero-runtime-rendering alternative to local JSX rendering. Recommended for Trigger.dev workers to avoid 1.8MB React Email v6 bundle bloat (pending ADR-010). |
-| Linting | ESLint | `^9.39.4` | v9 flat config (`tooling/eslint/index.js`). ⚠️ Do NOT upgrade to v10 — `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` have no v10-compatible versions (latest npm versions support `^9` only). v9.39.4 is the `maintenance` dist-tag (actively receiving security/bug fixes). See §9.9 Gotcha 2 + §12 Lesson 17 + MEP D45. |
-| Observability | Sentry + PostHog + Axiom + Checkly | latest | Errors, 17 product analytics events, structured logs, uptime synthetics |
-| Deployment | Vercel + Neon | latest | Preview deploys per PR; production on `main` merge |
-| Testing | Vitest + Playwright | latest | TDD mandatory; 90% coverage on `packages/api/routers/*` |
-| Validation | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs; Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https:$/ })` (v4 native) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()` |
+| Layer              | Technology                         | Version   | Critical Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------ | ---------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework          | Next.js (App Router, Turbopack)    | `^16.2.0` | `proxy.ts` replaces `middleware.ts` (ADR-009); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16); top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); React Compiler NOT default — requires explicit `reactCompiler: true` in `next.config.ts`                                                                                                                                                                                                                                                                                                                                               |
+| UI Runtime         | React                              | `^19.2.3` | ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3; No `forwardRef` (ref as regular prop in React 19); React Compiler requires explicit opt-in via `reactCompiler: true` in `next.config.ts` (NOT default)                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Language           | TypeScript                         | `^5.9.0`  | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (added TS 5.0; requires `import type` for type-only imports), `erasableSyntaxOnly: true` (added TS 5.8; FORBIDS `enum`, `namespace`, and parameter properties — use string unions or Drizzle `pgEnum()`) — see §13 for pitfalls                                                                                                                                                                                                                                                                                             |
+| Styling            | Tailwind CSS                       | `^4.3.0`  | CSS-first `@theme` in `globals.css`; NO `tailwind.config.js` required; `@source` directives required in monorepo (see §13.6); `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics)                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Component Lib      | Radix UI + shadcn/ui               | latest    | Initialize with `style: "default"`, `baseColor: "stone"`; `--radius: 0` overrides all defaults                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| API Layer          | tRPC                               | `^11.0.0` | 10 routers, 4 procedure tiers (public/protected/staff/owner); server caller for RSC, React Query for client                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ORM                | Drizzle ORM                        | `^0.45.0` | Schema in TypeScript, no codegen; `neon-http` driver for serverless; `db.$count` requires ≥0.34; relational query API v1 (`db.query.*`) since 0.28; v2 (`defineRelations()`) requires ≥1.0.0-beta                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Database           | PostgreSQL                         | 17 (Neon) | 14 tables, 8 enums, 5 critical indexes; advisory locks for booking (ADR-004)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Cache / Rate Limit | Upstash Redis                      | latest    | Per-procedure rate limiting on `bookings.book` (10/min) and auth mutations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Auth               | Better Auth                        | `^1.6.23` | Replaces Auth.js v5 (ADR-008); stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31 as of July 2026); Drizzle adapter; Google + Magic Link; session enriched with `memberId` + `roles`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Background Jobs    | Trigger.dev                        | **v4**    | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. **⚠️ SDK import (validated July 2026):** Per official Trigger.dev v4 docs: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file in `@trigger.dev/sdk@4.5.0`, but root import is the official v4 path and future-proofs against `/v3` removal). See §9.9 Gotcha 1 + §12 Lesson 16. |
+| Monorepo           | Turborepo                          | `^2.10.0` | Task graph + remote caching; `@stillwater/source` custom condition; graceful shutdown + deferred input hashing (2.10+)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Package Manager    | pnpm                               | `^11.0.0` | `custom-conditions=@stillwater/source` in `.npmrc`; `pnpm-workspace.yaml` with `packages: ['.']`; pnpm 9.x is EOL — use 11.x+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| CMS                | Sanity                             | v3        | Marketing content only; operational data stays in PostgreSQL (ADR-005). Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed — MEP §9 Q4 resolved); config in `apps/studio/sanity.config.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Payments           | Stripe                             | `^22.3.0` | "Dahlia" API (2026-06-24) pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward); SDK exposes snake_case to match API wire format (NOT camelCase); Subscriptions + credit packs + customer portal; idempotent webhooks (UNIQUE INDEX + `pg_advisory_xact_lock`). **v1 refund scope:** Stripe Dashboard only — in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved; D12 updated).                                                                                                                                                                                         |
+| Email Templates    | React Email                        | `^6.6.6`  | 13 templates, single-column 600px, CAN-SPAM compliant. ⚠️ v6.0.0 paradigm shift (April 16, 2026): all imports from `react-email` root (NOT `@react-email/components` or `@react-email/render` which are deprecated). v6 bundle is 1.8MB (514KB gzipped) — see `react_email_suggestion.md` Alternative A (Resend Native Templates) for Trigger.dev workers. Pending ADR-010 will formalize the Resend Native Templates decision. See §9.9 Gotcha 3 + §12 Lesson 18.                                                                                                                                                                                         |
+| Email Delivery     | Resend                             | `^6.17.1` | 2,400 emails/day free tier. Supports Resend Native Templates (template ID + variables API) as zero-runtime-rendering alternative to local JSX rendering. Recommended for Trigger.dev workers to avoid 1.8MB React Email v6 bundle bloat (pending ADR-010).                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Linting            | ESLint                             | `^9.39.4` | v9 flat config (`tooling/eslint/index.js`). ⚠️ Do NOT upgrade to v10 — `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` have no v10-compatible versions (latest npm versions support `^9` only). v9.39.4 is the `maintenance` dist-tag (actively receiving security/bug fixes). See §9.9 Gotcha 2 + §12 Lesson 17 + MEP D45.                                                                                                                                                                                                                                                                                                                 |
+| Observability      | Sentry + PostHog + Axiom + Checkly | latest    | Errors, 17 product analytics events, structured logs, uptime synthetics                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Deployment         | Vercel + Neon                      | latest    | Preview deploys per PR; production on `main` merge                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Testing            | Vitest + Playwright                | latest    | TDD mandatory; 90% coverage on `packages/api/routers/*`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Validation         | Zod                                | `^4.4.0`  | Env module, Server Action inputs, tRPC procedure inputs; Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https:$/ })` (v4 native) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()`                                                                                                                                                                                                                                                |
 
 ### 2.2 Runtime Requirements
 
-| Runtime | Version | Why |
-|---------|---------|-----|
-| Node.js | `>=22.0.0` | Required for native `fetch`, ESM stability, `crypto.randomUUID` |
-| pnpm | `>=11.0.0` | Workspace protocol support; `custom-conditions` declaration; pnpm 9.x is EOL |
-| Docker | latest | Local Postgres 17 + Redis 7 + Adminer via `docker-compose.yml` |
-| PostgreSQL | 17 | Matches Neon production; `pg_advisory_xact_lock` support |
+| Runtime    | Version    | Why                                                                          |
+| ---------- | ---------- | ---------------------------------------------------------------------------- |
+| Node.js    | `>=22.0.0` | Required for native `fetch`, ESM stability, `crypto.randomUUID`              |
+| pnpm       | `>=11.0.0` | Workspace protocol support; `custom-conditions` declaration; pnpm 9.x is EOL |
+| Docker     | latest     | Local Postgres 17 + Redis 7 + Adminer via `docker-compose.yml`               |
+| PostgreSQL | 17         | Matches Neon production; `pg_advisory_xact_lock` support                     |
 
 ### 2.3 Architecture Decision Records (ADRs)
 
 10 ADRs total (7 from PAD + 2 added in `MASTER_EXECUTION_PLAN.md` + 1 proposed in PAD §29). See Appendix A for full text.
 
-| ADR | Decision | Status |
-|-----|----------|--------|
-| ADR-001 | Turborepo monorepo over independent repositories | Accepted |
-| ADR-002 | tRPC v11 over REST API routes | Accepted |
-| ADR-003 | Drizzle ORM over Prisma | Accepted |
-| ADR-004 | PostgreSQL advisory locks for booking concurrency | Accepted |
-| ADR-005 | Sanity CMS for marketing content only | Accepted |
-| ADR-006 | Server-Sent Events over WebSockets for seat availability | Accepted |
-| ADR-007 | Trigger.dev v4 for background jobs over BullMQ | Accepted |
-| ADR-008 | Better Auth v1.6.23 supersedes Auth.js v5 | Accepted |
-| ADR-009 | `proxy.ts` replaces `middleware.ts` (Next.js 16) | Accepted |
+| ADR     | Decision                                                                                                      | Status                                    |
+| ------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| ADR-001 | Turborepo monorepo over independent repositories                                                              | Accepted                                  |
+| ADR-002 | tRPC v11 over REST API routes                                                                                 | Accepted                                  |
+| ADR-003 | Drizzle ORM over Prisma                                                                                       | Accepted                                  |
+| ADR-004 | PostgreSQL advisory locks for booking concurrency                                                             | Accepted                                  |
+| ADR-005 | Sanity CMS for marketing content only                                                                         | Accepted                                  |
+| ADR-006 | Server-Sent Events over WebSockets for seat availability                                                      | Accepted                                  |
+| ADR-007 | Trigger.dev v4 for background jobs over BullMQ                                                                | Accepted                                  |
+| ADR-008 | Better Auth v1.6.23 supersedes Auth.js v5                                                                     | Accepted                                  |
+| ADR-009 | `proxy.ts` replaces `middleware.ts` (Next.js 16)                                                              | Accepted                                  |
 | ADR-010 | Resend Native Templates for Trigger.dev workers (protects CPU budgets from React Email v6 1.8MB bundle bloat) | **Proposed** (pending Phase 8 acceptance) |
 
 ---
@@ -235,27 +236,27 @@ pnpm dev
 
 ### 3.2 Critical Configuration Files
 
-| File | Purpose | Phase 0 Patch |
-|------|---------|---------------|
-| `/package.json` | Root manifest; pnpm 11.9.0, Turborepo 2.10.3 | None |
-| `/pnpm-workspace.yaml` | Workspace + `customConditions: ['@stillwater/source']` | D15 fix |
-| `/.npmrc` | `custom-conditions=@stillwater/source` declaration | D15 fix |
-| `/turbo.json` | Task graph; remove `"ui": "tui"` line | D24 fix |
-| `/.env.example` | 25 env vars; Postgres password must match docker-compose | D17 fix |
-| `/docker-compose.yml` | Postgres 17 + Redis 7 + Adminer | None |
-| `/infrastructure/postgres/init/00-create-extensions.sql` | `uuid-ossp` + `pgcrypto` extensions | D18 fix (NEW) |
-| `/tooling/typescript/base.json` | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables` | None |
-| `/tooling/eslint/index.js` | ESLint v9 flat config; `no-explicit-any: error` | D19 fix (wire `nextPlugin`) |
-| `/tooling/tailwind/base.ts` | Warm Mineral palette tokens for Tailwind v4 | None |
-| `/apps/web/package.json` | Next.js 16 + React 19 + all Radix deps | D16, D22, D23 fixes |
-| `/apps/web/next.config.ts` | React Compiler + Turbopack + CSP headers | D21 fix (move `serverExternalPackages` to top-level) |
-| `/apps/web/postcss.config.mjs` | `@tailwindcss/postcss` plugin (MANDATORY) | None |
-| `/apps/web/tailwind.config.ts` | Content paths only (Tailwind v4 CSS-first) | None |
-| `/apps/web/proxy.ts` | Next.js 16 proxy (replaces middleware); RBAC route guard | None (Phase 2 patches real auth call) |
-| `/apps/web/components.json` | shadcn/ui config: `style: default`, `baseColor: stone` | None |
-| `/packages/db/drizzle.config.ts` | Uses `DATABASE_URL_UNPOOLED` for migrations | None |
-| `/packages/config/src/env.ts` | t3-env Zod-validated env schema (34 vars) | NEW file |
-| `/services/workers/trigger.config.ts` | Trigger.dev v4 config (`@trigger.dev/sdk/v4`); 11 task IDs; `maxDuration: 120` (CPU budget) | None |
+| File                                                     | Purpose                                                                                          | Phase 0 Patch                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `/package.json`                                          | Root manifest; pnpm 11.9.0, Turborepo 2.10.3                                                     | None                                                 |
+| `/pnpm-workspace.yaml`                                   | Workspace + `customConditions: ['@stillwater/source']`                                           | D15 fix                                              |
+| `/.npmrc`                                                | `custom-conditions=@stillwater/source` declaration                                               | D15 fix                                              |
+| `/turbo.json`                                            | Task graph; remove `"ui": "tui"` line                                                            | D24 fix                                              |
+| `/.env.example`                                          | 25 env vars; Postgres password must match docker-compose                                         | D17 fix                                              |
+| `/docker-compose.yml`                                    | Postgres 17 + Redis 7 + Adminer                                                                  | None                                                 |
+| `/infrastructure/postgres/init/00-create-extensions.sql` | `uuid-ossp` + `pgcrypto` extensions                                                              | D18 fix (NEW)                                        |
+| `/tooling/typescript/base.json`                          | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables` | None                                                 |
+| `/tooling/eslint/index.js`                               | ESLint v9 flat config; `no-explicit-any: error`                                                  | D19 fix (wire `nextPlugin`)                          |
+| `/tooling/tailwind/base.ts`                              | Warm Mineral palette tokens for Tailwind v4                                                      | None                                                 |
+| `/apps/web/package.json`                                 | Next.js 16 + React 19 + all Radix deps                                                           | D16, D22, D23 fixes                                  |
+| `/apps/web/next.config.ts`                               | React Compiler + Turbopack + CSP headers                                                         | D21 fix (move `serverExternalPackages` to top-level) |
+| `/apps/web/postcss.config.mjs`                           | `@tailwindcss/postcss` plugin (MANDATORY)                                                        | None                                                 |
+| `/apps/web/tailwind.config.ts`                           | Content paths only (Tailwind v4 CSS-first)                                                       | None                                                 |
+| `/apps/web/proxy.ts`                                     | Next.js 16 proxy (replaces middleware); RBAC route guard                                         | None (Phase 2 patches real auth call)                |
+| `/apps/web/components.json`                              | shadcn/ui config: `style: default`, `baseColor: stone`                                           | None                                                 |
+| `/packages/db/drizzle.config.ts`                         | Uses `DATABASE_URL_UNPOOLED` for migrations                                                      | None                                                 |
+| `/packages/config/src/env.ts`                            | t3-env Zod-validated env schema (34 vars)                                                        | NEW file                                             |
+| `/services/workers/trigger.config.ts`                    | Trigger.dev v4 config (`@trigger.dev/sdk/v4`); 11 task IDs; `maxDuration: 120` (CPU budget)      | None                                                 |
 
 ### 3.3 Environment Variables (34 total)
 
@@ -263,47 +264,47 @@ All env vars validated via `t3-env` Zod schema in `packages/config/src/env.ts`. 
 
 **Critical env vars (full list in `.env.example`):**
 
-| Variable | Purpose | Validation |
-|----------|---------|------------|
-| `DATABASE_URL` | Pooled PG connection (app queries) | `z.string().url()` + custom refine for postgres scheme |
-| `DATABASE_URL_UNPOOLED` | Direct PG connection (migrations ONLY) | `z.string().url()` + custom refine |
-| `BETTER_AUTH_SECRET` | Session cookie signing (min 32 chars) | `z.string().min(32)` + `superRefine` rejecting known-weak values (`dev-secret`, `placeholder`, etc.) |
-| `BETTER_AUTH_URL` | Auth callback base URL | `z.string().url()` |
-| `GOOGLE_CLIENT_ID` | Google OAuth | `z.string()` |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth secret | `z.string()` |
-| `STRIPE_SECRET_KEY` | Stripe server key | `z.string().startsWith('sk_')` |
-| `STRIPE_WEBHOOK_SECRET` | Webhook signature verification | `z.string().startsWith('whsec_')` |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Client Stripe key | `z.string().startsWith('pk_')` |
-| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Sanity project ID | `z.string()` |
-| `NEXT_PUBLIC_SANITY_DATASET` | Dataset name | `z.string()` |
-| `SANITY_API_TOKEN` | Server-side read token (never expose) | `z.string()` |
-| `SANITY_WEBHOOK_SECRET` | Webhook HMAC verification | `z.string()` |
-| `RESEND_API_KEY` | Email delivery | `z.string().startsWith('re_')` |
-| `EMAIL_FROM` | From address | `z.string().email()` |
-| `TRIGGER_SECRET_KEY` | Trigger.dev Cloud auth | `z.string().startsWith('tr_')` |
-| `UPSTASH_REDIS_REST_URL` | Rate limiting + idempotency | `z.string().url()` |
-| `UPSTASH_REDIS_REST_TOKEN` | Redis auth | `z.string()` |
-| `NEXT_PUBLIC_APP_URL` | Public app URL (OAuth callbacks, sitemap, OG) | `z.string().url()` |
-| `NODE_ENV` | Environment | `z.enum(['development', 'test', 'production']).default('development')` |
+| Variable                             | Purpose                                       | Validation                                                                                           |
+| ------------------------------------ | --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                       | Pooled PG connection (app queries)            | `z.string().url()` + custom refine for postgres scheme                                               |
+| `DATABASE_URL_UNPOOLED`              | Direct PG connection (migrations ONLY)        | `z.string().url()` + custom refine                                                                   |
+| `BETTER_AUTH_SECRET`                 | Session cookie signing (min 32 chars)         | `z.string().min(32)` + `superRefine` rejecting known-weak values (`dev-secret`, `placeholder`, etc.) |
+| `BETTER_AUTH_URL`                    | Auth callback base URL                        | `z.string().url()`                                                                                   |
+| `GOOGLE_CLIENT_ID`                   | Google OAuth                                  | `z.string()`                                                                                         |
+| `GOOGLE_CLIENT_SECRET`               | Google OAuth secret                           | `z.string()`                                                                                         |
+| `STRIPE_SECRET_KEY`                  | Stripe server key                             | `z.string().startsWith('sk_')`                                                                       |
+| `STRIPE_WEBHOOK_SECRET`              | Webhook signature verification                | `z.string().startsWith('whsec_')`                                                                    |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Client Stripe key                             | `z.string().startsWith('pk_')`                                                                       |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID`      | Sanity project ID                             | `z.string()`                                                                                         |
+| `NEXT_PUBLIC_SANITY_DATASET`         | Dataset name                                  | `z.string()`                                                                                         |
+| `SANITY_API_TOKEN`                   | Server-side read token (never expose)         | `z.string()`                                                                                         |
+| `SANITY_WEBHOOK_SECRET`              | Webhook HMAC verification                     | `z.string()`                                                                                         |
+| `RESEND_API_KEY`                     | Email delivery                                | `z.string().startsWith('re_')`                                                                       |
+| `EMAIL_FROM`                         | From address                                  | `z.string().email()`                                                                                 |
+| `TRIGGER_SECRET_KEY`                 | Trigger.dev Cloud auth                        | `z.string().startsWith('tr_')`                                                                       |
+| `UPSTASH_REDIS_REST_URL`             | Rate limiting + idempotency                   | `z.string().url()`                                                                                   |
+| `UPSTASH_REDIS_REST_TOKEN`           | Redis auth                                    | `z.string()`                                                                                         |
+| `NEXT_PUBLIC_APP_URL`                | Public app URL (OAuth callbacks, sitemap, OG) | `z.string().url()`                                                                                   |
+| `NODE_ENV`                           | Environment                                   | `z.enum(['development', 'test', 'production']).default('development')`                               |
 
 **Remaining 14 vars** (observability + Cloudflare — all validated in `packages/config/src/env.ts`):
 
-| Variable | Purpose | Validation |
-|----------|---------|------------|
-| `SENTRY_DSN` | Sentry server-side DSN | `z.string().url().optional()` |
-| `SENTRY_AUTH_TOKEN` | Sentry release auth | `z.string().optional()` |
-| `AXIOM_TOKEN` | Axiom structured logs | `z.string().optional()` |
-| `AXIOM_DATASET` | Axiom dataset name | `z.string().optional()` |
-| `CLOUDFLARE_ACCOUNT_ID` | CF account | `z.string()` |
-| `CLOUDFLARE_IMAGES_TOKEN` | CF Images API token | `z.string()` |
-| `CLOUDFLARE_R2_ACCESS_KEY_ID` | R2 access key | `z.string()` |
-| `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | R2 secret key | `z.string()` |
-| `CLOUDFLARE_R2_BUCKET` | R2 bucket name | `z.string()` |
-| `CLOUDFLARE_R2_ENDPOINT` | R2 endpoint URL | `z.string().url()` |
-| `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project key | `z.string()` |
-| `NEXT_PUBLIC_POSTHOG_HOST` | PostHog ingest host | `z.string().url()` |
-| `NEXT_PUBLIC_SENTRY_DSN` | Sentry client-side DSN | `z.string().url().optional()` |
-| `NEXT_PUBLIC_CLOUDFLARE_IMAGES_URL` | CF Images public base URL | `z.string().url()` |
+| Variable                            | Purpose                   | Validation                    |
+| ----------------------------------- | ------------------------- | ----------------------------- |
+| `SENTRY_DSN`                        | Sentry server-side DSN    | `z.string().url().optional()` |
+| `SENTRY_AUTH_TOKEN`                 | Sentry release auth       | `z.string().optional()`       |
+| `AXIOM_TOKEN`                       | Axiom structured logs     | `z.string().optional()`       |
+| `AXIOM_DATASET`                     | Axiom dataset name        | `z.string().optional()`       |
+| `CLOUDFLARE_ACCOUNT_ID`             | CF account                | `z.string()`                  |
+| `CLOUDFLARE_IMAGES_TOKEN`           | CF Images API token       | `z.string()`                  |
+| `CLOUDFLARE_R2_ACCESS_KEY_ID`       | R2 access key             | `z.string()`                  |
+| `CLOUDFLARE_R2_SECRET_ACCESS_KEY`   | R2 secret key             | `z.string()`                  |
+| `CLOUDFLARE_R2_BUCKET`              | R2 bucket name            | `z.string()`                  |
+| `CLOUDFLARE_R2_ENDPOINT`            | R2 endpoint URL           | `z.string().url()`            |
+| `NEXT_PUBLIC_POSTHOG_KEY`           | PostHog project key       | `z.string()`                  |
+| `NEXT_PUBLIC_POSTHOG_HOST`          | PostHog ingest host       | `z.string().url()`            |
+| `NEXT_PUBLIC_SENTRY_DSN`            | Sentry client-side DSN    | `z.string().url().optional()` |
+| `NEXT_PUBLIC_CLOUDFLARE_IMAGES_URL` | CF Images public base URL | `z.string().url()`            |
 
 ### 3.4 Env Module Build-Context Fallback
 
@@ -317,7 +318,8 @@ function isBuildContext(): boolean {
 function loadEnv(): Env {
   if (isBuildContext()) return PLACEHOLDERS; // don't throw
   const parsed = envSchema.safeParse(process.env);
-  if (!parsed.success) throw new Error(`Invalid environment variables:\n${parsed.error.toString()}`);
+  if (!parsed.success)
+    throw new Error(`Invalid environment variables:\n${parsed.error.toString()}`);
   return parsed.data;
 }
 ```
@@ -369,6 +371,7 @@ stripe trigger invoice.payment_failed
 ```
 
 ---
+
 ## §4. The Design System (Code-First)
 
 ### 4.1 The `@theme` Block (Tailwind v4 CSS-first)
@@ -381,146 +384,147 @@ All design tokens live in `apps/web/src/app/globals.css` via the `@theme` direct
 
 @theme {
   /* ── Color tokens (Warm Mineral palette) ── */
-  --color-stone-950: #0F0D0B;
-  --color-stone-900: #1C1915;
-  --color-stone-800: #2E2B26;
-  --color-stone-700: #3D3832;
-  --color-stone-600: #544F48;
-  --color-stone-500: #6E6760;
-  --color-stone-400: #8C7B6E;
-  --color-stone-300: #B0A49A;
-  --color-stone-200: #D4CFC9;
-  --color-stone-100: #E8E3DC;
-  --color-stone-50:  #F5F0E8;
+  --color-stone-950: #0f0d0b;
+  --color-stone-900: #1c1915;
+  --color-stone-800: #2e2b26;
+  --color-stone-700: #3d3832;
+  --color-stone-600: #544f48;
+  --color-stone-500: #6e6760;
+  --color-stone-400: #8c7b6e;
+  --color-stone-300: #b0a49a;
+  --color-stone-200: #d4cfc9;
+  --color-stone-100: #e8e3dc;
+  --color-stone-50: #f5f0e8;
 
-  --color-clay-600: #8A4030;
-  --color-clay-500: #9E5E44;
-  --color-clay-400: #C4856A;
-  --color-clay-300: #D9A48F;
-  --color-clay-200: #EDD4C8;
-  --color-clay-100: #F7EDE8;
+  --color-clay-600: #8a4030;
+  --color-clay-500: #9e5e44;
+  --color-clay-400: #c4856a;
+  --color-clay-300: #d9a48f;
+  --color-clay-200: #edd4c8;
+  --color-clay-100: #f7ede8;
 
-  --color-water-700: #4A7280;
-  --color-water-600: #5D8A99;
-  --color-water-500: #7B9EA8;
-  --color-water-400: #9BBAC5;
-  --color-water-300: #B8CDD4;
-  --color-water-100: #E8F0F3;
+  --color-water-700: #4a7280;
+  --color-water-600: #5d8a99;
+  --color-water-500: #7b9ea8;
+  --color-water-400: #9bbac5;
+  --color-water-300: #b8cdd4;
+  --color-water-100: #e8f0f3;
 
-  --color-sand:      #F5F0E8;
-  --color-sand-warm: #EDE5D8;
-  --color-sand-deep: #E2D8CB;
+  --color-sand: #f5f0e8;
+  --color-sand-warm: #ede5d8;
+  --color-sand-deep: #e2d8cb;
 
-  --color-success: #4A7C59;
-  --color-warning: #C4913A;
-  --color-error:   #B85450;
-  --color-info:    #7B9EA8;
+  --color-success: #4a7c59;
+  --color-warning: #c4913a;
+  --color-error: #b85450;
+  --color-info: #7b9ea8;
 
   /* ── Semantic aliases ── */
   --color-background: var(--color-sand);
-  --color-surface:    var(--color-sand-warm);
-  --color-border:     var(--color-stone-200);
-  --color-text-primary:   var(--color-stone-900);
+  --color-surface: var(--color-sand-warm);
+  --color-border: var(--color-stone-200);
+  --color-text-primary: var(--color-stone-900);
   --color-text-secondary: var(--color-stone-400);
-  --color-text-tertiary:  var(--color-stone-300);
-  --color-action:         var(--color-clay-400);
-  --color-action-hover:   var(--color-clay-500);
-  --color-accent:         var(--color-water-500);
+  --color-text-tertiary: var(--color-stone-300);
+  --color-action: var(--color-clay-400);
+  --color-action-hover: var(--color-clay-500);
+  --color-accent: var(--color-water-500);
 
   /* ── Typography ── */
   --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --font-body:    'DM Sans', system-ui, -apple-system, sans-serif;
-  --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
 
   /* ── Type scale (9 fluid tokens) ── */
   --text-display-2xl: clamp(3.5rem, 8vw, 7rem);
-  --text-display-xl:  clamp(2.5rem, 5vw, 4.5rem);
-  --text-display-lg:  clamp(2rem, 4vw, 3.25rem);
-  --text-heading-lg:  clamp(1.5rem, 3vw, 2rem);
-  --text-heading-md:  1.25rem;
-  --text-body-lg:     1.125rem;
-  --text-body-md:     1rem;
-  --text-body-sm:     0.875rem;
-  --text-caption:     0.75rem;
+  --text-display-xl: clamp(2.5rem, 5vw, 4.5rem);
+  --text-display-lg: clamp(2rem, 4vw, 3.25rem);
+  --text-heading-lg: clamp(1.5rem, 3vw, 2rem);
+  --text-heading-md: 1.25rem;
+  --text-body-lg: 1.125rem;
+  --text-body-md: 1rem;
+  --text-body-sm: 0.875rem;
+  --text-caption: 0.75rem;
 
   /* ── Line heights ── */
   --leading-display: 1.05;
   --leading-heading: 1.2;
-  --leading-body:    1.65;
+  --leading-body: 1.65;
   --leading-caption: 1.4;
 
   /* ── Spacing (14 tokens, 4px base, Fibonacci-influenced) ── */
-  --space-px:  1px;
+  --space-px: 1px;
   --space-0-5: 2px;
-  --space-1:   4px;
-  --space-2:   8px;
-  --space-3:   12px;
-  --space-4:   16px;
-  --space-5:   20px;     /* editorial half-step */
-  --space-6:   24px;
-  --space-7:   32px;     /* primary component gap */
-  --space-8:   48px;
-  --space-9:   64px;     /* section padding */
-  --space-10:  96px;
-  --space-11:  128px;
-  --space-12:  192px;    /* large section breaks */
-  --space-13:  256px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px; /* editorial half-step */
+  --space-6: 24px;
+  --space-7: 32px; /* primary component gap */
+  --space-8: 48px;
+  --space-9: 64px; /* section padding */
+  --space-10: 96px;
+  --space-11: 128px;
+  --space-12: 192px; /* large section breaks */
+  --space-13: 256px;
 
   /* ── Layout ── */
   --max-width-content: 1280px;
-  --max-width-narrow:  720px;
-  --max-width-wide:    1440px;
+  --max-width-narrow: 720px;
+  --max-width-wide: 1440px;
 
   /* ── Border radius (sharp edges by design) ── */
-  --radius:       0;
-  --radius-sm:    0;
-  --radius-md:    0;
-  --radius-lg:    0;
-  --radius-xl:    0;
-  --radius-2xl:   0;
-  --radius-full:  9999px;  /* ONLY for avatars and status dots */
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-full: 9999px; /* ONLY for avatars and status dots */
 
   /* ── Motion easings ── */
-  --ease-gentle:  cubic-bezier(0.16, 1, 0.3, 1);     /* Expo out — snappy settle */
-  --ease-breathe: cubic-bezier(0.45, 0, 0.55, 1);    /* Sine in-out — organic */
-  --ease-sharp:   cubic-bezier(0.4, 0, 0.2, 1);      /* Material standard */
+  --ease-gentle: cubic-bezier(0.16, 1, 0.3, 1); /* Expo out — snappy settle */
+  --ease-breathe: cubic-bezier(0.45, 0, 0.55, 1); /* Sine in-out — organic */
+  --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1); /* Material standard */
 
   /* ── Motion durations ── */
-  --duration-instant:  100ms;
-  --duration-quick:    150ms;
+  --duration-instant: 100ms;
+  --duration-quick: 150ms;
   --duration-standard: 300ms;
-  --duration-slow:     600ms;
-  --duration-crawl:    900ms;
+  --duration-slow: 600ms;
+  --duration-crawl: 900ms;
 }
 ```
 
 ### 4.2 Typography Hierarchy
 
-| Token | Font | Size | Weight | Line Height | Letter Spacing | Usage |
-|-------|------|------|--------|-------------|-----------------|-------|
-| `--text-display-2xl` | Cormorant | `clamp(3.5rem, 8vw, 7rem)` | 300 | 1.0 | -0.01em | Hero headline |
-| `--text-display-xl` | Cormorant | `clamp(2.5rem, 5vw, 4.5rem)` | 300 | 1.05 | -0.01em | Philosophy quote |
-| `--text-display-lg` | Cormorant | `clamp(2rem, 4vw, 3.25rem)` | 300 | 1.1 | -0.005em | Section titles |
-| `--text-heading-lg` | Cormorant | `clamp(1.5rem, 3vw, 2rem)` | 400 | 1.2 | -0.005em | Sub-headings |
-| `--text-heading-md` | Cormorant | 1.25rem | 400 | 1.3 | 0 | Card titles |
-| `--text-body-lg` | DM Sans | 1.125rem | 400 | 1.75 | 0 | Lead paragraphs |
-| `--text-body-md` | DM Sans | 1rem | 400 | 1.65 | 0 | Default body |
-| `--text-body-sm` | DM Sans | 0.875rem | 400 | 1.6 | 0 | Captions, labels |
-| `--text-caption` | DM Sans | 0.75rem | 400 | 1.4 | 0.06em | Fine print |
-| (overline) | JetBrains Mono | 0.6875rem | 500 | 1.4 | 0.2em | Section labels ("PHILOSOPHY", "SCHEDULE") |
-| (data label) | JetBrains Mono | 0.75rem | 500 | 1.4 | 0.1em | Admin table cells, captions |
+| Token                | Font           | Size                         | Weight | Line Height | Letter Spacing | Usage                                     |
+| -------------------- | -------------- | ---------------------------- | ------ | ----------- | -------------- | ----------------------------------------- |
+| `--text-display-2xl` | Cormorant      | `clamp(3.5rem, 8vw, 7rem)`   | 300    | 1.0         | -0.01em        | Hero headline                             |
+| `--text-display-xl`  | Cormorant      | `clamp(2.5rem, 5vw, 4.5rem)` | 300    | 1.05        | -0.01em        | Philosophy quote                          |
+| `--text-display-lg`  | Cormorant      | `clamp(2rem, 4vw, 3.25rem)`  | 300    | 1.1         | -0.005em       | Section titles                            |
+| `--text-heading-lg`  | Cormorant      | `clamp(1.5rem, 3vw, 2rem)`   | 400    | 1.2         | -0.005em       | Sub-headings                              |
+| `--text-heading-md`  | Cormorant      | 1.25rem                      | 400    | 1.3         | 0              | Card titles                               |
+| `--text-body-lg`     | DM Sans        | 1.125rem                     | 400    | 1.75        | 0              | Lead paragraphs                           |
+| `--text-body-md`     | DM Sans        | 1rem                         | 400    | 1.65        | 0              | Default body                              |
+| `--text-body-sm`     | DM Sans        | 0.875rem                     | 400    | 1.6         | 0              | Captions, labels                          |
+| `--text-caption`     | DM Sans        | 0.75rem                      | 400    | 1.4         | 0.06em         | Fine print                                |
+| (overline)           | JetBrains Mono | 0.6875rem                    | 500    | 1.4         | 0.2em          | Section labels ("PHILOSOPHY", "SCHEDULE") |
+| (data label)         | JetBrains Mono | 0.75rem                      | 500    | 1.4         | 0.1em          | Admin table cells, captions               |
 
 **Critical:** Apply `text-wrap: balance` to every Cormorant Garamond heading (prevents ugly orphaned words). Apply `text-wrap: pretty` to every DM Sans paragraph. Apply `font-variant-numeric: tabular-nums lining-nums` to JetBrains Mono in any data table.
 
 ### 4.3 Color Usage Hierarchy (60-30-10)
 
-| Role | Color | Coverage |
-|------|-------|----------|
-| Background (60%) | `--color-sand` (#F5F0E8) | Page background |
-| Surface + Text (30%) | `--color-sand-warm` (#EDE5D8) + `--color-stone-900` (#1C1915) text | Cards, surfaces, body text |
-| Accent (10%) | `--color-clay-400` (#C4856A) primary + `--color-water-500` (#7B9EA8) secondary | CTAs, highlights, links |
+| Role                 | Color                                                                          | Coverage                   |
+| -------------------- | ------------------------------------------------------------------------------ | -------------------------- |
+| Background (60%)     | `--color-sand` (#F5F0E8)                                                       | Page background            |
+| Surface + Text (30%) | `--color-sand-warm` (#EDE5D8) + `--color-stone-900` (#1C1915) text             | Cards, surfaces, body text |
+| Accent (10%)         | `--color-clay-400` (#C4856A) primary + `--color-water-500` (#7B9EA8) secondary | CTAs, highlights, links    |
 
 **Forbidden colors** (enforced by `scripts/brand-tokens.test.ts`):
+
 - `#7c3aed`, `#a855f7`, `#8b5cf6` (purple family)
 - `#3b82f6`, `#6366f1` (Tailwind default blue)
 - `#fde68a`, `#fcd34d` (Tailwind default amber)
@@ -530,7 +534,7 @@ All design tokens live in `apps/web/src/app/globals.css` via the `@theme` direct
 
 ```css
 /* Example: OKLCH equivalent of clay-400 */
---color-clay-400: oklch(0.65 0.08 50);  /* #C4856A */
+--color-clay-400: oklch(0.65 0.08 50); /* #C4856A */
 ```
 
 ### 4.4 Self-Hosted Fonts (Zero FOUT)
@@ -573,19 +577,35 @@ All keyframes live INSIDE the `@theme` block so Tailwind picks them up. Use `@ut
   /* Keyframes */
   --animate-marquee: marquee 32s linear infinite;
   --animate-fade-in: fade-in 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-reveal:  reveal 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-reveal: reveal 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
   @keyframes marquee {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
   }
   @keyframes fade-in {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   @keyframes reveal {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
@@ -614,12 +634,12 @@ All keyframes live INSIDE the `@theme` block so Tailwind picks them up. Use `@ut
 
 Source: `avant-garde-design-v4/references/14-animation-standards.md` §6.0. These rules are non-negotiable for maintaining 60fps on average mobile hardware.
 
-| Rule | Why | Enforcement |
-|------|-----|-------------|
-| **Compositor Only** — only animate `transform` and `opacity` | Other properties (width, height, top, left, margin, padding) trigger layout reflow, which is 10–100× slower than compositor-only animations | Code review; ESLint rule banning `transition: width`, `transition: height`, etc. (Phase 5+) |
-| **Avoid `transition: all`** | `all` animates every property, including ones you didn't intend (e.g., `display`, `position`); this causes jank and surprises | ESLint `no-restricted-syntax` ban on `transition: all` and `transition-property: all` |
-| **Hardware acceleration** — use `translateZ(0)` or `will-change: transform` sparingly | Overuse creates layers that consume GPU memory and can cause stuttering on low-end devices | Only on elements that actually animate frequently (marquee, scroll progress bar); remove after animation ends |
-| **60fps frame budget** — animations must maintain 60fps on average mobile hardware | Below 60fps = visible jank; below 30fps = motion sickness risk | Lighthouse "Avoid large layout shifts" + manual Chrome DevTools Performance tab check |
+| Rule                                                                                  | Why                                                                                                                                         | Enforcement                                                                                                   |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Compositor Only** — only animate `transform` and `opacity`                          | Other properties (width, height, top, left, margin, padding) trigger layout reflow, which is 10–100× slower than compositor-only animations | Code review; ESLint rule banning `transition: width`, `transition: height`, etc. (Phase 5+)                   |
+| **Avoid `transition: all`**                                                           | `all` animates every property, including ones you didn't intend (e.g., `display`, `position`); this causes jank and surprises               | ESLint `no-restricted-syntax` ban on `transition: all` and `transition-property: all`                         |
+| **Hardware acceleration** — use `translateZ(0)` or `will-change: transform` sparingly | Overuse creates layers that consume GPU memory and can cause stuttering on low-end devices                                                  | Only on elements that actually animate frequently (marquee, scroll progress bar); remove after animation ends |
+| **60fps frame budget** — animations must maintain 60fps on average mobile hardware    | Below 60fps = visible jank; below 30fps = motion sickness risk                                                                              | Lighthouse "Avoid large layout shifts" + manual Chrome DevTools Performance tab check                         |
 
 The keyframes defined above (`marquee`, `fade-in`, `reveal`) all comply: they animate only `transform` and `opacity`. Any new keyframe MUST follow the same constraint. If you need to animate a non-compositor property (e.g., `width` for an accordion), use a `ResizeObserver` + `transform: scaleX()` workaround instead.
 
@@ -627,7 +647,9 @@ The keyframes defined above (`marquee`, `fade-in`, `reveal`) all comply: they an
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -641,9 +663,7 @@ The keyframes defined above (`marquee`, `fade-in`, `reveal`) all comply: they an
 **Component-level pattern:** Default to `transition-none` and only add transitions with `motion-safe:transition-*`. This inverts the safety default — animations only apply when motion is allowed.
 
 ```tsx
-<div className="transition-colors motion-reduce:transition-none">
-  Respects user preference
-</div>
+<div className="transition-colors motion-reduce:transition-none">Respects user preference</div>
 ```
 
 ---
@@ -652,12 +672,12 @@ The keyframes defined above (`marquee`, `fade-in`, `reveal`) all comply: they an
 
 ### 5.1 The 5-Layer Architecture (Golden Rule)
 
-| Layer | Location | Allowed Imports | Forbidden Imports |
-|-------|----------|------------------|-------------------|
-| 0. Proxy (Edge or Node.js) | `apps/web/proxy.ts` | `auth` (cookie check only) | DB, Drizzle, Node APIs |
-| 1. App Router | `apps/web/src/app/` | Layouts, metadata, Suspense, PPR | DB queries (use tRPC server caller) |
-| 2. Feature modules | `apps/web/src/components/`, `packages/ui/` | UI composition, data binding, mutations | Raw Drizzle calls |
-| 3. Domain (pure) | `packages/api/src/domain/` | `import type` only from schema | ANY runtime import (Drizzle, Next.js, Stripe, tRPC) |
+| Layer                            | Location                                                                            | Allowed Imports                                               | Forbidden Imports                                   |
+| -------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------- |
+| 0. Proxy (Edge or Node.js)       | `apps/web/proxy.ts`                                                                 | `auth` (cookie check only)                                    | DB, Drizzle, Node APIs                              |
+| 1. App Router                    | `apps/web/src/app/`                                                                 | Layouts, metadata, Suspense, PPR                              | DB queries (use tRPC server caller)                 |
+| 2. Feature modules               | `apps/web/src/components/`, `packages/ui/`                                          | UI composition, data binding, mutations                       | Raw Drizzle calls                                   |
+| 3. Domain (pure)                 | `packages/api/src/domain/`                                                          | `import type` only from schema                                | ANY runtime import (Drizzle, Next.js, Stripe, tRPC) |
 | 4. Infrastructure / tRPC routers | `packages/api/src/routers/`, `packages/db/`, `packages/auth/`, `packages/payments/` | Drizzle, Better Auth, Stripe, Trigger.dev, tRPC server caller | React, Next.js App Router, anything from Layers 0–3 |
 
 Enforce Layer 3 purity via ESLint `no-restricted-imports`:
@@ -704,7 +724,7 @@ export default async function Page() {
 
 // ✅ CORRECT — Client Component receives data as prop
 // components/booking/BookingFlow.tsx
-'use client';
+('use client');
 import { useSessionAvailability } from '@/hooks/useSessionAvailability';
 
 export function BookingFlow({ initialSession }: { initialSession: SessionDetail }) {
@@ -721,7 +741,9 @@ import { apiCaller } from '@/lib/trpc/server'; // 💥 server-only import in cli
 export function BookingFlow({ sessionId }: { sessionId: string }) {
   const [session, setSession] = useState(null);
   useEffect(() => {
-    apiCaller().then(api => api.schedule.getSession({ sessionId })).then(setSession);
+    apiCaller()
+      .then((api) => api.schedule.getSession({ sessionId }))
+      .then(setSession);
   }, [sessionId]);
   // ...
 }
@@ -731,18 +753,18 @@ export function BookingFlow({ sessionId }: { sessionId: string }) {
 
 If a UI library provides a primitive, USE IT. Do not rebuild.
 
-| Need | Use | Don't rebuild |
-|------|-----|---------------|
-| Dialog / Modal | Radix `Dialog` | Custom overlay |
-| Tabs | Radix `Tabs` | Custom tab logic |
-| Select dropdown | Radix `Select` | Custom dropdown |
-| Toast notifications | `sonner` | Custom toast |
-| Date picker | `react-day-picker` | Custom calendar |
-| Data tables | `@tanstack/react-table` | Custom table |
-| Forms | `react-hook-form` + Zod resolver | Custom form state |
-| Server state | `@tanstack/react-query` (via tRPC) | Custom fetch hooks |
-| URL state | `nuqs` | Custom URL parsing |
-| Animations | `framer-motion` (sparingly — CSS for most) | Custom CSS keyframes (mostly) |
+| Need                | Use                                        | Don't rebuild                 |
+| ------------------- | ------------------------------------------ | ----------------------------- |
+| Dialog / Modal      | Radix `Dialog`                             | Custom overlay                |
+| Tabs                | Radix `Tabs`                               | Custom tab logic              |
+| Select dropdown     | Radix `Select`                             | Custom dropdown               |
+| Toast notifications | `sonner`                                   | Custom toast                  |
+| Date picker         | `react-day-picker`                         | Custom calendar               |
+| Data tables         | `@tanstack/react-table`                    | Custom table                  |
+| Forms               | `react-hook-form` + Zod resolver           | Custom form state             |
+| Server state        | `@tanstack/react-query` (via tRPC)         | Custom fetch hooks            |
+| URL state           | `nuqs`                                     | Custom URL parsing            |
+| Animations          | `framer-motion` (sparingly — CSS for most) | Custom CSS keyframes (mostly) |
 
 **Exception:** You may wrap or style library components to achieve the "Editorial Calm" look, but the underlying primitive must come from the library.
 
@@ -758,6 +780,7 @@ grep -r "rounded-lg\|rounded-xl\|rounded-2xl" apps/web/src/components/ui/ | grep
 ```
 
 **Card override:**
+
 ```tsx
 // ❌ shadcn default
 <div className="rounded-xl border bg-card text-card-foreground shadow-lg" />
@@ -769,26 +792,27 @@ grep -r "rounded-lg\|rounded-xl\|rounded-2xl" apps/web/src/components/ui/ | grep
 ```
 
 **Button variant customization:**
+
 ```tsx
 const buttonVariants = cva(
-  "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-water-500 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 disabled:pointer-events-none disabled:opacity-50",
+  'focus-visible:ring-water-500 focus-visible:ring-offset-sand-50 inline-flex items-center justify-center font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: "bg-clay-500 text-sand-100 hover:bg-clay-600",
-        outline: "border border-stone-400 bg-transparent text-stone-900 hover:bg-sand-warm",
-        ghost: "bg-transparent text-stone-900 hover:bg-sand-warm",
-        link: "text-clay-500 underline-offset-4 hover:underline",
-        destructive: "bg-error text-sand-100 hover:bg-error/90",
+        default: 'bg-clay-500 text-sand-100 hover:bg-clay-600',
+        outline: 'hover:bg-sand-warm border border-stone-400 bg-transparent text-stone-900',
+        ghost: 'hover:bg-sand-warm bg-transparent text-stone-900',
+        link: 'text-clay-500 underline-offset-4 hover:underline',
+        destructive: 'bg-error text-sand-100 hover:bg-error/90',
       },
       size: {
-        default: "h-11 px-6 py-2 text-sm",
-        sm: "h-9 px-4 text-xs",
-        lg: "h-14 px-8 text-base",
+        default: 'h-11 px-6 py-2 text-sm',
+        sm: 'h-9 px-4 text-xs',
+        lg: 'h-14 px-8 text-base',
       },
     },
-    defaultVariants: { variant: "default", size: "default" },
-  }
+    defaultVariants: { variant: 'default', size: 'default' },
+  },
 );
 ```
 
@@ -798,10 +822,10 @@ const buttonVariants = cva(
 >
 > Stillwater enforces a strict 2-layer auth pattern:
 >
-> | Layer | Location | What it does | Runtime |
-> |-------|----------|--------------|---------|
-> | 1. Edge proxy | `apps/web/proxy.ts` | Cookie-existence-only check via `getSessionCookie(request)`. Optimistic redirect to sign-in if no cookie. NO DB access. NO RBAC role checks. | Edge (or Node) |
-> | 2. Server Component / Layout | `apps/web/src/app/(studio)/layout.tsx`, `(admin)/layout.tsx` | Full session validation via `auth.api.getSession({ headers: await headers() })`. RBAC role checks via `requireRole()`. | Node.js |
+> | Layer                        | Location                                                     | What it does                                                                                                                                 | Runtime        |
+> | ---------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+> | 1. Edge proxy                | `apps/web/proxy.ts`                                          | Cookie-existence-only check via `getSessionCookie(request)`. Optimistic redirect to sign-in if no cookie. NO DB access. NO RBAC role checks. | Edge (or Node) |
+> | 2. Server Component / Layout | `apps/web/src/app/(studio)/layout.tsx`, `(admin)/layout.tsx` | Full session validation via `auth.api.getSession({ headers: await headers() })`. RBAC role checks via `requireRole()`.                       | Node.js        |
 >
 > **Why:** proxy.ts runs on every request (Edge or Node.js runtime — Next.js 16 docs are inconsistent on the default). Full session validation (DB lookup, JWT verification) is too expensive and breaks Next.js 16's caching model regardless of runtime. Cookie-existence is a fast optimistic check; the actual security boundary is the Server Component layer.
 >
@@ -829,7 +853,7 @@ export async function requireAuth() {
 
 export async function requireRole(...roles: StudioRole[]) {
   const session = await requireAuth();
-  const hasRole = session.user.roles.some(r => roles.includes(r));
+  const hasRole = session.user.roles.some((r) => roles.includes(r));
   if (!hasRole) redirect('/dashboard');
   return session;
 }
@@ -856,7 +880,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 export const staffProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const hasStaff = ctx.session.user.roles.some(r => ['staff', 'manager', 'owner'].includes(r));
+  const hasStaff = ctx.session.user.roles.some((r) => ['staff', 'manager', 'owner'].includes(r));
   if (!hasStaff) throw new TRPCError({ code: 'FORBIDDEN' });
   return next();
 });
@@ -891,9 +915,7 @@ export const auth = betterAuth({
   // MUST match the production URL. In production: https://stillwater.studio
   // In dev: http://localhost:3000
 
-  trustedOrigins: [
-    process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
-  ],
+  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'],
   // Additional origins allowed to call the auth API (CORS).
 
   // ... rest of config
@@ -908,7 +930,9 @@ if (process.env.NODE_ENV === 'production') {
   const authHost = new URL(env.BETTER_AUTH_URL).host;
   const appHost = new URL(env.NEXT_PUBLIC_APP_URL).host;
   if (authHost !== appHost) {
-    console.warn(`[auth] Host mismatch: BETTER_AUTH_URL host (${authHost}) != NEXT_PUBLIC_APP_URL host (${appHost}). Auth callbacks may redirect to the wrong host.`);
+    console.warn(
+      `[auth] Host mismatch: BETTER_AUTH_URL host (${authHost}) != NEXT_PUBLIC_APP_URL host (${appHost}). Auth callbacks may redirect to the wrong host.`,
+    );
   }
 }
 ```
@@ -921,19 +945,19 @@ Source: `security-and-hardening/SKILL.md` §2 Broken Authentication + §Security
 
 Better Auth handles most of these via its Drizzle adapter and plugin system, but the following must be verified/configured explicitly:
 
-| Control | Requirement | Stillwater config |
-|---------|-------------|-------------------|
-| Password hashing | bcrypt/scrypt/argon2 with salt rounds ≥ 12 | Better Auth default is bcrypt cost 12 — verify in `auth.ts` config; consider argon2id for Phase 9+ |
-| Password reset tokens | MUST expire (≤ 1 hour) | Better Auth `resetPasswordTokenExpiration: 60 * 60` (verify in `auth.ts`) |
-| Email verification | Required before first booking | Better Auth `requireEmailVerification: true` on sensitive procedures; Phase 2 enrollment gate |
-| OAuth scope minimization | Request only `email` + `profile` from Google | `socialProviders.google({ scope: ['email', 'profile'] })` in `auth.ts` |
-| Session fixation | Rotate session ID on login + privilege change | Better Auth rotates session ID on `signIn` by default; verify on role elevation (admin promotion) |
-| MFA | Available via Better Auth plugin (Phase 9+) | `better-auth/plugins/two-factor`; not in Phase 0 scaffold |
-| Account lockout | Lock after 5 failed attempts for 15 min | Upstash counter in `rateLimit.ts` (see §15.7); return 429 (NOT 401) to avoid revealing account existence |
-| Brute-force protection | Auth mutations: 10 requests / 15 min per IP | `rateLimit({ limit: 10, window: '15 m' })` on `auth.signIn`, `auth.signUp`, `auth.resetPassword` mutations (stricter than the 10/1min booking limit) |
-| Session cookie attributes | `httpOnly: true`, `secure: true` (prod), `sameSite: 'lax'` | Better Auth default; verify in `auth.ts` `session.cookie` config |
-| Session timeout | Idle: 24h; absolute: 7 days | `session.expiresIn: 60 * 60 * 24` (24h idle); rotate refresh token on use |
-| Logout invalidation | Session row deleted from DB (not just cookie cleared) | `authClient.signOut()` calls `auth.api.signOut()` which deletes the session row |
+| Control                   | Requirement                                                | Stillwater config                                                                                                                                    |
+| ------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Password hashing          | bcrypt/scrypt/argon2 with salt rounds ≥ 12                 | Better Auth default is bcrypt cost 12 — verify in `auth.ts` config; consider argon2id for Phase 9+                                                   |
+| Password reset tokens     | MUST expire (≤ 1 hour)                                     | Better Auth `resetPasswordTokenExpiration: 60 * 60` (verify in `auth.ts`)                                                                            |
+| Email verification        | Required before first booking                              | Better Auth `requireEmailVerification: true` on sensitive procedures; Phase 2 enrollment gate                                                        |
+| OAuth scope minimization  | Request only `email` + `profile` from Google               | `socialProviders.google({ scope: ['email', 'profile'] })` in `auth.ts`                                                                               |
+| Session fixation          | Rotate session ID on login + privilege change              | Better Auth rotates session ID on `signIn` by default; verify on role elevation (admin promotion)                                                    |
+| MFA                       | Available via Better Auth plugin (Phase 9+)                | `better-auth/plugins/two-factor`; not in Phase 0 scaffold                                                                                            |
+| Account lockout           | Lock after 5 failed attempts for 15 min                    | Upstash counter in `rateLimit.ts` (see §15.7); return 429 (NOT 401) to avoid revealing account existence                                             |
+| Brute-force protection    | Auth mutations: 10 requests / 15 min per IP                | `rateLimit({ limit: 10, window: '15 m' })` on `auth.signIn`, `auth.signUp`, `auth.resetPassword` mutations (stricter than the 10/1min booking limit) |
+| Session cookie attributes | `httpOnly: true`, `secure: true` (prod), `sameSite: 'lax'` | Better Auth default; verify in `auth.ts` `session.cookie` config                                                                                     |
+| Session timeout           | Idle: 24h; absolute: 7 days                                | `session.expiresIn: 60 * 60 * 24` (24h idle); rotate refresh token on use                                                                            |
+| Logout invalidation       | Session row deleted from DB (not just cookie cleared)      | `authClient.signOut()` calls `auth.api.signOut()` which deletes the session row                                                                      |
 
 **Brute-force note:** Return HTTP 429 (rate limited) — NOT 401 (unauthorized) — when the lockout triggers. Returning 401 reveals that the account exists, enabling username enumeration. The 429 response should be identical whether the lockout is active OR the rate limit is hit, to avoid a timing side-channel.
 
@@ -947,7 +971,7 @@ Better Auth handles most of these via its Drizzle adapter and plugin system, but
 import { requireAuth } from '@/lib/auth';
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
-  await requireAuth();  // throws NEXT_REDIRECT if unauthenticated
+  await requireAuth(); // throws NEXT_REDIRECT if unauthenticated
   return <StudioShell>{children}</StudioShell>;
 }
 
@@ -1010,7 +1034,7 @@ export async function cancelBooking(id: string) {
 // Drizzle/Postgres errors or expose timing side-channels
 export async function cancelBooking(id: string) {
   const booking = await db.query.bookings.findFirst({
-    where: eq(bookings.id, id),  // 💥 unvalidated
+    where: eq(bookings.id, id), // 💥 unvalidated
   });
 }
 ```
@@ -1025,14 +1049,14 @@ export async function cancelBooking(id: string) {
 
 ### 6.1 Hook Inventory (Phase 5+ — planned)
 
-| Hook | Location | Purpose | Returns |
-|------|----------|---------|---------|
+| Hook                     | Location                                       | Purpose                              | Returns                      |
+| ------------------------ | ---------------------------------------------- | ------------------------------------ | ---------------------------- |
 | `useSessionAvailability` | `apps/web/src/hooks/useSessionAvailability.ts` | SSE subscription for live seat count | `{ data, isLoading, error }` |
-| `useScrollProgress` | `apps/web/src/hooks/useScrollProgress.ts` | Reading progress bar (0–1) | `number` |
-| `useScrollReveal` | `apps/web/src/hooks/useScrollReveal.ts` | IntersectionObserver-based reveal | `{ ref, revealed }` |
-| `useNavScrollHide` | `apps/web/src/hooks/useNavScrollHide.ts` | Hide nav on scroll-down | `boolean` |
-| `useBookingMutation` | `apps/web/src/hooks/useBookingMutation.ts` | tRPC booking mutation wrapper | `UseMutationResult` |
-| `useReducedMotion` | `packages/ui/src/hooks/useReducedMotion.ts` | SSR-safe `prefers-reduced-motion` | `boolean` |
+| `useScrollProgress`      | `apps/web/src/hooks/useScrollProgress.ts`      | Reading progress bar (0–1)           | `number`                     |
+| `useScrollReveal`        | `apps/web/src/hooks/useScrollReveal.ts`        | IntersectionObserver-based reveal    | `{ ref, revealed }`          |
+| `useNavScrollHide`       | `apps/web/src/hooks/useNavScrollHide.ts`       | Hide nav on scroll-down              | `boolean`                    |
+| `useBookingMutation`     | `apps/web/src/hooks/useBookingMutation.ts`     | tRPC booking mutation wrapper        | `UseMutationResult`          |
+| `useReducedMotion`       | `packages/ui/src/hooks/useReducedMotion.ts`    | SSR-safe `prefers-reduced-motion`    | `boolean`                    |
 
 ### 6.2 `useSessionAvailability` (Critical SSE Hook)
 
@@ -1052,7 +1076,7 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 const BASE_BACKOFF_MS = 1000;
 
 function backoffDelay(attempt: number): number {
-  return BASE_BACKOFF_MS * Math.pow(2, attempt);  // 1s → 2s → 4s
+  return BASE_BACKOFF_MS * Math.pow(2, attempt); // 1s → 2s → 4s
 }
 
 export function useSessionAvailability(sessionId: string): {
@@ -1122,6 +1146,7 @@ export function useSessionAvailability(sessionId: string): {
 ```
 
 **Why each detail matters:**
+
 - `isCancelled` flag prevents reconnect after unmount (race condition guard)
 - `reconnectAttempt = 0` on `onopen` resets counter on successful reconnect
 - `eventSource?.close()` (optional chaining) — TypeScript strict mode requires it
@@ -1163,11 +1188,12 @@ export function useScrollProgress(): number {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  return progress;  // 0 on server, 0–1 on client
+  return progress; // 0 on server, 0–1 on client
 }
 ```
 
 **Why each detail matters:**
+
 - `{ passive: true }` enables scroll optimization
 - `requestAnimationFrame` throttles to one update per frame
 - `ticking` flag prevents duplicate rAF calls
@@ -1196,6 +1222,7 @@ export function useReducedMotion(): boolean {
 ```
 
 **Why each detail matters:**
+
 - Returns `false` on server (no hydration mismatch)
 - Uses `addEventListener('change', ...)` NOT deprecated `addListener`
 - Updates reactively if user changes preference mid-session
@@ -1235,12 +1262,14 @@ function SessionCapacity({ sessionPromise }: { sessionPromise: Promise<Session> 
 ```
 
 **Why each detail matters:**
+
 - Pass the **promise** (not `await`ed value) from Server Component — this enables PPR streaming
 - `use()` must be called inside a `<Suspense>` boundary or it throws
 - Both clients share the same promise → single fetch, no waterfall
 - Source: `nextjs-react-expert/1-async-eliminating-waterfalls.md` lines 283–301
 
 **When NOT to use `use(promise)`:**
+
 - For client-side mutations (use tRPC `useMutation` instead)
 - For data that changes frequently (use tRPC `useQuery` with invalidation)
 - For data not available at request time (use client-side fetch)
@@ -1253,27 +1282,27 @@ function SessionCapacity({ sessionPromise }: { sessionPromise: Promise<Session> 
 
 **Sanity CMS manages ONLY marketing content.** Operational data stays in PostgreSQL.
 
-| Sanity | PostgreSQL |
-|--------|------------|
+| Sanity                                                                                 | PostgreSQL                                                                                                                              |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | Studio story, Blog posts, FAQs, Testimonials, Announcements, Hero copy, Team narrative | Class definitions, Class sessions + schedule, Enrollments, Members + subscriptions, Payments, Instructors (operational), Rooms/capacity |
-| Changed by: Content editors | Changed by: Studio owners via admin UI |
-| Updated via: Sanity Studio publish | Updated via: tRPC admin procedures |
-| Revalidation: Webhook → ISR | Revalidation: Real-time via tRPC queries |
+| Changed by: Content editors                                                            | Changed by: Studio owners via admin UI                                                                                                  |
+| Updated via: Sanity Studio publish                                                     | Updated via: tRPC admin procedures                                                                                                      |
+| Revalidation: Webhook → ISR                                                            | Revalidation: Real-time via tRPC queries                                                                                                |
 
 **Instructor data is duplicated** (marketing bio in Sanity; operational record in Postgres). Managed by using `instructor.slug` as the join key.
 
 ### 7.2 Sanity Content Types (8 total)
 
-| Type | Purpose |
-|------|---------|
-| `siteSettings` | Studio name, address, hours, social links |
-| `homePage` | Hero content, featured classes, testimonials |
-| `aboutPage` | Studio story, values, team narrative |
-| `blogPost` | Author, publishedAt, body (Portable Text), tags |
-| `faq` | Question + answer pairs, categorized |
-| `instructorBio` | Extended bio, gallery (supplements DB record) |
-| `testimonial` | Member quote, name, class, rating |
-| `announcement` | Time-bound banner (e.g., "Studio closed Dec 25") |
+| Type            | Purpose                                          |
+| --------------- | ------------------------------------------------ |
+| `siteSettings`  | Studio name, address, hours, social links        |
+| `homePage`      | Hero content, featured classes, testimonials     |
+| `aboutPage`     | Studio story, values, team narrative             |
+| `blogPost`      | Author, publishedAt, body (Portable Text), tags  |
+| `faq`           | Question + answer pairs, categorized             |
+| `instructorBio` | Extended bio, gallery (supplements DB record)    |
+| `testimonial`   | Member quote, name, class, rating                |
+| `announcement`  | Time-bound banner (e.g., "Studio closed Dec 25") |
 
 ### 7.3 GROQ Query Patterns
 
@@ -1326,7 +1355,8 @@ export async function POST(req: Request) {
   const payload = JSON.parse(body);
   // Revalidate affected paths based on payload
   if (payload._type === 'homePage') revalidatePath('/');
-  if (payload._type === 'blogPost') revalidatePath('/blog'), revalidatePath(`/blog/${payload.slug.current}`, 'page');
+  if (payload._type === 'blogPost')
+    (revalidatePath('/blog'), revalidatePath(`/blog/${payload.slug.current}`, 'page'));
   // ...
 
   return new Response('ok', { status: 200 });
@@ -1336,6 +1366,7 @@ export async function POST(req: Request) {
 ### 7.5 Adding New Content (Procedure)
 
 Adding a new testimonial:
+
 1. Editor publishes in Sanity Studio
 2. Sanity fires webhook to `/api/webhooks/sanity`
 3. Webhook verifies HMAC signature
@@ -1353,21 +1384,19 @@ Source: `nextjs16-react19-tailwind4-full-stack/SKILL.md` H2 fix lines 348–378 
 
 ```typescript
 // ✅ CORRECT: Public tRPC procedure filters by published
-export const getInstructors = publicProcedure
-  .query(async ({ ctx }) => {
-    const result = await ctx.db
-      .select()
-      .from(instructors)
-      .where(eq(instructors.published, true))  // REQUIRED for public queries
-      .orderBy(instructors.order);
-    return InstructorArraySchema.parse(result);  // Zod defense-in-depth
-  });
+export const getInstructors = publicProcedure.query(async ({ ctx }) => {
+  const result = await ctx.db
+    .select()
+    .from(instructors)
+    .where(eq(instructors.published, true)) // REQUIRED for public queries
+    .orderBy(instructors.order);
+  return InstructorArraySchema.parse(result); // Zod defense-in-depth
+});
 
 // ❌ WRONG: No published filter — unpublished instructors leak to public
-export const getInstructors = publicProcedure
-  .query(async ({ ctx }) => {
-    return ctx.db.select().from(instructors).orderBy(instructors.order);
-  });
+export const getInstructors = publicProcedure.query(async ({ ctx }) => {
+  return ctx.db.select().from(instructors).orderBy(instructors.order);
+});
 ```
 
 **GROQ equivalent:** `*[_type == "instructor" && published == true] | order(order asc)`
@@ -1386,7 +1415,10 @@ All instructor photos, class thumbnails, and blog hero images served via Cloudfl
 import 'server-only';
 import { env } from '@stillwater/config/env';
 
-export async function getSignedImageUrl(imageKey: string, transformations: string = 'w=800,h=600,format=auto'): Promise<string> {
+export async function getSignedImageUrl(
+  imageKey: string,
+  transformations: string = 'w=800,h=600,format=auto',
+): Promise<string> {
   const url = `${env.NEXT_PUBLIC_CLOUDFLARE_IMAGES_URL}/${imageKey}/${transformations}`;
   // Sign URL with Cloudflare Images token
   // ...
@@ -1402,7 +1434,7 @@ import { InstructorCard } from '@/components/marketing/InstructorCard';
 
 export default async function InstructorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const instructor = await apiCaller().then(api => api.instructors.getBySlug({ slug }));
+  const instructor = await apiCaller().then((api) => api.instructors.getBySlug({ slug }));
   const imageUrl = await getSignedImageUrl(instructor.imageKey);
   return <InstructorCard instructor={instructor} imageUrl={imageUrl} />;
 }
@@ -1422,23 +1454,23 @@ import { getSignedImageUrl } from '@/storage/cloudflare-images'; // 💥 env val
 
 Source: `avant-garde-design-v4/references/04-accessibility-checklist.md` §Level AAA Requirements. Stillwater targets WCAG 2.2 Level AAA (not just AA). The table below covers all 9 criteria applicable to web apps.
 
-| # | WCAG 2.2 AAA Criterion | Requirement | Stillwater Value | Verified via |
-|---|------------------------|-------------|------------------|-------------|
-| 1.4.6 | Contrast (Enhanced) — normal text | 7:1 minimum | All `--color-stone-*` on `--color-sand` verified | `scripts/contrast-check.ts` in CI |
-| 1.4.6 | Contrast (Enhanced) — large text (≥ 18pt) | 4.5:1 minimum | All Cormorant display sizes | `scripts/contrast-check.ts` |
-| 1.4.8 | Visual Presentation | (a) Width ≤ 80 chars; (b) no justified text; (c) line spacing ≥ 1.5; (d) no background color override by user stylesheet blocking | `--leading-body: 1.65`; `max-width: 70ch` on prose; `text-align: left` (never `justify`) | Code review + axe-core |
-| 1.4.9 | Images of Text (No Exception) | No images of text (logos exempt) | All text is real HTML text; instructor names/schedules are NOT in images | Code review |
-| 2.2.4 | Interruptions | User can postpone or suppress interruptions | No auto-redirects; toast notifications dismissible; no auto-playing video with audio | Code review |
-| 2.3.2 | Three Flashes | No more than 3 flashes per second | No flashing animations; `@media (prefers-reduced-motion)` reduces all motion to 0.01ms (see §4.6) | Code review |
-| 2.5.5 | Target Size (Enhanced) | 44×44 CSS pixels minimum | `min-h-[44px] min-w-[44px]` on all interactive elements | ESLint rule + E2E assertion |
-| 2.5.7 | Dragging Movements (WCAG 2.2 NEW) | Functionality requiring dragging MUST have a single-click/tap alternative | Booking calendar has click-to-select alternative to drag-to-range; kanban admin has click-move buttons | Code review |
-| 3.1.5 | Reading Level | Lower secondary education (≈ Grade 8) | Instructional copy only; legal/medical copy reviewed for reading level | Content review |
-| 3.1.6 | Pronunciation | Pronunciation available for words where meaning depends on it | Japanese term 間 (ma) includes `<ruby>` annotation; Sanskrit yoga terms include IAST transliteration | Code review |
-| — | Focus indicator (Stillwater standard, exceeds WCAG) | 3px solid `--color-water-500` + 2px offset | Global `:focus-visible` rule (see §8.3); `--color-clay-300` on dark backgrounds | `scripts/contrast-check.ts` |
-| — | Keyboard navigation | Full tab order, no traps | Radix primitives + custom testing | axe-core + Lighthouse A11y = 100 |
-| — | Screen reader | Semantic HTML, ARIA labels | axe-core + Lighthouse A11y = 100 | Lighthouse CI Gate 6 |
-| — | Reduced motion | `0.01ms` durations globally | `@media (prefers-reduced-motion: reduce)` block (see §4.6) | Code review |
-| — | Time limits | None without warning + extension | No auto-logout, no countdown timers | Code review |
+| #     | WCAG 2.2 AAA Criterion                              | Requirement                                                                                                                       | Stillwater Value                                                                                       | Verified via                      |
+| ----- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| 1.4.6 | Contrast (Enhanced) — normal text                   | 7:1 minimum                                                                                                                       | All `--color-stone-*` on `--color-sand` verified                                                       | `scripts/contrast-check.ts` in CI |
+| 1.4.6 | Contrast (Enhanced) — large text (≥ 18pt)           | 4.5:1 minimum                                                                                                                     | All Cormorant display sizes                                                                            | `scripts/contrast-check.ts`       |
+| 1.4.8 | Visual Presentation                                 | (a) Width ≤ 80 chars; (b) no justified text; (c) line spacing ≥ 1.5; (d) no background color override by user stylesheet blocking | `--leading-body: 1.65`; `max-width: 70ch` on prose; `text-align: left` (never `justify`)               | Code review + axe-core            |
+| 1.4.9 | Images of Text (No Exception)                       | No images of text (logos exempt)                                                                                                  | All text is real HTML text; instructor names/schedules are NOT in images                               | Code review                       |
+| 2.2.4 | Interruptions                                       | User can postpone or suppress interruptions                                                                                       | No auto-redirects; toast notifications dismissible; no auto-playing video with audio                   | Code review                       |
+| 2.3.2 | Three Flashes                                       | No more than 3 flashes per second                                                                                                 | No flashing animations; `@media (prefers-reduced-motion)` reduces all motion to 0.01ms (see §4.6)      | Code review                       |
+| 2.5.5 | Target Size (Enhanced)                              | 44×44 CSS pixels minimum                                                                                                          | `min-h-[44px] min-w-[44px]` on all interactive elements                                                | ESLint rule + E2E assertion       |
+| 2.5.7 | Dragging Movements (WCAG 2.2 NEW)                   | Functionality requiring dragging MUST have a single-click/tap alternative                                                         | Booking calendar has click-to-select alternative to drag-to-range; kanban admin has click-move buttons | Code review                       |
+| 3.1.5 | Reading Level                                       | Lower secondary education (≈ Grade 8)                                                                                             | Instructional copy only; legal/medical copy reviewed for reading level                                 | Content review                    |
+| 3.1.6 | Pronunciation                                       | Pronunciation available for words where meaning depends on it                                                                     | Japanese term 間 (ma) includes `<ruby>` annotation; Sanskrit yoga terms include IAST transliteration   | Code review                       |
+| —     | Focus indicator (Stillwater standard, exceeds WCAG) | 3px solid `--color-water-500` + 2px offset                                                                                        | Global `:focus-visible` rule (see §8.3); `--color-clay-300` on dark backgrounds                        | `scripts/contrast-check.ts`       |
+| —     | Keyboard navigation                                 | Full tab order, no traps                                                                                                          | Radix primitives + custom testing                                                                      | axe-core + Lighthouse A11y = 100  |
+| —     | Screen reader                                       | Semantic HTML, ARIA labels                                                                                                        | axe-core + Lighthouse A11y = 100                                                                       | Lighthouse CI Gate 6              |
+| —     | Reduced motion                                      | `0.01ms` durations globally                                                                                                       | `@media (prefers-reduced-motion: reduce)` block (see §4.6)                                             | Code review                       |
+| —     | Time limits                                         | None without warning + extension                                                                                                  | No auto-logout, no countdown timers                                                                    | Code review                       |
 
 **ADA Title II compliance:** As of April 24, 2026, ADA Title II requires WCAG 2.1 AA conformance for state and local government websites. Stillwater targets AAA (stricter), so AA compliance is implicit. Source: `avant-garde-design-v4/references/04-accessibility-checklist.md` lines 270–285. Non-compliance risk: legal action, financial penalties, reputation damage, loss of federal contracts.
 
@@ -1471,10 +1503,10 @@ function meetsWCAG(fg: string, bg: string, level: 'AA' | 'AAA' = 'AAA'): boolean
 
 // Verify all pairings
 const pairings = [
-  { fg: '#1C1915', bg: '#F5F0E8', name: 'stone-900 on sand' },        // 14:1 ✓
-  { fg: '#8C7B6E', bg: '#F5F0E8', name: 'stone-400 on sand' },        // secondary text
-  { fg: '#C4856A', bg: '#F5F0E8', name: 'clay-400 on sand' },         // accent text
-  { fg: '#F5F0E8', bg: '#1C1915', name: 'sand on stone-900' },        // CTA band
+  { fg: '#1C1915', bg: '#F5F0E8', name: 'stone-900 on sand' }, // 14:1 ✓
+  { fg: '#8C7B6E', bg: '#F5F0E8', name: 'stone-400 on sand' }, // secondary text
+  { fg: '#C4856A', bg: '#F5F0E8', name: 'clay-400 on sand' }, // accent text
+  { fg: '#F5F0E8', bg: '#1C1915', name: 'sand on stone-900' }, // CTA band
   // ... all pairings
 ];
 
@@ -1495,7 +1527,7 @@ With `--radius: 0` (sharp edges), focus rings are the **only** interactive affor
 :focus-visible {
   outline: 3px solid var(--color-water-500);
   outline-offset: 2px;
-  border-radius: 0;  /* Maintain sharp edges even on focus */
+  border-radius: 0; /* Maintain sharp edges even on focus */
 }
 
 /* For elements on dark backgrounds (CTA band, admin dark sections) */
@@ -1522,15 +1554,15 @@ With `--radius: 0` (sharp edges), focus rings are the **only** interactive affor
 
 ### 8.5 ARIA Patterns per Component
 
-| Component | ARIA Pattern | Stillwater Implementation |
-|-----------|--------------|---------------------------|
-| Schedule tabs | `role="tablist"` + `role="tab"` + `aria-selected` + `aria-controls` | Radix Tabs (built-in) |
-| Class detail accordion | `role="button"` + `aria-expanded` + `aria-controls` | Custom (max-height transition) |
-| Live seat count | `role="img"` + `aria-label="N of M spots taken"` | Custom (12-bar visual) |
-| Booking confirmation | Radix Dialog (focus trap built-in) | `aria-labelledby` + `aria-describedby` |
-| Toast notifications | `sonner` (built-in `aria-live="polite"`) | Default |
-| Loading state | `aria-busy="true"` on container | Custom |
-| Error state | `aria-live="assertive"` + `aria-describedby` linking input to error | `react-hook-form` + `aria-invalid` |
+| Component              | ARIA Pattern                                                        | Stillwater Implementation              |
+| ---------------------- | ------------------------------------------------------------------- | -------------------------------------- |
+| Schedule tabs          | `role="tablist"` + `role="tab"` + `aria-selected` + `aria-controls` | Radix Tabs (built-in)                  |
+| Class detail accordion | `role="button"` + `aria-expanded` + `aria-controls`                 | Custom (max-height transition)         |
+| Live seat count        | `role="img"` + `aria-label="N of M spots taken"`                    | Custom (12-bar visual)                 |
+| Booking confirmation   | Radix Dialog (focus trap built-in)                                  | `aria-labelledby` + `aria-describedby` |
+| Toast notifications    | `sonner` (built-in `aria-live="polite"`)                            | Default                                |
+| Loading state          | `aria-busy="true"` on container                                     | Custom                                 |
+| Error state            | `aria-live="assertive"` + `aria-describedby` linking input to error | `react-hook-form` + `aria-invalid`     |
 
 ### 8.6 Reduced Motion (Global)
 
@@ -1567,46 +1599,55 @@ Set axe config to enforce WCAG 2.2 AAA ruleset.
 ### 8.8 Accessibility Testing Process
 
 **Automated (CI):**
+
 - `@axe-core/playwright` in E2E suite — runs on every PR
 - Lighthouse Accessibility in CI (target: 100)
 
 **Manual (per sprint):**
+
 - Screen reader testing: VoiceOver (macOS/iOS), NVDA (Windows)
 - Keyboard-only navigation walkthrough
 - High contrast mode testing
 - 200% zoom testing
 
 **Per-Component:**
+
 - Every new component in `packages/ui` has an accessibility test file
 - Tests verify: aria attributes, keyboard interaction, focus management
 
 ---
+
 ## §9. Anti-Patterns & Common Bugs
 
 ### 9.1 Next.js 16 Specific Anti-Patterns
 
 #### Bug: `middleware.ts` filename (Critical)
+
 **Symptom:** Edge middleware never runs; routes aren't protected.
 **Root cause:** Next.js 16 renamed `middleware.ts` to `proxy.ts`. The exported function must be named `proxy`, not `middleware`.
 **Fix:** Rename `apps/web/middleware.ts` → `apps/web/proxy.ts`. Change `export function middleware(...)` → `export async function proxy(...)`.
 **Lesson:** ADR-009. The `MASTER_EXECUTION_PLAN.md` Phase 0 patch D2 enforces this.
 
 #### Bug: `experimental.serverComponentsExternalPackages` ignored (Critical)
+
 **Symptom:** `@neondatabase/serverless`, `drizzle-orm`, `better-auth` bundled into server bundle, causing build failures or runtime errors.
 **Root cause:** Next.js 16 renamed this to top-level `serverExternalPackages` (no `experimental.` prefix).
 **Fix:** Move from `experimental.serverComponentsExternalPackages: [...]` to top-level `serverExternalPackages: [...]` in `next.config.ts`.
 **Lesson:** MASTER_EXECUTION_PLAN.md Phase 0 patch D21.
 
 #### Bug: `cacheComponents` inside `experimental` (Critical)
+
 **Symptom:** Every `"use cache"` directive is silently dead; `cacheLife()` throws `TypeError: cacheLife is not a function`.
 **Root cause:** `cacheComponents: true` and `cacheLife` profiles MUST be top-level in Next.js 16, not inside `experimental`.
 **Fix:** Move to top-level. Verify with a smoke test that `cacheLife("feed")` doesn't throw.
 **Lesson:** Skill `nextjs16-react19-postgres17` §Anti-Patterns.
 
 #### Bug: Synchronous `params` / `searchParams` / `cookies()` (Critical)
+
 **Symptom:** Runtime 500 in production; works in dev (silent).
 **Root cause:** All three are `Promise<T>` in Next.js 16. Synchronous access throws.
 **Fix:** Always `await` them:
+
 ```typescript
 // ✅ CORRECT
 export async function Page({ params }: { params: Promise<{ slug: string }> }) {
@@ -1621,60 +1662,69 @@ export function Page({ params }: { params: { slug: string } }) {
 ```
 
 #### Bug: `await` in page body without `<Suspense>` (Critical)
+
 **Symptom:** `blocking-route` build error.
 **Root cause:** With `cacheComponents: true`, ALL async data fetching must be inside `<Suspense>` or `'use cache'`.
 **Fix:** Wrap async Server Components in `<Suspense fallback={<Skeleton />}>`.
 
 #### Bug: `new Date()` in Server Components (High)
+
 **Symptom:** `next-prerender-current-time` build error.
 **Root cause:** Server Components are prerendered; `new Date()` makes them time-dependent.
 **Fix:** Move to Client Component with `useEffect`.
 
 #### Bug: `auth.api.getSession()` called inside `proxy.ts` (Critical — guide G2)
+
 **Symptom:** Slow edge requests; Next.js 16 caching bugs; potential RBAC bypass if proxy session check is stale.
 **Root cause:** proxy.ts calls `auth.api.getSession()` which requires a DB connection. Even if proxy.ts runs on Node.js runtime (Next.js 16 docs are inconsistent on whether it defaults to Edge or Node.js), calling `auth.api.getSession()` on every request adds latency and breaks Next.js 16's caching model. This violates the Auth0 + Better Auth + Next.js 16 consensus: "proxy.ts is not intended for full session management or complex authorization."
 **Fix:** Use `getSessionCookie(request)` from `better-auth/cookies` for cookie-existence-only optimistic check. Move full validation + RBAC to Server Component layouts via `requireAuth()` / `requireRole()`.
+
 ```typescript
 // ❌ WRONG — full validation in proxy (original scaffolded pattern)
-import { auth } from "@stillwater/auth";
+import { auth } from '@stillwater/auth';
 export async function proxy(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers }); // 💥 DB access on Edge
-  if (!session) return redirect("/auth/sign-in");
+  if (!session) return redirect('/auth/sign-in');
   // RBAC checks also wrong here
 }
 
 // ✅ CORRECT — cookie-only optimistic check (Edge-compatible)
-import { getSessionCookie } from "better-auth/cookies";
+import { getSessionCookie } from 'better-auth/cookies';
 export async function proxy(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   if (!sessionCookie) {
-    const signInUrl = new URL("/auth/sign-in", request.nextUrl.origin);
-    signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+    const signInUrl = new URL('/auth/sign-in', request.nextUrl.origin);
+    signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
     return NextResponse.redirect(signInUrl);
   }
   return NextResponse.next();
   // NOTE: Full session validation + RBAC happens in layout.tsx via requireAuth() / requireRole()
 }
 ```
+
 **Lesson:** Guide `guide_auth-v5_vs_better-auth.md` §Route Protection Pattern Changes. The original scaffolding_files.md `proxy.ts` used the wrong pattern; Phase 0 patch D2 + Phase 2 F2-13 must use the cookie-only pattern.
 
 #### Bug: `requireAuth()` wrapped in try/catch (Critical)
+
 **Symptom:** Unauthenticated users aren't redirected; they see the protected page.
 **Root cause:** `requireAuth()` (the Better Auth server-side guard defined in §5.6) throws `NEXT_REDIRECT`. try/catch swallows it.
 **Fix:** Never wrap in try/catch. Let `NEXT_REDIRECT` propagate.
 **Lesson:** Source `nextjs16-react19-next-auth5-drizzle-orm` §Anti-Patterns documents this for the Auth.js v5 `verifySession()` equivalent; the same rule applies to Better Auth's `requireAuth()`.
 
 #### Bug: `requireAuth()` in API routes (High)
+
 **Symptom:** API route throws redirect instead of returning 401 JSON.
 **Root cause:** `requireAuth()` is for Server Components (throws redirect). API routes need `auth.api.getSession()` (returns null → 401 JSON).
 **Fix:** Use `auth.api.getSession({ headers: await headers() })` directly in API routes; return 401 JSON if null.
 
 #### Bug: `next lint` deprecated (Medium)
+
 **Symptom:** Deprecation warning; future build failure.
 **Root cause:** Next.js 16 deprecated `next lint`.
 **Fix:** Use `eslint .` directly. MASTER_EXECUTION_PLAN.md Phase 0 patch D23.
 
 #### Bug: `metadata.other` for JSON-LD or HTTP headers (High)
+
 **Symptom:** JSON-LD doesn't render as `<script>`; HTTP headers don't apply.
 **Root cause:** `metadata.other` only emits `<meta>` tags, never `<script>` or HTTP headers.
 **Fix:** Render JSON-LD as `<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeForScriptContext(JSON.stringify(schema)) }} />` in body. Set HTTP headers in `next.config.ts` `headers()`.
@@ -1682,11 +1732,15 @@ export async function proxy(request: NextRequest) {
 ### 9.2 TypeScript Strict Mode Anti-Patterns
 
 #### Bug: `any` type (Critical)
+
 **Symptom:** ESLint error: `@typescript-eslint/no-explicit-any`.
 **Fix:** Use `unknown` and narrow with type guards:
+
 ```typescript
 // ❌ WRONG
-function process(data: any) { return data.foo; }
+function process(data: any) {
+  return data.foo;
+}
 
 // ✅ CORRECT
 function process(data: unknown) {
@@ -1698,11 +1752,17 @@ function process(data: unknown) {
 ```
 
 #### Bug: `enum` / `namespace` (Critical)
+
 **Symptom:** TypeScript error: violates `erasableSyntaxOnly`.
 **Fix:** Use string unions or Drizzle `pgEnum()`:
+
 ```typescript
 // ❌ WRONG
-enum BookingStatus { Pending, Confirmed, Cancelled }
+enum BookingStatus {
+  Pending,
+  Confirmed,
+  Cancelled,
+}
 
 // ✅ CORRECT
 export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'cancelled']);
@@ -1710,9 +1770,11 @@ export type BookingStatus = (typeof bookingStatusEnum.enumValues)[number];
 ```
 
 #### Bug: Indexed access without guard (High)
+
 **Symptom:** Runtime TypeError: "Cannot read property 'X' of undefined".
 **Root cause:** `noUncheckedIndexedAccess` means `arr[0]` is `T | undefined`.
 **Fix:** Guard before access:
+
 ```typescript
 // ❌ WRONG
 const first = result[0];
@@ -1725,23 +1787,33 @@ console.log(first.name);
 ```
 
 #### Bug: `catch (err)` accessing `err.message` (High)
+
 **Symptom:** TypeScript error: `err` is `unknown`.
 **Root cause:** `useUnknownInCatchVariables` is on.
 **Fix:** Narrow first:
+
 ```typescript
 // ❌ WRONG
-try { /* ... */ } catch (err) { console.log(err.message); }
+try {
+  /* ... */
+} catch (err) {
+  console.log(err.message);
+}
 
 // ✅ CORRECT
-try { /* ... */ } catch (err) {
+try {
+  /* ... */
+} catch (err) {
   if (err instanceof Error) console.log(err.message);
   else console.log(String(err));
 }
 ```
 
 #### Bug: `as unknown as` casts hide schema bugs (Critical)
+
 **Symptom:** Silent type mismatches; runtime crashes.
 **Fix:** Fix the schema. Add `.notNull()` to Drizzle columns:
+
 ```typescript
 // ❌ WRONG
 return result as unknown as Coach[];
@@ -1752,8 +1824,10 @@ return result;
 ```
 
 #### Bug: `@ts-expect-error` as escape hatch (High)
+
 **Symptom:** Type errors silently suppressed.
 **Fix:** Use `instanceof` type narrowing:
+
 ```typescript
 // ❌ WRONG
 // @ts-expect-error — response.Body is a Readable stream
@@ -1765,8 +1839,10 @@ for await (const chunk of response.Body) { ... }
 ```
 
 #### Bug: `exactOptionalPropertyTypes` with `undefined` in overrides (High)
+
 **Symptom:** Factory overrides with explicit `undefined` fail type-check.
 **Fix:** Use conditional spread:
+
 ```typescript
 // ❌ WRONG
 return { ...default, ...overrides }; // overrides may have undefined values
@@ -1778,17 +1854,21 @@ return { ...default, ...(overrides && { ...overrides }) };
 ### 9.3 Drizzle ORM Anti-Patterns
 
 #### Bug: `DATABASE_URL` (pooled) for migrations (Critical)
+
 **Symptom:** Migration fails with "prepared statement" errors.
 **Root cause:** PgBouncer (pooled connection) breaks prepared statements in migration scripts.
 **Fix:** Always use `DATABASE_URL_UNPOOLED` for migrations. `drizzle.config.ts` already enforces this.
 
 #### Bug: `drizzle-kit push` in production (Critical)
+
 **Symptom:** Irreversible schema overwrite; data loss.
 **Fix:** Use `drizzle-kit generate` (creates SQL) + `drizzle-kit migrate` (applies) only. `push` is dev-only.
 
 #### Bug: Raw SQL string concatenation (Critical)
+
 **Symptom:** SQL injection vulnerability.
 **Fix:** Use Drizzle parameterized queries:
+
 ```typescript
 // ❌ WRONG
 await db.execute(sql`SELECT * FROM users WHERE id = ${userId}`); // string concat if userId is untrusted
@@ -1798,8 +1878,10 @@ await db.select().from(users).where(eq(users.id, userId));
 ```
 
 #### Bug: Single-column cursor with composite ORDER BY (High)
+
 **Symptom:** Pagination skips or duplicates rows.
 **Fix:** Use compound cursor with UUID `id` tiebreaker:
+
 ```typescript
 // ❌ WRONG — single-column cursor
 const cursor = publishedAt.toISOString();
@@ -1812,9 +1894,11 @@ const cursorClause = sql`(${articles.publishedAt} < ${parsedCursor.publishedAt}
 ```
 
 #### Bug: Missing advisory lock on booking (Critical — ADR-004)
+
 **Symptom:** Double-booking under concurrent requests.
 **Root cause:** Race condition between capacity check and enrollment insert.
 **Fix:** Use `pg_advisory_xact_lock()` inside a transaction:
+
 ```typescript
 return ctx.db.transaction(async (tx) => {
   await tx.execute(sql`SELECT pg_advisory_xact_lock(${hashStringToBigInt(input.sessionId)})`);
@@ -1825,9 +1909,11 @@ return ctx.db.transaction(async (tx) => {
 ### 9.4 Stripe Webhook Anti-Patterns
 
 #### Bug: Non-idempotent webhook handler (Critical)
+
 **Symptom:** Duplicate subscription records, double credit grants on retry.
 **Root cause:** Stripe retries failed webhooks; handler processes same event twice.
 **Fix:** Idempotency via `payment_events.stripe_event_id` UNIQUE INDEX + `pg_advisory_xact_lock` (transaction-scoped — auto-releases at COMMIT/ROLLBACK; do NOT use session-scoped `pg_advisory_lock` which requires explicit unlock):
+
 ```typescript
 export async function handleStripeEvent(event: Stripe.Event, db: DrizzleDB): Promise<void> {
   // 1. Check if already processed
@@ -1861,9 +1947,11 @@ export async function handleStripeEvent(event: Stripe.Event, db: DrizzleDB): Pro
 ```
 
 #### Bug: Webhook body parsed as JSON (Critical)
+
 **Symptom:** Stripe signature verification fails.
 **Root cause:** Signature verification needs the raw body.
 **Fix:** Read body as text:
+
 ```typescript
 export async function POST(req: Request) {
   const body = await req.text(); // NOT req.json()!
@@ -1874,6 +1962,7 @@ export async function POST(req: Request) {
 ```
 
 #### Bug: Stripe SDK pre-v22 camelCase (Medium)
+
 **Symptom:** Property access returns undefined when using snake_case field names on pre-v22 SDK versions.
 **Root cause:** Pre-v22 Stripe SDK versions used camelCase aliases (`currentPeriodEnd` instead of `current_period_end`). SDK v22+ aligns with the API wire format using snake_case (`current_period_end`). Webhook event payloads are always snake_case regardless of SDK version.
 **Fix:** Use v22+ SDK (which exposes snake_case to match the API wire format). If supporting older SDK versions, cast with fallback. Always use snake_case field names (`current_period_end`, not `currentPeriodEnd`) — see §2.1, §9.9 Gotcha 10, §15.6.
@@ -1881,12 +1970,15 @@ export async function POST(req: Request) {
 ### 9.5 Tailwind v4 Anti-Patterns
 
 #### Bug: `tailwind.config.js` present (Medium)
+
 **Symptom:** Tailwind v4 ignores it; tokens don't apply.
 **Fix:** Delete `tailwind.config.js`. All tokens live in `@theme` block in `globals.css`.
 
 #### Bug: Missing `@tailwindcss/postcss` in postcss.config (Critical)
+
 **Symptom:** Zero Tailwind utility classes generate.
 **Fix:** Use `@tailwindcss/postcss`, NOT `tailwindcss`:
+
 ```javascript
 // postcss.config.mjs
 const config = {
@@ -1897,34 +1989,41 @@ const config = {
 ```
 
 #### Bug: `bg-opacity-*` / `text-opacity-*` (Medium)
+
 **Symptom:** Opacity utilities don't work.
 **Root cause:** Renamed in v4 to opacity modifiers.
 **Fix:** Use `bg-color/50` (50% opacity) instead of `bg-color bg-opacity-50`.
 
 #### Bug: `bg-gradient-to-r` (Medium)
+
 **Symptom:** Gradient doesn't apply.
 **Root cause:** Renamed in v4.
 **Fix:** Use `bg-linear-to-r`. (Stillwater bans gradients anyway.)
 
 #### Bug: `shadow-sm` → `shadow-xs` shift (Medium)
+
 **Symptom:** Shadow appears different size.
 **Root cause:** v4 renamed `shadow-sm` → `shadow-xs`, `shadow` → `shadow-sm`.
 **Fix:** Audit all shadow usage. (Stillwater bans shadows anyway.)
 
 #### Bug: `outline-none` (Medium)
+
 **Symptom:** Focus outline still appears.
 **Root cause:** Renamed for semantic clarity.
 **Fix:** Use `outline-hidden`.
 
 #### Bug: `bg-[--brand]` square brackets (Medium)
+
 **Symptom:** CSS variable not applied.
 **Root cause:** v4 uses parentheses for CSS variables.
 **Fix:** Use `bg-(--brand)`.
 
 #### Bug: Dynamic class interpolation (Critical)
+
 **Symptom:** Classes don't generate in production build.
 **Root cause:** Tailwind can't statically analyze dynamic strings.
 **Fix:** Use full class strings or mapping objects:
+
 ```typescript
 // ❌ WRONG
 <div className={`bg-${status}-500`}>...</div>
@@ -1939,20 +2038,24 @@ const STATUS_CLASSES = {
 ```
 
 #### Bug: `@layer utilities` (Medium)
+
 **Symptom:** Custom utilities don't apply.
 **Root cause:** v4 replaces with `@utility`.
 **Fix:** Use `@utility name { ... }`.
 
 #### Bug: `@apply` in scoped styles without `@reference` (Medium)
+
 **Symptom:** `@apply` fails in CSS Modules.
 **Fix:** Add `@reference "../../app.css";` first.
 
 ### 9.6 React 19 Anti-Patterns
 
 #### Bug: `forwardRef` (Medium)
+
 **Symptom:** Unnecessary boilerplate.
 **Root cause:** React 19 allows `ref` as regular prop.
 **Fix:** Drop `forwardRef`:
+
 ```typescript
 // ❌ WRONG (React 18 pattern)
 const Button = forwardRef<HTMLButtonElement, Props>((props, ref) => { ... });
@@ -1962,24 +2065,31 @@ function Button({ ref, ...props }: Props & { ref?: React.Ref<HTMLButtonElement> 
 ```
 
 #### Bug: `useMemo` / `useCallback` without profiler evidence (Medium)
+
 **Symptom:** Premature optimization; code complexity.
 **Root cause:** React Compiler handles memoization automatically.
 **Fix:** Remove manual memoization. Add back only with profiler evidence.
 
 #### Bug: `setState` in effect body (High)
+
 **Symptom:** ESLint error: `react-hooks/set-state-in-effect`.
 **Fix:** Derive state instead:
+
 ```typescript
 // ❌ WRONG
-useEffect(() => { setIsPlaying(shouldPlay); }, [shouldPlay]);
+useEffect(() => {
+  setIsPlaying(shouldPlay);
+}, [shouldPlay]);
 
 // ✅ CORRECT
 const isPlaying = shouldPlay;
 ```
 
 #### Bug: `toLocaleString()` without explicit locale (High)
+
 **Symptom:** SSR hydration mismatch (server uses en-US, client uses browser locale).
 **Fix:** Always specify locale:
+
 ```typescript
 // ❌ WRONG
 <div>{price.toLocaleString()}</div>
@@ -1993,8 +2103,10 @@ const isPlaying = shouldPlay;
 ### 9.7 shadcn/ui Anti-Patterns
 
 #### Bug: Default purple primary (Critical)
+
 **Symptom:** Generic SaaS look; violates Anti-Generic mandate.
 **Fix:** Override `--primary` with clay HSL:
+
 ```css
 :root {
   --primary: 12 50% 36%; /* Clay #8A4030 */
@@ -2003,23 +2115,28 @@ const isPlaying = shouldPlay;
 ```
 
 #### Bug: Gradient button variant (Critical)
+
 **Symptom:** Violates Anti-Generic mandate.
 **Fix:** Delete `gradient` variant entirely from `buttonVariants`.
 
 #### Bug: Drop shadows on cards (Critical)
+
 **Symptom:** Generic SaaS depth; violates Anti-Generic mandate.
 **Fix:** Strip `shadow-*` from all shadcn components. Use border color/surface contrast for elevation.
 
 #### Bug: `focus:outline-none` without replacement (Critical)
+
 **Symptom:** No keyboard focus indicator; WCAG AAA failure.
 **Fix:** Use `focus-visible:ring-2 focus-visible:ring-water-500 focus-visible:ring-offset-2`.
 
 ### 9.8 Vitest Mocking Anti-Patterns
 
 #### Bug: `vi.fn()` in `vi.mock()` factory (Critical)
+
 **Symptom:** `ReferenceError: Cannot access 'mockFn' before initialization`.
 **Root cause:** `vi.mock()` factories are hoisted above imports.
 **Fix:** Use `vi.hoisted()`:
+
 ```typescript
 // ❌ WRONG
 const mockFn = vi.fn();
@@ -2031,9 +2148,11 @@ vi.mock('module', () => ({ x: mockFn }));
 ```
 
 #### Bug: Arrow function mock constructors (High)
+
 **Symptom:** `X is not a constructor`.
 **Root cause:** Arrow functions can't be `new`-ed.
 **Fix:** Use class syntax:
+
 ```typescript
 // ❌ WRONG
 vi.mock('@aws-sdk/client-s3', () => ({
@@ -2042,23 +2161,29 @@ vi.mock('@aws-sdk/client-s3', () => ({
 
 // ✅ CORRECT
 vi.mock('@aws-sdk/client-s3', () => {
-  class MockS3Client { send = vi.fn(); }
+  class MockS3Client {
+    send = vi.fn();
+  }
   return { S3Client: MockS3Client };
 });
 ```
 
 #### Bug: JSX in `.test.ts` files (Medium)
+
 **Symptom:** oxc parse error.
 **Fix:** Rename to `*.test.tsx`.
 
 #### Bug: `cacheLife()` in tests without `next/cache` mock (High)
+
 **Symptom:** `TypeError: cacheLife is not a function`.
 **Fix:** Mock `next/cache`:
+
 ```typescript
 vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 ```
 
 #### Bug: `clearAllMocks()` on structural mock chains (High)
+
 **Symptom:** `db.select().from().where()` chain breaks.
 **Fix:** Use `resetAllMocks()` or selective `clearAllMocks()`.
 
@@ -2067,6 +2192,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 > These are real issues encountered during Phase 0 implementation and the P0–P3 remediation pass (2026-07-06). Each has a verified root cause and fix. See also §12 Lessons 16–22 and `CLAUDE.md` §Gotchas & Troubleshooting for the full narrative versions.
 
 #### Gotcha 1: Trigger.dev v4 SDK import — use root `@trigger.dev/sdk`, NOT `/v3` (Critical — validated July 2026)
+
 **Symptom:** Using `@trigger.dev/sdk/v3` still works today but is the deprecated v3-era import pattern. Future SDK versions may remove the `/v3` subpath. Using `@trigger.dev/sdk/v4` fails — module not found.
 **Root cause:** `@trigger.dev/sdk@4.5.0` (latest on npm, July 2026) exports both `.` (root) and `./v3` subpaths — both resolve to the identical file (`./dist/esm/v3/index.js`). However, official Trigger.dev v4 documentation mandates: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is the deprecated v3-era pattern that users must migrate away from. The `/v4` subpath does NOT exist (and is not needed — the root import IS the v4 path).
 **Fix:** Use `import { defineConfig } from "@trigger.dev/sdk"` (root import, NOT `/v3`). This is the official Trigger.dev v4 pattern. The `services/workers/trigger.config.ts` file has been updated to use the root import.
@@ -2074,6 +2200,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** §12 Lesson 16, `CLAUDE.md` Gotcha 1, `AGENTS.md` Gotcha 1. Validated against Trigger.dev v4 official docs (July 2026 web research).
 
 #### Gotcha 2: ESLint v10 plugin incompatibility (Critical — D45)
+
 **Symptom:** `pnpm lint` crashes with `context.getFilename is not a function` (eslint-plugin-react) or `SourceCode.getTokenOrCommentAfter is not a function` (eslint-plugin-import).
 **Root cause:** ESLint v10 removed several APIs that `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` depend on. No v10-compatible versions of these plugins exist (they are the latest versions on npm). `eslint-plugin-react` peer dep: `^9.7` only. `eslint-plugin-import` peer dep: `^9` only.
 **Fix:** ESLint is pinned at `^9.39.4` (the `maintenance` dist-tag, actively receiving security/bug fixes) in 3 files: root `package.json`, `apps/web/package.json`, `tooling/eslint/package.json` (`@eslint/js: ^9.39.4`). Do NOT upgrade to ESLint v10 until both plugins release v10-compatible versions. Revisit Q4 2026.
@@ -2081,6 +2208,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** §12 Lesson 17, `CLAUDE.md` Gotcha 2, `AGENTS.md` Gotcha 2, MEP D45.
 
 #### Gotcha 3: React Email v6 paradigm shift — `@react-email/render` deprecated (Critical — D43)
+
 **Symptom:** `import { render } from '@react-email/render'` — module not found or deprecated warning.
 **Root cause:** React Email v6.0.0 (released April 16, 2026) unified all component packages (`@react-email/components`, `@react-email/render`, `@react-email/button`, etc.) into a single `react-email` package. The v0.x sub-packages are deprecated. v6 bundle is 1.8MB (514KB gzipped) — pulls `prismjs`, `marked`, `tailwindcss` compiler at runtime, threatening Trigger.dev 30s CPU budgets.
 **Fix:** Import from `react-email` root: `import { render, Html, Button, Tailwind } from 'react-email'`. For Trigger.dev workers, consider Resend Native Templates (`resend.emails.send({ to, subject, templateId, variables })`) to avoid the 1.8MB bundle bloat — see `react_email_suggestion.md` Alternative A. Pending ADR-010 will formalize this decision.
@@ -2088,6 +2216,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** §12 Lesson 18, `CLAUDE.md` Gotcha 3, `AGENTS.md` Gotcha 3, MEP D43, PAD §16.3.
 
 #### Gotcha 4: TypeScript `^6.0.3` in sub-packages contradicts PAD §5.1 (High — D44)
+
 **Symptom:** `pnpm install` says "typescript 6.0.3 is available" but PAD says stay on 5.9.0. Sub-packages were accidentally pinned to `^6.0.3`.
 **Root cause:** TS 6.0.3 (October 2025) exists but PAD §5.1 + `pnpm_install_fix.md` explicitly mandate `^5.9.0` for compatibility with `erasableSyntaxOnly` (forbids `enum`, `namespace`, parameter properties — TS 5.8+) and `verbatimModuleSyntax` (requires `import type`). During initial package version bumping, 9 sub-package.json files were accidentally set to `^6.0.3`.
 **Fix:** All 9 sub-packages reverted to `typescript: "^5.9.0"`. The `pnpm install` output saying "6.0.3 is available" is expected — we intentionally ignore it.
@@ -2095,6 +2224,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** §12 Lesson 19, `CLAUDE.md` Gotcha 4, `AGENTS.md` Gotcha 4, MEP D44.
 
 #### Gotcha 5: `pg_advisory_lock` (session-scoped) leaks under Neon PgBouncer (Critical — ADR-004 audit)
+
 **Symptom:** Lock leaks under Neon PgBouncer connection pooling; pool exhaustion; booking race conditions.
 **Root cause:** `pg_advisory_lock()` is session-scoped — it releases when the database session ends. Under Neon's managed PgBouncer (transaction pooling, default), sessions are returned to the pool after each transaction, so session-scoped locks may not release on the same backend.
 **Fix:** Always use `pg_advisory_xact_lock()` (transaction-scoped) — auto-releases at COMMIT/ROLLBACK. This applies to BOTH the booking flow AND the Stripe webhook idempotency handler.
@@ -2102,6 +2232,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** ADR-004, PAD §7.4, `CLAUDE.md` Gotcha 5, `AGENTS.md` §Architecture.
 
 #### Gotcha 6: `proxy.ts` — don't call `auth.api.getSession()` regardless of runtime (High — ADR-009)
+
 **Symptom:** `proxy.ts` works in dev but causes latency issues or caching bugs in production. If running on Edge runtime, may fail with "Edge runtime cannot access database".
 **Root cause:** Next.js 16 `proxy.ts` can run on Edge or Node.js runtime (official documentation is inconsistent on the default — some docs say Edge, others say Node.js). Regardless of runtime, calling `auth.api.getSession()` (which does DB lookup + JWT verification) on every request is too expensive and breaks Next.js 16's caching model.
 **Fix:** Use the 2-layer auth pattern (ADR-009): Layer 1 (`proxy.ts`) uses `getSessionCookie(request)` from `better-auth/cookies` — cookie-existence-only check, fast, NO DB. Layer 2 (Server Component layouts) calls `requireAuth()` / `requireRole(...roles)` for full validation + RBAC. This pattern works on both Edge and Node.js runtimes. The `proxy.ts` comment has been updated to "Edge or Node.js runtime (Next.js 16 documentation is inconsistent on the default)."
@@ -2109,18 +2240,21 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** ADR-009, §5.6, §9.1 "auth.api.getSession() called inside proxy.ts", `CLAUDE.md` Gotcha 6, `AGENTS.md` Gotcha 5.
 
 #### Gotcha 7: `cacheComponents: true` + `force-dynamic` conflict (Medium — deferred to pre-Phase 4)
+
 **Symptom:** Next.js 16 build error: `force-dynamic` is incompatible with `cacheComponents`.
 **Root cause:** When `cacheComponents: true` is enabled in `next.config.ts` (§2.1 recommends this for Phase 4+), setting `export const dynamic = 'force-dynamic'` on any route handler causes a build error.
 **Fix:** Don't set `force-dynamic` on SSE or streaming route handlers — they're dynamic by default (they read `req.url` or stream). See §13.8. Note: `cacheComponents` is NOT yet enabled in Phase 0 (deferred to pre-Phase 4).
 **Cross-ref:** §13.8, `CLAUDE.md` Gotcha 7, `AGENTS.md` Gotcha 6.
 
 #### Gotcha 8: Vercel SSE timeout — 10s Hobby / 15s Pro default (Medium — Phase 5)
+
 **Symptom:** SSE endpoint silently terminates after 10–15 seconds on Vercel.
 **Root cause:** Vercel serverless functions have a default timeout (10s Hobby, 15s Pro) that terminates long-running streams. As of June 2026, Vercel allows up to 30 minutes (1800s) on Pro/Enterprise, but this requires BOTH `maxDuration` AND enabling Fluid Compute in project settings.
 **Fix:** Phase 5 F5-01 (`/api/schedule/stream/route.ts`) must set `export const maxDuration = 300` (5 min) AND the Vercel project must have Fluid Compute enabled.
 **Cross-ref:** PAD §13.2, audit report A, `CLAUDE.md` Gotcha 8.
 
 #### Gotcha 9: shadcn/ui `style` field — `"default"` not `"new-york"` (Low — resolved)
+
 **Symptom:** Confusion about whether shadcn `components.json` should have `"style": "new-york"` or `"style": "default"`.
 **Root cause:** §2.1 previously said `"new-york"` but §3.2 table said `"default"`. The actual `apps/web/components.json` file has `"style": "default"`.
 **Fix:** Use `"style": "default"` (§2.1 has been corrected). The `new-york` style was a stale reference from an earlier draft.
@@ -2128,6 +2262,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** `CLAUDE.md` Gotcha 9.
 
 #### Gotcha 10: Stripe API version — Dahlia (2026-06-24) not Acacia (2024-12-18) (High — resolved)
+
 **Symptom:** Stripe SDK v22 expects `apiVersion: '2026-06-24.dahlia'` but code had `'2024-12-18.acacia'`.
 **Root cause:** Stripe SDK v22.3.0 pins the "Dahlia" API (2026-06-24). The `current_period_end` field moved from the subscription object to `items.data[0].current_period_end`. SDK exposes snake_case (NOT camelCase).
 **Fix:** §15.6 code example updated to `apiVersion: '2026-06-24.dahlia'`. Always use snake_case field names (`current_period_end`, not `currentPeriodEnd`).
@@ -2135,6 +2270,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** §15.6, `CLAUDE.md` Gotcha 10.
 
 #### Gotcha 11: `reactCompiler: true` requires `babel-plugin-react-compiler` package (Critical)
+
 **Symptom:** Dev server boots ("Ready in 1099ms") but every page returns HTTP 500. Log: "Failed to resolve package babel-plugin-react-compiler while attempting to resolve React Compiler."
 **Root cause:** `next.config.ts` has `reactCompiler: true`, which tells Next.js 16 to enable the React Compiler. However, `babel-plugin-react-compiler` is NOT a built-in — it must be manually installed as a devDependency. Without it, Next.js cannot initialize the React Compiler Babel plugin, causing every page render to fail.
 **Fix:** `pnpm add -F @stillwater/web babel-plugin-react-compiler`. Package is now in `apps/web/package.json` as `^1.0.0`.
@@ -2142,6 +2278,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** `CLAUDE.md` Gotcha 11, `AGENTS.md` Gotcha 11.
 
 #### Gotcha 12: t3-env `createEnv()` requires `clientPrefix` + inline schema (High)
+
 **Symptom:** `pnpm check-types` fails with TS2345: "Property 'clientPrefix' is missing in type."
 **Root cause:** t3-env v0.13.11's `createEnv()` requires a `clientPrefix` property (e.g., `'NEXT_PUBLIC_'`). Additionally, TypeScript cannot infer the generic types when the schema is passed as a separate variable — the schema must be passed inline to `createEnv()`.
 **Fix:** `packages/config/src/env.ts` restructured: schemas extracted as `serverSchema` and `clientSchema` consts (for the build-context fallback), then passed inline to `createEnv({ clientPrefix: 'NEXT_PUBLIC_', server: serverSchema, client: clientSchema, runtimeEnv: {...} })`.
@@ -2149,6 +2286,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Cross-ref:** `CLAUDE.md` Gotcha 12, `AGENTS.md` Gotcha 12.
 
 #### Gotcha 13: Trigger.dev v4 type changes — `machine` is string, `build.env` removed (High)
+
 **Symptom:** `pnpm check-types` fails with TS2353 ("'env' does not exist in type") and TS2322 ("Type '{ preset: string; }' is not assignable to type 'micro' | 'small-1x' | ...").
 **Root cause:** Trigger.dev v4 SDK changed the `defineConfig` type signature: `machine` is now a string literal (`"micro"`, `"small-1x"`, etc.), not an object with `preset`. The `build.env` property was removed — environment variables are injected at runtime by Trigger.dev Cloud, not declared in config.
 **Fix:** `services/workers/trigger.config.ts` updated: `machine: { preset: "micro" }` → `machine: "micro"`; removed `build.env` block. Also added `"type": "module"` to `services/workers/package.json` (required by `verbatimModuleSyntax`) and removed `rootDir`/`outDir` from tsconfig (incompatible with `trigger.config.ts` outside `src/`).
@@ -2164,6 +2302,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 Source: `debugging-and-error-recovery/SKILL.md` §Triage Checklist. Apply this 6-step process to EVERY bug before reaching for the topic-specific tables in §10.1–10.5. Do not skip steps.
 
 **Step 1: Reproduce** — Make the failure happen reliably. If you can't reproduce it, you can't fix it with confidence.
+
 - Can reproduce? → Proceed to Step 2.
 - Cannot reproduce? → Gather more context (logs, environment details); try a minimal environment; if truly non-reproducible, document conditions and monitor.
   - **Non-reproducible bug decision tree:**
@@ -2173,31 +2312,37 @@ Source: `debugging-and-error-recovery/SKILL.md` §Triage Checklist. Apply this 6
     - **Truly random?** Add deterministic seeds; run with `--repeat`; log every branch taken.
 
 **Step 2: Localize** — Find the exact layer, file, and line where the bug originates.
+
 - Which layer is failing? (UI → API → DB → Build → External → Test)
 - Use `console.log` / Sentry breadcrumbs / PostHog session replay to trace.
 - Bisect with `git bisect` (see §10.6) if the bug was introduced by a recent change.
 
 **Step 3: Reduce** — Strip away everything unrelated. The smallest reproducer is the easiest to fix.
+
 - Remove code until the bug disappears — the last thing removed was the trigger.
 - Reduce data: does it happen with 1 record? 10? 1000?
 - Reduce environment: does it happen locally? In CI? In staging? In production?
 
 **Step 4: Fix the Root Cause** — Not the symptom.
+
 - Ask "why?" 5 times. The first answer is usually a symptom, not the cause.
 - Example: "Booking failed" → "capacity check returned wrong number" → "N+1 query returned partial data" → "missing `with: { enrollments: true }` in Drizzle query" → "the relational query API wasn't used". Fix the last answer, not the first.
 - Never fix the symptom. A `try/catch` that swallows the error is a symptom fix. The root cause is whatever made the error throw.
 
 **Step 5: Guard Against Recurrence** — Add a regression test that would have caught the original bug.
+
 - Follow the Red-Green-Revert-Restore cycle (see §11.5 + §15.8).
 - The test MUST fail without the fix and pass with it. If it passes both ways, it doesn't test the bug.
 
 **Step 6: Verify End-to-End** — Run the full test suite + the specific scenario that triggered the bug.
+
 - Unit tests alone are not enough. Run the integration test that exercises the full flow.
 - For UI bugs, manually verify in the browser (or via Playwright).
 - For Stripe webhooks, use `stripe trigger` to replay the event.
 - For SSE, verify the event arrives within 5s.
 
 **Stop-the-Line Rule (source: `debugging-and-error-recovery/SKILL.md` §Stop-the-Line Rule):** If ANY of these occur, STOP all feature work until resolved:
+
 1. STOP adding features or making changes
 2. PRESERVE evidence (error output, logs, repro steps)
 3. DIAGNOSE using the triage checklist above
@@ -2209,35 +2354,35 @@ Don't push past a failing test or broken build to work on the next feature. Erro
 
 ### 10.1 Build Failures
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `blocking-route` | `await` in page body without `<Suspense>` | Wrap async Server Component in `<Suspense fallback={<Skeleton />}>` |
-| `next-prerender-current-time` | `new Date()` in Server Component | Move to Client Component with `useEffect` |
-| `cacheLife is not a function` | `cacheLife` profiles inside `experimental` | Move to top-level `cacheLife` profiles |
-| `experimental.ppr is not supported` | Including `experimental.ppr` | Use top-level `cacheComponents: true` |
-| `ERR_PNPM_INVALID_WORKSPACE_CONFIGURATION` | Missing `packages: ['.']` in `pnpm-workspace.yaml` | Add `packages: ['.']` |
+| Error                                      | Cause                                              | Fix                                                                 |
+| ------------------------------------------ | -------------------------------------------------- | ------------------------------------------------------------------- |
+| `blocking-route`                           | `await` in page body without `<Suspense>`          | Wrap async Server Component in `<Suspense fallback={<Skeleton />}>` |
+| `next-prerender-current-time`              | `new Date()` in Server Component                   | Move to Client Component with `useEffect`                           |
+| `cacheLife is not a function`              | `cacheLife` profiles inside `experimental`         | Move to top-level `cacheLife` profiles                              |
+| `experimental.ppr is not supported`        | Including `experimental.ppr`                       | Use top-level `cacheComponents: true`                               |
+| `ERR_PNPM_INVALID_WORKSPACE_CONFIGURATION` | Missing `packages: ['.']` in `pnpm-workspace.yaml` | Add `packages: ['.']`                                               |
 
 ### 10.2 Runtime Errors
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `Cannot read property 'X' of undefined` | Indexed access without guard | Add `if (!result[0]) return null;` |
-| `err.message` TypeScript error | `useUnknownInCatchVariables` | Narrow with `instanceof Error` |
-| Hydration mismatch on numbers | `toLocaleString()` without locale | Use `toLocaleString('en-US')` |
-| `NEXT_REDIRECT` caught in try/catch | Wrapped `requireAuth()` | Remove try/catch |
-| SSE 504 on Vercel | Function timeout | Set `maxDuration = 900` for Pro tier |
-| Stripe webhook 400 | Body parsed as JSON | Read body as `req.text()` |
-| Tailwind classes missing in prod | Dynamic class interpolation | Use full class strings or mapping objects |
+| Error                                   | Cause                             | Fix                                       |
+| --------------------------------------- | --------------------------------- | ----------------------------------------- |
+| `Cannot read property 'X' of undefined` | Indexed access without guard      | Add `if (!result[0]) return null;`        |
+| `err.message` TypeScript error          | `useUnknownInCatchVariables`      | Narrow with `instanceof Error`            |
+| Hydration mismatch on numbers           | `toLocaleString()` without locale | Use `toLocaleString('en-US')`             |
+| `NEXT_REDIRECT` caught in try/catch     | Wrapped `requireAuth()`           | Remove try/catch                          |
+| SSE 504 on Vercel                       | Function timeout                  | Set `maxDuration = 900` for Pro tier      |
+| Stripe webhook 400                      | Body parsed as JSON               | Read body as `req.text()`                 |
+| Tailwind classes missing in prod        | Dynamic class interpolation       | Use full class strings or mapping objects |
 
 ### 10.3 Test Failures
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `Cannot access 'X' before initialization` | `vi.fn()` in `vi.mock()` factory | Use `vi.hoisted()` |
-| `X is not a constructor` | Arrow function mock | Use `class` syntax |
-| `cacheLife is not a function` | Missing `next/cache` mock | `vi.mock('next/cache', ...)` |
-| Flaky concurrent booking test | Race condition timing | Widen race window with `setTimeout`/`sleep` |
-| False green on Stripe idempotency | State leakage between tests | Truncate `payment_events` in `beforeEach` |
+| Error                                     | Cause                            | Fix                                         |
+| ----------------------------------------- | -------------------------------- | ------------------------------------------- |
+| `Cannot access 'X' before initialization` | `vi.fn()` in `vi.mock()` factory | Use `vi.hoisted()`                          |
+| `X is not a constructor`                  | Arrow function mock              | Use `class` syntax                          |
+| `cacheLife is not a function`             | Missing `next/cache` mock        | `vi.mock('next/cache', ...)`                |
+| Flaky concurrent booking test             | Race condition timing            | Widen race window with `setTimeout`/`sleep` |
+| False green on Stripe idempotency         | State leakage between tests      | Truncate `payment_events` in `beforeEach`   |
 
 ### 10.4 Concurrent Booking Bug Debugging (BOOK-xxx)
 
@@ -2257,13 +2402,13 @@ it('BOOK-006: handles concurrent booking attempts via advisory lock', async () =
 
   // Fire 10 concurrent booking attempts
   const results = await Promise.all(
-    members.map(m => bookingsRouter.book({ sessionId: session.id }, { session: mockSession(m) }))
+    members.map((m) => bookingsRouter.book({ sessionId: session.id }, { session: mockSession(m) })),
   );
 
-  const confirmed = results.filter(r => r.status === 'confirmed');
-  const waitlisted = results.filter(r => r.status === 'waitlisted');
+  const confirmed = results.filter((r) => r.status === 'confirmed');
+  const waitlisted = results.filter((r) => r.status === 'waitlisted');
 
-  expect(confirmed).toHaveLength(1);  // Exactly 1
+  expect(confirmed).toHaveLength(1); // Exactly 1
   expect(waitlisted).toHaveLength(9); // Exactly 9
 });
 ```
@@ -2335,24 +2480,25 @@ Error messages, stack traces, and log output from external sources (Stripe, Trig
 
 ### 11.1 The 8 CI Gates (all must pass)
 
-| # | Gate | Command | Acceptable Evidence |
-|---|------|---------|---------------------|
-| 1 | Type safety | `pnpm check-types` | Exit 0, no type errors |
-| 2 | Code quality | `pnpm lint` | Exit 0, 0 errors |
-| 3 | Tests + coverage | `pnpm test:coverage` | 0 failures + thresholds met (api 90 / payments 95 / db 80 / web 70 / workers 85) |
-| 4 | Build | `pnpm build` | Exit 0 |
-| 5 | E2E | `pnpm test:e2e` | 0 failures across all ~20 E2E specs |
-| 6 | Accessibility | `pnpm lighthouse ci` | Lighthouse A11y = 100 |
-| 7 | Bundle size | `pnpm bundle-size` | marketing < 80kb / booking < 200kb / admin < 400kb gzipped |
-| 8 | Security audit | `pnpm audit --audit-level=high` | 0 high/critical vulnerabilities |
+| #   | Gate             | Command                         | Acceptable Evidence                                                              |
+| --- | ---------------- | ------------------------------- | -------------------------------------------------------------------------------- |
+| 1   | Type safety      | `pnpm check-types`              | Exit 0, no type errors                                                           |
+| 2   | Code quality     | `pnpm lint`                     | Exit 0, 0 errors                                                                 |
+| 3   | Tests + coverage | `pnpm test:coverage`            | 0 failures + thresholds met (api 90 / payments 95 / db 80 / web 70 / workers 85) |
+| 4   | Build            | `pnpm build`                    | Exit 0                                                                           |
+| 5   | E2E              | `pnpm test:e2e`                 | 0 failures across all ~20 E2E specs                                              |
+| 6   | Accessibility    | `pnpm lighthouse ci`            | Lighthouse A11y = 100                                                            |
+| 7   | Bundle size      | `pnpm bundle-size`              | marketing < 80kb / booking < 200kb / admin < 400kb gzipped                       |
+| 8   | Security audit   | `pnpm audit --audit-level=high` | 0 high/critical vulnerabilities                                                  |
 
 > 🔴 **THE IRON LAW:** No completion claims without fresh verification evidence. Passing one gate is NOT evidence for any other gate. Run the command, read the raw output, then claim.
 >
 > **Gate Function:** `IDENTIFY command` → `RUN full command` → `READ output` → `VERIFY confirms claim` → `THEN claim`
 >
-> *Skipping any step is lying, not verifying.*
+> _Skipping any step is lying, not verifying._
 >
 > **Red Flags (STOP IMMEDIATELY):**
+>
 > - Using words like "should", "probably", "seems to"
 > - Expressing satisfaction ("Looks good to me") before running verification
 > - Committing or pushing without verification
@@ -2360,17 +2506,18 @@ Error messages, stack traces, and log output from external sources (Stripe, Trig
 
 **Core Web Vitals targets** (source: `avant-garde-design-v4/references/15-performance-budgets.md` §1.0). Stillwater is in the "Institutional" quadrant (Q1/Q3 — editorial calm), so we apply the strictest budgets:
 
-| Metric | Stillwater target | Lighthouse weighting | How to verify |
-|--------|-------------------|----------------------|---------------|
-| First Contentful Paint (FCP) | < 0.8s | 10% | Lighthouse CI (Gate 6) + Vercel Speed Insights |
-| Largest Contentful Paint (LCP) | < 1.2s | 25% | Lighthouse CI + `web-vitals` library in production |
-| Time to Interactive (TTI) | < 1.5s | 10% | Lighthouse CI |
-| Cumulative Layout Shift (CLS) | < 0.05 | 15% | Lighthouse CI + `web-vitals` |
-| Interaction to Next Paint (INP) | < 200ms | — (replaced FID in 2024) | `web-vitals` library + CrUX field data |
-| Animation Frame Rate | 60fps | — | Chrome DevTools Performance tab; see §4.5.1 compositor-only rule |
-| Initial JS bundle (gzipped) | marketing < 80kb / booking < 200kb / admin < 400kb | — | `pnpm bundle-size` (Gate 7) |
+| Metric                          | Stillwater target                                  | Lighthouse weighting     | How to verify                                                    |
+| ------------------------------- | -------------------------------------------------- | ------------------------ | ---------------------------------------------------------------- |
+| First Contentful Paint (FCP)    | < 0.8s                                             | 10%                      | Lighthouse CI (Gate 6) + Vercel Speed Insights                   |
+| Largest Contentful Paint (LCP)  | < 1.2s                                             | 25%                      | Lighthouse CI + `web-vitals` library in production               |
+| Time to Interactive (TTI)       | < 1.5s                                             | 10%                      | Lighthouse CI                                                    |
+| Cumulative Layout Shift (CLS)   | < 0.05                                             | 15%                      | Lighthouse CI + `web-vitals`                                     |
+| Interaction to Next Paint (INP) | < 200ms                                            | — (replaced FID in 2024) | `web-vitals` library + CrUX field data                           |
+| Animation Frame Rate            | 60fps                                              | —                        | Chrome DevTools Performance tab; see §4.5.1 compositor-only rule |
+| Initial JS bundle (gzipped)     | marketing < 80kb / booking < 200kb / admin < 400kb | —                        | `pnpm bundle-size` (Gate 7)                                      |
 
 **Pre-commit performance checklist** (source: `references/15-performance-budgets.md` §2.0):
+
 - [ ] Lighthouse baseline run on `localhost:3000` (production build, not dev)
 - [ ] Bundle analysis via `pnpm analyze` — check for unintended large packages
 - [ ] All images in `public/` compressed (AVIF/WebP via Cloudflare Images)
@@ -2381,16 +2528,17 @@ Error messages, stack traces, and log output from external sources (Stripe, Trig
 
 Every PR must pass all six axes before merge. The 8 CI Gates above cover axes 1–5 technically; axis 6 (Aesthetic/UX Rigor) requires human review.
 
-| Axis | Focus | Stillwater Enforcement |
-|------|-------|------------------------|
-| 1. Correctness | Matches spec, edge cases, error paths | CI tests pass |
-| 2. Readability | Clear naming, straightforward logic | ESLint + code review |
-| 3. Architecture | Follows patterns, clean boundaries | Layer enforcement (§5.1) |
-| 4. Security | Input validation, no secrets, auth checks | Zod at every boundary |
-| 5. Performance | No N+1, no unbounded loops | Bundle size gate |
-| 6. **Aesthetic/UX Rigor** | Anti-Generic Litmus Test (§1.4) | Human review + Rejection Matrix |
+| Axis                      | Focus                                     | Stillwater Enforcement          |
+| ------------------------- | ----------------------------------------- | ------------------------------- |
+| 1. Correctness            | Matches spec, edge cases, error paths     | CI tests pass                   |
+| 2. Readability            | Clear naming, straightforward logic       | ESLint + code review            |
+| 3. Architecture           | Follows patterns, clean boundaries        | Layer enforcement (§5.1)        |
+| 4. Security               | Input validation, no secrets, auth checks | Zod at every boundary           |
+| 5. Performance            | No N+1, no unbounded loops                | Bundle size gate                |
+| 6. **Aesthetic/UX Rigor** | Anti-Generic Litmus Test (§1.4)           | Human review + Rejection Matrix |
 
 **The Anti-Generic Litmus Test** (for every major UI decision):
+
 1. **Why?** — Tie element to user need or psychological purpose.
 2. **Only?** — Challenge defaults. Is this the only way? Were alternatives considered?
 3. **Without?** — Enforce minimalism. Does removal diminish the core?
@@ -2417,6 +2565,7 @@ Human makes the final call
 ```
 
 **Example prompt for a review agent:**
+
 ```
 Review this code change for correctness, security, and adherence to
 our project conventions. The spec says [X]. The change should [Y].
@@ -2433,14 +2582,14 @@ When receiving code review feedback (from a human partner, an external reviewer,
 
 **Response Pattern:** `READ → UNDERSTAND → VERIFY → EVALUATE → RESPOND → IMPLEMENT`
 
-| Step | What to do |
-|------|------------|
-| **READ** | Read the full feedback before responding to any of it. Don't react to the first comment before reading the rest. |
-| **UNDERSTAND** | Restate the feedback in your own words. If you can't restate it, you don't understand it yet. Ask clarifying questions. |
-| **VERIFY** | Check the technical claim. Is the cited line real? Does the suggested fix actually fix the issue? Are there tests that contradict the claim? |
-| **EVALUATE** | Is the feedback correct? Is it relevant to the current scope? Is it a Critical/Important/Suggestion/Nit? |
-| **RESPOND** | Acknowledge with technical reasoning, not performative agreement. Push back if wrong, with evidence. |
-| **IMPLEMENT** | Only after VERIFY + EVALUATE. Implement in order: clarify unclear first → blocking → simple → complex. |
+| Step           | What to do                                                                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **READ**       | Read the full feedback before responding to any of it. Don't react to the first comment before reading the rest.                             |
+| **UNDERSTAND** | Restate the feedback in your own words. If you can't restate it, you don't understand it yet. Ask clarifying questions.                      |
+| **VERIFY**     | Check the technical claim. Is the cited line real? Does the suggested fix actually fix the issue? Are there tests that contradict the claim? |
+| **EVALUATE**   | Is the feedback correct? Is it relevant to the current scope? Is it a Critical/Important/Suggestion/Nit?                                     |
+| **RESPOND**    | Acknowledge with technical reasoning, not performative agreement. Push back if wrong, with evidence.                                         |
+| **IMPLEMENT**  | Only after VERIFY + EVALUATE. Implement in order: clarify unclear first → blocking → simple → complex.                                       |
 
 **Key rules (source: `verification-and-review-protocol/SKILL.md` §Receiving Feedback Protocol):**
 
@@ -2450,6 +2599,7 @@ When receiving code review feedback (from a human partner, an external reviewer,
 - ✅ **YAGNI check:** `grep` for usage before implementing suggested "proper" features that aren't currently needed. If no caller exists, the abstraction is premature.
 
 **Source handling:**
+
 - **Human partner:** Trusted. Implement after understanding. No performative fluff.
 - **External/AI reviewer:** Verify technically correct, check for breakage, push back if it violates `code-quality-standards` or this skill file.
 
@@ -2460,6 +2610,7 @@ Source: `code-quality-standards/SKILL.md` §Dead Code Hygiene + §Dependency Dis
 #### Dead Code Hygiene
 
 After any refactoring or implementation change, check for orphaned code:
+
 1. Identify code that is now unreachable or unused.
 2. List it explicitly.
 3. **Ask before deleting:** "Should I remove these now-unused elements: [list]?"
@@ -2477,6 +2628,7 @@ DEAD CODE IDENTIFIED:
 #### Dependency Discipline
 
 Before adding any dependency, answer all 5 questions:
+
 1. Does the existing stack solve this? (Often it does — check Drizzle, Radix, sonner, react-day-picker, @tanstack/react-table, react-hook-form, zod first.)
 2. How large is the dependency? (Check bundle impact via `bundlephobia.com` or `pnpm why <pkg>`.)
 3. Is it actively maintained? (Check last commit date, open issues, release cadence.)
@@ -2488,6 +2640,7 @@ Before adding any dependency, answer all 5 questions:
 #### Honesty in Review
 
 When reviewing code — whether written by you, another agent, or a human:
+
 - **Don't rubber-stamp.** "LGTM" without evidence of review helps no one.
 - **Don't soften real issues.** "This might be a minor concern" when it's a bug that will hit production is dishonest.
 - **Quantify problems when possible.** "This N+1 query will add ~50ms per item in the list" is better than "this could be slow."
@@ -2498,20 +2651,20 @@ When reviewing code — whether written by you, another agent, or a human:
 
 Small, focused changes are easier to review, faster to merge, and safer to deploy.
 
-| Change size | Verdict |
-|-------------|---------|
-| ~100 lines changed | Good. Reviewable in one sitting. |
-| ~300 lines changed | Acceptable if it's a single logical change. |
-| ~1000 lines changed | Too large. Split it. |
+| Change size         | Verdict                                     |
+| ------------------- | ------------------------------------------- |
+| ~100 lines changed  | Good. Reviewable in one sitting.            |
+| ~300 lines changed  | Acceptable if it's a single logical change. |
+| ~1000 lines changed | Too large. Split it.                        |
 
 **Splitting strategies when a change is too large:**
 
-| Strategy | How | When |
-|----------|-----|------|
-| **Stack** | Submit a small change, start the next one based on it | Sequential dependencies |
-| **By file group** | Separate changes for groups needing different reviewers | Cross-cutting concerns |
-| **Horizontal** | Create shared code/stubs first, then consumers | Layered architecture (§5.1) |
-| **Vertical** | Break into smaller full-stack slices of the feature | Feature work |
+| Strategy          | How                                                     | When                        |
+| ----------------- | ------------------------------------------------------- | --------------------------- |
+| **Stack**         | Submit a small change, start the next one based on it   | Sequential dependencies     |
+| **By file group** | Separate changes for groups needing different reviewers | Cross-cutting concerns      |
+| **Horizontal**    | Create shared code/stubs first, then consumers          | Layered architecture (§5.1) |
+| **Vertical**      | Break into smaller full-stack slices of the feature     | Feature work                |
 
 **Separate refactoring from feature work.** A change that refactors existing code AND adds new behavior is two changes — submit them separately. Small cleanups (variable renaming) can be included at reviewer discretion.
 
@@ -2519,12 +2672,12 @@ Small, focused changes are easier to review, faster to merge, and safer to deplo
 
 Use these labels on every review comment so the author knows how to prioritize:
 
-| Label | Meaning | Action |
-|-------|---------|--------|
-| 🔴 **Critical** | Blocks merge. Bug, security issue, data loss. | Must fix before merge. |
-| 🟡 **Important** | Should fix before merge but not a blocker. | Fix before merge OR document deferral in PR. |
-| 🟢 **Nit** | Optional style/preference. | Address at author's discretion. |
-| ❓ **Question** | Needs clarification, not a change. | Author responds; may convert to one of the above. |
+| Label            | Meaning                                       | Action                                            |
+| ---------------- | --------------------------------------------- | ------------------------------------------------- |
+| 🔴 **Critical**  | Blocks merge. Bug, security issue, data loss. | Must fix before merge.                            |
+| 🟡 **Important** | Should fix before merge but not a blocker.    | Fix before merge OR document deferral in PR.      |
+| 🟢 **Nit**       | Optional style/preference.                    | Address at author's discretion.                   |
+| ❓ **Question**  | Needs clarification, not a change.            | Author responds; may convert to one of the above. |
 
 #### Review Speed
 
@@ -2536,6 +2689,7 @@ Use these labels on every review comment so the author knows how to prioritize:
 #### Handling Disagreements
 
 When the author and reviewer disagree, resolve in this priority order (highest authority first):
+
 1. **Technical facts** (measured performance, security vulnerability, spec compliance) — wins over everything.
 2. **Style guides** (ESLint config, this skill file) — wins over personal preference.
 3. **Software design principles** (SOLID, composition over inheritance) — wins over codebase consistency.
@@ -2576,34 +2730,40 @@ pnpm audit --audit-level=high
 Every PR must complete (from PAD §31):
 
 **SECURITY:**
+
 - [ ] All new tRPC procedures have correct access level (public/protected/staff/owner)
 - [ ] All new inputs validated with Zod schema
 - [ ] No secrets introduced in client-side code
 - [ ] New API routes have rate limiting if needed
 
 **DATA:**
+
 - [ ] New DB columns have appropriate NOT NULL constraints or defaults
 - [ ] New indexes added for any new query patterns
 - [ ] Migration is reversible (rollback script provided)
 - [ ] ERD updated in PAD §7 if new entities added
 
 **PERFORMANCE:**
+
 - [ ] No N+1 queries introduced
 - [ ] New pages follow the Rendering Strategy Map (PAD §12)
 - [ ] Images use next/image with explicit dimensions
 - [ ] Bundle size budget not exceeded
 
 **RELIABILITY:**
+
 - [ ] Side effects (email, notifications) moved to background jobs
 - [ ] Stripe webhook handlers are idempotent
 - [ ] New job tasks have appropriate timeout + retry config
 
 **ACCESSIBILITY:**
+
 - [ ] New components have associated accessibility tests
 - [ ] Color contrast meets 7:1 ratio for text
 - [ ] Keyboard navigation tested manually
 
 **DOCUMENTATION:**
+
 - [ ] PAD updated if architecture changed
 - [ ] ADR added if significant decision was made
 - [ ] `.env.example` updated if new env var introduced
@@ -2628,6 +2788,7 @@ A test that passes once without the revert-fail step proves nothing.
 ### 11.6 Stripe Webhook PR — Additional Reviewer
 
 Every Stripe webhook handler change requires a second reviewer specifically for:
+
 - Idempotency (UNIQUE INDEX + advisory lock)
 - Signature verification
 - Replay safety
@@ -2665,6 +2826,7 @@ Source: `ci-cd-and-automation/SKILL.md` — full skill (391 lines). This section
 #### 11.8.2 Feature Flags
 
 Feature flags decouple deployment from release. Deploy incomplete or risky features behind flags so you can:
+
 - Ship code without enabling it. Merge to main early, enable when ready.
 - Roll back without redeploying. Disable the flag instead of reverting code.
 - Canary new features. Enable for 1% of users, then 10%, then 100%.
@@ -2790,19 +2952,23 @@ CI should never have production secrets. Use separate secrets for CI testing.
 **What to do differently:** Use Better Auth patterns:
 
 **Server-side session:**
+
 - `auth.api.getSession({ headers: await headers() })` — requires explicit headers (Auth.js used header-implicit `auth()`)
 
 **Client-side API (centralized on `authClient`):**
+
 - `authClient.signIn.social({ provider: "github" })` — NOT `signIn("github")` from `next-auth/react`
 - `authClient.signIn.magicLink({ email, callbackURL })` — magic link flow
 - `authClient.signOut()` — NOT `signOut()` from `next-auth/react`
 - `authClient.useSession()` returns `{ data, error, refetch, isPending }` — NOT `{ data, status, update }` from `next-auth/react`
 
 **Route handler:**
+
 - File path: `/app/api/auth/[...all]/route.ts` — NOT `[...nextauth]`
 - Handler: `export const { GET, POST } = toNextJsHandler(auth)` — NOT `export const { handlers } = NextAuth(...)`
 
 **Database schema (Better Auth uses stricter typing):**
+
 - `User`: `name` and `emailVerified` are required (optional in Auth.js); `emailVerified` is **boolean** (not timestamp)
 - `Session`: uses `token`/`expiresAt` (not `sessionToken`/`expires`); adds `ipAddress`/`userAgent` fields
 - `Account`: camelCase (`refreshToken` not `refresh_token`); `accountId`/`providerId` (not `provider`); drops `token_type`/`session_state`
@@ -2810,6 +2976,7 @@ CI should never have production secrets. Use separate secrets for CI testing.
 - All Better Auth tables add `createdAt`/`updatedAt` timestamps automatically
 
 **Route protection (2-layer pattern — per Auth0 + Better Auth + Next.js 16):**
+
 - Layer 1 (Edge proxy): `getSessionCookie(request)` — cookie-existence-only optimistic check
 - Layer 2 (Server Component/Layout): `auth.api.getSession({ headers: await headers() })` — full validation + RBAC
 - See §5.6 for the full 2-layer pattern
@@ -2879,6 +3046,7 @@ CI should never have production secrets. Use separate secrets for CI testing.
 **Context:** Strict TypeScript mode means `arr[0]` is `T | undefined`. Without guards, runtime crashes with "Cannot read property 'X' of undefined".
 
 **What to do differently:** Always guard indexed access:
+
 ```typescript
 const first = result[0];
 if (!first) return null;
@@ -2892,6 +3060,7 @@ console.log(first.name);
 **Context:** `catch (err)` blocks have `err: unknown`. Accessing `err.message` is a type error.
 
 **What to do differently:** Narrow first:
+
 ```typescript
 catch (err) {
   if (err instanceof Error) console.log(err.message);
@@ -2906,6 +3075,7 @@ catch (err) {
 **Context:** The `verification-before-completion` skill documents 24 failure memories where claims of "done" without verification led to: undefined functions shipped, missing requirements shipped, time wasted on false completion.
 
 **What to do differently:** Before ANY completion claim:
+
 1. IDENTIFY the verification command
 2. RUN the full command (fresh)
 3. READ the full output (check exit code, count failures)
@@ -2929,6 +3099,7 @@ Skip any step = lying, not verifying.
 **Context:** A test that passes once proves nothing. The test must fail without the fix (RED) and pass with it (GREEN).
 
 **What to do differently:** For every bug fix:
+
 1. Write the regression test
 2. Run → MUST PASS (with fix)
 3. Revert the fix
@@ -2942,6 +3113,7 @@ Document this cycle in the PR.
 ### Lesson 16: Trigger.dev v4 SDK — use root `@trigger.dev/sdk` import, NOT `/v3`
 
 **Context:** During Phase 0, the `services/workers/trigger.config.ts` import path went through three iterations:
+
 1. Original scaffold: `import { defineConfig } from "@trigger.dev/sdk/v3"` (v3-era pattern)
 2. P0 fix (incorrect): Changed to `@trigger.dev/sdk/v4` — this FAILED because the `/v4` export doesn't exist in `@trigger.dev/sdk@4.5.0`
 3. P0 revert (still incorrect): Reverted to `@trigger.dev/sdk/v3` — this WORKS but is the deprecated v3-era pattern
@@ -2958,6 +3130,7 @@ The investigation revealed that `@trigger.dev/sdk@4.5.0` exports both `.` (root)
 **Context:** During Phase 0, `pnpm lint` crashed with `context.getFilename is not a function` (from `eslint-plugin-react@7.37.5`) and `SourceCode.getTokenOrCommentAfter is not a function` (from `eslint-plugin-import@2.32.0`). These are the LATEST versions of these plugins on npm. The root cause: ESLint v10 removed several internal APIs that these plugins depend on, and no v10-compatible versions exist.
 
 The investigation revealed:
+
 - `eslint-plugin-react@7.37.5` peer dep: `eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7` — NO v10
 - `eslint-plugin-import@2.32.0` peer dep: `eslint: ^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9` — NO v10
 - `eslint-plugin-react-hooks@7.1.1` — supports v10 ✅
@@ -2987,6 +3160,7 @@ The user had already bumped `packages/email/package.json` to `react-email: ^6.6.
 **Context:** During the initial package version bumping, the root `package.json` was correctly pinned to `typescript: ^5.9.0` (per PAD §5.1 + `pnpm_install_fix.md`). However, 9 sub-package.json files were accidentally set to `typescript: ^6.0.3` — the latest available version. This created version drift across the monorepo.
 
 PAD §5.1 and `pnpm_install_fix.md` explicitly mandate `^5.9.0` for compatibility with:
+
 - `erasableSyntaxOnly` (TS 5.8+) — forbids `enum`, `namespace`, parameter properties
 - `verbatimModuleSyntax` (TS 5.0+) — requires `import type` for type-only imports
 
@@ -3028,6 +3202,7 @@ The audit reports (`PAD_audit_report-1.md` §"Advisory Lock Inconsistency" + `PA
 ### Lesson 22: Phase 0 is complete — `pnpm install` / `check-types` / `lint` all green
 
 **Context:** Phase 0 (Monorepo Scaffold + Tooling + Docker + Phase 0 Fixes) is officially complete as of 2026-07-06. All 10 D15–D24 patches are applied and verified. The 2-layer auth pattern (F2-13, technically a Phase 2 patch) was correctly applied early. The Phase 0 Definition of Done smoke test passes:
+
 - `pnpm install` → exit 0; 984+ lockfile entries; supply chain guardrails passed; native builds compiled (sharp, esbuild, @sentry/cli)
 - `pnpm check-types` → only expected TS18003 "No inputs found" errors (empty `src/` dirs); zero "Cannot find module" errors
 - `pnpm lint` → 2/2 tasks successful, zero errors, ALL rules active (React + import/order + TS + Next + Tailwind)
@@ -3053,6 +3228,7 @@ This was discovered when the user ran `pnpm dev --filter=@stillwater/web` and go
 **Context:** During Phase 0, `pnpm check-types` failed with TS18003 ("No inputs were found") for 6 packages that had empty `src/` directories. This was expected. However, the TS18003 failure caused a turbo cascade that aborted ALL downstream packages — including `packages/config` which had a pre-existing t3-env type error (missing `clientPrefix`) that was never reached.
 
 After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade was unblocked and 3 more pre-existing bugs surfaced:
+
 1. `packages/config/src/env.ts` — t3-env `createEnv()` missing `clientPrefix` + type inference failure from separate variable
 2. `services/workers/trigger.config.ts` — Trigger.dev v4 type changes (`machine` is string, `build.env` removed)
 3. `services/workers/package.json` — `verbatimModuleSyntax` requires `"type": "module"`
@@ -3134,7 +3310,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't use `@apply` in scoped styles without `@reference`** — needs `@reference "../../app.css";`.
 - **Don't forget `@source` directives in monorepo** — explicitly limit scanning scope. Syntax (place at top of `globals.css` after `@import "tailwindcss"`):
   ```css
-  @import "tailwindcss";
+  @import 'tailwindcss';
   @source '../components/**/*.{ts,tsx}';
   @source '../lib/**/*.{ts,tsx}';
   @source '../../packages/ui/src/**/*.{ts,tsx}';
@@ -3233,6 +3409,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 ### 13.13 Stillwater-Specific Pitfalls (from MASTER_EXECUTION_PLAN.md discrepancies D1–D45)
 
 **D15–D24 (Phase 0 scaffolding patches — all applied ✅):**
+
 - **Don't use mockup `--sp-N` spacing tokens** — use PAD's `--space-N` (off-by-one from index 5; D26).
 - **Don't use mockup `--dur-*` duration tokens** — use PAD's `--duration-*` (D27).
 - **Don't use mockup type scale inline `clamp()`** — adopt PAD `--text-*` tokens (D28).
@@ -3247,6 +3424,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't forget `packages/config/src/env.ts`** — t3-env Zod schema (CRITICAL — every package imports this).
 
 **D43–D45 (P0–P3 remediation discoveries — all resolved ✅):**
+
 - **Don't import `@trigger.dev/sdk/v3` (deprecated)** — use root `import { defineConfig } from "@trigger.dev/sdk"` per official Trigger.dev v4 docs. The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file today, but `/v3` may be removed in future SDK versions). The `/v4` export does NOT exist. See §9.9 Gotcha 1, §12 Lesson 16.
 - **Don't import `render` from `@react-email/render`** — deprecated in React Email v6.0.0 (April 16, 2026). Import from `react-email` root: `import { render } from 'react-email'`. See §9.9 Gotcha 3, §12 Lesson 18, D43.
 - **Don't upgrade ESLint to v10** — `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` have no v10-compatible versions (latest npm versions support `^9` only). Stay on `eslint@^9.39.4` (`maintenance` dist-tag). See §9.9 Gotcha 2, §12 Lesson 17, D45.
@@ -3258,6 +3436,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't use shadcn `style: "new-york"`** — the actual `apps/web/components.json` has `"style": "default"`. See §9.9 Gotcha 9.
 
 **P0.3 cascade-discovered bugs (all resolved ✅):**
+
 - **Don't enable `reactCompiler: true` without installing `babel-plugin-react-compiler`** — it's NOT a built-in. `pnpm add -F @stillwater/web babel-plugin-react-compiler`. Without it, every page returns 500. See §9.9 Gotcha 11, §12 Lesson 23.
 - **Don't pass t3-env schema as a separate variable to `createEnv()`** — TypeScript can't infer generics. Pass inline. Also, `clientPrefix: 'NEXT_PUBLIC_'` is required. See §9.9 Gotcha 12.
 - **Don't use Trigger.dev v3-style `machine: { preset: "micro" }` or `build.env`** — v4 changed the type: `machine` is now a string literal; `build.env` was removed. See §9.9 Gotcha 13.
@@ -3322,22 +3501,22 @@ Every test follows Arrange → Act → Assert. The §15.8 regression test exampl
 
 **Test Prioritization** (source: `tdd-workflow/SKILL.md` §8):
 
-| Priority | Test Type | Stillwater example |
-|----------|-----------|--------------------|
-| 1 | Happy path | `bookings.book()` confirms when capacity available |
-| 2 | Error cases | `bookings.book()` rejects when session full (409 Conflict) |
-| 3 | Edge cases | `bookings.book()` handles concurrent booking race (BOOK-006) |
-| 4 | Performance | `bookings.book()` completes < 200ms p95 under 10 concurrent requests |
+| Priority | Test Type   | Stillwater example                                                   |
+| -------- | ----------- | -------------------------------------------------------------------- |
+| 1        | Happy path  | `bookings.book()` confirms when capacity available                   |
+| 2        | Error cases | `bookings.book()` rejects when session full (409 Conflict)           |
+| 3        | Edge cases  | `bookings.book()` handles concurrent booking race (BOOK-006)         |
+| 4        | Performance | `bookings.book()` completes < 200ms p95 under 10 concurrent requests |
 
 Write tests in this order. A happy-path test that passes is more valuable than an edge-case test that fails for the wrong reason.
 
 **AI-Augmented TDD Multi-Agent Pattern** (source: `tdd-workflow/SKILL.md` §10):
 
-| Agent | Role |
-|-------|------|
+| Agent   | Role                      |
+| ------- | ------------------------- |
 | Agent A | Write failing tests (RED) |
 | Agent B | Implement to pass (GREEN) |
-| Agent C | Optimize (REFACTOR) |
+| Agent C | Optimize (REFACTOR)       |
 
 This separates concerns: Agent A thinks about behavior, Agent B thinks about implementation, Agent C thinks about performance/clarity. Running all three roles through a single agent risks the implementation influencing the test design.
 
@@ -3366,18 +3545,18 @@ This separates concerns: Agent A thinks about behavior, Agent B thinks about imp
 
 Source: `vulnerability-scanner/SKILL.md` §2 + `security-and-hardening/SKILL.md` §OWASP Top 10 Prevention + `vulnerability-scanner/checklists.md`.
 
-| OWASP 2025 | Category | Stillwater mitigation | Where enforced |
-|------------|----------|----------------------|----------------|
-| **A01** | Broken Access Control | `requireAuth()` + `requireRole()` on every protected route (§5.6, §5.7); owner-checked queries (`getBooking()` returns null if `row.memberId !== session.memberId`) — see §15.1; deny-by-default in `proxy.ts` | §5.6, §5.7, §15.1 |
-| **A02** | Security Misconfiguration | Security headers in `next.config.ts` (see §14.6.3); error messages sanitized (no stack traces to users); default credentials rotated; `next lint` deprecated → use ESLint flat config | §14.6.3, §13.10 |
-| **A03** 🆕 | Software Supply Chain | `pnpm audit --audit-level=high` in CI (§11.1 Gate 7); lockfile committed; pnpm `allowBuilds` declaration; Dependabot/Renovate weekly (recommended) | §11.1 |
-| **A04** | Cryptographic Failures | `BETTER_AUTH_SECRET` from Zod-validated env; 12-byte AES-256-GCM IV (NOT 16); TLS 1.2+ enforced by Vercel; no secrets in code/logs | §13.10, §3.3 |
-| **A05** | Injection | Drizzle ORM parameterized queries (no string concat); Zod validation at every boundary; no `eval()` / `Function()` / `innerHTML` with user data (see §14.6.4 XSS) | §14.6, §13.10 |
-| **A06** | Insecure Design | Threat-modeling on new auth flows (§5.6.1); ADRs for security-relevant decisions (Appendix A); 5-layer architecture isolates Domain from infrastructure (§5.1) | §5.1, Appendix A |
-| **A07** | Authentication Failures | Better Auth Drizzle adapter; session cookies httpOnly+secure+sameSite=lax; rate-limit 10/15min on auth mutations (§15.7); password reset tokens expire; MFA via Better Auth plugin (Phase 9+) | §5.6.1, §15.7 |
-| **A08** | Integrity Failures | Stripe webhook signature verification; pnpm lockfile integrity; CI pipeline secured via Vercel-GitHub OIDC (no long-lived tokens) | §9.4, §11.1 |
-| **A09** | Logging & Alerting | Sentry error tracking; PostHog product analytics; Axiom structured logs; Checkly uptime synthetics; no PII in logs (Stripe webhook payload redaction) | §2.1 Observability row |
-| **A10** 🆕 | Exceptional Conditions | Fail-closed on auth errors (§5.6); fail-OPEN on rate-limit Redis outage (§15.7 — booking shouldn't break); no catch-all-and-ignore handlers; `useUnknownInCatchVariables` forces error narrowing | §5.6, §15.7, §9.2 |
+| OWASP 2025 | Category                  | Stillwater mitigation                                                                                                                                                                                          | Where enforced         |
+| ---------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **A01**    | Broken Access Control     | `requireAuth()` + `requireRole()` on every protected route (§5.6, §5.7); owner-checked queries (`getBooking()` returns null if `row.memberId !== session.memberId`) — see §15.1; deny-by-default in `proxy.ts` | §5.6, §5.7, §15.1      |
+| **A02**    | Security Misconfiguration | Security headers in `next.config.ts` (see §14.6.3); error messages sanitized (no stack traces to users); default credentials rotated; `next lint` deprecated → use ESLint flat config                          | §14.6.3, §13.10        |
+| **A03** 🆕 | Software Supply Chain     | `pnpm audit --audit-level=high` in CI (§11.1 Gate 7); lockfile committed; pnpm `allowBuilds` declaration; Dependabot/Renovate weekly (recommended)                                                             | §11.1                  |
+| **A04**    | Cryptographic Failures    | `BETTER_AUTH_SECRET` from Zod-validated env; 12-byte AES-256-GCM IV (NOT 16); TLS 1.2+ enforced by Vercel; no secrets in code/logs                                                                             | §13.10, §3.3           |
+| **A05**    | Injection                 | Drizzle ORM parameterized queries (no string concat); Zod validation at every boundary; no `eval()` / `Function()` / `innerHTML` with user data (see §14.6.4 XSS)                                              | §14.6, §13.10          |
+| **A06**    | Insecure Design           | Threat-modeling on new auth flows (§5.6.1); ADRs for security-relevant decisions (Appendix A); 5-layer architecture isolates Domain from infrastructure (§5.1)                                                 | §5.1, Appendix A       |
+| **A07**    | Authentication Failures   | Better Auth Drizzle adapter; session cookies httpOnly+secure+sameSite=lax; rate-limit 10/15min on auth mutations (§15.7); password reset tokens expire; MFA via Better Auth plugin (Phase 9+)                  | §5.6.1, §15.7          |
+| **A08**    | Integrity Failures        | Stripe webhook signature verification; pnpm lockfile integrity; CI pipeline secured via Vercel-GitHub OIDC (no long-lived tokens)                                                                              | §9.4, §11.1            |
+| **A09**    | Logging & Alerting        | Sentry error tracking; PostHog product analytics; Axiom structured logs; Checkly uptime synthetics; no PII in logs (Stripe webhook payload redaction)                                                          | §2.1 Observability row |
+| **A10** 🆕 | Exceptional Conditions    | Fail-closed on auth errors (§5.6); fail-OPEN on rate-limit Redis outage (§15.7 — booking shouldn't break); no catch-all-and-ignore handlers; `useUnknownInCatchVariables` forces error narrowing               | §5.6, §15.7, §9.2      |
 
 **2025 key changes vs 2021:** SSRF merged into A01; A03 (Supply Chain) is new and a major focus; A10 (Exceptional Conditions) is new — covers fail-open states and error-handling blind spots. Source: `vulnerability-scanner/SKILL.md` §2.
 
@@ -3397,13 +3576,17 @@ const securityHeaders = [
   {
     key: 'Content-Security-Policy',
     // Tighten scriptSrc to remove 'unsafe-inline' once React 19 + React Compiler stabilizes
-    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.stripe.com https://*.posthog.com https://*.sentry.io wss:; frame-src https://js.stripe.com https://hooks.stripe.com; base-uri 'self'; form-action 'self';",
+    value:
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.stripe.com https://*.posthog.com https://*.sentry.io wss:; frame-src https://js.stripe.com https://hooks.stripe.com; base-uri 'self'; form-action 'self';",
   },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' }, // Clickjacking — DENY because Stillwater has no iframe embeds
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' }, // FLoC opt-out + disable unused APIs
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+  }, // FLoC opt-out + disable unused APIs
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
 ];
 
@@ -3416,14 +3599,14 @@ module.exports = {
 
 **Header purposes (source: `vulnerability-scanner/checklists.md` §Security Headers):**
 
-| Header | Purpose |
-|--------|---------|
-| Content-Security-Policy | XSS prevention — restricts script/style/img/font/connect/frame sources |
+| Header                    | Purpose                                                                     |
+| ------------------------- | --------------------------------------------------------------------------- |
+| Content-Security-Policy   | XSS prevention — restricts script/style/img/font/connect/frame sources      |
 | Strict-Transport-Security | Force HTTPS for 2 years, include subdomains, eligible for HSTS preload list |
-| X-Content-Type-Options | Prevent MIME sniffing (`nosniff`) |
-| X-Frame-Options | Clickjacking prevention (`DENY` — Stillwater has no iframe embeds) |
-| Referrer-Policy | Control referrer leakage (`strict-origin-when-cross-origin`) |
-| Permissions-Policy | Disable unused browser APIs (camera, mic, geo, FLoC) |
+| X-Content-Type-Options    | Prevent MIME sniffing (`nosniff`)                                           |
+| X-Frame-Options           | Clickjacking prevention (`DENY` — Stillwater has no iframe embeds)          |
+| Referrer-Policy           | Control referrer leakage (`strict-origin-when-cross-origin`)                |
+| Permissions-Policy        | Disable unused browser APIs (camera, mic, geo, FLoC)                        |
 
 **CSP note:** `'unsafe-eval'` is currently required for Sentry + PostHog in dev. Remove in production once both libraries ship CSP-compliant builds. `'unsafe-inline'` for scripts is required by Next.js 16 inline runtime — React Compiler + Next.js 16 strict CSP is a Phase 10+ goal.
 
@@ -3431,14 +3614,14 @@ module.exports = {
 
 Source: `security-and-hardening/SKILL.md` §3 Cross-Site Scripting.
 
-| Rule | Enforcement |
-|------|-------------|
-| ❌ Never use `eval()` or `Function()` with user-provided data | ESLint `no-eval` rule = `error` |
-| ❌ Never use `element.innerHTML = userInput` | ESLint `no-restricted-syntax` ban on `innerHTML` assignments |
-| ❌ Never use `dangerouslySetInnerHTML` without sanitization | ESLint `react/no-danger` = `warn`; review-required |
-| ✅ Use React auto-escaping (`<div>{userInput}</div>`) | Default React behavior — do not bypass |
-| ✅ If rendering HTML from Sanity CMS, sanitize with DOMPurify | `DOMPurify.sanitize(html)` before `dangerouslySetInnerHTML` |
-| ✅ JSON-LD via `<script type="application/ld+json">` (not `metadata.other`) | See §15.10 `escapeForScriptContext` |
+| Rule                                                                        | Enforcement                                                  |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| ❌ Never use `eval()` or `Function()` with user-provided data               | ESLint `no-eval` rule = `error`                              |
+| ❌ Never use `element.innerHTML = userInput`                                | ESLint `no-restricted-syntax` ban on `innerHTML` assignments |
+| ❌ Never use `dangerouslySetInnerHTML` without sanitization                 | ESLint `react/no-danger` = `warn`; review-required           |
+| ✅ Use React auto-escaping (`<div>{userInput}</div>`)                       | Default React behavior — do not bypass                       |
+| ✅ If rendering HTML from Sanity CMS, sanitize with DOMPurify               | `DOMPurify.sanitize(html)` before `dangerouslySetInnerHTML`  |
+| ✅ JSON-LD via `<script type="application/ld+json">` (not `metadata.other`) | See §15.10 `escapeForScriptContext`                          |
 
 ```typescript
 // ✅ CORRECT: React auto-escaping (default)
@@ -3461,25 +3644,25 @@ All REST route handlers (NOT tRPC — tRPC uses `TRPCError`) MUST return errors 
 ```typescript
 interface APIError {
   error: {
-    code: string;        // Machine-readable: "VALIDATION_ERROR", "UNAUTHORIZED", "FORBIDDEN"
-    message: string;     // Human-readable: "Email is required"
-    details?: unknown;   // Additional context (field-level validation errors)
+    code: string; // Machine-readable: "VALIDATION_ERROR", "UNAUTHORIZED", "FORBIDDEN"
+    message: string; // Human-readable: "Email is required"
+    details?: unknown; // Additional context (field-level validation errors)
   };
 }
 ```
 
 **Status code map (source: `api-and-interface-design/SKILL.md` lines 76–83):**
 
-| Status | When | Example |
-|--------|------|--------|
-| 400 | Client sent invalid data (malformed JSON, missing required field) | `{ error: { code: 'BAD_REQUEST', message: 'Missing sessionId' } }` |
-| 401 | Not authenticated | `{ error: { code: 'UNAUTHORIZED', message: 'Sign in to continue' } }` |
-| 403 | Authenticated but not authorized (wrong role, not resource owner) | `{ error: { code: 'FORBIDDEN', message: 'Not your booking' } }` |
-| 404 | Resource not found | `{ error: { code: 'NOT_FOUND', message: 'Session not found' } }` |
-| 409 | Conflict (duplicate, version mismatch) | `{ error: { code: 'CONFLICT', message: 'Already enrolled' } }` |
-| 422 | Validation failed (semantically invalid) | `{ error: { code: 'VALIDATION_ERROR', message: 'Invalid email', details: zodError.flatten() } }` |
-| 429 | Rate limit exceeded (include `Retry-After` header) | `{ error: { code: 'TOO_MANY_REQUESTS', message: 'Retry after 60s' } }` |
-| 500 | Server error (NEVER expose internal details) | `{ error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' } }` |
+| Status | When                                                              | Example                                                                                          |
+| ------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 400    | Client sent invalid data (malformed JSON, missing required field) | `{ error: { code: 'BAD_REQUEST', message: 'Missing sessionId' } }`                               |
+| 401    | Not authenticated                                                 | `{ error: { code: 'UNAUTHORIZED', message: 'Sign in to continue' } }`                            |
+| 403    | Authenticated but not authorized (wrong role, not resource owner) | `{ error: { code: 'FORBIDDEN', message: 'Not your booking' } }`                                  |
+| 404    | Resource not found                                                | `{ error: { code: 'NOT_FOUND', message: 'Session not found' } }`                                 |
+| 409    | Conflict (duplicate, version mismatch)                            | `{ error: { code: 'CONFLICT', message: 'Already enrolled' } }`                                   |
+| 422    | Validation failed (semantically invalid)                          | `{ error: { code: 'VALIDATION_ERROR', message: 'Invalid email', details: zodError.flatten() } }` |
+| 429    | Rate limit exceeded (include `Retry-After` header)                | `{ error: { code: 'TOO_MANY_REQUESTS', message: 'Retry after 60s' } }`                           |
+| 500    | Server error (NEVER expose internal details)                      | `{ error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' } }`                         |
 
 **Never** return raw stack traces, database error messages, or internal IDs in 500 responses. Log the full error server-side (Sentry); return a generic message to the client.
 
@@ -3512,6 +3695,7 @@ interface APIError {
 - Update `.env.example` for any new env var
 
 ---
+
 ## §15. Coding Patterns
 
 ### 15.1 Pattern: tRPC Procedure with Advisory Lock (BOOK-006)
@@ -3531,7 +3715,7 @@ const bookingSchema = z.object({
 function hashStringToBigInt(s: string): bigint {
   let hash = 0n;
   for (let i = 0; i < s.length; i++) {
-    hash = (hash * 31n) + BigInt(s.charCodeAt(i));
+    hash = hash * 31n + BigInt(s.charCodeAt(i));
   }
   return hash % 9223372036854775807n; // Fit in PG bigint
 }
@@ -3591,11 +3775,14 @@ export const bookingsRouter = router({
         }
 
         // Step 5: Create enrollment
-        const [enrollment] = await tx.insert(enrollments).values({
-          sessionId: input.sessionId,
-          memberId: ctx.session.user.memberId!,
-          packageCreditId: credit?.id,
-        }).returning();
+        const [enrollment] = await tx
+          .insert(enrollments)
+          .values({
+            sessionId: input.sessionId,
+            memberId: ctx.session.user.memberId!,
+            packageCreditId: credit?.id,
+          })
+          .returning();
 
         // Step 6: Side effect — trigger booking confirmation email
         await ctx.jobs.trigger('booking-confirmation', {
@@ -3621,7 +3808,7 @@ import { paymentEvents } from '@stillwater/db/schema';
 function hashStringToBigInt(s: string): bigint {
   let hash = 0n;
   for (let i = 0; i < s.length; i++) {
-    hash = (hash * 31n) + BigInt(s.charCodeAt(i));
+    hash = hash * 31n + BigInt(s.charCodeAt(i));
   }
   return hash % 9223372036854775807n;
 }
@@ -3689,7 +3876,7 @@ import { db } from '@stillwater/db';
 import { classSessions, enrollments } from '@stillwater/db/schema';
 import { and, eq } from 'drizzle-orm';
 
-export const runtime = 'nodejs';           // NOT 'edge' — needs Drizzle
+export const runtime = 'nodejs'; // NOT 'edge' — needs Drizzle
 // Note: do NOT set `export const dynamic = 'force-dynamic'` here. Route handlers
 // that read `req.url` or stream are dynamic by default; explicitly setting
 // `force-dynamic` is incompatible with `cacheComponents: true` (see §9.1) and
@@ -3717,7 +3904,7 @@ export async function GET(req: Request) {
         }
         const enrolledCount = await db.$count(
           enrollments,
-          and(eq(enrollments.sessionId, sessionId), eq(enrollments.status, 'confirmed'))
+          and(eq(enrollments.sessionId, sessionId), eq(enrollments.status, 'confirmed')),
         );
         const capacity = session.overrideCapacity ?? session.class.maxCapacity ?? 0;
         const data = {
@@ -3746,7 +3933,7 @@ export async function GET(req: Request) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }
@@ -3763,7 +3950,7 @@ import { InstructorCard } from '@/components/marketing/InstructorCard';
 import { apiCaller } from '@/lib/trpc/server';
 
 export default async function InstructorPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;  // Next.js 16 async params
+  const { slug } = await params; // Next.js 16 async params
   const api = await apiCaller();
   const instructor = await api.instructors.getBySlug({ slug });
   const imageUrl = await getSignedImageUrl(instructor.imageKey);
@@ -3771,7 +3958,7 @@ export default async function InstructorPage({ params }: { params: Promise<{ slu
 }
 
 // ❌ WRONG — Client Component imports server-only module
-'use client';
+('use client');
 import { getSignedImageUrl } from '@/lib/storage/cloudflare-images'; // 💥 env validation throws
 ```
 
@@ -3788,14 +3975,19 @@ function isBuildContext(): boolean {
 
 const envSchema = {
   server: {
-    DATABASE_URL: z.string().refine(s => s.startsWith('postgres'), 'Must be postgres URL'),
-    DATABASE_URL_UNPOOLED: z.string().refine(s => s.startsWith('postgres'), 'Must be postgres URL'),
-    BETTER_AUTH_SECRET: z.string().min(32).superRefine((val, ctx) => {
-      const weak = ['dev-secret', 'test-secret', 'ci-dummy', 'change-me', 'placeholder'];
-      if (weak.some(w => val.toLowerCase().includes(w))) {
-        ctx.addIssue({ code: 'custom', message: 'Weak secret rejected' });
-      }
-    }),
+    DATABASE_URL: z.string().refine((s) => s.startsWith('postgres'), 'Must be postgres URL'),
+    DATABASE_URL_UNPOOLED: z
+      .string()
+      .refine((s) => s.startsWith('postgres'), 'Must be postgres URL'),
+    BETTER_AUTH_SECRET: z
+      .string()
+      .min(32)
+      .superRefine((val, ctx) => {
+        const weak = ['dev-secret', 'test-secret', 'ci-dummy', 'change-me', 'placeholder'];
+        if (weak.some((w) => val.toLowerCase().includes(w))) {
+          ctx.addIssue({ code: 'custom', message: 'Weak secret rejected' });
+        }
+      }),
     // ... 22 more vars
   },
   client: {
@@ -3812,7 +4004,7 @@ function loadEnv() {
   if (isBuildContext()) {
     // Return placeholders during build (don't throw)
     return Object.fromEntries(
-      Object.keys(envSchema.server).map(k => [k, 'placeholder'])
+      Object.keys(envSchema.server).map((k) => [k, 'placeholder']),
     ) as unknown as Env;
   }
   return createEnv(envSchema);
@@ -3854,11 +4046,11 @@ export function getStripe(): Stripe | null {
 
 Source: `api-patterns/rate-limiting.md` §Strategy Selection.
 
-| Strategy | How it works | When to use | Stillwater use |
-|----------|--------------|-------------|----------------|
-| **Token bucket** | Burst allowed, refills over time | Most APIs — allows short bursts | Default for general API (Phase 5+) |
-| **Sliding window** | Smooth distribution, no burst | Strict limits — auth, payment | **Auth mutations** (10/15min) + **booking.book** (10/1min) |
-| **Fixed window** | Simple counters per window | Basic needs, low precision | Not used in Stillwater |
+| Strategy           | How it works                     | When to use                     | Stillwater use                                             |
+| ------------------ | -------------------------------- | ------------------------------- | ---------------------------------------------------------- |
+| **Token bucket**   | Burst allowed, refills over time | Most APIs — allows short bursts | Default for general API (Phase 5+)                         |
+| **Sliding window** | Smooth distribution, no burst    | Strict limits — auth, payment   | **Auth mutations** (10/15min) + **booking.book** (10/1min) |
+| **Fixed window**   | Simple counters per window       | Basic needs, low precision      | Not used in Stillwater                                     |
 
 **Why sliding window for auth:** Prevents the "burst then wait" pattern that token bucket allows — an attacker can't make 10 rapid attempts at the start of each window. Sliding window distributes the 10 attempts across the full 15 minutes.
 
@@ -3896,42 +4088,44 @@ const ratelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(10, '1 m'),
 });
 
-export const rateLimit = (opts: { limit: number; window: '1 m' | '1 h' | '15 m' }) => t.middleware(async ({ ctx, next }) => {
-  const identifier = ctx.session?.user.id ?? ctx.req.headers.get('x-forwarded-for') ?? 'anonymous';
-  const key = `${opts.limit}:${opts.window}:${identifier}`;
+export const rateLimit = (opts: { limit: number; window: '1 m' | '1 h' | '15 m' }) =>
+  t.middleware(async ({ ctx, next }) => {
+    const identifier =
+      ctx.session?.user.id ?? ctx.req.headers.get('x-forwarded-for') ?? 'anonymous';
+    const key = `${opts.limit}:${opts.window}:${identifier}`;
 
-  let rateLimitResult;
-  try {
-    rateLimitResult = await ratelimit.limit(key);
-  } catch (err) {
-    // Fail OPEN — Redis outage shouldn't break booking
-    console.warn('[rateLimit] Upstash unavailable, failing open:', err);
+    let rateLimitResult;
+    try {
+      rateLimitResult = await ratelimit.limit(key);
+    } catch (err) {
+      // Fail OPEN — Redis outage shouldn't break booking
+      console.warn('[rateLimit] Upstash unavailable, failing open:', err);
+      return next();
+    }
+
+    if (!rateLimitResult.success) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: `Rate limit exceeded. Retry after ${rateLimitResult.reset} seconds.`,
+      });
+    }
+
     return next();
-  }
-
-  if (!rateLimitResult.success) {
-    throw new TRPCError({
-      code: 'TOO_MANY_REQUESTS',
-      message: `Rate limit exceeded. Retry after ${rateLimitResult.reset} seconds.`,
-    });
-  }
-
-  return next();
-});
+  });
 ```
 
 #### 15.7.4 Per-Procedure Limits
 
-| Procedure | Limit | Window | Strategy | Reason |
-|------------|-------|--------|----------|--------|
-| `auth.signIn` (email/password) | 10 | 15 min | sliding | Brute-force protection; stricter than booking |
-| `auth.signUp` | 5 | 15 min | sliding | Account-creation abuse |
-| `auth.resetPassword` | 3 | 1 hour | sliding | Token-request abuse |
-| `auth.sendMagicLink` | 5 | 15 min | sliding | Email-bombing prevention |
-| `bookings.book` | 10 | 1 min | sliding | Double-click + race-abuse prevention |
-| `bookings.cancel` | 10 | 1 min | sliding | Same as book |
-| `memberships.purchase` | 5 | 1 min | sliding | Payment-abuse prevention |
-| General API (default) | 100 | 15 min | token bucket | Standard API protection |
+| Procedure                      | Limit | Window | Strategy     | Reason                                        |
+| ------------------------------ | ----- | ------ | ------------ | --------------------------------------------- |
+| `auth.signIn` (email/password) | 10    | 15 min | sliding      | Brute-force protection; stricter than booking |
+| `auth.signUp`                  | 5     | 15 min | sliding      | Account-creation abuse                        |
+| `auth.resetPassword`           | 3     | 1 hour | sliding      | Token-request abuse                           |
+| `auth.sendMagicLink`           | 5     | 15 min | sliding      | Email-bombing prevention                      |
+| `bookings.book`                | 10    | 1 min  | sliding      | Double-click + race-abuse prevention          |
+| `bookings.cancel`              | 10    | 1 min  | sliding      | Same as book                                  |
+| `memberships.purchase`         | 5     | 1 min  | sliding      | Payment-abuse prevention                      |
+| General API (default)          | 100   | 15 min | token bucket | Standard API protection                       |
 
 **Why auth is stricter (10/15min) than booking (10/1min):** Auth endpoints face distributed brute-force attacks; the 15-min window makes IP-rotation attacks slower. Booking's 1-min window is for double-click/race prevention, not brute-force. Source: `security-and-hardening/SKILL.md` §Rate Limiting lines 256–260.
 
@@ -3939,13 +4133,13 @@ export const rateLimit = (opts: { limit: number; window: '1 m' | '1 h' | '15 m' 
 
 Source: `vulnerability-scanner/SKILL.md` §6 Exceptional Conditions.
 
-| Scenario | Fail-Open (allow) | Fail-Closed (deny) | Stillwater choice |
-|----------|------------------|---------------------|-------------------|
-| Rate-limit Redis outage | Booking still works (revenue) | Booking breaks (revenue loss) | **Fail-OPEN** (booking shouldn't break because rate-limit is down) |
-| Auth DB outage | Login impossible | Login impossible | N/A — both fail-closed by design (Better Auth requires DB) |
-| Stripe API outage | Payment fails silently | Payment fails with error | **Fail-CLOSED** (never silently lose a payment) |
-| Sanity CDN outage | Stale content shown | Page 500s | **Fail-OPEN** (ISR serves stale; see §7.4) |
-| Email delivery (Resend) outage | Background job retries | Background job fails | **Fail-OPEN** (Trigger.dev retries with backoff; see ADR-007) |
+| Scenario                       | Fail-Open (allow)             | Fail-Closed (deny)            | Stillwater choice                                                  |
+| ------------------------------ | ----------------------------- | ----------------------------- | ------------------------------------------------------------------ |
+| Rate-limit Redis outage        | Booking still works (revenue) | Booking breaks (revenue loss) | **Fail-OPEN** (booking shouldn't break because rate-limit is down) |
+| Auth DB outage                 | Login impossible              | Login impossible              | N/A — both fail-closed by design (Better Auth requires DB)         |
+| Stripe API outage              | Payment fails silently        | Payment fails with error      | **Fail-CLOSED** (never silently lose a payment)                    |
+| Sanity CDN outage              | Stale content shown           | Page 500s                     | **Fail-OPEN** (ISR serves stale; see §7.4)                         |
+| Email delivery (Resend) outage | Background job retries        | Background job fails          | **Fail-OPEN** (Trigger.dev retries with backoff; see ADR-007)      |
 
 ### 15.8 Pattern: Regression Test (Red-Green-Revert-Restore)
 
@@ -3955,23 +4149,27 @@ describe('BOOK-006: concurrent booking via advisory lock', () => {
   it('exactly 1 of 10 concurrent bookings confirms; 9 waitlist', async () => {
     // Arrange
     const session = await createTestSession({ capacity: 1 });
-    const members = await Promise.all(
-      Array.from({ length: 10 }, () => createTestMember())
-    );
+    const members = await Promise.all(Array.from({ length: 10 }, () => createTestMember()));
 
     // Act — fire 10 concurrent booking attempts
     const results = await Promise.all(
-      members.map(m =>
+      members.map((m) =>
         bookingsRouter.book({
           input: { sessionId: session.id },
-          ctx: { session: mockSession(m), db: testDb, jobs: mockJobs, redis: testRedis, req: new Request('http://localhost') },
-        })
-      )
+          ctx: {
+            session: mockSession(m),
+            db: testDb,
+            jobs: mockJobs,
+            redis: testRedis,
+            req: new Request('http://localhost'),
+          },
+        }),
+      ),
     );
 
     // Assert
-    const confirmed = results.filter(r => r.status === 'confirmed');
-    const waitlisted = results.filter(r => r.status === 'waitlisted');
+    const confirmed = results.filter((r) => r.status === 'confirmed');
+    const waitlisted = results.filter((r) => r.status === 'waitlisted');
     expect(confirmed).toHaveLength(1);
     expect(waitlisted).toHaveLength(9);
   });
@@ -4036,12 +4234,12 @@ it('validates sessionId', () => {
 
 Use the simplest test double that gets the job done. The more your tests use real code, the more confidence they provide.
 
-| Preference | When to use | Stillwater example |
-|------------|-------------|--------------------|
-| 1. **Real implementation** | Highest confidence, catches real bugs | Use real Drizzle with testcontainers Postgres for booking tests |
-| 2. **Fake** | In-memory version of a dependency | `FakeEmailService` that captures emails in an array instead of sending |
-| 3. **Stub** | Returns canned data, no behavior | `stripe.webhooks.constructEvent` stubbed to return a fixed event object |
-| 4. **Mock** | Verifies method calls — use sparingly | Only for asserting "email was sent" or "analytics event was fired" |
+| Preference                 | When to use                           | Stillwater example                                                      |
+| -------------------------- | ------------------------------------- | ----------------------------------------------------------------------- |
+| 1. **Real implementation** | Highest confidence, catches real bugs | Use real Drizzle with testcontainers Postgres for booking tests         |
+| 2. **Fake**                | In-memory version of a dependency     | `FakeEmailService` that captures emails in an array instead of sending  |
+| 3. **Stub**                | Returns canned data, no behavior      | `stripe.webhooks.constructEvent` stubbed to return a fixed event object |
+| 4. **Mock**                | Verifies method calls — use sparingly | Only for asserting "email was sent" or "analytics event was fired"      |
 
 **Rule:** If you reach for `vi.mock()`, ask first: could a fake or stub work? Mocks couple tests to implementation details and break on refactors. The §9.8 anti-pattern (`vi.fn()` inside `vi.mock()`) is the worst case — use `vi.hoisted()` to share mock instances.
 
@@ -4104,7 +4302,7 @@ export const getMockSession = (overrides?: Partial<ClassSession>): ClassSession 
   classId: crypto.randomUUID(),
   instructorId: crypto.randomUUID(),
   roomId: null,
-  startsAt: new Date(Date.now() + 24 * 60 * 60 * 1000),  // Tomorrow
+  startsAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
   endsAt: new Date(Date.now() + 25.5 * 60 * 60 * 1000),
   status: 'scheduled',
   cancelReason: null,
@@ -4134,7 +4332,7 @@ export const getMockInstructor = (overrides?: Partial<Instructor>): Instructor =
 // services/workers/src/index.ts
 const shutdown = async () => {
   const timeout = setTimeout(() => process.exit(1), 25_000);
-  timeout.unref();  // Don't keep process alive for timeout
+  timeout.unref(); // Don't keep process alive for timeout
   await Promise.allSettled([
     // Close all open workers
   ]);
@@ -4154,20 +4352,24 @@ Add a hidden `company_website` field to public-facing forms (booking, contact, w
 
 ```typescript
 // packages/api/src/schemas/honeypot.ts
-const HoneypotSchema = z.object({
-  company_website: z.string().max(0).optional(),  // Must be empty
-}).catchall(z.unknown());
+const HoneypotSchema = z
+  .object({
+    company_website: z.string().max(0).optional(), // Must be empty
+  })
+  .catchall(z.unknown());
 
 // In the booking mutation
 export const joinWaitlist = publicProcedure
-  .input(waitlistSchema.extend({
-    company_website: z.string().max(0).optional(),  // honeypot
-  }))
+  .input(
+    waitlistSchema.extend({
+      company_website: z.string().max(0).optional(), // honeypot
+    }),
+  )
   .mutation(async ({ ctx, input }) => {
     // 1. Honeypot check — silent success for bots
     if (input.company_website && input.company_website.length > 0) {
       console.warn('[honeypot] Bot detected on joinWaitlist');
-      return { success: true as const };  // lie to the bot
+      return { success: true as const }; // lie to the bot
     }
     // 2. Real processing
     await ctx.db.insert(waitlist).values({
@@ -4185,7 +4387,7 @@ export const joinWaitlist = publicProcedure
   name="company_website"
   tabIndex={-1}
   autoComplete="off"
-  className="absolute left-[-9999px] top-auto w-px h-px overflow-hidden"
+  className="absolute top-auto left-[-9999px] h-px w-px overflow-hidden"
   aria-hidden="true"
   // No label, no placeholder — bots fill it, humans never see it
 />
@@ -4203,11 +4405,7 @@ Source: `nextjs16-react19-next-auth5-drizzle-orm/SKILL.md` lesson 30 (line 1881)
 
 ```typescript
 // ✅ CORRECT: Owner-checked query — returns null if not owner
-async function getBooking(
-  id: string,
-  memberId: string,
-  db: DrizzleDB
-): Promise<Booking | null> {
+async function getBooking(id: string, memberId: string, db: DrizzleDB): Promise<Booking | null> {
   const row = await db.query.bookings.findFirst({
     where: eq(bookings.id, id),
   });
@@ -4229,11 +4427,7 @@ async function getBooking(id: string, db: DrizzleDB): Promise<Booking | null> {
 **For admin/owner routes:** If the requesting user has the `admin` or `owner` role, skip the owner check — they can access any resource. Use `requireRole()` (§5.6) for these routes.
 
 ```typescript
-async function getBooking(
-  id: string,
-  session: Session,
-  db: DrizzleDB
-): Promise<Booking | null> {
+async function getBooking(id: string, session: Session, db: DrizzleDB): Promise<Booking | null> {
   const row = await db.query.bookings.findFirst({
     where: eq(bookings.id, id),
   });
@@ -4549,29 +4743,29 @@ it('tests cached function', async () => {
 
 ### 17.1 Tailwind v4 Default Breakpoints (no custom config)
 
-| Prefix | Min-width | Usage |
-|--------|-----------|-------|
-| (none) | 0px | Mobile-first base |
-| `sm:` | 640px | Small phones landscape |
-| `md:` | 768px | Tablets |
-| `lg:` | 1024px | Small desktops |
-| `xl:` | 1280px | Standard desktops |
-| `2xl:` | 1536px | Large desktops |
+| Prefix | Min-width | Usage                  |
+| ------ | --------- | ---------------------- |
+| (none) | 0px       | Mobile-first base      |
+| `sm:`  | 640px     | Small phones landscape |
+| `md:`  | 768px     | Tablets                |
+| `lg:`  | 1024px    | Small desktops         |
+| `xl:`  | 1280px    | Standard desktops      |
+| `2xl:` | 1536px    | Large desktops         |
 
 ### 17.2 Stillwater Section Patterns
 
-| Section | Mobile (< 768px) | Tablet (768–1024px) | Desktop (> 1024px) |
-|---------|------------------|---------------------|---------------------|
-| Nav | Hamburger drawer (Radix Dialog) | Inline links | Inline links + CTA |
-| Hero | Single column, headline `clamp(3rem, 12vw, 5rem)` | Single column | Asymmetric 3-col: `1fr 1px minmax(280px, 38%)` |
-| Marquee | Same (kinetic typography) | Same | Same |
-| Philosophy | Single column, hide vertical-text + `間` ornament | Single column | 3-col: `auto 1fr auto` (vertical-text / content / ornament) |
-| Schedule | 2-col class items (time + info); hide level + spots | 4-col class items | 4-col class items |
-| Instructors | Single column, portrait above content | Single column | Alternating 2-col magazine spread |
-| Membership | 1-col table | 2-col table | 4-col table |
-| Studio Space | 1-col grid | 2-col grid | 3-col grid with row-span-2 |
-| CTA Band | Single column | Single column | 2-col: `1fr auto` |
-| Footer | 1-col, centered | 2-col | 4-col: `1.5fr 1fr 1fr 1fr` |
+| Section      | Mobile (< 768px)                                    | Tablet (768–1024px) | Desktop (> 1024px)                                          |
+| ------------ | --------------------------------------------------- | ------------------- | ----------------------------------------------------------- |
+| Nav          | Hamburger drawer (Radix Dialog)                     | Inline links        | Inline links + CTA                                          |
+| Hero         | Single column, headline `clamp(3rem, 12vw, 5rem)`   | Single column       | Asymmetric 3-col: `1fr 1px minmax(280px, 38%)`              |
+| Marquee      | Same (kinetic typography)                           | Same                | Same                                                        |
+| Philosophy   | Single column, hide vertical-text + `間` ornament   | Single column       | 3-col: `auto 1fr auto` (vertical-text / content / ornament) |
+| Schedule     | 2-col class items (time + info); hide level + spots | 4-col class items   | 4-col class items                                           |
+| Instructors  | Single column, portrait above content               | Single column       | Alternating 2-col magazine spread                           |
+| Membership   | 1-col table                                         | 2-col table         | 4-col table                                                 |
+| Studio Space | 1-col grid                                          | 2-col grid          | 3-col grid with row-span-2                                  |
+| CTA Band     | Single column                                       | Single column       | 2-col: `1fr auto`                                           |
+| Footer       | 1-col, centered                                     | 2-col               | 4-col: `1.5fr 1fr 1fr 1fr`                                  |
 
 ### 17.3 Mobile Testing
 
@@ -4585,18 +4779,18 @@ it('tests cached function', async () => {
 
 Tailwind v4 provides built-in container queries for **component-level responsive design**. Unlike viewport breakpoints (`md:`), container queries respond to the parent element's width.
 
-| Concept | Syntax | Description |
-|---------|--------|-------------|
-| Define container | `@container` on parent | Marks element as container |
-| Container breakpoint | `@sm:`, `@md:`, `@lg:` on children | Responds to container width |
-| Named containers | `@container/card` | Multiple containers in same tree |
+| Concept              | Syntax                             | Description                      |
+| -------------------- | ---------------------------------- | -------------------------------- |
+| Define container     | `@container` on parent             | Marks element as container       |
+| Container breakpoint | `@sm:`, `@md:`, `@lg:` on children | Responds to container width      |
+| Named containers     | `@container/card`                  | Multiple containers in same tree |
 
 **When to use:**
 
-| Scenario | Use |
-|----------|-----|
-| Page-level layouts | Viewport breakpoints (`md:`, `lg:`) |
-| Component-level responsive | Container queries (`@container`) |
+| Scenario                            | Use                                     |
+| ----------------------------------- | --------------------------------------- |
+| Page-level layouts                  | Viewport breakpoints (`md:`, `lg:`)     |
+| Component-level responsive          | Container queries (`@container`)        |
 | Reusable components (cards, panels) | Container queries (context-independent) |
 
 **Example — Schedule class card:**
@@ -4605,12 +4799,8 @@ Tailwind v4 provides built-in container queries for **component-level responsive
 // Class card responds to its container width, not viewport
 <div className="@container">
   <div className="@md:flex @md:items-center @md:gap-4">
-    <div className="@md:w-1/3">
-      {/* Time */}
-    </div>
-    <div className="@md:w-2/3">
-      {/* Class info */}
-    </div>
+    <div className="@md:w-1/3">{/* Time */}</div>
+    <div className="@md:w-2/3">{/* Class info */}</div>
   </div>
 </div>
 ```
@@ -4625,17 +4815,17 @@ Tailwind v4 provides built-in container queries for **component-level responsive
 
 ```css
 @theme {
-  --z-behind: -1;       /* Background decorations */
-  --z-base: 0;          /* Normal document flow */
-  --z-raised: 10;       /* Sticky elements, sticky table headers */
-  --z-dropdown: 200;    /* Radix Select, DropdownMenu */
-  --z-sticky: 300;      /* Sticky nav, sticky CTA */
-  --z-overlay: 400;     /* Backdrop dimmers */
-  --z-modal: 500;       /* Radix Dialog (booking confirmation, cancellation) */
-  --z-popover: 600;     /* Radix Popover (filters) */
-  --z-tooltip: 700;     /* Radix Tooltip */
-  --z-toast: 800;       /* sonner toasts */
-  --z-max: 999;         /* Skip-to-content link, scroll progress bar */
+  --z-behind: -1; /* Background decorations */
+  --z-base: 0; /* Normal document flow */
+  --z-raised: 10; /* Sticky elements, sticky table headers */
+  --z-dropdown: 200; /* Radix Select, DropdownMenu */
+  --z-sticky: 300; /* Sticky nav, sticky CTA */
+  --z-overlay: 400; /* Backdrop dimmers */
+  --z-modal: 500; /* Radix Dialog (booking confirmation, cancellation) */
+  --z-popover: 600; /* Radix Popover (filters) */
+  --z-tooltip: 700; /* Radix Tooltip */
+  --z-toast: 800; /* sonner toasts */
+  --z-max: 999; /* Skip-to-content link, scroll progress bar */
 }
 ```
 
@@ -4661,83 +4851,83 @@ If two elements need the same z-index layer, the one that appears LATER in the D
 
 ### 19.1 Stone (Foundation)
 
-| Token | Hex | RGB | Tailwind Class | Usage |
-|-------|-----|-----|----------------|-------|
-| `--color-stone-950` | `#0F0D0B` | 15, 13, 11 | `bg-stone-950` | Deepest shadow |
-| `--color-stone-900` | `#1C1915` | 28, 25, 21 | `bg-stone-900` | Primary text, CTA band bg |
-| `--color-stone-800` | `#2E2B26` | 46, 43, 38 | `bg-stone-800` | SVG portrait fill |
-| `--color-stone-700` | `#3D3832` | 61, 56, 50 | `bg-stone-700` | Body text on dark |
-| `--color-stone-600` | `#544F48` | 84, 79, 72 | `bg-stone-600` | SVG fill |
-| `--color-stone-500` | `#6E6760` | 110, 103, 96 | `bg-stone-500` | Placeholder, disabled |
-| `--color-stone-400` | `#8C7B6E` | 140, 123, 110 | `bg-stone-400` | Secondary text |
-| `--color-stone-300` | `#B0A49A` | 176, 164, 154 | `bg-stone-300` | Tertiary text, SVG fill |
-| `--color-stone-200` | `#D4CFC9` | 212, 207, 201 | `bg-stone-200` | Borders, dividers |
-| `--color-stone-100` | `#E8E3DC` | 232, 227, 220 | `bg-stone-100` | Section number text |
-| `--color-stone-50` | `#F5F0E8` | 245, 240, 232 | `bg-stone-50` | Page background (warm white) |
+| Token               | Hex       | RGB           | Tailwind Class | Usage                        |
+| ------------------- | --------- | ------------- | -------------- | ---------------------------- |
+| `--color-stone-950` | `#0F0D0B` | 15, 13, 11    | `bg-stone-950` | Deepest shadow               |
+| `--color-stone-900` | `#1C1915` | 28, 25, 21    | `bg-stone-900` | Primary text, CTA band bg    |
+| `--color-stone-800` | `#2E2B26` | 46, 43, 38    | `bg-stone-800` | SVG portrait fill            |
+| `--color-stone-700` | `#3D3832` | 61, 56, 50    | `bg-stone-700` | Body text on dark            |
+| `--color-stone-600` | `#544F48` | 84, 79, 72    | `bg-stone-600` | SVG fill                     |
+| `--color-stone-500` | `#6E6760` | 110, 103, 96  | `bg-stone-500` | Placeholder, disabled        |
+| `--color-stone-400` | `#8C7B6E` | 140, 123, 110 | `bg-stone-400` | Secondary text               |
+| `--color-stone-300` | `#B0A49A` | 176, 164, 154 | `bg-stone-300` | Tertiary text, SVG fill      |
+| `--color-stone-200` | `#D4CFC9` | 212, 207, 201 | `bg-stone-200` | Borders, dividers            |
+| `--color-stone-100` | `#E8E3DC` | 232, 227, 220 | `bg-stone-100` | Section number text          |
+| `--color-stone-50`  | `#F5F0E8` | 245, 240, 232 | `bg-stone-50`  | Page background (warm white) |
 
 ### 19.2 Clay (Primary Action — Terracotta)
 
-| Token | Hex | RGB | Tailwind Class | Usage |
-|-------|-----|-----|----------------|-------|
-| `--color-clay-600` | `#8A4030` | 138, 64, 48 | `bg-clay-600` | Pressed state |
-| `--color-clay-500` | `#9E5E44` | 158, 94, 68 | `bg-clay-500` | Hover state, primary CTA bg |
-| `--color-clay-400` | `#C4856A` | 196, 133, 106 | `bg-clay-400` | Primary CTA bg, accent text |
-| `--color-clay-300` | `#D9A48F` | 217, 164, 143 | `bg-clay-300` | CTA band em, light accent |
-| `--color-clay-200` | `#EDD4C8` | 237, 212, 200 | `bg-clay-200` | Tinted hover bg |
-| `--color-clay-100` | `#F7EDE8` | 247, 237, 232 | `bg-clay-100` | Class item hover bg |
+| Token              | Hex       | RGB           | Tailwind Class | Usage                       |
+| ------------------ | --------- | ------------- | -------------- | --------------------------- |
+| `--color-clay-600` | `#8A4030` | 138, 64, 48   | `bg-clay-600`  | Pressed state               |
+| `--color-clay-500` | `#9E5E44` | 158, 94, 68   | `bg-clay-500`  | Hover state, primary CTA bg |
+| `--color-clay-400` | `#C4856A` | 196, 133, 106 | `bg-clay-400`  | Primary CTA bg, accent text |
+| `--color-clay-300` | `#D9A48F` | 217, 164, 143 | `bg-clay-300`  | CTA band em, light accent   |
+| `--color-clay-200` | `#EDD4C8` | 237, 212, 200 | `bg-clay-200`  | Tinted hover bg             |
+| `--color-clay-100` | `#F7EDE8` | 247, 237, 232 | `bg-clay-100`  | Class item hover bg         |
 
 ### 19.3 Water (Accent — Muted Teal)
 
-| Token | Hex | RGB | Tailwind Class | Usage |
-|-------|-----|-----|----------------|-------|
-| `--color-water-700` | `#4A7280` | 74, 114, 128 | `bg-water-700` | Pressed state |
-| `--color-water-600` | `#5D8A99` | 93, 138, 153 | `bg-water-600` | Hover state, SVG text fill |
-| `--color-water-500` | `#7B9EA8` | 123, 158, 168 | `bg-water-500` | Accent, focus ring |
-| `--color-water-400` | `#9BBAC5` | 155, 186, 197 | `bg-water-400` | SVG fill |
-| `--color-water-300` | `#B8CDD4` | 184, 205, 212 | `bg-water-300` | Light accent |
+| Token               | Hex       | RGB           | Tailwind Class | Usage                       |
+| ------------------- | --------- | ------------- | -------------- | --------------------------- |
+| `--color-water-700` | `#4A7280` | 74, 114, 128  | `bg-water-700` | Pressed state               |
+| `--color-water-600` | `#5D8A99` | 93, 138, 153  | `bg-water-600` | Hover state, SVG text fill  |
+| `--color-water-500` | `#7B9EA8` | 123, 158, 168 | `bg-water-500` | Accent, focus ring          |
+| `--color-water-400` | `#9BBAC5` | 155, 186, 197 | `bg-water-400` | SVG fill                    |
+| `--color-water-300` | `#B8CDD4` | 184, 205, 212 | `bg-water-300` | Light accent                |
 | `--color-water-100` | `#E8F0F3` | 232, 240, 243 | `bg-water-100` | Level badge bg (All Levels) |
 
 ### 19.4 Sand (Surfaces)
 
-| Token | Hex | RGB | Tailwind Class | Usage |
-|-------|-----|-----|----------------|-------|
-| `--color-sand` | `#F5F0E8` | 245, 240, 232 | `bg-sand` | Page background (= stone-50) |
-| `--color-sand-warm` | `#EDE5D8` | 237, 229, 216 | `bg-sand-warm` | Card surface, next-class card bg |
+| Token               | Hex       | RGB           | Tailwind Class | Usage                                |
+| ------------------- | --------- | ------------- | -------------- | ------------------------------------ |
+| `--color-sand`      | `#F5F0E8` | 245, 240, 232 | `bg-sand`      | Page background (= stone-50)         |
+| `--color-sand-warm` | `#EDE5D8` | 237, 229, 216 | `bg-sand-warm` | Card surface, next-class card bg     |
 | `--color-sand-deep` | `#E2D8CB` | 226, 216, 203 | `bg-sand-deep` | Philosophy section bg, hover surface |
 
 ### 19.5 Status Colors
 
-| Token | Hex | RGB | Tailwind Class | Usage |
-|-------|-----|-----|----------------|-------|
-| `--color-success` | `#4A7C59` | 74, 124, 89 | `bg-success` | Muted forest green (success badges, beginner level) |
-| `--color-warning` | `#C4913A` | 196, 145, 58 | `bg-warning` | Warm amber (warning badges) |
-| `--color-error` | `#B85450` | 184, 84, 80 | `bg-error` | Muted red-clay (error badges, destructive buttons) |
-| `--color-info` | `#7B9EA8` | 123, 158, 168 | `bg-info` | Water-500 (info badges) |
+| Token             | Hex       | RGB           | Tailwind Class | Usage                                               |
+| ----------------- | --------- | ------------- | -------------- | --------------------------------------------------- |
+| `--color-success` | `#4A7C59` | 74, 124, 89   | `bg-success`   | Muted forest green (success badges, beginner level) |
+| `--color-warning` | `#C4913A` | 196, 145, 58  | `bg-warning`   | Warm amber (warning badges)                         |
+| `--color-error`   | `#B85450` | 184, 84, 80   | `bg-error`     | Muted red-clay (error badges, destructive buttons)  |
+| `--color-info`    | `#7B9EA8` | 123, 158, 168 | `bg-info`      | Water-500 (info badges)                             |
 
 ### 19.6 Semantic Aliases
 
-| Token | Maps To | Usage |
-|-------|---------|-------|
-| `--color-background` | `--color-sand` | Page background |
-| `--color-surface` | `--color-sand-warm` | Card surface |
-| `--color-border` | `--color-stone-200` | Borders, dividers |
-| `--color-text-primary` | `--color-stone-900` | Primary text |
-| `--color-text-secondary` | `--color-stone-400` | Secondary text |
-| `--color-text-tertiary` | `--color-stone-300` | Tertiary text |
-| `--color-action` | `--color-clay-400` | Primary CTA bg |
-| `--color-action-hover` | `--color-clay-500` | Primary CTA hover bg |
-| `--color-accent` | `--color-water-500` | Accent, focus ring |
+| Token                    | Maps To             | Usage                |
+| ------------------------ | ------------------- | -------------------- |
+| `--color-background`     | `--color-sand`      | Page background      |
+| `--color-surface`        | `--color-sand-warm` | Card surface         |
+| `--color-border`         | `--color-stone-200` | Borders, dividers    |
+| `--color-text-primary`   | `--color-stone-900` | Primary text         |
+| `--color-text-secondary` | `--color-stone-400` | Secondary text       |
+| `--color-text-tertiary`  | `--color-stone-300` | Tertiary text        |
+| `--color-action`         | `--color-clay-400`  | Primary CTA bg       |
+| `--color-action-hover`   | `--color-clay-500`  | Primary CTA hover bg |
+| `--color-accent`         | `--color-water-500` | Accent, focus ring   |
 
 ### 19.7 Forbidden Colors (enforced by `scripts/brand-tokens.test.ts`)
 
 The following colors are REJECTED by a Vitest test that scans all CSS + TSX files:
 
-| Color | Hex | Reason |
-|-------|-----|--------|
-| Purple family | `#7c3aed`, `#a855f7`, `#8b5cf6` | Generic SaaS aesthetic |
-| Tailwind default blue | `#3b82f6`, `#6366f1` | Fintech cliché |
-| Tailwind default amber | `#fde68a`, `#fcd34d` | Off-palette |
-| Any raw `#rrggbb` not in Warm Mineral | n/a | Bypasses design token system |
+| Color                                 | Hex                             | Reason                       |
+| ------------------------------------- | ------------------------------- | ---------------------------- |
+| Purple family                         | `#7c3aed`, `#a855f7`, `#8b5cf6` | Generic SaaS aesthetic       |
+| Tailwind default blue                 | `#3b82f6`, `#6366f1`            | Fintech cliché               |
+| Tailwind default amber                | `#fde68a`, `#fcd34d`            | Off-palette                  |
+| Any raw `#rrggbb` not in Warm Mineral | n/a                             | Bypasses design token system |
 
 ### 19.8 shadcn HSL Variable Mapping
 
@@ -4745,25 +4935,25 @@ shadcn components use HSL format WITHOUT `hsl()` wrapper for opacity control:
 
 ```css
 :root {
-  --background: 40 25% 95%;       /* Sand #F5F0E8 */
-  --foreground: 30 30% 5%;        /* Stone #0F0D0B */
-  --primary: 12 50% 36%;          /* Clay #8A4030 */
+  --background: 40 25% 95%; /* Sand #F5F0E8 */
+  --foreground: 30 30% 5%; /* Stone #0F0D0B */
+  --primary: 12 50% 36%; /* Clay #8A4030 */
   --primary-foreground: 40 25% 95%;
-  --secondary: 35 20% 88%;        /* Sand-deep #E2D8CB */
+  --secondary: 35 20% 88%; /* Sand-deep #E2D8CB */
   --secondary-foreground: 30 30% 5%;
-  --muted: 35 18% 90%;            /* Sand-warm #EDE5D8 */
+  --muted: 35 18% 90%; /* Sand-warm #EDE5D8 */
   --muted-foreground: 30 12% 35%; /* Stone-700 */
-  --accent: 195 25% 40%;          /* Water #4A7280 */
+  --accent: 195 25% 40%; /* Water #4A7280 */
   --accent-foreground: 40 25% 95%;
-  --destructive: 5 45% 52%;       /* Error #B85450 */
+  --destructive: 5 45% 52%; /* Error #B85450 */
   --destructive-foreground: 40 25% 95%;
   --border: 35 15% 82%;
   --input: 35 15% 82%;
-  --ring: 195 25% 40%;            /* Water for focus rings */
-  --radius: 0;                    /* CRITICAL: sharp edges */
-  --success: 130 25% 38%;         /* #4A7C59 */
-  --warning: 38 50% 50%;          /* #C4913A */
-  --info: 195 25% 40%;            /* Water-500 */
+  --ring: 195 25% 40%; /* Water for focus rings */
+  --radius: 0; /* CRITICAL: sharp edges */
+  --success: 130 25% 38%; /* #4A7C59 */
+  --warning: 38 50% 50%; /* #C4913A */
+  --info: 195 25% 40%; /* Water-500 */
 }
 ```
 
@@ -4828,8 +5018,7 @@ export interface TRPCContext {
 // packages/api/src/routers/bookings.ts
 
 export type BookingResult =
-  | { status: 'confirmed'; enrollmentId: string }
-  | { status: 'waitlisted'; position: number };
+  { status: 'confirmed'; enrollmentId: string } | { status: 'waitlisted'; position: number };
 ```
 
 ### 20.4 SSE Event Payload
@@ -4928,23 +5117,23 @@ export type Permission =
   | 'settings:studio';
 
 const MATRIX: Record<Permission, StudioRole[]> = {
-  'schedule:view':     ['guest', 'member', 'instructor', 'staff', 'manager', 'owner'],
-  'class:book':        ['member', 'instructor', 'staff', 'manager', 'owner'],
-  'class:cancel:own':  ['member', 'instructor', 'staff', 'manager', 'owner'],
-  'history:view:own':  ['member', 'instructor', 'staff', 'manager', 'owner'],
+  'schedule:view': ['guest', 'member', 'instructor', 'staff', 'manager', 'owner'],
+  'class:book': ['member', 'instructor', 'staff', 'manager', 'owner'],
+  'class:cancel:own': ['member', 'instructor', 'staff', 'manager', 'owner'],
+  'history:view:own': ['member', 'instructor', 'staff', 'manager', 'owner'],
   'schedule:view:own': ['instructor', 'staff', 'manager', 'owner'],
-  'checkin:member':    ['staff', 'manager', 'owner'],
-  'members:view:all':  ['staff', 'manager', 'owner'],
-  'schedule:manage':   ['staff', 'manager', 'owner'],
-  'class:cancel:any':  ['staff', 'manager', 'owner'],
-  'revenue:view':      ['manager', 'owner'],
-  'memberships:manage':['manager', 'owner'],
-  'roles:assign':      ['owner'],
-  'settings:studio':   ['owner'],
+  'checkin:member': ['staff', 'manager', 'owner'],
+  'members:view:all': ['staff', 'manager', 'owner'],
+  'schedule:manage': ['staff', 'manager', 'owner'],
+  'class:cancel:any': ['staff', 'manager', 'owner'],
+  'revenue:view': ['manager', 'owner'],
+  'memberships:manage': ['manager', 'owner'],
+  'roles:assign': ['owner'],
+  'settings:studio': ['owner'],
 };
 
 export function can(roles: StudioRole[], permission: Permission): boolean {
-  return roles.some(r => MATRIX[permission].includes(r));
+  return roles.some((r) => MATRIX[permission].includes(r));
 }
 ```
 
@@ -5044,6 +5233,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 ## Appendix A: ADRs
 
 ### ADR-001: Turborepo Monorepo over Independent Repositories
+
 - **Status:** Accepted (2025-07-04)
 - **Context:** Multiple concerns sharing types/business logic
 - **Decision:** Turborepo monorepo with pnpm workspaces
@@ -5052,6 +5242,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Rejected:** Polyrepo (npm package versioning overhead)
 
 ### ADR-002: tRPC v11 over REST API Routes
+
 - **Status:** Accepted (2025-07-04)
 - **Context:** Data-fetching layer between Next.js and DB
 - **Decision:** tRPC v11
@@ -5060,6 +5251,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Rejected:** REST (no type safety bridge without openapi-typescript + codegen); GraphQL (overkill)
 
 ### ADR-003: Drizzle ORM over Prisma
+
 - **Status:** Accepted (2025-07-04)
 - **Context:** Type-safe ORM for PostgreSQL
 - **Decision:** Drizzle ORM
@@ -5068,6 +5260,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Rejected:** Prisma (requires code generation; slower; separate schema language)
 
 ### ADR-004: PostgreSQL Advisory Locks for Booking Concurrency
+
 - **Status:** Accepted (2025-07-04)
 - **Context:** Multiple users booking last spot simultaneously
 - **Decision:** `pg_advisory_xact_lock()` within a database transaction, keyed on session ID hash
@@ -5077,6 +5270,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Also applied to:** Stripe webhook idempotency (keyed on event ID hash)
 
 ### ADR-005: Sanity CMS for Marketing Content Only
+
 - **Status:** Accepted (2025-07-04)
 - **Context:** Studio owners need to update marketing content without engineering; operational data must stay in app DB
 - **Decision:** Sanity v3 for marketing content; PostgreSQL for all operational data
@@ -5085,6 +5279,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Rejected:** Payload CMS (self-hosted, operational burden); MDX files (requires engineer for any change); Single DB for everything (content editors would have direct access to operational tables)
 
 ### ADR-006: Server-Sent Events over WebSockets for Seat Availability
+
 - **Status:** Accepted (2025-07-04)
 - **Context:** Booking page needs live seat counts
 - **Decision:** Server-Sent Events (SSE) via Next.js Streaming API
@@ -5093,6 +5288,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Rejected:** WebSockets (overkill; separate infra on Vercel); Long polling (higher server load); Pusher/Ably (cost; external dependency)
 
 ### ADR-007: Trigger.dev for Background Jobs over BullMQ
+
 - **Status:** Accepted (2025-07-04)
 - **Context:** Async side effects cannot run in serverless due to timeout constraints
 - **Decision:** Trigger.dev v4 (cloud-hosted). v3 is deprecated — new v3 deploys stop working April 1, 2026. v4 reached GA August 2025.
@@ -5101,6 +5297,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Rejected:** BullMQ (requires self-managed Redis + worker processes); Inngest (similar but Trigger.dev has better TypeScript DX); Next.js API routes (10s timeout; not suitable for async work)
 
 ### ADR-008: Better Auth supersedes Auth.js v5
+
 - **Status:** Accepted (NEW — 2026-07-04; validated against `guide_auth-v5_vs_better-auth.md` July 2026)
 - **Context:** Auth.js v5 has been in beta for over a year (5.0.0-beta.31 as of July 2026) and has never left the beta channel since the rewrite began. The npm "latest" tag still points to legacy v4.24.14. The Better Auth team took over Auth.js maintenance in Sept 2025 and now also patches security issues for Auth.js. Auth.js officially directs new projects to Better Auth. Better Auth is at stable v1.6.23 with 1.7.0-beta in testing.
 - **Decision:** Better Auth v1.6.23 (replaces Auth.js v5)
@@ -5109,6 +5306,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Source:** `scaffolding_files.md` preamble (lines 1–9); `guide_auth-v5_vs_better-auth.md` (July 2026 research validation)
 
 ### ADR-009: `proxy.ts` replaces `middleware.ts` (Next.js 16)
+
 - **Status:** Accepted (NEW — 2026-07-04)
 - **Context:** Next.js 16 renamed `middleware.ts` to `proxy.ts`; exported function must be named `proxy`
 - **Decision:** Use `apps/web/proxy.ts` (not `middleware.ts`)
@@ -5117,6 +5315,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Source:** `scaffolding_files.md` preamble; Next.js 16 blog post (`https://nextjs.org/blog/next-16#proxy`); `guide_auth-v5_vs_better-auth.md` §Route Protection Pattern Changes
 
 ### ADR-010: Resend Native Templates for Trigger.dev Workers (Proposed)
+
 - **Status:** Proposed (NEW — 2026-07-06; pending formal acceptance before Phase 8 implementation)
 - **Context:** React Email v6.0.0 (released April 16, 2026) unified all component packages into a single `react-email` package. The v6 bundle is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (markdown parser), and the full `tailwindcss` compiler into runtime bundles. Trigger.dev workers (ADR-007, PAD §17.1) have strict CPU budgets: 30s for `booking-confirmation`, 30s for `waitlist-promotion`, 120s for `weekly-digest`. Importing the 1.8MB package on every serverless cold start risks exhausting the CPU budget.
 - **Decision (Proposed):** Adopt Resend Native Templates (Alternative A from `react_email_suggestion.md`) for all Trigger.dev worker email sending. Workers send a JSON payload (`templateId` + `variables`) to Resend's API; Resend's infrastructure handles HTML rendering and delivery. For Next.js Server Component email sending (rare), local JSX rendering via `import { render } from 'react-email'` (v6 unified import) is acceptable.
@@ -5131,47 +5330,47 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 ### B.1 Stripe Billing Flow
 
-| Step | Operation | Cost | Latency |
-|------|-----------|------|---------|
-| 1 | Create Checkout Session | Stripe API call | ~200ms |
-| 2 | User completes checkout | Stripe-hosted page | User-paced |
-| 3 | Stripe sends `checkout.session.completed` webhook | Free | ~1s |
-| 4 | Webhook handler creates `member_subscriptions` record | DB insert | ~10ms |
-| 5 | Trigger.dev `membership-credit-grant` job | Trigger.dev task | ~5s (with retries) |
-| 6 | Resend sends `WelcomeMember` email | Resend API | ~2s |
+| Step | Operation                                             | Cost               | Latency            |
+| ---- | ----------------------------------------------------- | ------------------ | ------------------ |
+| 1    | Create Checkout Session                               | Stripe API call    | ~200ms             |
+| 2    | User completes checkout                               | Stripe-hosted page | User-paced         |
+| 3    | Stripe sends `checkout.session.completed` webhook     | Free               | ~1s                |
+| 4    | Webhook handler creates `member_subscriptions` record | DB insert          | ~10ms              |
+| 5    | Trigger.dev `membership-credit-grant` job             | Trigger.dev task   | ~5s (with retries) |
+| 6    | Resend sends `WelcomeMember` email                    | Resend API         | ~2s                |
 
 **Total: < 10 seconds end-to-end** (excluding user checkout time)
 
 ### B.2 Booking Flow
 
-| Step | Operation | Cost | Latency |
-|------|-----------|------|---------|
-| 1 | tRPC `bookings.book` mutation | API call | ~100ms |
-| 2 | Acquire `pg_advisory_xact_lock` | DB call | ~5ms |
-| 3 | Capacity check + credit consumption | DB query | ~15ms |
-| 4 | Insert enrollment | DB insert | ~10ms |
-| 5 | Trigger.dev `booking-confirmation` job | Async | ~5s (with retries) |
-| 6 | Trigger.dev `class-reminder-24h` scheduled | Async (delayed) | 23h |
-| 7 | Trigger.dev `class-reminder-1h` scheduled | Async (delayed) | 59min |
-| 8 | Resend sends confirmation email | Resend API | ~2s |
+| Step | Operation                                  | Cost            | Latency            |
+| ---- | ------------------------------------------ | --------------- | ------------------ |
+| 1    | tRPC `bookings.book` mutation              | API call        | ~100ms             |
+| 2    | Acquire `pg_advisory_xact_lock`            | DB call         | ~5ms               |
+| 3    | Capacity check + credit consumption        | DB query        | ~15ms              |
+| 4    | Insert enrollment                          | DB insert       | ~10ms              |
+| 5    | Trigger.dev `booking-confirmation` job     | Async           | ~5s (with retries) |
+| 6    | Trigger.dev `class-reminder-24h` scheduled | Async (delayed) | 23h                |
+| 7    | Trigger.dev `class-reminder-1h` scheduled  | Async (delayed) | 59min              |
+| 8    | Resend sends confirmation email            | Resend API      | ~2s                |
 
 **Total: < 200ms synchronous** (member sees confirmation); emails arrive within 10s
 
 ### B.3 Background Job Costs (Trigger.dev)
 
-| Job | Machine | Avg Duration | Cost per Run |
-|-----|---------|--------------|--------------|
-| `booking-confirmation` | micro (0.25 vCPU, 256MB) | ~2s | ~$0.0001 |
-| `class-reminder-24h` | micro | ~1s | ~$0.00005 |
-| `class-reminder-1h` | micro | ~1s | ~$0.00005 |
-| `class-cancellation-notify` | micro | ~10s (multiple emails) | ~$0.0005 |
-| `waitlist-promotion` | micro | ~2s | ~$0.0001 |
-| `waitlist-expiry` | micro | ~1s | ~$0.00005 |
-| `membership-credit-grant` | micro | ~2s | ~$0.0001 |
-| `membership-expiry-warn` | micro | ~2s | ~$0.0001 |
-| `payment-failed-notify` | micro | ~2s | ~$0.0001 |
-| `weekly-digest` | micro | ~60s (many emails) | ~$0.003 |
-| `attendance-summary` | micro | ~10s | ~$0.0005 |
+| Job                         | Machine                  | Avg Duration           | Cost per Run |
+| --------------------------- | ------------------------ | ---------------------- | ------------ |
+| `booking-confirmation`      | micro (0.25 vCPU, 256MB) | ~2s                    | ~$0.0001     |
+| `class-reminder-24h`        | micro                    | ~1s                    | ~$0.00005    |
+| `class-reminder-1h`         | micro                    | ~1s                    | ~$0.00005    |
+| `class-cancellation-notify` | micro                    | ~10s (multiple emails) | ~$0.0005     |
+| `waitlist-promotion`        | micro                    | ~2s                    | ~$0.0001     |
+| `waitlist-expiry`           | micro                    | ~1s                    | ~$0.00005    |
+| `membership-credit-grant`   | micro                    | ~2s                    | ~$0.0001     |
+| `membership-expiry-warn`    | micro                    | ~2s                    | ~$0.0001     |
+| `payment-failed-notify`     | micro                    | ~2s                    | ~$0.0001     |
+| `weekly-digest`             | micro                    | ~60s (many emails)     | ~$0.003      |
+| `attendance-summary`        | micro                    | ~10s                   | ~$0.0005     |
 
 **Estimated monthly cost (500 members, 42 classes/week):** ~$5–10/month on Trigger.dev free tier
 
@@ -5181,39 +5380,39 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 ### v1.4.0 (2026-07-06) — Phase 0 Complete + P0–P3 Remediation
 
-| Finding | Severity | Status |
-|---------|----------|--------|
-| Trigger.dev SDK import path: `@trigger.dev/sdk/v4` does not exist | Critical | Resolved — reverted to `/v3` (v4 platform uses v3 SDK API). D45-adjacent. See §9.9 Gotcha 1, §12 Lesson 16. |
-| ESLint v10 crashes: `eslint-plugin-react` + `eslint-plugin-import` have no v10 versions | Critical | Resolved — downgraded ESLint from `^10.6.0` → `^9.39.4` in 3 files. D45. See §9.9 Gotcha 2, §12 Lesson 17. |
-| React Email v6 paradigm shift: `@react-email/render` deprecated | Critical | Resolved — PAD.md + SKILL.md updated to `^6.6.6`; MEP F8-29 import changed to `react-email` root. D43. See §9.9 Gotcha 3, §12 Lesson 18. |
-| TypeScript `^6.0.3` drift in 9 sub-packages | High | Resolved — all 9 reverted to `^5.9.0`. D44. See §9.9 Gotcha 4, §12 Lesson 19. |
-| `pg_advisory_lock` (session-scoped) leaks under Neon PgBouncer | Critical | Resolved — all locks use `pg_advisory_xact_lock` (transaction-scoped). ADR-004 audit. See §9.9 Gotcha 5, §12 Lesson 20. |
-| `proxy.ts` comment said "Node.js runtime" (runtime is disputed — Edge or Node.js) | Medium | Resolved — comment corrected to "Edge or Node.js runtime (Next.js 16 docs inconsistent on default)". ADR-009. See §9.9 Gotcha 6. |
-| shadcn `style` conflict: `"new-york"` vs `"default"` | Low | Resolved — §2.1 corrected to `"default"` (matches `components.json`). See §9.9 Gotcha 9. |
-| Stripe API version: `acacia` → `dahlia` in §15.6 code example | High | Resolved — updated to `apiVersion: '2026-06-24.dahlia'`. See §9.9 Gotcha 10. |
-| All 10 MEP §9 Open Questions unresolved | High | ✅ All 10 resolved — Sanity Cloud, Stripe Dashboard refunds, Radix Dialog, synthetic data, feature-flag rollout. See §12 Lesson 21. |
-| Phase 0 smoke test not yet run | High | ✅ PASS — `pnpm install` / `pnpm check-types` / `pnpm lint` all green. See §12 Lesson 22. |
-| ADR-010 (Resend Native Templates) not yet documented | Medium | ✅ Added as Proposed in PAD §29 + SKILL.md Appendix A. Pending Phase 8 acceptance. |
-| Discrepancy count: 35 → 45 (D43, D44, D45 added) | Medium | ✅ All 45 discrepancies reconciled in MEP §2. |
-| Documentation suite not aligned | High | ✅ CLAUDE.md, AGENTS.md, README.md, PAD.md, SKILL.md, MEP.md all updated and cross-checked. |
+| Finding                                                                                 | Severity | Status                                                                                                                                   |
+| --------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Trigger.dev SDK import path: `@trigger.dev/sdk/v4` does not exist                       | Critical | Resolved — reverted to `/v3` (v4 platform uses v3 SDK API). D45-adjacent. See §9.9 Gotcha 1, §12 Lesson 16.                              |
+| ESLint v10 crashes: `eslint-plugin-react` + `eslint-plugin-import` have no v10 versions | Critical | Resolved — downgraded ESLint from `^10.6.0` → `^9.39.4` in 3 files. D45. See §9.9 Gotcha 2, §12 Lesson 17.                               |
+| React Email v6 paradigm shift: `@react-email/render` deprecated                         | Critical | Resolved — PAD.md + SKILL.md updated to `^6.6.6`; MEP F8-29 import changed to `react-email` root. D43. See §9.9 Gotcha 3, §12 Lesson 18. |
+| TypeScript `^6.0.3` drift in 9 sub-packages                                             | High     | Resolved — all 9 reverted to `^5.9.0`. D44. See §9.9 Gotcha 4, §12 Lesson 19.                                                            |
+| `pg_advisory_lock` (session-scoped) leaks under Neon PgBouncer                          | Critical | Resolved — all locks use `pg_advisory_xact_lock` (transaction-scoped). ADR-004 audit. See §9.9 Gotcha 5, §12 Lesson 20.                  |
+| `proxy.ts` comment said "Node.js runtime" (runtime is disputed — Edge or Node.js)       | Medium   | Resolved — comment corrected to "Edge or Node.js runtime (Next.js 16 docs inconsistent on default)". ADR-009. See §9.9 Gotcha 6.         |
+| shadcn `style` conflict: `"new-york"` vs `"default"`                                    | Low      | Resolved — §2.1 corrected to `"default"` (matches `components.json`). See §9.9 Gotcha 9.                                                 |
+| Stripe API version: `acacia` → `dahlia` in §15.6 code example                           | High     | Resolved — updated to `apiVersion: '2026-06-24.dahlia'`. See §9.9 Gotcha 10.                                                             |
+| All 10 MEP §9 Open Questions unresolved                                                 | High     | ✅ All 10 resolved — Sanity Cloud, Stripe Dashboard refunds, Radix Dialog, synthetic data, feature-flag rollout. See §12 Lesson 21.      |
+| Phase 0 smoke test not yet run                                                          | High     | ✅ PASS — `pnpm install` / `pnpm check-types` / `pnpm lint` all green. See §12 Lesson 22.                                                |
+| ADR-010 (Resend Native Templates) not yet documented                                    | Medium   | ✅ Added as Proposed in PAD §29 + SKILL.md Appendix A. Pending Phase 8 acceptance.                                                       |
+| Discrepancy count: 35 → 45 (D43, D44, D45 added)                                        | Medium   | ✅ All 45 discrepancies reconciled in MEP §2.                                                                                            |
+| Documentation suite not aligned                                                         | High     | ✅ CLAUDE.md, AGENTS.md, README.md, PAD.md, SKILL.md, MEP.md all updated and cross-checked.                                              |
 
 **Next audit:** After Phase 1 (Database Schema, Drizzle Migrations, Seed Data) completes.
 
 ### v1.0.0 (2026-07-04) — Initial Plan Release
 
-| Finding | Severity | Status |
-|---------|----------|--------|
-| 35 discrepancies between source documents | High | All resolved in `MASTER_EXECUTION_PLAN.md` §2 (D1–D35; now D1–D45 after v1.4.0 additions) |
-| Phase 0 scaffolding has 10 bugs that break `pnpm install` | High | All documented with patches (D15–D24) — ✅ all applied in v1.4.0 |
-| Auth.js v5 deprecated in favor of Better Auth | Medium | ADR-008 added; validated against `guide_auth-v5_vs_better-auth.md` (July 2026) — Better Auth 1.6.23 stable, Auth.js v5 still beta at 5.0.0-beta.31 |
-| proxy.ts doing full `auth.api.getSession()` (scaffolded pattern) | High | Refactored to 2-layer pattern: `getSessionCookie()` in proxy + `requireAuth()`/`requireRole()` in layouts (per guide G2) — ✅ applied early in v1.4.0 |
-| `middleware.ts` renamed to `proxy.ts` in Next.js 16 | Medium | ADR-009 added |
-| Mockup has 10 accessibility bugs | Medium | All documented (D29–D35) — to be fixed in Phase 12 port |
-| Mockup uses Google Fonts CDN | Low | Self-hosting mandated in Phase 12 port — ✅ fonts already in `packages/ui/src/fonts/` |
-| 5 worker files missing from scaffolding tree | Medium | All 11 files documented in Phase 8 |
-| 5 email templates missing from scaffolding tree | Medium | All 13 files documented in Phase 8 |
-| `members.stripeCustomerId` column missing from schema | High | Added in Phase 1 (D6) — pending Phase 1 implementation |
-| Refund workflow undefined in PAD | Medium | D12 updated in v1.4.0: v1 uses Stripe Dashboard only; in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved) |
+| Finding                                                          | Severity | Status                                                                                                                                                |
+| ---------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 35 discrepancies between source documents                        | High     | All resolved in `MASTER_EXECUTION_PLAN.md` §2 (D1–D35; now D1–D45 after v1.4.0 additions)                                                             |
+| Phase 0 scaffolding has 10 bugs that break `pnpm install`        | High     | All documented with patches (D15–D24) — ✅ all applied in v1.4.0                                                                                      |
+| Auth.js v5 deprecated in favor of Better Auth                    | Medium   | ADR-008 added; validated against `guide_auth-v5_vs_better-auth.md` (July 2026) — Better Auth 1.6.23 stable, Auth.js v5 still beta at 5.0.0-beta.31    |
+| proxy.ts doing full `auth.api.getSession()` (scaffolded pattern) | High     | Refactored to 2-layer pattern: `getSessionCookie()` in proxy + `requireAuth()`/`requireRole()` in layouts (per guide G2) — ✅ applied early in v1.4.0 |
+| `middleware.ts` renamed to `proxy.ts` in Next.js 16              | Medium   | ADR-009 added                                                                                                                                         |
+| Mockup has 10 accessibility bugs                                 | Medium   | All documented (D29–D35) — to be fixed in Phase 12 port                                                                                               |
+| Mockup uses Google Fonts CDN                                     | Low      | Self-hosting mandated in Phase 12 port — ✅ fonts already in `packages/ui/src/fonts/`                                                                 |
+| 5 worker files missing from scaffolding tree                     | Medium   | All 11 files documented in Phase 8                                                                                                                    |
+| 5 email templates missing from scaffolding tree                  | Medium   | All 13 files documented in Phase 8                                                                                                                    |
+| `members.stripeCustomerId` column missing from schema            | High     | Added in Phase 1 (D6) — pending Phase 1 implementation                                                                                                |
+| Refund workflow undefined in PAD                                 | Medium   | D12 updated in v1.4.0: v1 uses Stripe Dashboard only; in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved)                                         |
 
 ---
 
@@ -5283,6 +5482,7 @@ echo "✅ All smoke tests passed"
 3. **API health check** — hits `/api/trpc/schedule.getWeek`, verifies 200 + response time < 500ms
 
 Alerts:
+
 - Any check failure → Slack `#alerts`
 - SSE endpoint down → Slack `#alerts` (Warning)
 - Booking failure rate > 5% → Slack `#alerts` (Critical)
@@ -5300,15 +5500,15 @@ Alerts:
 
 ### D.4 Live-Site Validation Cadence
 
-| Cadence | Check |
-|---------|-------|
-| Every 60s | Checkly synthetic (3 checks) |
-| Every deploy | Smoke test script (D.1) |
-| Daily | Sentry error rate review |
-| Weekly | PostHog funnel analysis |
-| Monthly | Lighthouse audit on all routes |
-| Quarterly | Full WCAG 2.2 AAA manual audit |
+| Cadence      | Check                          |
+| ------------ | ------------------------------ |
+| Every 60s    | Checkly synthetic (3 checks)   |
+| Every deploy | Smoke test script (D.1)        |
+| Daily        | Sentry error rate review       |
+| Weekly       | PostHog funnel analysis        |
+| Monthly      | Lighthouse audit on all routes |
+| Quarterly    | Full WCAG 2.2 AAA manual audit |
 
 ---
 
-*End of `stillwater_SKILL.md` v1.3.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+_End of `stillwater_SKILL.md` v1.3.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution)._
