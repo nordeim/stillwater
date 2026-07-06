@@ -16,6 +16,7 @@
 | **react19-ts6-vite8-tailwindv4-mvp**           | MVP/production React 19 + Vite 8 + Tailwind v4. File-based routing, pnpm, Vitest + Playwright. Use for greenfield web apps with React + Vite (not Next.js).                                                                                                                                                                                                                                             |
 | **nextjs16-tailwind4**                         | Next.js 16 + React + Tailwind v4 with Framer Motion. Luxury-grade, avant-garde UI, OWASP 2025, Core Web Vitals, WCAG AAA. Use for distinctive marketing sites with animated motion.                                                                                                                                                                                                                     |
 | **nextjs16-react19-tailwind4-full-stack**      | Next.js 16 + React 19 + Tailwind v4 full-stack marketing + booking + memberships + admin. Drizzle ORM, Auth.js v5 JWT, Inngest, Stripe, Replicate SDXL, Cloudflare R2. 5-layer architecture, CSS-only animations, brutalist dark-mode, WCAG AAA, OWASP hardening, Vitest + Playwright. Use for production marketing sites, membership platforms, booking systems, or any Next.js 16 full-stack project. |
+| **nextjs16-react19-tailwindv4-trpcv11-drizzle-better-auth** | Next.js 16 + React 19 + Tailwind v4 + tRPC v11 + Drizzle ORM + Better Auth (replaces Auth.js v5) in Turborepo monorepo. 50+ anti-patterns, 24 implementation lessons, production patterns (advisory-lock concurrency, idempotent webhooks, SSE streaming, fail-open rate limiting). Anti-generic avant-garde design, WCAG AAA, OWASP 2025, 8-gate CI/CD, TDD regression verification. Use for full-stack Next.js 16 SaaS with tRPC, Drizzle, and Better Auth. |
 | **nextjs-react-expert**                        | Next.js 16 + React 19 performance (Vercel Engineering). 57 rules: waterfall elimination, bundle size, RSC streaming, Turbopack, React Compiler, Core Web Vitals. Use when profiling or optimizing production React/Next.js apps.                                                                                                                                                                        |
 | **super-frontend-design**                      | Master skill: anti-generic strategy, Next.js 16 + React + Tailwind v4, App Router Server Components, design systems, Vercel-grade performance, WCAG AAA.                                                                                                                                                                                                                                                |
 | **tailwind-patterns**                          | Tailwind CSS v4 CSS-first `@theme` config, container queries, design tokens, modern utility patterns.                                                                                                                                                                                                                                                                                                   |
@@ -251,7 +252,7 @@
 
 | #   | Category                                       | Count   |
 | --- | ---------------------------------------------- | ------- |
-| 1   | Frontend Development & UI Engineering          | 18      |
+| 1   | Frontend Development & UI Engineering          | 19      |
 | 2   | Design Artifacts & Visual Creation             | 10      |
 | 3   | Full-Stack & Backend Development               | 10      |
 | 4   | AI / ML / Multimodal SDK Skills                | 8       |
@@ -261,7 +262,7 @@
 | 8   | Documentation & Content Creation               | 14      |
 | 9   | Career, Learning & Personal Development        | 14      |
 | 10  | DevOps, Infrastructure & External Integrations | 19      |
-|     | **Total**                                      | **141** |
+|     | **Total**                                      | **142** |
 
 ---
 
@@ -280,4 +281,5 @@
 - Major project updates → `to-distill-project-into-skill` for comprehensive reference
 - Next.js 16 + React + Tailwind v4 SaaS with AI pipeline → `nextjs16-react19-tailwind4-auth5-video-gen`
 - Next.js 16 + React + Tailwind v4 full-stack marketing/booking/memberships → `nextjs16-react19-tailwind4-full-stack`
+- Next.js 16 + React + Tailwind v4 + tRPC + Drizzle + Better Auth → `nextjs16-react19-tailwindv4-trpcv11-drizzle-better-auth`
 - Choosing between Auth.js v5 and Better Auth → `authjs-vs-better-auth`
