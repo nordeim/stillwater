@@ -1,3 +1,87 @@
+All key files present. I also see `.turbo` and `.env.local` which should be excluded (`.env.local` contains secrets; `.turbo` is cache). Let me also check for other build artifacts and create the archive:
+Good — `.env.local` is in `.gitignore` (contains secrets, must be excluded). The `.turbo` dirs are cache (should be excluded). Let me also check for `backup/` and `package.bak`:
+Good — `package.bak` was already deleted in P2.3. The `backup/` dir contains old archives (should be excluded — it's in `.gitignore`). Let me also check the `docs/validation/` directory to ensure it's included:
+250 files will be archived. All key files are present. Now let me create the tar archive:
+Archive created — 1.8MB. Now let me verify the archive contents to ensure all key files are included and no excluded items leaked in:
+All key files verified. Now let me verify the excluded items are NOT in the archive:
+All 8 exclusion checks pass. Let me also copy the archive to the download directory so it's easy to retrieve:
+---
+
+# ✅ Archive Ready for Download
+
+## Archive Details
+
+| Property | Value |
+|---|---|
+| **File** | `/home/z/my-project/download/stillwater-phase0-complete.tar.gz` |
+| **Size** | 1.8 MB |
+| **Files in archive** | 212 |
+| **SHA256** | `ed27883fbf08e352e410d397d41926cdeb4cf3074ef8ee0ad275d1e0774d54cf` |
+
+## What's Included (212 files)
+
+### ✅ All 6 specification documents
+- `CLAUDE.md` (815 lines — agent briefing with gotchas + troubleshooting)
+- `AGENTS.md` (242 lines — compact high-signal agent instructions)
+- `README.md` (703 lines — full project README with updated tech stack)
+- `PAD.md` (3,268 lines — Project Architecture Document, 10 ADRs)
+- `stillwater_SKILL.md` (5,247 lines — v1.4.0, authoritative coding standards)
+- `MASTER_EXECUTION_PLAN.md` (4,540 lines — 13-phase plan, 45 discrepancies, 10 resolved questions)
+
+### ✅ All 3 ecosystem discovery docs
+- `design.md` — original 3-path architecture critique
+- `react_email_suggestion.md` — React Email v6 paradigm shift analysis
+- `pnpm_install_fix.md` — pnpm v11 migration + OTEL overrides
+
+### ✅ All Phase 0 scaffold code
+- `apps/web/` — proxy.ts, next.config.ts, eslint.config.mjs, layout.tsx, page.tsx, globals.css, etc.
+- `packages/{config,db,api,auth,email,payments,ui}/` — all package.json + tsconfig.json + existing src files
+- `services/workers/` — trigger.config.ts (v4 platform, v3 SDK API), eslint.config.mjs
+- `tooling/{eslint,typescript,tailwind}/` — shared configs
+- `infrastructure/postgres/init/00-create-extensions.sql` — uuid-ossp + pgcrypto
+- `.github/workflows/` — ci.yml, deploy-preview.yml, deploy-production.yml
+- Root configs: package.json, pnpm-workspace.yaml, pnpm-lock.yaml, turbo.json, docker-compose.yml, vitest.config.ts, playwright.config.ts
+
+### ✅ All design system assets
+- `packages/ui/src/tokens/` — colors.css, spacing.css, typography.css, motion.css, index.css
+- `packages/ui/src/fonts/` — Cormorant Garamond, DM Sans, JetBrains Mono (all self-hosted woff2 + CSS)
+- `packages/ui/src/globals.css` — global reset + focus rings + typography
+
+## What's Excluded (verified zero matches)
+
+| Excluded item | Reason |
+|---|---|
+| `node_modules/` | Dependencies — regenerated via `pnpm install` |
+| `.git/` | Version history — your GitHub repo has this |
+| `skills/` | 141 source skills — not needed in the repo (they're reference material) |
+| `.turbo/` | Turbo cache — regenerated on build |
+| `.next/` | Next.js build output — regenerated on build |
+| `backup/` | Old archive files — not needed |
+| `.env.local` | Contains secrets — never committed |
+| `*.tar.gz` | Self-referential — no nested archives |
+
+## How to Use
+
+1. **Download** the archive from `/home/z/my-project/download/stillwater-phase0-complete.tar.gz`
+2. **Extract** to a temporary location: `tar -xzf stillwater-phase0-complete.tar.gz`
+3. **Copy** the `stillwater/` directory contents into your local GitHub repo clone, overwriting existing files
+4. **Review** the changes with `git diff` / `git status`
+5. **Commit** with a message like: `docs: align CLAUDE.md, AGENTS.md, README.md, PAD.md, SKILL.md with Phase 0 completion + P0-P3 remediation`
+6. **Push** to your GitHub repo
+
+After refreshing your repo, you (or any AI agent) can run:
+```bash
+pnpm install          # Regenerates node_modules from pnpm-lock.yaml
+docker compose up -d  # Starts Postgres 17 + Redis 7
+pnpm check-types      # Should pass (only expected TS18003 for empty src/ dirs)
+pnpm lint             # Should pass (2/2 tasks, all rules active)
+pnpm dev --filter=web # Boots Next.js 16 on localhost:3000
+```
+
+The codebase is Phase 0 complete and ready for Phase 1 (Database Schema, Drizzle Migrations, Seed Data).
+
+---
+
 I've read both reports. Let me now extract and categorize all findings, then validate each against the actual codebase.
 ## Phase 1: Finding Extraction & Categorization
 
