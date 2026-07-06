@@ -94,9 +94,9 @@ Workspace packages resolve to `./src/index.ts` (source) instead of `./dist/index
 
 ### 2-Layer Auth Pattern (ADR-009 — mandatory)
 
-**NEVER call `auth.api.getSession()` inside `proxy.ts`.** It breaks Edge runtime.
+**NEVER call `auth.api.getSession()` inside `proxy.ts`.** It's too expensive for every request regardless of runtime (Edge or Node.js — Next.js 16 docs are inconsistent on the default). Use `getSessionCookie()` (cookie-only) instead.
 
-- **Layer 1 — `apps/web/proxy.ts` (Edge runtime):** Cookie-existence-only check via `getSessionCookie(request)` from `better-auth/cookies`. NO DB. NO RBAC. Fast redirect for unauthenticated.
+- **Layer 1 — `apps/web/proxy.ts` (Edge or Node.js runtime):** Cookie-existence-only check via `getSessionCookie(request)` from `better-auth/cookies`. NO DB. NO RBAC. Fast redirect for unauthenticated.
 - **Layer 2 — Server Component layouts (Node.js):** Full validation via `requireAuth()` / `requireRole(...roles)` in `(studio)/layout.tsx`, `(admin)/layout.tsx`, nested revenue/settings layouts.
 
 ### Database: two URLs, transaction-scoped locks
@@ -112,14 +112,17 @@ Workspace packages resolve to `./src/index.ts` (source) instead of `./dist/index
 ### 1. Trigger.dev SDK import path
 
 ```typescript
-// ✅ CORRECT — v4 platform uses v3 SDK API
+// ✅ CORRECT — official Trigger.dev v4 import (root)
+import { defineConfig } from "@trigger.dev/sdk";
+
+// ❌ WRONG — /v3 is the deprecated v3-era pattern (still works but not recommended)
 import { defineConfig } from "@trigger.dev/sdk/v3";
 
-// ❌ WRONG — /v4 export does not exist in @trigger.dev/sdk@4.5.0
+// ❌ WRONG — /v4 export does not exist
 import { defineConfig } from "@trigger.dev/sdk/v4"; // Module not found
 ```
 
-The "v4" in PAD §17.2 / ADR-007 = platform version. The "v3" in the import = SDK API version. `@trigger.dev/sdk@4.5.0` only exports `./v3`.
+`@trigger.dev/sdk@4.5.0` exports both `.` (root) and `./v3` — both resolve to the same file. Official Trigger.dev v4 docs mandate: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The root import is the v4 path.
 
 ### 2. ESLint version — do NOT upgrade to v10
 
@@ -142,9 +145,9 @@ v6 bundle is 1.8MB (514KB gzipped) — consider Resend Native Templates for Trig
 
 `pnpm install` will say "6.0.3 is available". **Ignore it.** PAD §5.1 mandates `^5.9.0` for `erasableSyntaxOnly` (forbids `enum`, `namespace`, parameter properties) + `verbatimModuleSyntax` (requires `import type`). All 9 sub-packages must pin `^5.9.0`, not `^6.0.3`.
 
-### 5. `proxy.ts` is Edge by default
+### 5. `proxy.ts` — don't call `auth.api.getSession()` regardless of runtime
 
-Next.js 16 `proxy.ts` runs on Edge runtime. The comment in the file previously said "Node.js runtime" — that was wrong. The cookie-only `getSessionCookie()` check is Edge-compatible. Do NOT add `auth.api.getSession()` or any DB call to `proxy.ts`.
+Next.js 16 `proxy.ts` can run on Edge or Node.js runtime (official documentation is inconsistent on the default). Regardless of runtime, do NOT call `auth.api.getSession()` — it's too expensive for every request and breaks Next.js 16's caching model. Use `getSessionCookie()` (cookie-only) in proxy.ts; full validation in Server Component layouts via `requireAuth()` / `requireRole()` (ADR-009 2-layer auth pattern).
 
 ### 6. `cacheComponents: true` not yet enabled
 

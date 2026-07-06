@@ -259,7 +259,7 @@ C4Container
   Container_Boundary(web, "Web Application (apps/web)") {
     Container(nextjs, "Next.js 16 App", "TypeScript, React 19", "Serves marketing pages (ISR), member app (SSR/CSR), admin dashboard (SSR)")
     Container(trpc, "tRPC API Layer", "tRPC v11, Zod", "Type-safe API procedures consumed by the Next.js app")
-    Container(proxy, "Node.js Proxy", "Next.js 16 proxy.ts", "Auth cookie check, RBAC route protection, i18n routing (replaces Edge Middleware per ADR-009)")
+    Container(proxy, "Proxy (Edge or Node.js)", "Next.js 16 proxy.ts", "Auth cookie check, RBAC route protection, i18n routing (replaces middleware.ts per ADR-009)")
   }
 
   Container_Boundary(data, "Data Layer (packages/db)") {
@@ -342,7 +342,7 @@ sequenceDiagram
 
 | Layer | Technology | Version | Rationale | Rejected Alternatives |
 |-------|-----------|---------|-----------|----------------------|
-| **Frontend Framework** | Next.js | `^16.2.0` | App Router, Turbopack stable, React Compiler (opt-in via `reactCompiler: true` — NOT default), `proxy.ts` (replaces `middleware.ts` — runs on Edge runtime by default, same as middleware did), streaming, ISR, top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16) | Remix (less ecosystem), Nuxt (different team skills) |
+| **Frontend Framework** | Next.js | `^16.2.0` | App Router, Turbopack stable, React Compiler (opt-in via `reactCompiler: true` — NOT default), `proxy.ts` (replaces `middleware.ts` — can run on Edge or Node.js runtime; Next.js 16 docs are inconsistent on the default), streaming, ISR, top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16) | Remix (less ecosystem), Nuxt (different team skills) |
 | **UI Library** | React | `^19.2.3` | Concurrent features, `use()`, Server Components. ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3. | — |
 | **Language** | TypeScript | `^5.9.0` | Strict mode end-to-end; `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (requires `import type`), `erasableSyntaxOnly: true` (FORBIDS `enum` and `namespace`) | — |
 | **Styling** | Tailwind CSS | `^4.3.0` | Utility-first, zero dead CSS in production, v4's CSS-first `@theme`, `@source` directives for monorepo content scanning; `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) | CSS Modules (verbose), styled-components (runtime cost) |
@@ -1778,7 +1778,7 @@ All emails share:
 ```typescript
 // services/workers/trigger.config.ts
 
-import { defineConfig } from '@trigger.dev/sdk/v4';  // v4 — v3 deploys stop working April 1, 2026
+import { defineConfig } from '@trigger.dev/sdk';  // v4 — root import (NOT /v3 which is deprecated, NOT /v4 which doesn't exist)
 
 export default defineConfig({
   project: 'stillwater-prod',
@@ -2922,7 +2922,7 @@ Unknown error                  "Something unexpected happened. We've been
 **Decision:** Use `apps/web/proxy.ts` (not `middleware.ts`). Export `proxy` function (not `middleware`).
 
 **Rationale:**
-- Next.js 16 network-boundary clarification — `proxy.ts` runs on **Edge runtime by default** (same as middleware did in Next.js 15). Cookie-existence-only check via `getSessionCookie()` is Edge-compatible (no DB access). Full session validation requires Node.js runtime and belongs in Server Component layouts via `auth.api.getSession({ headers })`.
+- Next.js 16 network-boundary clarification — `proxy.ts` can run on **Edge or Node.js runtime** (Next.js 16 docs are inconsistent on the default — some say Edge, others say Node.js). Regardless of runtime, cookie-existence-only check via `getSessionCookie()` is fast and runtime-agnostic (no DB access). Full session validation requires Node.js runtime and belongs in Server Component layouts via `auth.api.getSession({ headers })`.
 - Official Next.js 16 rename; `middleware.ts` is deprecated and will be removed.
 - Aligns with Better Auth's documented "fully compatible with Next.js 16" guidance.
 - Enables the 2-layer auth pattern: `proxy.ts` does cookie-only optimistic check via `getSessionCookie()` (Edge-compatible, no DB access); Server Component layouts do full validation via `auth.api.getSession({ headers })` + RBAC via `requireRole()`.
@@ -2931,7 +2931,7 @@ Unknown error                  "Something unexpected happened. We've been
 **Trade-offs:**
 - All documentation, tutorials, and Stack Overflow answers referencing `middleware.ts` are now stale — engineers must learn the new pattern.
 - The 2-layer pattern requires RBAC enforcement at layout boundaries (`(studio)/layout.tsx`, `(admin)/layout.tsx`, nested revenue/settings layouts) rather than a single middleware check — more files to maintain but better separation of concerns.
-- `proxy.ts` runs on Edge runtime by default (same as middleware did) — the 2-layer pattern exists because Edge cannot do DB access. Full validation + RBAC in Server Component layouts (Node.js runtime) via `requireAuth()` / `requireRole()`.
+- `proxy.ts` can run on Edge or Node.js runtime (Next.js 16 docs inconsistent on default) — the 2-layer pattern exists because calling `auth.api.getSession()` on every request is too expensive regardless of runtime. Full validation + RBAC in Server Component layouts (Node.js runtime) via `requireAuth()` / `requireRole()`.
 
 **Rejected:** Keep `middleware.ts` (deprecated in Next.js 16; will be removed). Use Edge runtime for proxy.ts (Better Auth requires Node.js for `auth.api.getSession()`; cookie-only check is Edge-compatible but full validation is not). Put full auth + RBAC in proxy.ts (violates Auth0 + Better Auth + Next.js 16 guidance; causes DB round-trip on every request; defeats proxy's purpose as lightweight gating layer).
 
@@ -2947,7 +2947,7 @@ Unknown error                  "Something unexpected happened. We've been
 
 Trigger.dev workers (ADR-007, §17.1) have strict CPU budgets: 30s for `booking-confirmation`, 30s for `waitlist-promotion`, 120s for `weekly-digest`. Importing a 1.8MB package that initializes a Tailwind compiler and Prism.js on every serverless cold start risks exhausting the CPU budget, causing task timeouts or failures.
 
-Next.js Edge middleware (`proxy.ts`, ADR-009) is also at risk — if any server component or module in the Edge import graph touches `react-email`, the Vercel deployment will fail due to unsupported Node.js APIs or bundle size limits.
+Next.js `proxy.ts` (ADR-009) is also at risk — if any server component or module in the proxy's import graph touches `react-email`, the Vercel deployment may fail due to unsupported Node.js APIs or bundle size limits (this applies regardless of whether proxy.ts runs on Edge or Node.js runtime).
 
 **Decision (Proposed):** Adopt **Resend Native Templates** (Alternative A from `react_email_suggestion.md`) for all Trigger.dev worker email sending. Workers send a JSON payload (`templateId` + `variables`) to Resend's API; Resend's infrastructure handles HTML rendering and delivery. This achieves zero bundle bloat in workers and 0ms rendering CPU time.
 

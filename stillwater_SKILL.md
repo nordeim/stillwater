@@ -155,7 +155,7 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | Database | PostgreSQL | 17 (Neon) | 14 tables, 8 enums, 5 critical indexes; advisory locks for booking (ADR-004) |
 | Cache / Rate Limit | Upstash Redis | latest | Per-procedure rate limiting on `bookings.book` (10/min) and auth mutations |
 | Auth | Better Auth | `^1.6.23` | Replaces Auth.js v5 (ADR-008); stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31 as of July 2026); Drizzle adapter; Google + Magic Link; session enriched with `memberId` + `roles` |
-| Background Jobs | Trigger.dev | **v4** | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. **⚠️ CRITICAL SDK import gotcha (D45-adjacent):** The v4 PLATFORM uses the v3 SDK API import path — `import { defineConfig } from "@trigger.dev/sdk/v3"`. The `/v4` export DOES NOT EXIST in `@trigger.dev/sdk@4.5.0` (latest npm). See §9.9 Gotcha 1 + §12 Lesson 16. |
+| Background Jobs | Trigger.dev | **v4** | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. **⚠️ SDK import (validated July 2026):** Per official Trigger.dev v4 docs: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file in `@trigger.dev/sdk@4.5.0`, but root import is the official v4 path and future-proofs against `/v3` removal). See §9.9 Gotcha 1 + §12 Lesson 16. |
 | Monorepo | Turborepo | `^2.10.0` | Task graph + remote caching; `@stillwater/source` custom condition; graceful shutdown + deferred input hashing (2.10+) |
 | Package Manager | pnpm | `^11.0.0` | `custom-conditions=@stillwater/source` in `.npmrc`; `pnpm-workspace.yaml` with `packages: ['.']`; pnpm 9.x is EOL — use 11.x+ |
 | CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005). Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed — MEP §9 Q4 resolved); config in `apps/studio/sanity.config.ts` |
@@ -647,7 +647,7 @@ The keyframes defined above (`marquee`, `fade-in`, `reveal`) all comply: they an
 
 | Layer | Location | Allowed Imports | Forbidden Imports |
 |-------|----------|------------------|-------------------|
-| 0. Edge proxy | `apps/web/proxy.ts` | `auth` (cookie check only) | DB, Drizzle, Node APIs |
+| 0. Proxy (Edge or Node.js) | `apps/web/proxy.ts` | `auth` (cookie check only) | DB, Drizzle, Node APIs |
 | 1. App Router | `apps/web/src/app/` | Layouts, metadata, Suspense, PPR | DB queries (use tRPC server caller) |
 | 2. Feature modules | `apps/web/src/components/`, `packages/ui/` | UI composition, data binding, mutations | Raw Drizzle calls |
 | 3. Domain (pure) | `packages/api/src/domain/` | `import type` only from schema | ANY runtime import (Drizzle, Next.js, Stripe, tRPC) |
@@ -796,7 +796,7 @@ const buttonVariants = cva(
 > | 1. Edge proxy | `apps/web/proxy.ts` | Cookie-existence-only check via `getSessionCookie(request)`. Optimistic redirect to sign-in if no cookie. NO DB access. NO RBAC role checks. | Edge (or Node) |
 > | 2. Server Component / Layout | `apps/web/src/app/(studio)/layout.tsx`, `(admin)/layout.tsx` | Full session validation via `auth.api.getSession({ headers: await headers() })`. RBAC role checks via `requireRole()`. | Node.js |
 >
-> **Why:** proxy.ts runs on Edge runtime for every request — full session validation (DB lookup, JWT verification) is too expensive and breaks Next.js 16's caching model. Cookie-existence is a fast optimistic check; the actual security boundary is the Server Component layer.
+> **Why:** proxy.ts runs on every request (Edge or Node.js runtime — Next.js 16 docs are inconsistent on the default). Full session validation (DB lookup, JWT verification) is too expensive and breaks Next.js 16's caching model regardless of runtime. Cookie-existence is a fast optimistic check; the actual security boundary is the Server Component layer.
 >
 > **Reference:** [Auth0 Next.js 16 guidance](https://auth0.com/blog/whats-new-nextjs-16/) — "proxy.ts is not intended for full session management or complex authorization. Keep it light."
 >
@@ -1625,7 +1625,7 @@ export function Page({ params }: { params: { slug: string } }) {
 
 #### Bug: `auth.api.getSession()` called inside `proxy.ts` (Critical — guide G2)
 **Symptom:** Slow edge requests; Next.js 16 caching bugs; potential RBAC bypass if proxy session check is stale.
-**Root cause:** proxy.ts (Edge runtime) calls `auth.api.getSession()` which requires Node.js runtime + DB access. This violates the Auth0 + Better Auth + Next.js 16 consensus: "proxy.ts is not intended for full session management or complex authorization."
+**Root cause:** proxy.ts calls `auth.api.getSession()` which requires a DB connection. Even if proxy.ts runs on Node.js runtime (Next.js 16 docs are inconsistent on whether it defaults to Edge or Node.js), calling `auth.api.getSession()` on every request adds latency and breaks Next.js 16's caching model. This violates the Auth0 + Better Auth + Next.js 16 consensus: "proxy.ts is not intended for full session management or complex authorization."
 **Fix:** Use `getSessionCookie(request)` from `better-auth/cookies` for cookie-existence-only optimistic check. Move full validation + RBAC to Server Component layouts via `requireAuth()` / `requireRole()`.
 ```typescript
 // ❌ WRONG — full validation in proxy (original scaffolded pattern)
@@ -1867,9 +1867,9 @@ export async function POST(req: Request) {
 ```
 
 #### Bug: Stripe SDK pre-v22 camelCase (Medium)
-**Symptom:** Property access returns undefined.
-**Root cause:** Stripe SDK v22+ uses camelCase (`currentPeriodEnd` not `current_period_end`).
-**Fix:** Use v22+ SDK. If supporting older webhooks, cast with fallback.
+**Symptom:** Property access returns undefined when using snake_case field names on pre-v22 SDK versions.
+**Root cause:** Pre-v22 Stripe SDK versions used camelCase aliases (`currentPeriodEnd` instead of `current_period_end`). SDK v22+ aligns with the API wire format using snake_case (`current_period_end`). Webhook event payloads are always snake_case regardless of SDK version.
+**Fix:** Use v22+ SDK (which exposes snake_case to match the API wire format). If supporting older SDK versions, cast with fallback. Always use snake_case field names (`current_period_end`, not `currentPeriodEnd`) — see §2.1, §9.9 Gotcha 10, §15.6.
 
 ### 9.5 Tailwind v4 Anti-Patterns
 
@@ -2059,12 +2059,12 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 
 > These are real issues encountered during Phase 0 implementation and the P0–P3 remediation pass (2026-07-06). Each has a verified root cause and fix. See also §12 Lessons 16–22 and `CLAUDE.md` §Gotchas & Troubleshooting for the full narrative versions.
 
-#### Gotcha 1: `@trigger.dev/sdk/v4` import path does not exist (Critical — D45-adjacent)
-**Symptom:** `import { defineConfig } from "@trigger.dev/sdk/v4"` fails — module not found.
-**Root cause:** `@trigger.dev/sdk@4.5.0` (latest on npm, July 2026) does NOT export a `./v4` subpath. The package `exports` field only includes `./v3`, `.`, `./ai`, `./chat`, `./chat-server`, `./chat/react`. The "v4" in PAD §17.2 / ADR-007 refers to the **Trigger.dev platform version** (v4 GA August 2025), NOT the SDK API version. The v4 platform is accessed via the v3 SDK API.
-**Fix:** Use `import { defineConfig } from "@trigger.dev/sdk/v3"` (NOT `/v4`). The `services/workers/trigger.config.ts` file has an explanatory comment. Do NOT "fix" this to `/v4` — it will break.
-**Verification:** `cat node_modules/.pnpm/@trigger.dev+sdk@*/node_modules/@trigger.dev/sdk/package.json | jq '.exports | keys'` — confirmed only `./v3` exists.
-**Cross-ref:** §12 Lesson 16, `CLAUDE.md` Gotcha 1, `AGENTS.md` Gotcha 1.
+#### Gotcha 1: Trigger.dev v4 SDK import — use root `@trigger.dev/sdk`, NOT `/v3` (Critical — validated July 2026)
+**Symptom:** Using `@trigger.dev/sdk/v3` still works today but is the deprecated v3-era import pattern. Future SDK versions may remove the `/v3` subpath. Using `@trigger.dev/sdk/v4` fails — module not found.
+**Root cause:** `@trigger.dev/sdk@4.5.0` (latest on npm, July 2026) exports both `.` (root) and `./v3` subpaths — both resolve to the identical file (`./dist/esm/v3/index.js`). However, official Trigger.dev v4 documentation mandates: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is the deprecated v3-era pattern that users must migrate away from. The `/v4` subpath does NOT exist (and is not needed — the root import IS the v4 path).
+**Fix:** Use `import { defineConfig } from "@trigger.dev/sdk"` (root import, NOT `/v3`). This is the official Trigger.dev v4 pattern. The `services/workers/trigger.config.ts` file has been updated to use the root import.
+**Verification:** `node --input-type=module -e "import { defineConfig } from '@trigger.dev/sdk'; console.log(typeof defineConfig)"` → `function` ✅. Both root and `/v3` resolve to `./dist/esm/v3/index.js`, but root is the recommended path.
+**Cross-ref:** §12 Lesson 16, `CLAUDE.md` Gotcha 1, `AGENTS.md` Gotcha 1. Validated against Trigger.dev v4 official docs (July 2026 web research).
 
 #### Gotcha 2: ESLint v10 plugin incompatibility (Critical — D45)
 **Symptom:** `pnpm lint` crashes with `context.getFilename is not a function` (eslint-plugin-react) or `SourceCode.getTokenOrCommentAfter is not a function` (eslint-plugin-import).
@@ -2094,10 +2094,10 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Verification:** `rg 'pg_advisory_lock' --glob '!*.md'` should return zero matches (only `pg_advisory_xact_lock` is allowed).
 **Cross-ref:** ADR-004, PAD §7.4, `CLAUDE.md` Gotcha 5, `AGENTS.md` §Architecture.
 
-#### Gotcha 6: `proxy.ts` runs on Edge by default — NOT Node.js (High — ADR-009)
-**Symptom:** `proxy.ts` works in dev but fails in production with "Edge runtime cannot access database" or similar. The original `proxy.ts` comment said "Runs on: Node.js runtime" — that was wrong.
-**Root cause:** Next.js 16 `proxy.ts` runs on the Edge runtime by default. Calling `auth.api.getSession()` (which does DB lookup + JWT verification) breaks Edge compatibility.
-**Fix:** Use the 2-layer auth pattern (ADR-009): Layer 1 (`proxy.ts`) uses `getSessionCookie(request)` from `better-auth/cookies` — cookie-existence-only check, Edge-compatible, NO DB. Layer 2 (Server Component layouts) calls `requireAuth()` / `requireRole(...roles)` for full validation + RBAC. The `proxy.ts` comment has been corrected to "Runs on: Edge runtime by default (Next.js 16)."
+#### Gotcha 6: `proxy.ts` — don't call `auth.api.getSession()` regardless of runtime (High — ADR-009)
+**Symptom:** `proxy.ts` works in dev but causes latency issues or caching bugs in production. If running on Edge runtime, may fail with "Edge runtime cannot access database".
+**Root cause:** Next.js 16 `proxy.ts` can run on Edge or Node.js runtime (official documentation is inconsistent on the default — some docs say Edge, others say Node.js). Regardless of runtime, calling `auth.api.getSession()` (which does DB lookup + JWT verification) on every request is too expensive and breaks Next.js 16's caching model.
+**Fix:** Use the 2-layer auth pattern (ADR-009): Layer 1 (`proxy.ts`) uses `getSessionCookie(request)` from `better-auth/cookies` — cookie-existence-only check, fast, NO DB. Layer 2 (Server Component layouts) calls `requireAuth()` / `requireRole(...roles)` for full validation + RBAC. This pattern works on both Edge and Node.js runtimes. The `proxy.ts` comment has been updated to "Edge or Node.js runtime (Next.js 16 documentation is inconsistent on the default)."
 **Verification:** `rg 'auth\.api\.getSession' apps/web/proxy.ts` → zero matches (only `getSessionCookie` is allowed).
 **Cross-ref:** ADR-009, §5.6, §9.1 "auth.api.getSession() called inside proxy.ts", `CLAUDE.md` Gotcha 6, `AGENTS.md` Gotcha 5.
 
@@ -2911,15 +2911,19 @@ Document this cycle in the PR.
 
 **Fix references:** §11.5 of this SKILL.md, Skill `verification-before-completion.md`.
 
-### Lesson 16: Trigger.dev v4 platform uses v3 SDK API — `@trigger.dev/sdk/v4` does not exist
+### Lesson 16: Trigger.dev v4 SDK — use root `@trigger.dev/sdk` import, NOT `/v3`
 
-**Context:** PAD §17.2 and ADR-007 specify "Trigger.dev v4" — this refers to the **platform version** (v4 reached GA August 2025; v3 deploys stop working April 1, 2026). However, the npm package `@trigger.dev/sdk@4.5.0` (latest, July 2026) only exports a `./v3` subpath. There is NO `./v4` export. The "v3" in the import path refers to the **SDK API version**, not the platform version.
+**Context:** During Phase 0, the `services/workers/trigger.config.ts` import path went through three iterations:
+1. Original scaffold: `import { defineConfig } from "@trigger.dev/sdk/v3"` (v3-era pattern)
+2. P0 fix (incorrect): Changed to `@trigger.dev/sdk/v4` — this FAILED because the `/v4` export doesn't exist in `@trigger.dev/sdk@4.5.0`
+3. P0 revert (still incorrect): Reverted to `@trigger.dev/sdk/v3` — this WORKS but is the deprecated v3-era pattern
+4. Final fix (correct, July 2026 validation): Changed to `@trigger.dev/sdk` (root import) — the official Trigger.dev v4 path
 
-During Phase 0, the `services/workers/trigger.config.ts` was initially changed from `@trigger.dev/sdk/v3` to `@trigger.dev/sdk/v4` based on a literal reading of "Trigger.dev v4" in the specs. This broke the import — the v4 export doesn't exist. The fix was to revert to `@trigger.dev/sdk/v3` with an explanatory comment.
+The investigation revealed that `@trigger.dev/sdk@4.5.0` exports both `.` (root) and `./v3` subpaths, and both resolve to the identical file (`./dist/esm/v3/index.js`). However, official Trigger.dev v4 documentation states: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is explicitly deprecated.
 
-**What to do differently:** When a spec says "use Trigger.dev v4", verify the actual npm package exports before changing import paths. Use `npm view @trigger.dev/sdk exports` or inspect `node_modules/.pnpm/@trigger.dev+sdk@*/node_modules/@trigger.dev/sdk/package.json`. The v4 platform is accessed via the v3 SDK API.
+**What to do differently:** When a spec says "use Trigger.dev v4", use `import { defineConfig } from "@trigger.dev/sdk"` (root import). Do NOT use `/v3` (deprecated) or `/v4` (doesn't exist). Verify with: `node --input-type=module -e "import { defineConfig } from '@trigger.dev/sdk'; console.log(typeof defineConfig)"` → should output `function`.
 
-**Fix references:** §9.9 Gotcha 1, `CLAUDE.md` Gotcha 1, `AGENTS.md` Gotcha 1, `services/workers/trigger.config.ts` comment (lines 21-25).
+**Fix references:** §9.9 Gotcha 1, `CLAUDE.md` Gotcha 1, `AGENTS.md` Gotcha 1, `services/workers/trigger.config.ts` (line 27). Validated against Trigger.dev v4 official docs (July 2026 web research by Qwen + DeepSeek).
 
 ### Lesson 17: ESLint v10 is too new for the plugin ecosystem — stay on v9.39.4
 
@@ -3189,12 +3193,12 @@ The discrepancy catalog now has 45 entries (D1–D45), all resolved or tracked. 
 - **Don't forget `packages/config/src/env.ts`** — t3-env Zod schema (CRITICAL — every package imports this).
 
 **D43–D45 (P0–P3 remediation discoveries — all resolved ✅):**
-- **Don't import `@trigger.dev/sdk/v4`** — the `/v4` export DOES NOT EXIST in `@trigger.dev/sdk@4.5.0` (latest npm). The v4 PLATFORM uses the v3 SDK API: `import { defineConfig } from "@trigger.dev/sdk/v3"`. See §9.9 Gotcha 1, §12 Lesson 16.
+- **Don't import `@trigger.dev/sdk/v3` (deprecated)** — use root `import { defineConfig } from "@trigger.dev/sdk"` per official Trigger.dev v4 docs. The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file today, but `/v3` may be removed in future SDK versions). The `/v4` export does NOT exist. See §9.9 Gotcha 1, §12 Lesson 16.
 - **Don't import `render` from `@react-email/render`** — deprecated in React Email v6.0.0 (April 16, 2026). Import from `react-email` root: `import { render } from 'react-email'`. See §9.9 Gotcha 3, §12 Lesson 18, D43.
 - **Don't upgrade ESLint to v10** — `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` have no v10-compatible versions (latest npm versions support `^9` only). Stay on `eslint@^9.39.4` (`maintenance` dist-tag). See §9.9 Gotcha 2, §12 Lesson 17, D45.
 - **Don't pin `typescript: ^6.0.3` in sub-packages** — PAD §5.1 mandates `^5.9.0` for `erasableSyntaxOnly` + `verbatimModuleSyntax` compatibility. The "6.0.3 is available" pnpm warning is expected — ignore it. See §9.9 Gotcha 4, §12 Lesson 19, D44.
 - **Don't use `pg_advisory_lock()` (session-scoped)** — leaks under Neon PgBouncer transaction pooling. Always use `pg_advisory_xact_lock()` (transaction-scoped). See §9.9 Gotcha 5, §12 Lesson 20, ADR-004.
-- **Don't call `auth.api.getSession()` inside `proxy.ts`** — proxy.ts runs on Edge runtime by default (Next.js 16). Use `getSessionCookie()` (cookie-only). See §9.9 Gotcha 6, ADR-009, §5.6.
+- **Don't call `auth.api.getSession()` inside `proxy.ts`** — too expensive for every request regardless of runtime (Edge or Node.js — Next.js 16 docs are inconsistent on the default). Use `getSessionCookie()` (cookie-only). See §9.9 Gotcha 6, ADR-009, §5.6.
 - **Don't set `export const dynamic = 'force-dynamic'` when `cacheComponents: true` is enabled** — incompatible; causes build error. SSE/streaming routes are dynamic by default. See §9.9 Gotcha 7, §13.8.
 - **Don't use Stripe `apiVersion: '2024-12-18.acacia'`** — SDK v22.3.0 pins "Dahlia" API (2026-06-24). Use `apiVersion: '2026-06-24.dahlia'`. SDK uses snake_case (`current_period_end`, not `currentPeriodEnd`). See §9.9 Gotcha 10, §15.6.
 - **Don't use shadcn `style: "new-york"`** — the actual `apps/web/components.json` has `"style": "default"`. See §9.9 Gotcha 9.
@@ -5045,7 +5049,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Status:** Accepted (NEW — 2026-07-04)
 - **Context:** Next.js 16 renamed `middleware.ts` to `proxy.ts`; exported function must be named `proxy`
 - **Decision:** Use `apps/web/proxy.ts` (not `middleware.ts`)
-- **Rationale:** Next.js 16 network-boundary clarification; official rename. `proxy.ts` runs on Edge runtime by default — cookie-existence-only check via `getSessionCookie()` is Edge-compatible (no DB access). Full session validation requires Node.js runtime and belongs in Server Component layouts.
+- **Rationale:** Next.js 16 network-boundary clarification; official rename. `proxy.ts` can run on Edge or Node.js runtime (docs inconsistent on default) — cookie-existence-only check via `getSessionCookie()` is fast and runtime-agnostic (no DB access). Full session validation requires Node.js runtime and belongs in Server Component layouts.
 - **Trade-offs:** All documentation referencing `middleware.ts` has been updated (PAD.md, SKILL.md, MEP.md all now reference `proxy.ts`). The 2-layer auth pattern requires RBAC enforcement at layout boundaries — more files but better separation of concerns.
 - **Source:** `scaffolding_files.md` preamble; Next.js 16 blog post (`https://nextjs.org/blog/next-16#proxy`); `guide_auth-v5_vs_better-auth.md` §Route Protection Pattern Changes
 
@@ -5121,7 +5125,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 | React Email v6 paradigm shift: `@react-email/render` deprecated | Critical | Resolved — PAD.md + SKILL.md updated to `^6.6.6`; MEP F8-29 import changed to `react-email` root. D43. See §9.9 Gotcha 3, §12 Lesson 18. |
 | TypeScript `^6.0.3` drift in 9 sub-packages | High | Resolved — all 9 reverted to `^5.9.0`. D44. See §9.9 Gotcha 4, §12 Lesson 19. |
 | `pg_advisory_lock` (session-scoped) leaks under Neon PgBouncer | Critical | Resolved — all locks use `pg_advisory_xact_lock` (transaction-scoped). ADR-004 audit. See §9.9 Gotcha 5, §12 Lesson 20. |
-| `proxy.ts` comment said "Node.js runtime" (actually Edge by default) | Medium | Resolved — comment corrected to "Edge runtime by default". ADR-009. See §9.9 Gotcha 6. |
+| `proxy.ts` comment said "Node.js runtime" (runtime is disputed — Edge or Node.js) | Medium | Resolved — comment corrected to "Edge or Node.js runtime (Next.js 16 docs inconsistent on default)". ADR-009. See §9.9 Gotcha 6. |
 | shadcn `style` conflict: `"new-york"` vs `"default"` | Low | Resolved — §2.1 corrected to `"default"` (matches `components.json`). See §9.9 Gotcha 9. |
 | Stripe API version: `acacia` → `dahlia` in §15.6 code example | High | Resolved — updated to `apiVersion: '2026-06-24.dahlia'`. See §9.9 Gotcha 10. |
 | All 10 MEP §9 Open Questions unresolved | High | ✅ All 10 resolved — Sanity Cloud, Stripe Dashboard refunds, Radix Dialog, synthetic data, feature-flag rollout. See §12 Lesson 21. |

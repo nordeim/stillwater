@@ -11,8 +11,10 @@
  *  3. i18n locale routing (v2 — placeholder)
  *  4. Security header enforcement
  *
- * Runs on: Edge runtime by default (Next.js 16). Cookie-only check
- * is Edge-compatible (no DB access, no auth.api.getSession()).
+ * Runs on: Edge or Node.js runtime (Next.js 16 documentation is inconsistent
+ * on the default). The 2-layer auth pattern works on both runtimes — cookie-only
+ * check is recommended regardless for performance and to avoid DB round-trips
+ * on every request. Do NOT call auth.api.getSession() here.
  * See PAD § 9.4 + ADR-009 for route protection logic.
  */
 

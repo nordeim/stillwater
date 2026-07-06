@@ -18,12 +18,13 @@
  *   - attendance-summary       Cron: Daily 23:00
  */
 
-// Note: The Trigger.dev v4 PLATFORM still uses the v3 SDK API import path.
-// The "v3" in @trigger.dev/sdk/v3 refers to the SDK API version, NOT the
-// platform version. As of @trigger.dev/sdk@4.5.0 (latest on npm, July 2026),
-// no /v4 export exists. The v4 platform is accessed via the v3 SDK API.
-// See: https://trigger.dev/docs (v4 migration guide)
-import { defineConfig } from "@trigger.dev/sdk/v3";
+// Trigger.dev v4 — import from root @trigger.dev/sdk (NOT /v3 which is deprecated).
+// Per official Trigger.dev v4 docs: "ALWAYS import from @trigger.dev/sdk.
+// NEVER import from @trigger.dev/sdk/v3." The /v3 subpath is the deprecated
+// v3-era pattern. Both resolve to the same file today, but root import is
+// the official v4 path and future-proofs against /v3 removal.
+// See: https://trigger.dev/docs/v4/migration-guide
+import { defineConfig } from "@trigger.dev/sdk";
 
 export default defineConfig({
   // ── Project identity ────────────────────────────────────────────

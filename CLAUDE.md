@@ -519,8 +519,8 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 11. **Using `experimental.serverComponentsExternalPackages`**: Renamed to top-level `serverExternalPackages` in Next.js 16 (D21)
 12. **Hardcoded mockup `--sp-N` spacing tokens**: Use PAD's `--space-N` (off-by-one from index 5; D26)
 13. **Forgetting idempotency on Stripe webhooks**: Always check `payment_events.stripe_event_id` UNIQUE INDEX first; use `pg_advisory_xact_lock` (transaction-scoped), NOT `pg_advisory_lock` (session-scoped — leaks under Neon PgBouncer)
-14. **Calling `auth.api.getSession()` inside `proxy.ts`**: BREAKS Edge runtime — proxy.ts is Edge by default in Next.js 16. Use `getSessionCookie()` (cookie-only) in proxy.ts; full validation in Server Component layouts (D36, ADR-009)
-15. **Importing `@trigger.dev/sdk/v4`**: The v4 export DOES NOT EXIST in `@trigger.dev/sdk@4.5.0` (latest npm). The v4 PLATFORM uses the v3 SDK API import path: `@trigger.dev/sdk/v3`. See Gotchas §1.
+14. **Calling `auth.api.getSession()` inside `proxy.ts`**: Too expensive for every request regardless of runtime (Edge or Node.js — Next.js 16 docs are inconsistent on the default). Use `getSessionCookie()` (cookie-only) in proxy.ts; full validation in Server Component layouts (D36, ADR-009)
+15. **Importing `@trigger.dev/sdk/v3` (deprecated)**: Use root `import { defineConfig } from "@trigger.dev/sdk"` per official Trigger.dev v4 docs. The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file, but root is the official v4 path). The `/v4` export does NOT exist. See Gotchas §1.
 16. **Upgrading ESLint to v10**: `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` do NOT support ESLint v10 (no v10-compatible versions exist). Stay on ESLint v9.39.4 (`maintenance` dist-tag). See D45.
 17. **Importing `render` from `@react-email/render`**: Deprecated in React Email v6.0.0 (April 16, 2026). Import from `react-email` root: `import { render } from 'react-email'`. See D43.
 18. **Pinning `typescript: ^6.0.3` in sub-packages**: PAD §5.1 mandates `^5.9.0` for `erasableSyntaxOnly` + `verbatimModuleSyntax` compatibility. See D44 + `pnpm_install_fix.md`.
@@ -642,13 +642,13 @@ Enforced at two layers:
 
 These are real issues encountered during Phase 0 implementation. Each has a verified root cause and fix.
 
-### Gotcha 1: Trigger.dev SDK v4 import path
+### Gotcha 1: Trigger.dev v4 SDK import — use root `@trigger.dev/sdk`
 
-**Symptom:** `import { defineConfig } from "@trigger.dev/sdk/v4"` fails — module not found.
+**Symptom:** Using `@trigger.dev/sdk/v3` still works but is the deprecated v3-era pattern. Using `@trigger.dev/sdk/v4` fails — module not found.
 
-**Root cause:** `@trigger.dev/sdk@4.5.0` (latest on npm, July 2026) does NOT export a `./v4` subpath. The package `exports` field only includes `./v3`, `.`, `./ai`, `./chat`, `./chat-server`, `./chat/react`. The "v4" in PAD §17.2 / ADR-007 refers to the **Trigger.dev platform version** (v4 GA August 2025), NOT the SDK API version. The v4 platform is accessed via the v3 SDK API.
+**Root cause:** `@trigger.dev/sdk@4.5.0` (latest on npm, July 2026) exports both `.` (root) and `./v3` subpaths — both resolve to the identical file (`./dist/esm/v3/index.js`). However, official Trigger.dev v4 documentation mandates: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is the deprecated v3-era pattern. The `/v4` subpath does NOT exist (and is not needed — the root import IS the v4 path).
 
-**Fix:** Use `import { defineConfig } from "@trigger.dev/sdk/v3"` (NOT `/v4`). The `services/workers/trigger.config.ts` file has an explanatory comment. Do NOT "fix" this to `/v4` — it will break.
+**Fix:** Use `import { defineConfig } from "@trigger.dev/sdk"` (root import, NOT `/v3`). This is the official Trigger.dev v4 pattern. The `services/workers/trigger.config.ts` file has been updated to use the root import. Validated July 2026 via web research (Qwen + DeepSeek) + codebase verification.
 
 ### Gotcha 2: ESLint v10 plugin incompatibility
 
@@ -682,13 +682,13 @@ These are real issues encountered during Phase 0 implementation. Each has a veri
 
 **Fix:** Always use `pg_advisory_xact_lock()` (transaction-scoped) — auto-releases at COMMIT/ROLLBACK. This applies to BOTH the booking flow AND the Stripe webhook idempotency handler. See PAD §7.4 + audit reports.
 
-### Gotcha 6: `proxy.ts` Edge runtime + auth validation
+### Gotcha 6: `proxy.ts` — don't call `auth.api.getSession()` regardless of runtime
 
-**Symptom:** `proxy.ts` works in dev but fails in production with "Edge runtime cannot access database" or similar.
+**Symptom:** `proxy.ts` works in dev but causes latency issues or caching bugs in production. If running on Edge runtime, may fail with "Edge runtime cannot access database".
 
-**Root cause:** Next.js 16 `proxy.ts` runs on the Edge runtime by default. Calling `auth.api.getSession()` (which does DB lookup + JWT verification) breaks Edge compatibility.
+**Root cause:** Next.js 16 `proxy.ts` can run on Edge or Node.js runtime (official documentation is inconsistent on the default — some docs say Edge, others say Node.js). Regardless of runtime, calling `auth.api.getSession()` (which does DB lookup + JWT verification) on every request is too expensive and breaks Next.js 16's caching model.
 
-**Fix:** Use the 2-layer auth pattern (ADR-009): Layer 1 (`proxy.ts`) uses `getSessionCookie(request)` from `better-auth/cookies` — cookie-existence-only check, Edge-compatible, NO DB. Layer 2 (Server Component layouts) calls `requireAuth()` / `requireRole(...roles)` for full validation + RBAC. The current `apps/web/proxy.ts` already implements this correctly.
+**Fix:** Use the 2-layer auth pattern (ADR-009): Layer 1 (`proxy.ts`) uses `getSessionCookie(request)` from `better-auth/cookies` — cookie-existence-only check, fast, NO DB. Layer 2 (Server Component layouts) calls `requireAuth()` / `requireRole(...roles)` for full validation + RBAC. This pattern works on both Edge and Node.js runtimes.
 
 ### Gotcha 7: `cacheComponents: true` + `force-dynamic` conflict
 
