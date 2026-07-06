@@ -1,3 +1,85 @@
+## Phase 1: AUDIT — PAD.md and MASTER_EXECUTION_PLAN.md
+
+Let me search both docs for all 3 fix areas in parallel:
+Good findings. Let me check the specific lines that need attention:
+Now let me audit MASTER_EXECUTION_PLAN.md:
+Excellent audit results. Let me now compile the full edit plan:
+## Phase 2: PLAN — Edit Summary
+
+### PAD.md (3 edits)
+
+| # | Line | Issue | Fix |
+|---|---|---|---|
+| P1 | 1781 | `import { defineConfig } from '@trigger.dev/sdk/v4';` — verbatim code example with wrong import path | Change to root `@trigger.dev/sdk` + update comment |
+| P2 | 262 | Mermaid diagram: "Node.js Proxy" + "replaces Edge Middleware" | Soften to reflect runtime ambiguity |
+| P3 | 2950 | ADR-010 context: "Next.js Edge middleware (proxy.ts, ADR-009)" | Soften to "proxy.ts (ADR-009)" |
+
+### MASTER_EXECUTION_PLAN.md (5 edits)
+
+| # | Line | Issue | Fix |
+|---|---|---|---|
+| M1 | 2958 | `All tasks MUST use @trigger.dev/sdk/v4` — wrong import path | Change to root `@trigger.dev/sdk` |
+| M2 | 2980 | `import { task } from '@trigger.dev/sdk/v4';` — verbatim code example | Change to root `@trigger.dev/sdk` |
+| M3 | 169 (D36) | "full DB validation on Edge" — assumes Edge runtime | Soften to acknowledge runtime ambiguity |
+| M4 | 174 (D41) | "ADR-009 proxy.ts runtime (Node.js→Edge)" — states Edge as fact | Update to reflect docs inconsistency |
+| M5 | 4298 | "ADR-009 Edge runtime" — states Edge as fact | Soften to "ADR-009 proxy.ts (Edge or Node.js)" |
+
+**Note on Stripe (Fix 5):** No edits needed in either PAD.md or MEP.md. The `currentPeriodEnd` references in both docs are Drizzle ORM TypeScript property names (camelCase), not Stripe SDK field names. Drizzle uses camelCase in TypeScript and maps to snake_case DB columns via `timestamp('current_period_end')`. This is correct.
+
+## Phase 3: EXECUTE — PAD.md Edits
+✅ PAD.md edits complete. Now MEP.md edits:
+## Phase 4: EXECUTE — MEP.md Edits
+Now fix the proxy.ts runtime references in MEP.md (D36, D41, and alignment note):
+Now fix D41 (line 174) — the "ADR-009 proxy.ts runtime (Node.js→Edge)" claim:
+Now fix the alignment note on line 4298:
+All 8 edits complete. Now let me run the final verification:
+---
+
+# ✅ Complete — PAD.md and MASTER_EXECUTION_PLAN.md Updated
+
+## Summary of Changes
+
+### PAD.md (3 edits)
+
+| # | Line | Fix Area | Change |
+|---|---|---|---|
+| P1 | 1781 | Trigger.dev | `import { defineConfig } from '@trigger.dev/sdk/v4'` → `from '@trigger.dev/sdk'` (root import) with explanatory comment |
+| P2 | 262 | proxy.ts runtime | Mermaid diagram: "Node.js Proxy" / "replaces Edge Middleware" → "Proxy (Edge or Node.js)" / "replaces middleware.ts" |
+| P3 | 2950 | proxy.ts runtime | ADR-010 context: "Next.js Edge middleware (proxy.ts)" → "Next.js proxy.ts" with note "regardless of whether proxy.ts runs on Edge or Node.js runtime" |
+
+### MASTER_EXECUTION_PLAN.md (5 edits)
+
+| # | Line | Fix Area | Change |
+|---|---|---|---|
+| M1 | 2958 | Trigger.dev | `All tasks MUST use @trigger.dev/sdk/v4` → `@trigger.dev/sdk` (root) with full explanation + SKILL.md cross-ref |
+| M2 | 2980 | Trigger.dev | F8-01 code example: `import { task } from '@trigger.dev/sdk/v4'` → `from '@trigger.dev/sdk'` (root) |
+| M3 | 169 (D36) | proxy.ts runtime | "full DB validation on Edge" → "full DB validation on every request" + added note: "proxy.ts runtime is disputed (Next.js 16 docs inconsistent — Edge or Node.js); 2-layer pattern works on both" |
+| M4 | 174 (D41) | proxy.ts runtime | "ADR-009 proxy.ts runtime (Node.js→Edge)" → "originally stated Edge; v1.4.0 softened to 'Edge or Node.js — docs inconsistent'" + added v1.4.0 to resolution history |
+| M5 | 4298 | proxy.ts runtime | Alignment note: "ADR-009 Edge runtime" → "ADR-009 proxy.ts" + added v1.4.0 note about runtime language softening + ADR-010 |
+
+### No Stripe Fixes Needed
+
+The `currentPeriodEnd` references in both PAD.md (line 848) and MEP.md (lines 1217, 3091) are **Drizzle ORM TypeScript property names** (camelCase), not Stripe SDK field names. Drizzle uses camelCase in TypeScript and maps to snake_case DB columns via `timestamp('current_period_end')`. This is correct and consistent with the snake_case guidance for Stripe SDK field access.
+
+## Verification Results (10/10 PASS)
+
+| # | Check | Result |
+|---|---|---|
+| 1 | `pnpm lint` | ✅ 2/2 tasks pass (FULL TURBO) |
+| 2 | Zero `@trigger.dev/sdk/v4` in PAD.md | ✅ PASS |
+| 3 | Zero `@trigger.dev/sdk/v4` in MEP.md | ✅ PASS |
+| 4 | Root `@trigger.dev/sdk` import in PAD.md | ✅ Line 1781 |
+| 5 | Root `@trigger.dev/sdk` imports in MEP.md | ✅ Lines 1600, 1650, 2980 (all 3 code examples) |
+| 6 | Zero "Edge by default" in PAD.md | ✅ PASS |
+| 7 | Zero "Edge by default" in MEP.md | ✅ PASS |
+| 8 | proxy.ts runtime softened in PAD.md | ✅ 5 locations say "Edge or Node.js" |
+| 9 | proxy.ts runtime softened in MEP.md | ✅ D36 + D41 + alignment note all updated |
+| 10 | Zero Stripe camelCase contradictions | ✅ PASS — no "v22+ uses camelCase" anywhere |
+
+All 6 documentation files (CLAUDE.md, AGENTS.md, README.md, PAD.md, stillwater_SKILL.md, MASTER_EXECUTION_PLAN.md) are now fully aligned with the 3 validation findings. The codebase is ready for the archive refresh.
+
+---
+
 All verification passes. Let me create the v2 archive:
 Now let me verify the archive contents — confirm all key files are included and exclusions are clean:
 ---
