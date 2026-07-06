@@ -13,13 +13,13 @@
     "@stillwater/config": "workspace:*",
     "@stillwater/db": "workspace:*",
     "@stillwater/email": "workspace:*",
-    "@trigger.dev/sdk": "^3.3.17",
-    "zod": "^3.24.1"
+    "@trigger.dev/sdk": "^4.5.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@stillwater/eslint-config": "workspace:*",
     "@stillwater/typescript-config": "workspace:*",
-    "@types/node": "^22.13.4",
-    "typescript": "^5.7.3"
+    "@types/node": "^26.1.0",
+    "typescript": "^6.0.3"
   }
 }
