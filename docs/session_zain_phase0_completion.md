@@ -1,3 +1,145 @@
+## Phase 1: RE-VALIDATE All 3 Findings
+
+Let me re-examine each finding with fresh eyes to ensure I'm not introducing regressions.
+The root import failed when run from the project root because `@trigger.dev/sdk` is a dependency of `services/workers`, not the root workspace. Let me verify it resolves correctly from within the workers package context:
+✅ **Finding 1 CONFIRMED.** Both `@trigger.dev/sdk` (root) and `@trigger.dev/sdk/v3` resolve and export `defineConfig` as a function. They point to the identical file (`./dist/esm/v3/index.js`). The root import is the official Trigger.dev v4 recommended path. The `/v3` subpath is the deprecated v3-era pattern. Switching to root import is safe — it resolves to the same code.
+
+Now let me re-validate Finding 5 (Stripe snake_case contradiction):
+✅ **Finding 5 CONFIRMED.** Lines 1869-1872 say "Stripe SDK v22+ uses camelCase (`currentPeriodEnd` not `current_period_end`)" — this directly contradicts:
+- Line 162: "SDK exposes snake_case to match API wire format (NOT camelCase)"
+- Line 2125: "SDK exposes snake_case (NOT camelCase)"
+- Line 2126: "Always use snake_case field names (`current_period_end`, not `currentPeriodEnd`)"
+- Line 3061: "Don't use Stripe SDK pre-v22 camelCase"
+
+The bug title says "pre-v22 camelCase" (implying pre-v22 USED camelCase, and v22+ does NOT), but the root cause text says "v22+ uses camelCase" — which is the opposite. This is a clear internal contradiction. Line 1871 is wrong.
+
+Now let me re-validate Finding 2 (proxy.ts runtime):
+✅ **Finding 2 CONFIRMED as needing language softening.** The documentation is inconsistent:
+- SKILL.md line 796 already hedges: "Edge (or Node)"
+- SKILL.md line 2099 is absolute: "runs on the Edge runtime by default"
+- Report 2 (DeepSeek) cites Next.js 16 official docs saying proxy.ts runs on Node.js runtime
+- Report 1 (Qwen) says the 2-layer pattern is correct regardless
+
+The key insight: **the 2-layer auth pattern is correct regardless of the runtime.** Whether Edge or Node.js, cookie-only check is faster and avoids DB round-trips. I should soften the absolute "Edge by default" claims while keeping the architectural guidance intact.
+
+All 3 findings are re-validated and confirmed. Let me now plan and execute the fixes:
+## Phase 2: PLAN — Fix Strategy
+
+### Fix 1: Trigger.dev SDK Import Path (`/v3` → root `@trigger.dev/sdk`)
+
+| File | Change | Exact Edit |
+|---|---|---|
+| `services/workers/trigger.config.ts` | Line 26 import + comment | `from "@trigger.dev/sdk/v3"` → `from "@trigger.dev/sdk"`; update explanatory comment |
+| `stillwater_SKILL.md` §2.1 | Trigger.dev row | Remove `/v3` recommendation; add root import note |
+| `stillwater_SKILL.md` §9.9 Gotcha 1 | Full rewrite | Change from "use /v3" to "use root @trigger.dev/sdk" |
+| `stillwater_SKILL.md` §12 Lesson 16 | Full rewrite | Change conclusion from "use /v3" to "use root @trigger.dev/sdk" |
+| `stillwater_SKILL.md` §13.13 | Pitfall entry | Update "Don't import @trigger.dev/sdk/v4" → "Don't import @trigger.dev/sdk/v3 (deprecated)" |
+| `CLAUDE.md` Gotcha 1 | Full rewrite | Change from "use /v3" to "use root @trigger.dev/sdk" |
+| `AGENTS.md` Gotcha 1 | Full rewrite | Change from "use /v3" to "use root @trigger.dev/sdk" |
+
+### Fix 5: Stripe snake_case Contradiction (SKILL.md line 1871)
+
+| File | Change |
+|---|---|
+| `stillwater_SKILL.md` §9.4 line 1871 | Change "v22+ uses camelCase" → "pre-v22 used camelCase; v22+ uses snake_case to match API wire format" |
+
+### Fix 2: proxy.ts Runtime Language Softening
+
+| File | Change |
+|---|---|
+| `apps/web/proxy.ts` comment | "Edge runtime by default" → "Edge or Node.js runtime (Next.js 16 docs are inconsistent on the default)" |
+| `stillwater_SKILL.md` §5.1 line 650 | "Edge proxy" → "Proxy (Edge or Node.js)" |
+| `stillwater_SKILL.md` §5.6 line 796 | Already says "Edge (or Node)" — verify |
+| `stillwater_SKILL.md` §5.6 line 799 | "runs on Edge runtime for every request" → soften |
+| `stillwater_SKILL.md` §9.1 line 1628 | "proxy.ts (Edge runtime)" → soften |
+| `stillwater_SKILL.md` §9.9 Gotcha 6 line 2097-2100 | Rewrite to acknowledge runtime dispute |
+| `CLAUDE.md` line 75, 167, 522, 636, 685 | Soften "Edge" references |
+| `AGENTS.md` line 97, 99, 145-147 | Soften "Edge" references |
+
+Now executing all fixes:
+✅ Code fixed. Now let me verify lint still passes before updating docs:
+Lint passes. Now let me update the SKILL.md. First, Fix 1 (Trigger.dev) — I need to update §2.1, §9.9 Gotcha 1, §12 Lesson 16, and §13.13:
+Now update §9.9 Gotcha 1:
+Now update §12 Lesson 16:
+Now update §13.13 Trigger.dev pitfall entry:
+Now Fix 5: Stripe snake_case contradiction (line 1871):
+✅ Fix 5 complete — line 1871 now consistent with lines 162, 2125, 2126, 3061.
+
+Now Fix 2: proxy.ts runtime language softening. Let me update the proxy.ts comment first:
+Now update SKILL.md proxy.ts runtime claims. Let me fix the most critical absolute claims:
+Now update CLAUDE.md and AGENTS.md for both Fix 1 (Trigger.dev) and Fix 2 (proxy.ts runtime):
+The CLAUDE.md text is slightly different. Let me find the exact text:
+Now update CLAUDE.md Gotcha 6 (proxy.ts runtime) and the Common Pitfall #14 and #15:
+Now update CLAUDE.md Common Pitfalls #14 and #15:
+I see — pitfall #14 was already updated in my previous edit (the MultiEdit found the exact match). Only #15 still needs updating:
+Now update AGENTS.md for both Fix 1 and Fix 2:
+All fixes applied. Now let me verify everything — lint, check-types, and cross-file consistency:
+I see 3 remaining stale references in SKILL.md (lines 3201, 5052, 5128). Let me fix those:
+Now let me do the final verification:
+Almost perfect — but PAD.md still has 3 "Edge by default" matches. Let me fix those:
+Now let me run the absolute final verification:
+---
+
+# ✅ All 3 Fixes Complete — Verified
+
+## Summary of Changes
+
+### Fix 1: Trigger.dev SDK Import Path (`/v3` → root `@trigger.dev/sdk`) ✅
+
+**Root cause:** Both validation reports (Qwen + DeepSeek) independently flagged that SKILL.md §9.9 Gotcha 1 and §12 Lesson 16 incorrectly recommended using the deprecated `@trigger.dev/sdk/v3` subpath. Official Trigger.dev v4 documentation mandates: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`."
+
+**Codebase verification:** I confirmed that `@trigger.dev/sdk@4.5.0` exports both `.` (root) and `./v3` — both resolve to the identical file (`./dist/esm/v3/index.js`). The root import is the official v4 path; `/v3` is the deprecated v3-era pattern.
+
+**Files updated (6):**
+| File | Change |
+|---|---|
+| `services/workers/trigger.config.ts` | `from "@trigger.dev/sdk/v3"` → `from "@trigger.dev/sdk"` + updated comment |
+| `stillwater_SKILL.md` §2.1 | Trigger.dev row: removed `/v3` recommendation, added root import note |
+| `stillwater_SKILL.md` §9.9 Gotcha 1 | Full rewrite: "use root `@trigger.dev/sdk`, NOT `/v3`" |
+| `stillwater_SKILL.md` §12 Lesson 16 | Full rewrite: documents the 4-iteration journey to correct import |
+| `stillwater_SKILL.md` §13.13 | Pitfall: "Don't import `/v3` (deprecated)" → use root |
+| `CLAUDE.md` Gotcha 1 + Pitfall #15 | Full rewrite: root import recommendation |
+| `AGENTS.md` Gotcha 1 | Full rewrite: root import with code examples |
+
+### Fix 5: Stripe snake_case Internal Contradiction ✅
+
+**Root cause:** SKILL.md line 1871 said "Stripe SDK v22+ uses camelCase (`currentPeriodEnd`)" — this directly contradicted 4 other locations (lines 162, 2125, 2126, 3061) that correctly state "SDK exposes snake_case."
+
+**Files updated (1):**
+| File | Change |
+|---|---|
+| `stillwater_SKILL.md` §9.4 line 1871 | Changed from "v22+ uses camelCase" → "Pre-v22 used camelCase; v22+ aligns with API wire format using snake_case" — now consistent with all other locations |
+
+### Fix 2: proxy.ts Runtime Language Softening ✅
+
+**Root cause:** Report 2 (DeepSeek) flagged that SKILL.md claimed "proxy.ts runs on Edge by default" but Next.js 16 official docs say Node.js runtime. Report 1 (Qwen) correctly noted the 2-layer auth pattern is architecturally correct regardless of runtime. The fix: soften absolute "Edge by default" claims to "Edge or Node.js (docs inconsistent)" while keeping the 2-layer pattern guidance intact.
+
+**Files updated (5):**
+| File | Changes |
+|---|---|
+| `apps/web/proxy.ts` | Comment: "Edge runtime by default" → "Edge or Node.js runtime (Next.js 16 docs inconsistent on default)" |
+| `stillwater_SKILL.md` | §5.1 line 650, §5.6 line 799, §9.1 line 1628, §9.9 Gotcha 6 (full rewrite), §13.13 pitfall, Appendix A ADR-009 rationale, Appendix C audit entry |
+| `CLAUDE.md` | Gotcha 6 (full rewrite), Pitfall #14, 2-layer auth pattern description |
+| `AGENTS.md` | Gotcha 5 (full rewrite), 2-layer auth pattern description, Layer 1 label |
+| `PAD.md` | §5.1 Next.js row, §29 ADR-009 rationale + trade-offs |
+
+---
+
+## Verification Results
+
+| Check | Result |
+|---|---|
+| `pnpm lint` | ✅ 2/2 tasks pass (FULL TURBO) |
+| Zero `/v3` imports in code | ✅ PASS |
+| Zero absolute "Edge by default" claims across ALL 6 docs | ✅ PASS (0 matches in SKILL.md, CLAUDE.md, AGENTS.md, README.md, PAD.md, MEP.md) |
+| Stripe snake_case contradiction eliminated | ✅ PASS (line 1871 now consistent with lines 162, 2125, 2126, 3061) |
+| Trigger.dev root import in code | ✅ `from "@trigger.dev/sdk"` (line 27) |
+| proxy.ts comment updated | ✅ "Edge or Node.js runtime (Next.js 16 documentation is inconsistent..." |
+
+All 3 fixes are verified, lint passes, and all 6 documentation files are now consistent. The codebase is ready for the archive refresh.
+
+---
+
 ## Phase 1: AUDIT — PAD.md and MASTER_EXECUTION_PLAN.md
 
 Let me search both docs for all 3 fix areas in parallel:
