@@ -10,8 +10,12 @@
  * See: apps/web/src/app/globals.css for @theme token declarations
  */
 
-import type { Config } from "tailwindcss";
+import containerQueries from "@tailwindcss/container-queries";
+import typography from "@tailwindcss/typography";
+
 import { stillwaterBase } from "@stillwater/tailwind-config";
+
+import type { Config } from "tailwindcss";
 
 const config: Config = {
   // Content paths — Tailwind v4 scans these for class usage
@@ -27,7 +31,7 @@ const config: Config = {
   theme: {
     ...stillwaterBase.theme,
     extend: {
-      ...stillwaterBase.theme?.extend,
+      ...stillwaterBase.theme.extend,
 
       // App-specific overrides (none needed for v1)
     },
@@ -35,9 +39,9 @@ const config: Config = {
 
   plugins: [
     // Typography plugin for blog/long-form content
-    require("@tailwindcss/typography"),
+    typography,
     // Container queries for component-level responsive design
-    require("@tailwindcss/container-queries"),
+    containerQueries,
   ],
 };
 

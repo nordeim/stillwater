@@ -1,18 +1,18 @@
 # Stillwater
 
 [![Node.js](https://img.shields.io/badge/node-%E2%89%A522.0.0-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-9.15.4-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
-[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![pnpm](https://img.shields.io/badge/pnpm-11.9.0-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2.3-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.40-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%200%20scaffold%20ready-clay)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%200%20complete-success)](#project-status)
 
-> **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev background jobs. Built with the calm intentionality of Japanese editorial design.
+> **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
 ---
 
@@ -20,9 +20,9 @@
 
 Stillwater is the operational backbone and digital face of a boutique yoga studio in Southeast Portland. It serves three populations from one Turborepo monorepo: a **public audience** (schedule, instructors, pricing, blog — ISR-cached, Sanity-backed), **members** (booking, dashboard, membership management — auth-gated, real-time), and **studio operations** (RBAC-gated admin for staff/manager/owner).
 
-The platform replaces a class of brittle brochure-site-plus-Stripe-link yoga websites with a SaaS-grade product: PostgreSQL advisory locks for double-booking prevention, idempotent Stripe webhook processing, an 11-job Trigger.dev background worker for emails and waitlist promotion, and WCAG 2.2 Level AAA accessibility for the 35–65 demographic the studio serves.
+The platform replaces a class of brittle brochure-site-plus-Stripe-link yoga websites with a SaaS-grade product: PostgreSQL advisory locks for double-booking prevention, idempotent Stripe webhook processing, an 11-job Trigger.dev v4 background worker for emails and waitlist promotion, and WCAG 2.2 Level AAA accessibility for the 35–65 demographic the studio serves.
 
-The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 7 ADRs; [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 35 discrepancies between source documents; [`scaffolding_files.md`](./scaffolding_files.md) contains the ready-to-paste Phase 0 monorepo configuration.
+The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 10 ADRs (9 accepted + 1 proposed); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v1.4.0) condensing 21 source skills.
 
 ---
 
@@ -35,8 +35,8 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 | ⏳ | **Waitlist promotion**               | 2-hour offer window with cascading promotion when expired                                              |
 | 💳 | **Stripe subscriptions**             | Full lifecycle: trialing → active → past_due → paused → cancelled; idempotent webhook handler           |
 | 📦 | **Class credit packs**               | One-off PaymentIntent purchases for non-subscription members                                           |
-| 🔐 | **Better Auth + RBAC**               | Google OAuth + Magic Link; 6 roles × 13 permissions matrix enforced at edge via `proxy.ts`             |
-| ✉️ | **11 background jobs**               | Trigger.dev v3 tasks for confirmations, reminders, waitlist, digest, attendance — all retried & durable |
+| 🔐 | **Better Auth + RBAC**               | Google OAuth + Magic Link; 6 roles × 13 permissions matrix; 2-layer auth (cookie-only `proxy.ts` + Server Component layouts) |
+| ✉️ | **11 background jobs**               | Trigger.dev v4 tasks for confirmations, reminders, waitlist, digest, attendance — all retried & durable |
 | 📝 | **Sanity marketing CMS**             | Webhook-triggered ISR; editors publish without deploys                                                 |
 | ♿ | **WCAG 2.2 Level AAA**               | 7:1 contrast, full keyboard nav, screen-reader semantics, reduced-motion respect                       |
 | 🎨 | **"Editorial Calm" design system**   | Warm Mineral palette (stone/clay/water/sand), Cormorant Garamond + DM Sans + JetBrains Mono, sharp edges |
@@ -51,24 +51,25 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 
 | Layer            | Technology                  | Version     | Purpose                                                        |
 |------------------|-----------------------------|-------------|----------------------------------------------------------------|
-| Frontend         | Next.js                     | 16.x        | App Router, Turbopack, React Compiler, `proxy.ts`              |
-| UI Library       | React                       | 19.x        | Server Components by default, Client Islands for interactivity |
-| Styling          | Tailwind CSS                | v4.x        | CSS-first `@theme` directive, no `tailwind.config.js` required |
+| Frontend         | Next.js                     | 16.2.0      | App Router, Turbopack, React Compiler, `proxy.ts`              |
+| UI Library       | React                       | 19.2.3      | Server Components by default, Client Islands for interactivity |
+| Styling          | Tailwind CSS                | 4.3.0       | CSS-first `@theme` directive, no `tailwind.config.js` required |
 | Component Lib    | Radix UI + shadcn/ui        | latest      | Accessible primitives; never rebuild what Radix provides       |
-| Language         | TypeScript                  | 5.7+        | Strict mode + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` |
+| Language         | TypeScript                  | 5.9.0       | Strict mode + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` + `erasableSyntaxOnly` (no `enum`/`namespace`) |
 | API Layer        | tRPC                        | v11         | End-to-end type safety; server caller for RSC, React Query for client |
-| ORM              | Drizzle ORM                 | 0.40.1      | Schema in TypeScript, no codegen, advisory lock support        |
+| ORM              | Drizzle ORM                 | 0.45.0      | Schema in TypeScript, no codegen, advisory lock support        |
 | Database         | PostgreSQL                  | 17          | 14 tables, 8 enums, 5 critical indexes (incl. partial + unique)|
 | DB Host          | Neon                        | latest      | Serverless PG with branching for preview envs                  |
 | Cache / Rate Limit | Upstash Redis             | latest      | Per-procedure rate limiting on auth + booking mutations        |
-| Auth             | Better Auth                 | 1.2+        | Replaces Auth.js v5 (Sept 2025 maintenance handover)           |
-| Background Jobs  | Trigger.dev                 | v3          | 11 durable tasks with retries + cron schedules                 |
-| Monorepo         | Turborepo                   | 2.3+        | Task graph + remote caching                                     |
-| Package Manager  | pnpm                        | 9.15.4      | Workspace protocol; `customConditions` for source linking      |
-| CMS              | Sanity                      | v3          | Marketing content only; operational data stays in PostgreSQL   |
-| Payments         | Stripe                      | 17.x        | Subscriptions + credit packs + customer portal + idempotent webhooks |
-| Email Templates  | React Email                | latest      | 13 templates, single-column 600px, CAN-SPAM compliant          |
-| Email Delivery   | Resend                      | 4.x         | 2,400 emails/day free tier                                     |
+| Auth             | Better Auth                 | 1.6.23      | Replaces Auth.js v5 (ADR-008); Drizzle adapter; 2-layer auth pattern |
+| Background Jobs  | Trigger.dev                 | v4 platform | 11 durable tasks; SDK import is `@trigger.dev/sdk/v3` (v4 platform uses v3 SDK API) |
+| Monorepo         | Turborepo                   | 2.10.0      | Task graph + remote caching                                     |
+| Package Manager  | pnpm                        | 11.9.0      | Workspace protocol; `customConditions` for source linking; v9 is EOL |
+| CMS              | Sanity                      | v3          | Marketing content only (ADR-005); hosted at stillwater.sanity.studio (Q4) |
+| Payments         | Stripe                      | 22.3.0      | "Dahlia" API (2026-06-24); subscriptions + credit packs + idempotent webhooks |
+| Email Templates  | React Email                | 6.6.6       | v6 unified package (April 2026); 13 templates, single-column 600px, CAN-SPAM |
+| Email Delivery   | Resend                      | 6.17.1      | 2,400 emails/day free tier; Native Templates API available     |
+| Linting          | ESLint                      | 9.39.4      | v9 flat config; do NOT upgrade to v10 (plugin incompatibility) |
 | Observability    | Sentry + PostHog + Axiom + Checkly | latest | Errors, product analytics, structured logs, uptime synthetics  |
 | Deployment       | Vercel + Neon               | latest      | Preview deploys per PR; production on `main` merge             |
 | Testing          | Vitest + Playwright         | latest      | TDD mandatory; 90% coverage on `packages/api/routers/*`        |
@@ -123,7 +124,7 @@ flowchart TB
         Sanity[Sanity CMS]
         Stripe[Stripe Billing]
         Resend[Resend Email]
-        Trigger[Trigger.dev v3]
+        Trigger[Trigger.dev v4]
         Cloudflare[Cloudflare Images + R2]
     end
 
@@ -181,7 +182,7 @@ stillwater/
 │   └── 📂 config/                       # t3-env Zod-validated env schema
 │
 ├── 📂 services/
-│   └── 📂 workers/                      # Trigger.dev v3 background jobs (11 tasks)
+│   └── 📂 workers/                      # Trigger.dev v4 background jobs (11 tasks)
 │
 ├── 📂 tooling/                          # Shared configs
 │   ├── 📂 eslint/                       # ESLint v9 flat config
@@ -193,7 +194,7 @@ stillwater/
 ├── 📄 docker-compose.yml                # Postgres 17 + Redis 7 + Adminer
 ├── 📄 turbo.json                        # Task graph + caching
 ├── 📄 pnpm-workspace.yaml               # Workspace + customConditions
-├── 📄 .env.example                      # 25 env vars documented
+├── 📄 .env.example                      # 34 env vars documented
 ├── 📄 PAD.md                            # Project Architecture Document (canonical)
 ├── 📄 MASTER_EXECUTION_PLAN.md          # 13-phase TDD execution plan
 ├── 📄 scaffolding_files.md              # Phase 0 ready-to-paste configs
@@ -208,7 +209,7 @@ stillwater/
 ### Prerequisites
 
 - **Node.js ≥ 22.0.0** (LTS recommended)
-- **pnpm ≥ 9.0.0** (`npm install -g pnpm@9.15.4`)
+- **pnpm ≥ 11.0.0** (`npm install -g pnpm@11`; pnpm 9.x is EOL)
 - **Docker + Docker Compose** (for local Postgres + Redis)
 - **Git**
 
@@ -274,7 +275,7 @@ pnpm lint
 
 ## Environment Variables
 
-All 25 env vars are documented in [`.env.example`](./.env.example). Critical ones grouped by purpose:
+All 34 env vars are documented in [`.env.example`](./.env.example) and validated via `t3-env` Zod schema in `packages/config/src/env.ts`. Critical ones grouped by purpose:
 
 ### Application
 | Variable                  | Purpose                                  | Example                          |
@@ -547,24 +548,24 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 
 ## Project Status
 
-| Phase | Focus                                              | Status      | Est. Days |
-|-------|----------------------------------------------------|-------------|-----------|
-| 0     | Monorepo scaffold + tooling + Docker + fixes       | 🟡 Plan ready | 2       |
-| 1     | DB schema, Drizzle migrations, seed data           | ⬜ Pending  | 3         |
-| 2     | Better Auth + RBAC + `proxy.ts`                    | ⬜ Pending  | 3         |
-| 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ⬜ Pending  | 5         |
-| 4     | Marketing surface with Sanity CMS                  | ⬜ Pending  | 4         |
-| 5     | Booking flow + SSE real-time seats                 | ⬜ Pending  | 5         |
-| 6     | Member dashboard + membership management           | ⬜ Pending  | 4         |
-| 7     | Stripe integration (subscriptions + credit packs)  | ⬜ Pending  | 4         |
-| 8     | Background jobs (11 Trigger.dev tasks)             | ⬜ Pending  | 3         |
-| 9     | Admin surface (RBAC-gated)                         | ⬜ Pending  | 5         |
-| 10    | Observability + performance hardening              | ⬜ Pending  | 3         |
-| 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending  | 3         |
-| 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending  | 4         |
-| **Total** |                                                | **0% complete** | **~48 days** |
+| Phase | Focus                                              | Status        | Est. Days |
+|-------|----------------------------------------------------|---------------|-----------|
+| 0     | Monorepo scaffold + tooling + Docker + fixes       | ✅ Complete   | 2         |
+| 1     | DB schema, Drizzle migrations, seed data           | ⬜ Next       | 3         |
+| 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ⬜ Pending     | 3         |
+| 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ⬜ Pending     | 5         |
+| 4     | Marketing surface with Sanity CMS                  | ⬜ Pending     | 4         |
+| 5     | Booking flow + SSE real-time seats                 | ⬜ Pending     | 5         |
+| 6     | Member dashboard + membership management           | ⬜ Pending     | 4         |
+| 7     | Stripe integration (subscriptions + credit packs)  | ⬜ Pending     | 4         |
+| 8     | Background jobs (11 Trigger.dev v4 tasks)          | ⬜ Pending     | 3         |
+| 9     | Admin surface (RBAC-gated)                         | ⬜ Pending     | 5         |
+| 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
+| 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
+| 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
+| **Total** |                                                | **~8% complete** | **~50 days** |
 
-> See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full 256-file inventory, per-file TDD checklists, and 35 reconciled discrepancies between source documents.
+> See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
 ---
 
@@ -572,16 +573,26 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 
 | Issue                                                        | Solution                                                                                          |
 |--------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| `pnpm install` warns about `@stillwater/source` condition    | Ensure `.npmrc` contains `custom-conditions=@stillwater/source` (Phase 0 patch D15)              |
-| `docker compose up` fails on `./infrastructure/postgres/init`| Create the directory + `00-create-extensions.sql` per Phase 0 file F0-05                          |
-| `pnpm db:migrate` errors with "DATABASE_URL_UNPOOLED missing"| `.env.local` must define `DATABASE_URL_UNPOOLED` (not just `DATABASE_URL`) — migrations use direct connection |
-| `next lint` deprecated warning in Next.js 16                 | Use `eslint .` instead — `apps/web/package.json` `lint` script updated in Phase 0 patch D23      |
-| `experimental.serverComponentsExternalPackages` ignored       | Moved to top-level `serverExternalPackages` in Next.js 16 (Phase 0 patch D21)                    |
-| Stripe webhook returns 400 "Invalid signature"               | Verify `STRIPE_WEBHOOK_SECRET` matches `whsec_...` from Stripe Dashboard; use `stripe listen --forward-to localhost:3000/api/webhooks/stripe` for local testing |
-| Better Auth Google OAuth redirect_uri mismatch               | Add `https://stillwater-pr-<n>.vercel.app/api/auth/callback/google` to Google Console authorized redirect URIs for preview envs |
-| SSE endpoint returns 504 on Vercel                            | SSE is `runtime = 'nodejs'` + `dynamic = 'force-dynamic'`; verify Vercel function timeout ≥ 25s   |
-| `proxy.ts` not running                                        | Verify `config.matcher` excludes `_next/static`, `_next/image`, and asset extensions — see `apps/web/proxy.ts` |
-| Tailwind v4 classes not applying                              | Verify `globals.css` imports `@stillwater/ui/globals` BEFORE `tailwindcss`; `@theme` block maps every token |
+| `pnpm install` warns about `@stillwater/source` condition    | Ensure `.npmrc` contains `custom-conditions=@stillwater/source` AND `pnpm-workspace.yaml` has `customConditions` (D15) |
+| `ERR_PNPM_NO_MATCHING_VERSION` for `@opentelemetry/core@2.9.0` | `pnpm-workspace.yaml` `overrides` block pins OTEL to 2.8.0 (Sentry 10.63.0 demands 2.9.0). See `pnpm_install_fix.md`. |
+| `ERR_PNPM_IGNORED_BUILDS` for sharp/esbuild/@sentry/cli       | `pnpm-workspace.yaml` `allowBuilds` block allows these native postinstall scripts. |
+| `[WARN] The "pnpm" field in package.json is no longer read`  | Delete the `pnpm.overrides` + `pnpm.onlyBuiltDependencies` block from root `package.json` — moved to `pnpm-workspace.yaml` in pnpm v11. |
+| `pnpm lint` crashes: `getFilename is not a function`         | ESLint v10 installed (should be v9). Downgrade: `pnpm add -Dw eslint@^9.39.4`. `eslint-plugin-react`/`eslint-plugin-import` have no v10 versions. See D45. |
+| `import { defineConfig } from "@trigger.dev/sdk/v4"` fails   | The `/v4` export DOES NOT EXIST. Use `@trigger.dev/sdk/v3` (v4 platform uses v3 SDK API). See CLAUDE.md Gotcha 1. |
+| `import { render } from '@react-email/render'` — module not found | React Email v6 unified all imports. Use `import { render } from 'react-email'`. See D43. |
+| `typescript 6.0.3 is available` warning during install       | Expected — we intentionally stay on `^5.9.0` for `erasableSyntaxOnly` + `verbatimModuleSyntax`. See D44. |
+| `TS18003: No inputs were found` in `packages/db`             | EXPECTED at Phase 0 — `packages/db/src/` doesn't exist yet. Phase 1 creates schema files. Not a real error. |
+| `Cannot find module '@stillwater/db'`                        | `.npmrc` missing `custom-conditions=@stillwater/source` (D15). Both `.npmrc` AND `pnpm-workspace.yaml` must declare it. |
+| `docker compose up` fails on `./infrastructure/postgres/init`| Directory + `00-create-extensions.sql` exist (D18). Verify `docker-compose.yml` volume mount path. |
+| `pnpm db:migrate` errors with "DATABASE_URL_UNPOOLED missing"| `.env.local` must define `DATABASE_URL_UNPOOLED` (not just `DATABASE_URL`) — migrations use direct connection (PgBouncer breaks prepared statements). |
+| `next lint` deprecated warning in Next.js 16                 | Use `eslint .` instead (D23). `apps/web/package.json` `lint` script already updated. |
+| `experimental.serverComponentsExternalPackages` ignored       | Moved to top-level `serverExternalPackages` in Next.js 16 (D21). |
+| Stripe webhook returns 400 "Invalid signature"               | Verify `STRIPE_WEBHOOK_SECRET` matches `whsec_...` from Stripe Dashboard; use `stripe listen --forward-to localhost:3000/api/webhooks/stripe` for local testing. |
+| Better Auth Google OAuth redirect_uri mismatch               | Add `https://stillwater-pr-<n>.vercel.app/api/auth/callback/google` to Google Console authorized redirect URIs for preview envs. |
+| SSE endpoint returns 504 on Vercel                            | SSE is `runtime = 'nodejs'`; set `maxDuration = 300` AND enable Fluid Compute. Do NOT set `dynamic = 'force-dynamic'` (incompatible with `cacheComponents`). |
+| `proxy.ts` not running                                        | Verify `config.matcher` excludes `_next/static`, `_next/image`, and asset extensions. See `apps/web/proxy.ts`. |
+| `proxy.ts` crashes with "Edge runtime cannot access database" | Do NOT call `auth.api.getSession()` in `proxy.ts`. Use `getSessionCookie()` (cookie-only). Full validation in Server Component layouts (ADR-009). |
+| Tailwind v4 classes not applying                              | Verify `globals.css` imports `@stillwater/ui/globals` BEFORE `tailwindcss`; `@theme` block maps every token. |
 
 ---
 
@@ -642,16 +653,30 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 
 ## What's New
 
+### v1.1.0 (2026-07-06) — Phase 0 Complete + P0–P3 Remediation
+
+| Change                                          | Source Document              |
+|-------------------------------------------------|------------------------------|
+| Phase 0 scaffold complete (68 files on disk)    | All D15–D24 patches applied  |
+| Trigger.dev v3→v4 platform migration (config)   | `trigger.config.ts` updated  |
+| React Email v6.6.6 + Resend v6.17.1 adopted     | D43 — `react_email_suggestion.md` |
+| TypeScript ^5.9.0 enforced across all 10 packages | D44 — was ^6.0.3 in 9 sub-packages |
+| ESLint v10→v9 downgrade (plugin compatibility)   | D45 — `eslint-plugin-react`/`import` have no v10 versions |
+| All 10 Open Questions resolved (§9)              | Sanity Cloud, Stripe Dashboard refunds, Radix Dialog, synthetic data, feature-flag rollout |
+| 45 discrepancies reconciled (D1–D45)             | `MASTER_EXECUTION_PLAN.md` §2 |
+| 10 ADRs documented (ADR-008 Better Auth, ADR-009 proxy.ts, ADR-010 Resend Native Templates proposed) | `PAD.md` §29          |
+| `AGENTS.md` created for AI agent onboarding     | Compact high-signal instructions |
+| `CLAUDE.md` updated with gotchas + troubleshooting | 10 Phase 0 gotchas documented |
+
 ### v1.0.0 (2026-07-04) — Initial Plan Release
 
 | Change                                          | Source Document              |
 |-------------------------------------------------|------------------------------|
-| Phase 0 monorepo scaffold (39 files)            | `scaffolding_files.md`       |
-| 13-phase TDD execution plan (256 files)         | `MASTER_EXECUTION_PLAN.md`   |
-| 35 source discrepancies reconciled              | `MASTER_EXECUTION_PLAN.md` §2|
+| Phase 0 monorepo scaffold plan (39 files)       | `scaffolding_files.md`       |
+| 13-phase TDD execution plan (~260 files)        | `MASTER_EXECUTION_PLAN.md`   |
 | ADR-008: Better Auth supersedes Auth.js v5      | `MASTER_EXECUTION_PLAN.md`   |
 | ADR-009: `proxy.ts` replaces `middleware.ts`    | `MASTER_EXECUTION_PLAN.md`   |
-| 7 existing ADRs preserved from PAD              | `PAD.md` §23                 |
+| 7 existing ADRs preserved from PAD              | `PAD.md` §29                 |
 
 ---
 
@@ -665,9 +690,14 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 
 | Document                                  | Purpose                                                              |
 |-------------------------------------------|----------------------------------------------------------------------|
-| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 7 ADRs)        |
-| [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (256 files, per-file checklists) |
+| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 9 ADRs)        |
+| [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions) |
+| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.3.0; 21 source skills condensed)   |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt      |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents               |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (39 files)               |
 | [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture      |
-| [`static_landing_page_html_mockup.md`](./static_landing_page_html_mockup.md) | Landing page spec + complete HTML mockup |
+| [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |
+| [`pnpm_install_fix.md`](./pnpm_install_fix.md) | pnpm v11 migration, OTEL overrides, native build unblocking     |
+| [`static_landing_page_html_mockup.md`](./static_landing_page_html_mockup.md) | Landing page spec + complete HTML mockup (UI/UX guidance only) |
 | [`docs/prompts.md`](./docs/prompts.md)    | Historical prompt log                                                |

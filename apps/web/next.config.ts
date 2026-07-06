@@ -58,7 +58,7 @@ const nextConfig: NextConfig = {
   },
 
   // ── Security Headers ───────────────────────────────────────────
-  async headers() {
+  headers() {
     return [
       {
         source: "/(.*)",
@@ -110,7 +110,7 @@ const nextConfig: NextConfig = {
   },
 
   // ── Rewrites ───────────────────────────────────────────────────
-  async rewrites() {
+  rewrites() {
     return [
       // PostHog reverse proxy (privacy-friendly analytics)
       {
@@ -125,7 +125,7 @@ const nextConfig: NextConfig = {
   },
 
   // ── Redirects ──────────────────────────────────────────────────
-  async redirects() {
+  redirects() {
     return [
       // Legacy URL support
       {

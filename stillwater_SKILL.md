@@ -7,17 +7,17 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 1.3.0
+version: 1.4.0
 project_type: nextjs-monorepo
-framework_version: "Next.js 16.2, React 19.2, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
-last_updated: 2026-07-05
+framework_version: "Next.js 16.2, React 19.2.3, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
+last_updated: 2026-07-06
 ---
 
 # Stillwater — Project Skill File
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v1.3.0 — Phase 0 (scaffold) ready; Phases 1–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo have been bumped to match §2.1.
+> **Status:** v1.4.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phases 1–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. `pnpm install` / `pnpm check-types` / `pnpm lint` all green.
 
 ---
 
@@ -149,19 +149,20 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | UI Runtime | React | `^19.2.3` | ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3; No `forwardRef` (ref as regular prop in React 19); React Compiler requires explicit opt-in via `reactCompiler: true` in `next.config.ts` (NOT default) |
 | Language | TypeScript | `^5.9.0` | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (added TS 5.0; requires `import type` for type-only imports), `erasableSyntaxOnly: true` (added TS 5.8; FORBIDS `enum`, `namespace`, and parameter properties — use string unions or Drizzle `pgEnum()`) — see §13 for pitfalls |
 | Styling | Tailwind CSS | `^4.3.0` | CSS-first `@theme` in `globals.css`; NO `tailwind.config.js` required; `@source` directives required in monorepo (see §13.6); `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) |
-| Component Lib | Radix UI + shadcn/ui | latest | Initialize with `style: "new-york"`, `baseColor: "stone"`; `--radius: 0` overrides all defaults |
+| Component Lib | Radix UI + shadcn/ui | latest | Initialize with `style: "default"`, `baseColor: "stone"`; `--radius: 0` overrides all defaults |
 | API Layer | tRPC | `^11.0.0` | 10 routers, 4 procedure tiers (public/protected/staff/owner); server caller for RSC, React Query for client |
 | ORM | Drizzle ORM | `^0.45.0` | Schema in TypeScript, no codegen; `neon-http` driver for serverless; `db.$count` requires ≥0.34; relational query API v1 (`db.query.*`) since 0.28; v2 (`defineRelations()`) requires ≥1.0.0-beta |
 | Database | PostgreSQL | 17 (Neon) | 14 tables, 8 enums, 5 critical indexes; advisory locks for booking (ADR-004) |
 | Cache / Rate Limit | Upstash Redis | latest | Per-procedure rate limiting on `bookings.book` (10/min) and auth mutations |
 | Auth | Better Auth | `^1.6.23` | Replaces Auth.js v5 (ADR-008); stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31 as of July 2026); Drizzle adapter; Google + Magic Link; session enriched with `memberId` + `roles` |
-| Background Jobs | Trigger.dev | **v4** | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. |
+| Background Jobs | Trigger.dev | **v4** | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. **⚠️ CRITICAL SDK import gotcha (D45-adjacent):** The v4 PLATFORM uses the v3 SDK API import path — `import { defineConfig } from "@trigger.dev/sdk/v3"`. The `/v4` export DOES NOT EXIST in `@trigger.dev/sdk@4.5.0` (latest npm). See §9.9 Gotcha 1 + §12 Lesson 16. |
 | Monorepo | Turborepo | `^2.10.0` | Task graph + remote caching; `@stillwater/source` custom condition; graceful shutdown + deferred input hashing (2.10+) |
 | Package Manager | pnpm | `^11.0.0` | `custom-conditions=@stillwater/source` in `.npmrc`; `pnpm-workspace.yaml` with `packages: ['.']`; pnpm 9.x is EOL — use 11.x+ |
-| CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005) |
-| Payments | Stripe | `^22.3.0` | "Dahlia" API (2026-06-24) pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward); SDK exposes snake_case to match API wire format (NOT camelCase); Subscriptions + credit packs + customer portal; idempotent webhooks (UNIQUE INDEX + `pg_advisory_xact_lock`) |
-| Email Templates | React Email | `^0.0.36` | 13 templates, single-column 600px, CAN-SPAM compliant |
-| Email Delivery | Resend | `^4.1.2` | 2,400 emails/day free tier |
+| CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005). Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed — MEP §9 Q4 resolved); config in `apps/studio/sanity.config.ts` |
+| Payments | Stripe | `^22.3.0` | "Dahlia" API (2026-06-24) pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward); SDK exposes snake_case to match API wire format (NOT camelCase); Subscriptions + credit packs + customer portal; idempotent webhooks (UNIQUE INDEX + `pg_advisory_xact_lock`). **v1 refund scope:** Stripe Dashboard only — in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved; D12 updated). |
+| Email Templates | React Email | `^6.6.6` | 13 templates, single-column 600px, CAN-SPAM compliant. ⚠️ v6.0.0 paradigm shift (April 16, 2026): all imports from `react-email` root (NOT `@react-email/components` or `@react-email/render` which are deprecated). v6 bundle is 1.8MB (514KB gzipped) — see `react_email_suggestion.md` Alternative A (Resend Native Templates) for Trigger.dev workers. Pending ADR-010 will formalize the Resend Native Templates decision. See §9.9 Gotcha 3 + §12 Lesson 18. |
+| Email Delivery | Resend | `^6.17.1` | 2,400 emails/day free tier. Supports Resend Native Templates (template ID + variables API) as zero-runtime-rendering alternative to local JSX rendering. Recommended for Trigger.dev workers to avoid 1.8MB React Email v6 bundle bloat (pending ADR-010). |
+| Linting | ESLint | `^9.39.4` | v9 flat config (`tooling/eslint/index.js`). ⚠️ Do NOT upgrade to v10 — `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` have no v10-compatible versions (latest npm versions support `^9` only). v9.39.4 is the `maintenance` dist-tag (actively receiving security/bug fixes). See §9.9 Gotcha 2 + §12 Lesson 17 + MEP D45. |
 | Observability | Sentry + PostHog + Axiom + Checkly | latest | Errors, 17 product analytics events, structured logs, uptime synthetics |
 | Deployment | Vercel + Neon | latest | Preview deploys per PR; production on `main` merge |
 | Testing | Vitest + Playwright | latest | TDD mandatory; 90% coverage on `packages/api/routers/*` |
@@ -172,13 +173,13 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | Runtime | Version | Why |
 |---------|---------|-----|
 | Node.js | `>=22.0.0` | Required for native `fetch`, ESM stability, `crypto.randomUUID` |
-| pnpm | `>=9.0.0` | Workspace protocol support; `custom-conditions` declaration |
+| pnpm | `>=11.0.0` | Workspace protocol support; `custom-conditions` declaration; pnpm 9.x is EOL |
 | Docker | latest | Local Postgres 17 + Redis 7 + Adminer via `docker-compose.yml` |
 | PostgreSQL | 17 | Matches Neon production; `pg_advisory_xact_lock` support |
 
 ### 2.3 Architecture Decision Records (ADRs)
 
-9 ADRs total (7 from PAD + 2 added in `MASTER_EXECUTION_PLAN.md`). See Appendix A for full text.
+10 ADRs total (7 from PAD + 2 added in `MASTER_EXECUTION_PLAN.md` + 1 proposed in PAD §29). See Appendix A for full text.
 
 | ADR | Decision | Status |
 |-----|----------|--------|
@@ -189,8 +190,9 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | ADR-005 | Sanity CMS for marketing content only | Accepted |
 | ADR-006 | Server-Sent Events over WebSockets for seat availability | Accepted |
 | ADR-007 | Trigger.dev v4 for background jobs over BullMQ | Accepted |
-| ADR-008 | Better Auth supersedes Auth.js v5 | Accepted (NEW) |
-| ADR-009 | `proxy.ts` replaces `middleware.ts` (Next.js 16) | Accepted (NEW) |
+| ADR-008 | Better Auth v1.6.23 supersedes Auth.js v5 | Accepted |
+| ADR-009 | `proxy.ts` replaces `middleware.ts` (Next.js 16) | Accepted |
+| ADR-010 | Resend Native Templates for Trigger.dev workers (protects CPU budgets from React Email v6 1.8MB bundle bloat) | **Proposed** (pending Phase 8 acceptance) |
 
 ---
 
@@ -199,7 +201,7 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 ### 3.1 Environment Setup
 
 ```bash
-# Prerequisites: Node.js >= 22, pnpm >= 9, Docker
+# Prerequisites: Node.js >= 22, pnpm >= 11, Docker
 
 # Clone and install (uses @stillwater/source custom condition)
 git clone https://github.com/nordeim/stillwater.git
@@ -228,7 +230,7 @@ pnpm dev
 
 | File | Purpose | Phase 0 Patch |
 |------|---------|---------------|
-| `/package.json` | Root manifest; pnpm 9.15.4, Turborepo 2.3.3 | None |
+| `/package.json` | Root manifest; pnpm 11.9.0, Turborepo 2.10.3 | None |
 | `/pnpm-workspace.yaml` | Workspace + `customConditions: ['@stillwater/source']` | D15 fix |
 | `/.npmrc` | `custom-conditions=@stillwater/source` declaration | D15 fix |
 | `/turbo.json` | Task graph; remove `"ui": "tui"` line | D24 fix |
@@ -440,8 +442,9 @@ All design tokens live in `apps/web/src/app/globals.css` via the `@theme` direct
   --leading-body:    1.65;
   --leading-caption: 1.4;
 
-  /* ── Spacing (13 tokens, 4px base, Fibonacci-influenced) ── */
+  /* ── Spacing (14 tokens, 4px base, Fibonacci-influenced) ── */
   --space-px:  1px;
+  --space-0-5: 2px;
   --space-1:   4px;
   --space-2:   8px;
   --space-3:   12px;
@@ -2052,6 +2055,78 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Symptom:** `db.select().from().where()` chain breaks.
 **Fix:** Use `resetAllMocks()` or selective `clearAllMocks()`.
 
+### 9.9 Phase 0 Implementation Gotchas (Lessons from Actual P0–P3 Work)
+
+> These are real issues encountered during Phase 0 implementation and the P0–P3 remediation pass (2026-07-06). Each has a verified root cause and fix. See also §12 Lessons 16–22 and `CLAUDE.md` §Gotchas & Troubleshooting for the full narrative versions.
+
+#### Gotcha 1: `@trigger.dev/sdk/v4` import path does not exist (Critical — D45-adjacent)
+**Symptom:** `import { defineConfig } from "@trigger.dev/sdk/v4"` fails — module not found.
+**Root cause:** `@trigger.dev/sdk@4.5.0` (latest on npm, July 2026) does NOT export a `./v4` subpath. The package `exports` field only includes `./v3`, `.`, `./ai`, `./chat`, `./chat-server`, `./chat/react`. The "v4" in PAD §17.2 / ADR-007 refers to the **Trigger.dev platform version** (v4 GA August 2025), NOT the SDK API version. The v4 platform is accessed via the v3 SDK API.
+**Fix:** Use `import { defineConfig } from "@trigger.dev/sdk/v3"` (NOT `/v4`). The `services/workers/trigger.config.ts` file has an explanatory comment. Do NOT "fix" this to `/v4` — it will break.
+**Verification:** `cat node_modules/.pnpm/@trigger.dev+sdk@*/node_modules/@trigger.dev/sdk/package.json | jq '.exports | keys'` — confirmed only `./v3` exists.
+**Cross-ref:** §12 Lesson 16, `CLAUDE.md` Gotcha 1, `AGENTS.md` Gotcha 1.
+
+#### Gotcha 2: ESLint v10 plugin incompatibility (Critical — D45)
+**Symptom:** `pnpm lint` crashes with `context.getFilename is not a function` (eslint-plugin-react) or `SourceCode.getTokenOrCommentAfter is not a function` (eslint-plugin-import).
+**Root cause:** ESLint v10 removed several APIs that `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` depend on. No v10-compatible versions of these plugins exist (they are the latest versions on npm). `eslint-plugin-react` peer dep: `^9.7` only. `eslint-plugin-import` peer dep: `^9` only.
+**Fix:** ESLint is pinned at `^9.39.4` (the `maintenance` dist-tag, actively receiving security/bug fixes) in 3 files: root `package.json`, `apps/web/package.json`, `tooling/eslint/package.json` (`@eslint/js: ^9.39.4`). Do NOT upgrade to ESLint v10 until both plugins release v10-compatible versions. Revisit Q4 2026.
+**Verification:** `npm view eslint-plugin-react peerDependencies` → `{ eslint: '^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7' }` (no v10).
+**Cross-ref:** §12 Lesson 17, `CLAUDE.md` Gotcha 2, `AGENTS.md` Gotcha 2, MEP D45.
+
+#### Gotcha 3: React Email v6 paradigm shift — `@react-email/render` deprecated (Critical — D43)
+**Symptom:** `import { render } from '@react-email/render'` — module not found or deprecated warning.
+**Root cause:** React Email v6.0.0 (released April 16, 2026) unified all component packages (`@react-email/components`, `@react-email/render`, `@react-email/button`, etc.) into a single `react-email` package. The v0.x sub-packages are deprecated. v6 bundle is 1.8MB (514KB gzipped) — pulls `prismjs`, `marked`, `tailwindcss` compiler at runtime, threatening Trigger.dev 30s CPU budgets.
+**Fix:** Import from `react-email` root: `import { render, Html, Button, Tailwind } from 'react-email'`. For Trigger.dev workers, consider Resend Native Templates (`resend.emails.send({ to, subject, templateId, variables })`) to avoid the 1.8MB bundle bloat — see `react_email_suggestion.md` Alternative A. Pending ADR-010 will formalize this decision.
+**Verification:** `packages/email/package.json` has `"react-email": "^6.6.6"` (not `^0.0.36`).
+**Cross-ref:** §12 Lesson 18, `CLAUDE.md` Gotcha 3, `AGENTS.md` Gotcha 3, MEP D43, PAD §16.3.
+
+#### Gotcha 4: TypeScript `^6.0.3` in sub-packages contradicts PAD §5.1 (High — D44)
+**Symptom:** `pnpm install` says "typescript 6.0.3 is available" but PAD says stay on 5.9.0. Sub-packages were accidentally pinned to `^6.0.3`.
+**Root cause:** TS 6.0.3 (October 2025) exists but PAD §5.1 + `pnpm_install_fix.md` explicitly mandate `^5.9.0` for compatibility with `erasableSyntaxOnly` (forbids `enum`, `namespace`, parameter properties — TS 5.8+) and `verbatimModuleSyntax` (requires `import type`). During initial package version bumping, 9 sub-package.json files were accidentally set to `^6.0.3`.
+**Fix:** All 9 sub-packages reverted to `typescript: "^5.9.0"`. The `pnpm install` output saying "6.0.3 is available" is expected — we intentionally ignore it.
+**Verification:** `rg '"typescript":\s*"\^6' --glob '**/package.json' --glob '!skills/**'` → zero matches.
+**Cross-ref:** §12 Lesson 19, `CLAUDE.md` Gotcha 4, `AGENTS.md` Gotcha 4, MEP D44.
+
+#### Gotcha 5: `pg_advisory_lock` (session-scoped) leaks under Neon PgBouncer (Critical — ADR-004 audit)
+**Symptom:** Lock leaks under Neon PgBouncer connection pooling; pool exhaustion; booking race conditions.
+**Root cause:** `pg_advisory_lock()` is session-scoped — it releases when the database session ends. Under Neon's managed PgBouncer (transaction pooling, default), sessions are returned to the pool after each transaction, so session-scoped locks may not release on the same backend.
+**Fix:** Always use `pg_advisory_xact_lock()` (transaction-scoped) — auto-releases at COMMIT/ROLLBACK. This applies to BOTH the booking flow AND the Stripe webhook idempotency handler.
+**Verification:** `rg 'pg_advisory_lock' --glob '!*.md'` should return zero matches (only `pg_advisory_xact_lock` is allowed).
+**Cross-ref:** ADR-004, PAD §7.4, `CLAUDE.md` Gotcha 5, `AGENTS.md` §Architecture.
+
+#### Gotcha 6: `proxy.ts` runs on Edge by default — NOT Node.js (High — ADR-009)
+**Symptom:** `proxy.ts` works in dev but fails in production with "Edge runtime cannot access database" or similar. The original `proxy.ts` comment said "Runs on: Node.js runtime" — that was wrong.
+**Root cause:** Next.js 16 `proxy.ts` runs on the Edge runtime by default. Calling `auth.api.getSession()` (which does DB lookup + JWT verification) breaks Edge compatibility.
+**Fix:** Use the 2-layer auth pattern (ADR-009): Layer 1 (`proxy.ts`) uses `getSessionCookie(request)` from `better-auth/cookies` — cookie-existence-only check, Edge-compatible, NO DB. Layer 2 (Server Component layouts) calls `requireAuth()` / `requireRole(...roles)` for full validation + RBAC. The `proxy.ts` comment has been corrected to "Runs on: Edge runtime by default (Next.js 16)."
+**Verification:** `rg 'auth\.api\.getSession' apps/web/proxy.ts` → zero matches (only `getSessionCookie` is allowed).
+**Cross-ref:** ADR-009, §5.6, §9.1 "auth.api.getSession() called inside proxy.ts", `CLAUDE.md` Gotcha 6, `AGENTS.md` Gotcha 5.
+
+#### Gotcha 7: `cacheComponents: true` + `force-dynamic` conflict (Medium — deferred to pre-Phase 4)
+**Symptom:** Next.js 16 build error: `force-dynamic` is incompatible with `cacheComponents`.
+**Root cause:** When `cacheComponents: true` is enabled in `next.config.ts` (§2.1 recommends this for Phase 4+), setting `export const dynamic = 'force-dynamic'` on any route handler causes a build error.
+**Fix:** Don't set `force-dynamic` on SSE or streaming route handlers — they're dynamic by default (they read `req.url` or stream). See §13.8. Note: `cacheComponents` is NOT yet enabled in Phase 0 (deferred to pre-Phase 4).
+**Cross-ref:** §13.8, `CLAUDE.md` Gotcha 7, `AGENTS.md` Gotcha 6.
+
+#### Gotcha 8: Vercel SSE timeout — 10s Hobby / 15s Pro default (Medium — Phase 5)
+**Symptom:** SSE endpoint silently terminates after 10–15 seconds on Vercel.
+**Root cause:** Vercel serverless functions have a default timeout (10s Hobby, 15s Pro) that terminates long-running streams. As of June 2026, Vercel allows up to 30 minutes (1800s) on Pro/Enterprise, but this requires BOTH `maxDuration` AND enabling Fluid Compute in project settings.
+**Fix:** Phase 5 F5-01 (`/api/schedule/stream/route.ts`) must set `export const maxDuration = 300` (5 min) AND the Vercel project must have Fluid Compute enabled.
+**Cross-ref:** PAD §13.2, audit report A, `CLAUDE.md` Gotcha 8.
+
+#### Gotcha 9: shadcn/ui `style` field — `"default"` not `"new-york"` (Low — resolved)
+**Symptom:** Confusion about whether shadcn `components.json` should have `"style": "new-york"` or `"style": "default"`.
+**Root cause:** §2.1 previously said `"new-york"` but §3.2 table said `"default"`. The actual `apps/web/components.json` file has `"style": "default"`.
+**Fix:** Use `"style": "default"` (§2.1 has been corrected). The `new-york` style was a stale reference from an earlier draft.
+**Verification:** `cat apps/web/components.json | jq '.style'` → `"default"`.
+**Cross-ref:** `CLAUDE.md` Gotcha 9.
+
+#### Gotcha 10: Stripe API version — Dahlia (2026-06-24) not Acacia (2024-12-18) (High — resolved)
+**Symptom:** Stripe SDK v22 expects `apiVersion: '2026-06-24.dahlia'` but code had `'2024-12-18.acacia'`.
+**Root cause:** Stripe SDK v22.3.0 pins the "Dahlia" API (2026-06-24). The `current_period_end` field moved from the subscription object to `items.data[0].current_period_end`. SDK exposes snake_case (NOT camelCase).
+**Fix:** §15.6 code example updated to `apiVersion: '2026-06-24.dahlia'`. Always use snake_case field names (`current_period_end`, not `currentPeriodEnd`).
+**Verification:** `rg "apiVersion" --glob '!*.md'` → should show `'2026-06-24.dahlia'`.
+**Cross-ref:** §15.6, `CLAUDE.md` Gotcha 10.
+
 ---
 
 ## §10. Debugging Guide
@@ -2662,15 +2737,15 @@ CI should never have production secrets. Use separate secrets for CI testing.
 
 ## §12. Lessons Learnt & How to Avoid Them
 
-> **Note:** The lessons below are distilled from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and the 35 reconciled discrepancies in `MASTER_EXECUTION_PLAN.md`. As Phases 0–12 are executed, this section will be updated with concrete lessons from actual bugs encountered. The 21 cited source skills are: `nextjs16-tailwind4`, `nextjs16-react19-tailwind4-full-stack`, `nextjs16-react19-next-auth5-drizzle-orm`, `nextjs16-react19-postgres17`, `nextjs16-react19-tailwind4-auth5-video-gen`, `nextjs-react-expert`, `tailwind-patterns`, `avant-garde-design-v4`, `aesthetic`, `visual-design-foundations`, `frontend-design`, `tdd-workflow`, `test-driven-development`, `code-quality-standards`, `verification-and-review-protocol`, `debugging-and-error-recovery`, `ci-cd-and-automation`, `security-and-hardening`, `vulnerability-scanner`, `webapp-testing-journey`, `to-distill-project-into-skill`.
+> **Note:** The lessons below are distilled from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and the 45 reconciled discrepancies in `MASTER_EXECUTION_PLAN.md` (D1–D45). Lessons 1–15 are from the initial distillation; Lessons 16–22 are from actual Phase 0 implementation and the P0–P3 remediation pass (2026-07-06). The 21 cited source skills are: `nextjs16-tailwind4`, `nextjs16-react19-tailwind4-full-stack`, `nextjs16-react19-next-auth5-drizzle-orm`, `nextjs16-react19-postgres17`, `nextjs16-react19-tailwind4-auth5-video-gen`, `nextjs-react-expert`, `tailwind-patterns`, `avant-garde-design-v4`, `aesthetic`, `visual-design-foundations`, `frontend-design`, `tdd-workflow`, `test-driven-development`, `code-quality-standards`, `verification-and-review-protocol`, `debugging-and-error-recovery`, `ci-cd-and-automation`, `security-and-hardening`, `vulnerability-scanner`, `webapp-testing-journey`, `to-distill-project-into-skill`.
 
 ### Lesson 1: Source documents disagree — always reconcile before implementing
 
-**Context:** The 4 source documents (design.md, PAD.md, scaffolding_files.md, mockup) disagree in 35 places. Examples: Auth.js v5 vs Better Auth, `middleware.ts` vs `proxy.ts`, 11 vs 7 worker files, 13 vs 8 email templates, mockup `--sp-N` vs PAD `--space-N` spacing.
+**Context:** The 4 source documents (design.md, PAD.md, scaffolding_files.md, mockup) disagree in 45 places (D1–D45). Examples: Auth.js v5 vs Better Auth, `middleware.ts` vs `proxy.ts`, 11 vs 7 worker files, 13 vs 8 email templates, mockup `--sp-N` vs PAD `--space-N` spacing, React Email v6 paradigm shift, TypeScript version drift, ESLint v10 incompatibility.
 
-**What to do differently:** Before implementing any phase, read `MASTER_EXECUTION_PLAN.md` §2 (Critical Discrepancies & Canonical Resolutions). Every discrepancy has a canonical resolution with a "D" prefix (D1–D35). Defer to the canonical resolution, not the source document.
+**What to do differently:** Before implementing any phase, read `MASTER_EXECUTION_PLAN.md` §2 (Critical Discrepancies & Canonical Resolutions). Every discrepancy has a canonical resolution with a "D" prefix (D1–D45). Defer to the canonical resolution, not the source document.
 
-**Fix references:** D1–D35 in `MASTER_EXECUTION_PLAN.md` §2.
+**Fix references:** D1–D45 in `MASTER_EXECUTION_PLAN.md` §2.
 
 ### Lesson 2: Phase 0 patches are non-negotiable
 
@@ -2835,6 +2910,101 @@ Skip any step = lying, not verifying.
 Document this cycle in the PR.
 
 **Fix references:** §11.5 of this SKILL.md, Skill `verification-before-completion.md`.
+
+### Lesson 16: Trigger.dev v4 platform uses v3 SDK API — `@trigger.dev/sdk/v4` does not exist
+
+**Context:** PAD §17.2 and ADR-007 specify "Trigger.dev v4" — this refers to the **platform version** (v4 reached GA August 2025; v3 deploys stop working April 1, 2026). However, the npm package `@trigger.dev/sdk@4.5.0` (latest, July 2026) only exports a `./v3` subpath. There is NO `./v4` export. The "v3" in the import path refers to the **SDK API version**, not the platform version.
+
+During Phase 0, the `services/workers/trigger.config.ts` was initially changed from `@trigger.dev/sdk/v3` to `@trigger.dev/sdk/v4` based on a literal reading of "Trigger.dev v4" in the specs. This broke the import — the v4 export doesn't exist. The fix was to revert to `@trigger.dev/sdk/v3` with an explanatory comment.
+
+**What to do differently:** When a spec says "use Trigger.dev v4", verify the actual npm package exports before changing import paths. Use `npm view @trigger.dev/sdk exports` or inspect `node_modules/.pnpm/@trigger.dev+sdk@*/node_modules/@trigger.dev/sdk/package.json`. The v4 platform is accessed via the v3 SDK API.
+
+**Fix references:** §9.9 Gotcha 1, `CLAUDE.md` Gotcha 1, `AGENTS.md` Gotcha 1, `services/workers/trigger.config.ts` comment (lines 21-25).
+
+### Lesson 17: ESLint v10 is too new for the plugin ecosystem — stay on v9.39.4
+
+**Context:** During Phase 0, `pnpm lint` crashed with `context.getFilename is not a function` (from `eslint-plugin-react@7.37.5`) and `SourceCode.getTokenOrCommentAfter is not a function` (from `eslint-plugin-import@2.32.0`). These are the LATEST versions of these plugins on npm. The root cause: ESLint v10 removed several internal APIs that these plugins depend on, and no v10-compatible versions exist.
+
+The investigation revealed:
+- `eslint-plugin-react@7.37.5` peer dep: `eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7` — NO v10
+- `eslint-plugin-import@2.32.0` peer dep: `eslint: ^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9` — NO v10
+- `eslint-plugin-react-hooks@7.1.1` — supports v10 ✅
+- `eslint-plugin-tailwindcss@4.0.6` — supports v10 ✅
+- `typescript-eslint@8.62.1` — supports v10 ✅
+
+The shared ESLint config uses zero v10-specific APIs, so downgrading to v9 was safe.
+
+**What to do differently:** Before upgrading ESLint to a new major version, check ALL plugin peer dependencies: `npm view <plugin> peerDependencies`. If any plugin doesn't support the new version, do NOT upgrade. ESLint v9.39.4 is the `maintenance` dist-tag (actively receiving security/bug fixes) — it's safe to stay on. Revisit ESLint v10 when `eslint-plugin-react` and `eslint-plugin-import` release v10-compatible versions.
+
+**Fix references:** §9.9 Gotcha 2, `CLAUDE.md` Gotcha 2, `AGENTS.md` Gotcha 2, MEP D45. Pinned in 3 files: root `package.json`, `apps/web/package.json`, `tooling/eslint/package.json`.
+
+### Lesson 18: React Email v6 unified all imports — `@react-email/render` is deprecated
+
+**Context:** React Email v6.0.0 (released April 16, 2026) unified all component packages (`@react-email/components`, `@react-email/render`, `@react-email/button`, `@react-email/html`, etc.) into a single `react-email` package. The v0.x sub-packages are deprecated. The MEP F8-29 `send.ts` code block originally specified `import { render } from '@react-email/render'` — this would fail at runtime in v6.
+
+Additionally, v6 bundle is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (markdown parser), and the full `tailwindcss` compiler into runtime bundles via top-level imports. This threatens Trigger.dev worker CPU budgets (30s for `booking-confirmation`, 30s for `waitlist-promotion`).
+
+The user had already bumped `packages/email/package.json` to `react-email: ^6.6.6`, but PAD.md and SKILL.md still pinned `^0.0.36`. The `react_email_suggestion.md` document (which none of the 3 core specs cited) documented this paradigm shift and recommended Alternative A (Resend Native Templates) to avoid the bundle bloat.
+
+**What to do differently:** When a library undergoes a major version unification (like React Email v6), update ALL documentation immediately — not just the package.json. Check for ecosystem discovery docs (`react_email_suggestion.md`) that may have been written post-hoc. For Trigger.dev workers, prefer Resend Native Templates (`resend.emails.send({ to, subject, templateId, variables })`) over local JSX rendering to protect CPU budgets. Pending ADR-010 will formalize this.
+
+**Fix references:** §9.9 Gotcha 3, `CLAUDE.md` Gotcha 3, `AGENTS.md` Gotcha 3, MEP D43, PAD §16.3, `react_email_suggestion.md`.
+
+### Lesson 19: TypeScript version drift across monorepo packages — always verify ALL package.json files
+
+**Context:** During the initial package version bumping, the root `package.json` was correctly pinned to `typescript: ^5.9.0` (per PAD §5.1 + `pnpm_install_fix.md`). However, 9 sub-package.json files were accidentally set to `typescript: ^6.0.3` — the latest available version. This created version drift across the monorepo.
+
+PAD §5.1 and `pnpm_install_fix.md` explicitly mandate `^5.9.0` for compatibility with:
+- `erasableSyntaxOnly` (TS 5.8+) — forbids `enum`, `namespace`, parameter properties
+- `verbatimModuleSyntax` (TS 5.0+) — requires `import type` for type-only imports
+
+The `pnpm install` output saying "typescript 6.0.3 is available" is expected — we intentionally ignore it.
+
+**What to do differently:** When bumping package versions, use `rg '"<package>":\s*"' --glob '**/package.json'` to find ALL occurrences across the monorepo — not just the root. Verify consistency before committing. The root `package.json` is not the only source of truth; sub-packages can override.
+
+**Fix references:** §9.9 Gotcha 4, `CLAUDE.md` Gotcha 4, `AGENTS.md` Gotcha 4, MEP D44, `pnpm_install_fix.md`. All 9 sub-packages now pin `^5.9.0`.
+
+### Lesson 20: `pg_advisory_lock` (session-scoped) vs `pg_advisory_xact_lock` (transaction-scoped) — Neon PgBouncer decides
+
+**Context:** ADR-004 specifies PostgreSQL advisory locks for booking concurrency. The original draft used `pg_advisory_lock()` (session-scoped). However, under Neon's managed PgBouncer (transaction pooling, default), session-scoped locks are NOT guaranteed to release on the same backend — they release when the database session ends, which may be different from the transaction end under connection pooling. This causes lock leaks and pool exhaustion.
+
+The audit reports (`PAD_audit_report-1.md` §"Advisory Lock Inconsistency" + `PAD_audit_report-2.md` §B) caught this. The fix: use `pg_advisory_xact_lock()` (transaction-scoped) — auto-releases at COMMIT/ROLLBACK, regardless of connection pooling.
+
+**What to do differently:** When choosing between session-scoped and transaction-scoped PostgreSQL advisory locks, always check the connection pooling strategy. Under PgBouncer transaction pooling (Neon's default), ALWAYS use `pg_advisory_xact_lock()`. This applies to BOTH the booking flow AND the Stripe webhook idempotency handler.
+
+**Fix references:** §9.9 Gotcha 5, ADR-004, PAD §7.4, `CLAUDE.md` Gotcha 5, `AGENTS.md` §Architecture, `PAD_audit_report-1.md` §"Advisory Lock Inconsistency".
+
+### Lesson 21: All 10 Open Questions in MEP §9 are resolved — decisions locked
+
+**Context:** MEP §9 originally had 10 open questions requiring project-owner sign-off. During the P3 remediation pass (2026-07-06), all 10 were resolved with documented decisions:
+
+1. Better Auth vs Auth.js → Better Auth v1.6.23 (resolved prior)
+2. `proxy.ts` rename → Adopted (resolved prior)
+3. Self-hosted fonts → JetBrains Mono (resolved prior)
+4. **Sanity hosting → Sanity Cloud** (`stillwater.sanity.studio`) — ADR-005 "marketing content only"; PAD §2.3 "no infra management"; free for small teams
+5. **Stripe refund workflow → Stripe Dashboard for v1** — staff already have Dashboard access; in-app refunds add complexity unjustified for single-studio v1; D12 scope reduced
+6. **Mobile nav drawer → Radix Dialog** (D32 default) — SKILL.md §5.4 library discipline; built-in focus trap + Escape + `aria-modal` for WCAG AAA
+7. Berkeley Mono license → JetBrains Mono (resolved prior)
+8. **Refund workflow scope → Defer in-app to v2** (merged with Q5) — saves ~2 engineering days in Phase 7
+9. **Test data PII → Synthetic data only** — `crypto.randomUUID()` for all IDs; factory pattern; GDPR/CCPA compliance; Phase 1 fixtures use `member1@stillwater.test`, `+1-555-0100`
+10. **Production cutover → Feature-flag-gated progressive rollout** (5% → 25% → 100%) — PostHog feature flags already in stack; instant rollback without redeploy; each stage requires 48h green metrics
+
+**What to do differently:** When implementing phases, refer to MEP §9 for the locked decisions. Do NOT re-litigate these questions. The decisions are documented with rationale and action items in MEP §9.
+
+**Fix references:** MEP §9 (all 10 questions marked ✅ RESOLVED), this SKILL.md §2.1 (Sanity Cloud, Stripe refund scope), §14 (synthetic test data, feature-flag rollout).
+
+### Lesson 22: Phase 0 is complete — `pnpm install` / `check-types` / `lint` all green
+
+**Context:** Phase 0 (Monorepo Scaffold + Tooling + Docker + Phase 0 Fixes) is officially complete as of 2026-07-06. All 10 D15–D24 patches are applied and verified. The 2-layer auth pattern (F2-13, technically a Phase 2 patch) was correctly applied early. The Phase 0 Definition of Done smoke test passes:
+- `pnpm install` → exit 0; 984+ lockfile entries; supply chain guardrails passed; native builds compiled (sharp, esbuild, @sentry/cli)
+- `pnpm check-types` → only expected TS18003 "No inputs found" errors (empty `src/` dirs); zero "Cannot find module" errors
+- `pnpm lint` → 2/2 tasks successful, zero errors, ALL rules active (React + import/order + TS + Next + Tailwind)
+
+The discrepancy catalog now has 45 entries (D1–D45), all resolved or tracked. The documentation suite (CLAUDE.md, AGENTS.md, README.md, PAD.md, SKILL.md, MEP.md) is fully aligned.
+
+**What to do differently:** Phase 1 (Database Schema, Drizzle Migrations, Seed Data — F1-01 through F1-21, estimated 3 days) can begin. Follow TDD (RED → GREEN → REFACTOR → COMMIT). Use synthetic data only per Q9 resolution. The foundation is stable; all architectural decisions are locked; all gotchas are documented for future agents.
+
+**Fix references:** MEP §6 Phase 0 (acceptance criteria), this SKILL.md §2.1 (version pins), §9.9 (gotchas), §12 (lessons), `CLAUDE.md` (full agent briefing), `AGENTS.md` (compact instructions).
 
 ---
 
@@ -3002,20 +3172,32 @@ Document this cycle in the PR.
 - **Don't forget `aria-label` on icon-only buttons** — screen readers need context.
 - **Don't use `tabindex={1+}`** — positive tabindex breaks tab order. Use `tabindex={0}` or `{-1}`.
 
-### 13.13 Stillwater-Specific Pitfalls (from MASTER_EXECUTION_PLAN.md discrepancies)
+### 13.13 Stillwater-Specific Pitfalls (from MASTER_EXECUTION_PLAN.md discrepancies D1–D45)
 
-- **Don't use mockup `--sp-N` spacing tokens** — use PAD's `--space-N` (off-by-one from index 5).
-- **Don't use mockup `--dur-*` duration tokens** — use PAD's `--duration-*`.
-- **Don't use mockup type scale inline `clamp()`** — adopt PAD `--text-*` tokens.
-- **Don't hardcode beginner badge colors** — use PAD `--color-success` family.
-- **Don't use Google Fonts CDN in production** — self-host.
-- **Don't use Auth.js v5 patterns** — Better Auth 1.6.23 (ADR-008).
-- **Don't use `middleware.ts` filename** — `proxy.ts` (ADR-009).
-- **Don't trust scaffolding `next.config.ts` `experimental.serverComponentsExternalPackages`** — move to top-level.
-- **Don't trust scaffolding `apps/web/package.json` `lint` script** — `next lint` is deprecated.
-- **Don't forget `@stillwater/source` declaration** — both `.npmrc` and `pnpm-workspace.yaml`.
-- **Don't forget `infrastructure/postgres/init/00-create-extensions.sql`** — docker-compose volume mount.
+**D15–D24 (Phase 0 scaffolding patches — all applied ✅):**
+- **Don't use mockup `--sp-N` spacing tokens** — use PAD's `--space-N` (off-by-one from index 5; D26).
+- **Don't use mockup `--dur-*` duration tokens** — use PAD's `--duration-*` (D27).
+- **Don't use mockup type scale inline `clamp()`** — adopt PAD `--text-*` tokens (D28).
+- **Don't hardcode beginner badge colors** — use PAD `--color-success` family (D29).
+- **Don't use Google Fonts CDN in production** — self-host (D34).
+- **Don't use Auth.js v5 patterns** — Better Auth 1.6.23 (ADR-008; D1, D37–D40).
+- **Don't use `middleware.ts` filename** — `proxy.ts` (ADR-009; D2, D36).
+- **Don't trust scaffolding `next.config.ts` `experimental.serverComponentsExternalPackages`** — move to top-level `serverExternalPackages` (D21).
+- **Don't trust scaffolding `apps/web/package.json` `lint` script** — `next lint` is deprecated; use `eslint .` (D23).
+- **Don't forget `@stillwater/source` declaration** — both `.npmrc` and `pnpm-workspace.yaml` (D15).
+- **Don't forget `infrastructure/postgres/init/00-create-extensions.sql`** — docker-compose volume mount (D18).
 - **Don't forget `packages/config/src/env.ts`** — t3-env Zod schema (CRITICAL — every package imports this).
+
+**D43–D45 (P0–P3 remediation discoveries — all resolved ✅):**
+- **Don't import `@trigger.dev/sdk/v4`** — the `/v4` export DOES NOT EXIST in `@trigger.dev/sdk@4.5.0` (latest npm). The v4 PLATFORM uses the v3 SDK API: `import { defineConfig } from "@trigger.dev/sdk/v3"`. See §9.9 Gotcha 1, §12 Lesson 16.
+- **Don't import `render` from `@react-email/render`** — deprecated in React Email v6.0.0 (April 16, 2026). Import from `react-email` root: `import { render } from 'react-email'`. See §9.9 Gotcha 3, §12 Lesson 18, D43.
+- **Don't upgrade ESLint to v10** — `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` have no v10-compatible versions (latest npm versions support `^9` only). Stay on `eslint@^9.39.4` (`maintenance` dist-tag). See §9.9 Gotcha 2, §12 Lesson 17, D45.
+- **Don't pin `typescript: ^6.0.3` in sub-packages** — PAD §5.1 mandates `^5.9.0` for `erasableSyntaxOnly` + `verbatimModuleSyntax` compatibility. The "6.0.3 is available" pnpm warning is expected — ignore it. See §9.9 Gotcha 4, §12 Lesson 19, D44.
+- **Don't use `pg_advisory_lock()` (session-scoped)** — leaks under Neon PgBouncer transaction pooling. Always use `pg_advisory_xact_lock()` (transaction-scoped). See §9.9 Gotcha 5, §12 Lesson 20, ADR-004.
+- **Don't call `auth.api.getSession()` inside `proxy.ts`** — proxy.ts runs on Edge runtime by default (Next.js 16). Use `getSessionCookie()` (cookie-only). See §9.9 Gotcha 6, ADR-009, §5.6.
+- **Don't set `export const dynamic = 'force-dynamic'` when `cacheComponents: true` is enabled** — incompatible; causes build error. SSE/streaming routes are dynamic by default. See §9.9 Gotcha 7, §13.8.
+- **Don't use Stripe `apiVersion: '2024-12-18.acacia'`** — SDK v22.3.0 pins "Dahlia" API (2026-06-24). Use `apiVersion: '2026-06-24.dahlia'`. SDK uses snake_case (`current_period_end`, not `currentPeriodEnd`). See §9.9 Gotcha 10, §15.6.
+- **Don't use shadcn `style: "new-york"`** — the actual `apps/web/components.json` has `"style": "default"`. See §9.9 Gotcha 9.
 
 ---
 
@@ -3587,7 +3769,7 @@ export function getStripe(): Stripe | null {
   if (!key || key.includes('placeholder')) return null;
   if (!stripeClient) {
     stripeClient = new Stripe(key, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2026-06-24.dahlia',
       typescript: true,
     });
   }
@@ -4863,9 +5045,18 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Status:** Accepted (NEW — 2026-07-04)
 - **Context:** Next.js 16 renamed `middleware.ts` to `proxy.ts`; exported function must be named `proxy`
 - **Decision:** Use `apps/web/proxy.ts` (not `middleware.ts`)
-- **Rationale:** Next.js 16 network-boundary clarification; official rename
-- **Trade-offs:** PAD.md still references `middleware.ts` — must be updated
-- **Source:** `scaffolding_files.md` preamble; Next.js 16 blog post
+- **Rationale:** Next.js 16 network-boundary clarification; official rename. `proxy.ts` runs on Edge runtime by default — cookie-existence-only check via `getSessionCookie()` is Edge-compatible (no DB access). Full session validation requires Node.js runtime and belongs in Server Component layouts.
+- **Trade-offs:** All documentation referencing `middleware.ts` has been updated (PAD.md, SKILL.md, MEP.md all now reference `proxy.ts`). The 2-layer auth pattern requires RBAC enforcement at layout boundaries — more files but better separation of concerns.
+- **Source:** `scaffolding_files.md` preamble; Next.js 16 blog post (`https://nextjs.org/blog/next-16#proxy`); `guide_auth-v5_vs_better-auth.md` §Route Protection Pattern Changes
+
+### ADR-010: Resend Native Templates for Trigger.dev Workers (Proposed)
+- **Status:** Proposed (NEW — 2026-07-06; pending formal acceptance before Phase 8 implementation)
+- **Context:** React Email v6.0.0 (released April 16, 2026) unified all component packages into a single `react-email` package. The v6 bundle is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (markdown parser), and the full `tailwindcss` compiler into runtime bundles. Trigger.dev workers (ADR-007, PAD §17.1) have strict CPU budgets: 30s for `booking-confirmation`, 30s for `waitlist-promotion`, 120s for `weekly-digest`. Importing the 1.8MB package on every serverless cold start risks exhausting the CPU budget.
+- **Decision (Proposed):** Adopt Resend Native Templates (Alternative A from `react_email_suggestion.md`) for all Trigger.dev worker email sending. Workers send a JSON payload (`templateId` + `variables`) to Resend's API; Resend's infrastructure handles HTML rendering and delivery. For Next.js Server Component email sending (rare), local JSX rendering via `import { render } from 'react-email'` (v6 unified import) is acceptable.
+- **Rationale:** Protects Trigger.dev CPU budgets from 1.8MB bundle bloat; leverages Resend's global edge network for HTML rendering; maintains React Email JSX templates in the monorepo for type safety and preview server; aligns with PAD §2.3 "no infrastructure management".
+- **Trade-offs:** Requires managing template deployment to Resend (CI/CD script); template changes require a Resend deploy in addition to code deploy; loses some runtime flexibility.
+- **Rejected:** Local JSX rendering in workers (risks CPU budget exhaustion); MJML (loses React composition; unnecessary migration cost); Isolated rendering microservice (adds infra complexity).
+- **Source:** `react_email_suggestion.md` §5 Alternative A; MEP D43; PAD §16.3 Email Rendering Strategy; PAD §29 ADR-010
 
 ---
 
@@ -4921,23 +5112,41 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 ## Appendix C: Audit History
 
+### v1.4.0 (2026-07-06) — Phase 0 Complete + P0–P3 Remediation
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| Trigger.dev SDK import path: `@trigger.dev/sdk/v4` does not exist | Critical | Resolved — reverted to `/v3` (v4 platform uses v3 SDK API). D45-adjacent. See §9.9 Gotcha 1, §12 Lesson 16. |
+| ESLint v10 crashes: `eslint-plugin-react` + `eslint-plugin-import` have no v10 versions | Critical | Resolved — downgraded ESLint from `^10.6.0` → `^9.39.4` in 3 files. D45. See §9.9 Gotcha 2, §12 Lesson 17. |
+| React Email v6 paradigm shift: `@react-email/render` deprecated | Critical | Resolved — PAD.md + SKILL.md updated to `^6.6.6`; MEP F8-29 import changed to `react-email` root. D43. See §9.9 Gotcha 3, §12 Lesson 18. |
+| TypeScript `^6.0.3` drift in 9 sub-packages | High | Resolved — all 9 reverted to `^5.9.0`. D44. See §9.9 Gotcha 4, §12 Lesson 19. |
+| `pg_advisory_lock` (session-scoped) leaks under Neon PgBouncer | Critical | Resolved — all locks use `pg_advisory_xact_lock` (transaction-scoped). ADR-004 audit. See §9.9 Gotcha 5, §12 Lesson 20. |
+| `proxy.ts` comment said "Node.js runtime" (actually Edge by default) | Medium | Resolved — comment corrected to "Edge runtime by default". ADR-009. See §9.9 Gotcha 6. |
+| shadcn `style` conflict: `"new-york"` vs `"default"` | Low | Resolved — §2.1 corrected to `"default"` (matches `components.json`). See §9.9 Gotcha 9. |
+| Stripe API version: `acacia` → `dahlia` in §15.6 code example | High | Resolved — updated to `apiVersion: '2026-06-24.dahlia'`. See §9.9 Gotcha 10. |
+| All 10 MEP §9 Open Questions unresolved | High | ✅ All 10 resolved — Sanity Cloud, Stripe Dashboard refunds, Radix Dialog, synthetic data, feature-flag rollout. See §12 Lesson 21. |
+| Phase 0 smoke test not yet run | High | ✅ PASS — `pnpm install` / `pnpm check-types` / `pnpm lint` all green. See §12 Lesson 22. |
+| ADR-010 (Resend Native Templates) not yet documented | Medium | ✅ Added as Proposed in PAD §29 + SKILL.md Appendix A. Pending Phase 8 acceptance. |
+| Discrepancy count: 35 → 45 (D43, D44, D45 added) | Medium | ✅ All 45 discrepancies reconciled in MEP §2. |
+| Documentation suite not aligned | High | ✅ CLAUDE.md, AGENTS.md, README.md, PAD.md, SKILL.md, MEP.md all updated and cross-checked. |
+
+**Next audit:** After Phase 1 (Database Schema, Drizzle Migrations, Seed Data) completes.
+
 ### v1.0.0 (2026-07-04) — Initial Plan Release
 
 | Finding | Severity | Status |
 |---------|----------|--------|
-| 35 discrepancies between source documents | High | All resolved in `MASTER_EXECUTION_PLAN.md` §2 (D1–D35) |
-| Phase 0 scaffolding has 10 bugs that break `pnpm install` | High | All documented with patches (D15–D24) |
+| 35 discrepancies between source documents | High | All resolved in `MASTER_EXECUTION_PLAN.md` §2 (D1–D35; now D1–D45 after v1.4.0 additions) |
+| Phase 0 scaffolding has 10 bugs that break `pnpm install` | High | All documented with patches (D15–D24) — ✅ all applied in v1.4.0 |
 | Auth.js v5 deprecated in favor of Better Auth | Medium | ADR-008 added; validated against `guide_auth-v5_vs_better-auth.md` (July 2026) — Better Auth 1.6.23 stable, Auth.js v5 still beta at 5.0.0-beta.31 |
-| proxy.ts doing full `auth.api.getSession()` (scaffolded pattern) | High | Refactored to 2-layer pattern: `getSessionCookie()` in proxy + `requireAuth()`/`requireRole()` in layouts (per guide G2) |
+| proxy.ts doing full `auth.api.getSession()` (scaffolded pattern) | High | Refactored to 2-layer pattern: `getSessionCookie()` in proxy + `requireAuth()`/`requireRole()` in layouts (per guide G2) — ✅ applied early in v1.4.0 |
 | `middleware.ts` renamed to `proxy.ts` in Next.js 16 | Medium | ADR-009 added |
-| Mockup has 10 accessibility bugs | Medium | All documented (D29–D35) |
-| Mockup uses Google Fonts CDN | Low | Self-hosting mandated in Phase 12 port |
+| Mockup has 10 accessibility bugs | Medium | All documented (D29–D35) — to be fixed in Phase 12 port |
+| Mockup uses Google Fonts CDN | Low | Self-hosting mandated in Phase 12 port — ✅ fonts already in `packages/ui/src/fonts/` |
 | 5 worker files missing from scaffolding tree | Medium | All 11 files documented in Phase 8 |
 | 5 email templates missing from scaffolding tree | Medium | All 13 files documented in Phase 8 |
-| `members.stripeCustomerId` column missing from schema | High | Added in Phase 1 (D6) |
-| Refund workflow undefined in PAD | Medium | Added `paymentsRouter.refund` in Phase 7 (D12) |
-
-**Next audit:** After Phase 0 implementation completes.
+| `members.stripeCustomerId` column missing from schema | High | Added in Phase 1 (D6) — pending Phase 1 implementation |
+| Refund workflow undefined in PAD | Medium | D12 updated in v1.4.0: v1 uses Stripe Dashboard only; in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved) |
 
 ---
 

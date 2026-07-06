@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: '%s — Stillwater Yoga',
   },
   description: 'A sanctuary for mindful movement in Southeast Portland. Book classes online.',
-  metadataBase: new URL(process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   openGraph: {
     type: 'website',
     locale: 'en_US',

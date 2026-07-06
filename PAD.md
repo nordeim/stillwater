@@ -5,7 +5,7 @@
 The user has given explicit approval to proceed ("awesome meticulous job, keep up the good work"), treating the prior architecture review as the VALIDATE checkpoint. This task is a **pure documentation artifact** — no code risk, maximum value. I will now produce the **definitive Project Architecture Document** for Stillwater, designed to serve as the single source of truth for the entire engineering lifecycle: onboarding, implementation, code review, and long-term maintenance.
 
 **What I will deliver:**
-A production-grade `Project_Architecture_Document.md` that is:
+A production-grade `PAD.md` (Project Architecture Document) that is:
 - Exhaustive without being verbose — every section earns its presence
 - Visually structured with Mermaid diagrams, tables, and decision records
 - Actionable — engineers can open this and immediately understand what to build and why
@@ -85,7 +85,7 @@ Now — implementing the full document:
 
 - All **structural** changes (new service, new data entity, new integration) **require a PAD update** before merging the implementing PR.
 - All **architectural decisions** must be logged in [Section 29: ADRs](#29-architecture-decision-records).
-- This document lives at the repository root: `/Project_Architecture_Document.md`.
+- This document lives at the repository root: `/PAD.md`.
 - Diagrams are written in Mermaid and render natively in GitHub and most modern IDEs.
 
 ---
@@ -356,8 +356,8 @@ sequenceDiagram
 | **Background Jobs** | Trigger.dev | **v4** | Durable execution, retries, scheduling, excellent DX. **v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025.** | Inngest (similar but fewer features), BullMQ (self-hosted complexity) |
 | **CMS** | Sanity | v3 | GROQ queries, real-time collaborative editing, webhook-driven ISR | Contentful (expensive), Payload CMS (self-hosted complexity) |
 | **Payments** | Stripe | `^22.3.0` | Industry standard, Billing API, webhooks, tax support. ⚠️ **"Dahlia" API (2026-06-24)** pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward). SDK exposes **snake_case** to match API wire format (NOT camelCase — use `current_period_end`, not `currentPeriodEnd`). | Paddle (US restrictions), Braintree (complex) |
-| **Email Templates** | React Email | `^0.0.36` | JSX email templates, preview server, TypeScript | MJML (XML, not TypeScript), Handlebars (no type safety) |
-| **Email Delivery** | Resend | `^4.1.2` | Built for developers, React Email native integration, generous free tier | SendGrid (complex API), Postmark (no React Email native) |
+| **Email Templates** | React Email | `^6.6.6` | JSX email templates, unified package (v6.0.0 paradigm shift April 16, 2026 — `@react-email/components` and `@react-email/render` deprecated, all imports from `react-email` root). ⚠️ v6 bundle is 1.8MB (514KB gzipped) — pulls `prismjs`, `marked`, `tailwindcss` compiler at runtime. See `react_email_suggestion.md` Alternative A (Resend Native Templates) to protect Trigger.dev CPU budgets. | MJML (XML, not TypeScript), Handlebars (no type safety) |
+| **Email Delivery** | Resend | `^6.17.1` | Built for developers, React Email native integration, generous free tier (2,400 emails/day). Supports Resend Native Templates (template ID + variables API) as zero-runtime-rendering alternative to local JSX rendering — recommended for Trigger.dev workers to avoid 1.8MB React Email v6 bundle bloat. | SendGrid (complex API), Postmark (no React Email native) |
 | **Monorepo** | Turborepo | `^2.10.0` | Incremental builds, task caching, excellent pnpm support; graceful shutdown + deferred input hashing (2.10+) | Nx (heavier), Lerna (legacy) |
 | **Package Manager** | pnpm | `^11.0.0` | Workspace support, fast, disk-efficient. `custom-conditions=@stillwater/source` in `.npmrc`. pnpm 9.x is EOL — use 11.x+. | npm (slow workspaces), yarn (inconsistent behavior) |
 | **Testing: Unit/Integration** | Vitest | latest | Fast, ESM native, compatible with Vite ecosystem | Jest (slower, ESM friction) |
@@ -368,6 +368,7 @@ sequenceDiagram
 | **Deployment** | Vercel | latest | Zero-config Next.js, edge network, preview deployments | Fly.io (more config), Railway (less edge) |
 | **Image CDN** | Cloudflare Images | latest | Transforms on-the-fly, R2 storage, global CDN | Cloudinary (cost), imgix (cost) |
 | **Uptime Monitoring** | Checkly | latest | Synthetic monitoring, E2E checks in production | Pingdom (no E2E), Better Uptime |
+| **Linting** | ESLint | `^9.39.4` | v9 flat config (`tooling/eslint/index.js`). ⚠️ Do NOT upgrade to v10 — `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` have no v10-compatible versions (see MEP D45). v9.39.4 is the `maintenance` dist-tag (actively receiving security/bug fixes). | ESLint v10 (plugin ecosystem hasn't caught up); Biome (less mature plugin ecosystem) |
 
 ### 5.2 Node.js & Runtime Versions
 
@@ -638,6 +639,10 @@ stillwater/                              # Repository root
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── CODEOWNERS
 │
+├── infrastructure/
+│   └── postgres/
+│       └── init/
+│           └── 00-create-extensions.sql # uuid-ossp + pgcrypto (D18)
 ├── docker-compose.yml                  # Local development: postgres, redis
 ├── turbo.json                          # Turborepo pipeline config
 ├── pnpm-workspace.yaml
@@ -1725,6 +1730,27 @@ All emails share:
   - Plain text: All emails have a plain text version generated automatically
 ```
 
+### 16.3 Email Rendering Strategy (React Email v6 + Resend)
+
+> ⚠️ **Paradigm Shift (April 16, 2026):** React Email v6.0.0 unified all component packages (`@react-email/components`, `@react-email/render`, `@react-email/button`, etc.) into a single `react-email` package. All imports must come from the `react-email` root. The v0.x sub-packages are deprecated. See `react_email_suggestion.md` for full analysis (cited in MEP D43).
+
+**Bundle Bloat Risk:** React Email v6.6.0 is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (markdown parser), and the full `tailwindcss` compiler into runtime bundles via top-level imports. This threatens Trigger.dev worker CPU budgets (30s for `booking-confirmation`, 30s for `waitlist-promotion` — see §17.1) and Edge middleware bundle limits.
+
+**Rendering Decision (pending ADR-010):**
+
+| Approach | Pros | Cons | Recommendation |
+|---|---|---|---|
+| **A. Resend Native Templates** (zero-runtime rendering) | Zero bundle bloat in workers; 0ms rendering CPU time; leverages Resend's edge network | Requires managing templates in Resend dashboard or CI/CD scripts | ✅ **Recommended** for Trigger.dev workers |
+| **B. Local JSX rendering** (`import { render } from 'react-email'`) | Full React component composition; type-safe templates | 1.8MB bundle in every worker cold start; may exhaust CPU budget | Acceptable for Next.js Server Components (not workers) |
+| **C. MJML** (via `mjml-react`) | 421KB gzipped (much smaller); reliable cross-client | Loss of native React composition; new syntax to learn | Not recommended — unnecessary migration cost |
+| **D. Isolated rendering microservice** | Keeps bloat out of workers + Edge | Adds infrastructure complexity (violates §2.3 "no infra management") | Not recommended |
+
+**Implementation Guidance (Phase 8):**
+- `packages/email/src/send.ts` (F8-29) should use `import { render } from 'react-email'` (v6 unified import, NOT `@react-email/render`).
+- For Trigger.dev workers (F8-01…F8-12), strongly prefer **Resend Native Templates**: `resend.emails.send({ to, subject, templateId, variables: props })` — this sends a JSON payload to Resend, which handles HTML rendering on its infrastructure.
+- For Next.js Server Component email sending (rare — e.g., welcome email on signup), local JSX rendering via `render()` is acceptable since Server Components run on Node.js with no strict CPU budget.
+- **ADR-010** (pending) will formally adopt Alternative A for Trigger.dev workers.
+
 ---
 
 ## 17. Background Job Architecture
@@ -2511,7 +2537,7 @@ hotfix/*     ← Emergency fixes. Branch from main. PR → main + backport to de
 ### 27.1 Getting Started (New Engineer Onboarding)
 
 ```bash
-# Prerequisites: Node.js 22+, pnpm 9+, Docker Desktop
+# Prerequisites: Node.js 22+, pnpm 11+, Docker Desktop
 
 # 1. Clone and install
 git clone https://github.com/org/stillwater.git
@@ -2913,6 +2939,40 @@ Unknown error                  "Something unexpected happened. We've been
 
 ---
 
+### ADR-010: Resend Native Templates for Trigger.dev Workers (Proposed)
+
+**Status:** Proposed (2026-07-06) — pending formal acceptance before Phase 8 implementation.
+
+**Context:** React Email v6.0.0 (released April 16, 2026) unified all component packages into a single `react-email` package. While this simplifies imports, the v6 bundle is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (markdown parser), and the full `tailwindcss` compiler into runtime bundles via top-level imports. See `react_email_suggestion.md` for full analysis.
+
+Trigger.dev workers (ADR-007, §17.1) have strict CPU budgets: 30s for `booking-confirmation`, 30s for `waitlist-promotion`, 120s for `weekly-digest`. Importing a 1.8MB package that initializes a Tailwind compiler and Prism.js on every serverless cold start risks exhausting the CPU budget, causing task timeouts or failures.
+
+Next.js Edge middleware (`proxy.ts`, ADR-009) is also at risk — if any server component or module in the Edge import graph touches `react-email`, the Vercel deployment will fail due to unsupported Node.js APIs or bundle size limits.
+
+**Decision (Proposed):** Adopt **Resend Native Templates** (Alternative A from `react_email_suggestion.md`) for all Trigger.dev worker email sending. Workers send a JSON payload (`templateId` + `variables`) to Resend's API; Resend's infrastructure handles HTML rendering and delivery. This achieves zero bundle bloat in workers and 0ms rendering CPU time.
+
+For Next.js Server Component email sending (rare — e.g., synchronous welcome email on signup), local JSX rendering via `import { render } from 'react-email'` (v6 unified import) is acceptable since Server Components run on Node.js with no strict CPU budget.
+
+**Rationale:**
+- Protects Trigger.dev CPU budgets from 1.8MB React Email v6 bundle bloat.
+- Leverages Resend's global edge network for HTML rendering.
+- Maintains React Email JSX templates in the monorepo (`packages/email/src/templates/`) for type safety and preview server — templates are deployed to Resend via CI/CD script, not imported at runtime in workers.
+- Aligns with PAD §2.3 non-goal "no infrastructure management" — Resend handles rendering infra.
+
+**Trade-offs:**
+- Requires managing template deployment to Resend (CI/CD script or manual dashboard upload).
+- Template changes require a Resend deploy in addition to a code deploy.
+- Loses some runtime flexibility (can't dynamically compose templates based on DB state in the worker).
+
+**Rejected:**
+- **Local JSX rendering in workers** (`import { render } from 'react-email'`) — risks CPU budget exhaustion on cold starts.
+- **MJML** (`mjml-react`) — 421KB gzipped (smaller) but loses native React composition; unnecessary migration cost.
+- **Isolated rendering microservice** — adds infrastructure complexity, violates §2.3 "no infra management".
+
+**Source:** `react_email_suggestion.md` §5 Alternative A; MEP D43; PAD §16.3 Email Rendering Strategy.
+
+---
+
 ## 30. Glossary
 
 | Term | Definition |
@@ -3184,13 +3244,13 @@ DOCUMENTATION:
 
 ## Delivery Summary
 
-The **`Project_Architecture_Document.md`** is now complete. Here is what was delivered:
+The **`PAD.md`** (Project Architecture Document) is now complete. Here is what was delivered:
 
 | Section | Coverage |
 |---------|---------|
 | **31 sections** | Full lifecycle: concept → deployment → maintenance |
 | **8 Mermaid diagrams** | System context, container view, ERD, sequence diagrams, state machines, flow charts |
-| **7 Architecture Decision Records** | Every major architectural choice documented with rationale and rejected alternatives |
+| **10 Architecture Decision Records** | Every major architectural choice documented with rationale and rejected alternatives (ADR-001 through ADR-009 accepted; ADR-010 proposed for Resend Native Templates) |
 | **Full database schema** | Entity definitions, relationships, indexes, enum types |
 | **Complete API catalog** | All tRPC routers, procedures, access levels |
 | **Design system specification** | Typography, color palette, spacing, motion — fully anti-generic |

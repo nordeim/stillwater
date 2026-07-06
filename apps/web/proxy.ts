@@ -11,12 +11,14 @@
  *  3. i18n locale routing (v2 — placeholder)
  *  4. Security header enforcement
  *
- * Runs on: Node.js runtime (proxy.ts runs on Node, not Edge)
- * See PAD § 9.4 for route protection logic.
+ * Runs on: Edge runtime by default (Next.js 16). Cookie-only check
+ * is Edge-compatible (no DB access, no auth.api.getSession()).
+ * See PAD § 9.4 + ADR-009 for route protection logic.
  */
 
-import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
+
+import { getSessionCookie } from "better-auth/cookies";
 
 // ── 2-Layer Auth Pattern (D36, ADR-009, guide G2) ──────────────────
 // Layer 1 (THIS FILE): Cookie-existence-only optimistic check.
@@ -47,7 +49,10 @@ const AUTH_REQUIRED_ROUTES = [
 ];
 
 // ── Proxy function (replaces middleware in Next.js 16) ───────────────
-export async function proxy(request: NextRequest) {
+// Note: Not async — no await needed. The cookie-existence check via
+// getSessionCookie() is synchronous. If async work is added later
+// (e.g., i18n locale detection), add `async` back.
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check if route requires authentication (prefix match)

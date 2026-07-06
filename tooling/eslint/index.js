@@ -34,7 +34,19 @@ export default tseslint.config(
   // ── Base ESLint recommended ───────────────────────────────────────
   eslint.configs.recommended,
 
-  // ── TypeScript strict ─────────────────────────────────────────────
+  // ── TypeScript strict (type-checked requires projectService) ─────
+  // In typescript-eslint v8, strictTypeChecked is a config ARRAY (not a function).
+  // Type-checked rules require parserOptions.projectService to be set.
+  // This config block enables the TypeScript project service which auto-discovers
+  // the nearest tsconfig.json per file — essential for monorepo support.
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
 
@@ -70,8 +82,12 @@ export default tseslint.config(
     },
   },
 
-  // ── React + React Hooks ───────────────────────────────────────────
+  // ── React + React Hooks (scoped to .tsx/.jsx only) ────────────────
+  // React rules only apply to component files, not plain .ts config files.
+  // ESLint v9.39.4 + eslint-plugin-react@7.37.5 (supports ^9.7, not v10).
+  // Scoped to .tsx/.jsx to avoid running React rules on .ts files.
   {
+    files: ["**/*.tsx", "**/*.jsx"],
     plugins: {
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
@@ -92,6 +108,8 @@ export default tseslint.config(
   },
 
   // ── Import ordering ───────────────────────────────────────────────
+  // ESLint v9.39.4 + eslint-plugin-import@2.32.0 (supports ^9, not v10).
+  // Re-enabled after ESLint downgrade from v10 to v9.
   {
     plugins: {
       import: importPlugin,
@@ -151,13 +169,16 @@ export default tseslint.config(
   },
 
   // ── Next.js (D19: wire previously-unused nextPlugin) ──────────────
+  // ESLint v9 flat config: plugin key must match rule prefix.
+  // @next/eslint-plugin-next rules use "@next/next/" prefix,
+  // so the plugin must be registered as "@next/next" (not "next").
   {
     plugins: {
-      next: nextPlugin,
+      "@next/next": nextPlugin,
     },
     rules: {
       ...nextPlugin.configs.recommended.rules,
-      "next/no-html-link-for-pages": "off",
+      "@next/next/no-html-link-for-pages": "off",
     },
   },
 );

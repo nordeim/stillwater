@@ -35,10 +35,12 @@
 | Source                                  | Lines   | Purpose                                                                | Used For                                   |
 |-----------------------------------------|---------|------------------------------------------------------------------------|--------------------------------------------|
 | `design.md`                             | 813     | Phase 1 architecture critique across 3 paths + merged optimal arch     | Conceptual framing, 12-phase skeleton      |
-| `PAD.md`                                | 3,109   | Definitive Project Architecture Document (31 sections, 7 ADRs)         | All architectural decisions, schema, API   |
+| `PAD.md`                                | 3,209   | Definitive Project Architecture Document (31 sections, 9 ADRs)         | All architectural decisions, schema, API   |
 | `scaffolding_files.md`                  | 2,298   | Phase 0 IMPLEMENT — 39 ready-to-paste config files                     | Phase 0 file contents, version pins        |
 | `static_landing_page_mockup.html`     | 2,927   | Standalone HTML mockup — **visual/aesthetic reference** for Phase 12 side-by-side comparison | Phase 12 visual fidelity |
 | `static_landing_page_html_mockup.md`    | 3,056   | Landing page design spec + complete self-contained HTML mockup         | Phase 12 landing-page port (conceptual guidance)                 |
+| `react_email_suggestion.md`             | 143     | React Email v6.0.0 paradigm shift analysis + Resend Native Templates recommendation | Phase 8 F8-29 send.ts import pattern, email rendering strategy |
+| `pnpm_install_fix.md`                   | 327     | pnpm v11 migration, OTEL override injection, native build unblocking   | Phase 0 pnpm-workspace.yaml, allowBuilds, overrides configuration |
 
 ---
 
@@ -130,7 +132,7 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 | D9 | Color token bug (PAD L1268) | `--color-stone-200: --color-fog: #D4CFC9;` (malformed) | n/a                     | n/a                          | **RESOLVED IN SOURCE (PAD v1.2.0):** Malformed token fixed; orphaned `--color-fog` removed entirely (it was a Phase 1 design.md named token never implemented in the numbered scale). No action required. |
 | D10| `ActiveSubscriptionSummary` type | Referenced (L1102), undefined  | n/a                                    | n/a                          | **Define** in `packages/auth/src/types.ts`                                     |
 | D11| `DrizzleDB` type            | Referenced (L1036), undefined  | n/a                                    | n/a                          | **Define** in `packages/db/src/index.ts` as `typeof db`                         |
-| D12| Refund workflow             | Not specified                  | n/a                                    | n/a                          | **Add** `paymentsRouter.refund` (staff-only) + Stripe refund event handler     |
+| D12| Refund workflow             | Not specified                  | n/a                                    | n/a                          | **v1: Stripe Dashboard only** (per MEP §9 Q5+Q8 resolution). Staff (manager/owner) process refunds via Stripe Dashboard. `payment_events` table records all Stripe events (including `charge.refunded`) for audit. In-app refund UI (`paymentsRouter.refund` F3-12 + full `refunds.ts` F7-07) deferred to v2 — saves ~2 engineering days. Phase 7 F7-07 retains `refunds.ts` as thin wrapper for future v2 use.     |
 | D13| Sanity Studio hosting       | Mentioned as separate container| No path/URL                            | n/a                          | **Host at** `stillwater.sanity.studio` (Sanity Cloud); config in `apps/studio/` |
 | D14| Middleware `config.matcher` | Only `ROUTE_ROLE_MAP` shown    | `proxy.ts` provides matcher (L1501–7)  | n/a                          | **Use scaffolding's matcher** verbatim                                          |
 
@@ -171,6 +173,9 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 | D40| Better Auth DB schema differences (guide G5) | Files don't document table/field renames | Guide documents User/Session/Account/Verification schema changes | **Document schema migration** in stillwater_SKILL.md §Lesson 3 + Phase 1 schema files |
 | D41| PAD staleness — 14 stale references | **RESOLVED IN SOURCE (PAD v1.1.0 §5.1, §6.1)** | **RESOLVED IN SOURCE** | **RESOLVED (v1.1.0) + FURTHER UPDATED (v1.3.0):** PAD.md v1.1.0 fixed the 14 Auth.js/middleware references. PAD.md v1.3.0 additionally fixed: Stripe API version (Basil→Dahlia), pnpm (9→11), Tailwind (4.1→4.3), Zod v4 guidance, version pins (Turborepo/React Email/Resend), Drizzle $count floor (≥0.30→≥0.34), ADR-009 proxy.ts runtime (Node.js→Edge), Appendix A Cloudflare env var names + 3 missing vars, §5.1 Next.js row corrections. The MEP has been updated to reflect these in v1.2.0 (see Change Log). **No further action required.** |
 | D42| Missing `@dnd-kit/core` and `recharts` in `apps/web/package.json` scaffolding | Neither package listed in scaffolding deps | Phase 9 F9-07 references `@dnd-kit/core` for drag-and-drop calendar; F9-14 references `recharts` for revenue charts | **Add** `"@dnd-kit/core": "^6.0.0"` and `"recharts": "^2.15.0"` to `apps/web/package.json` dependencies in Phase 0 (or at Phase 9 start) |
+| D43| React Email v6.0.0 paradigm shift + Resend version bump | PAD/SKILL/MEP pinned React Email `^0.0.36` + Resend `^4.1.2`; `react_email_suggestion.md` documents v6.0.0 unification (April 16, 2026) + 1.8MB bundle bloat risk | Code (`packages/email/package.json`) already bumped to `react-email: ^6.6.6` + `resend: ^6.17.1` by user; docs were stale | **RESOLVED:** PAD.md §5.1 + SKILL.md §2.1 updated to `^6.6.6` / `^6.17.1` with `react_email_suggestion.md` cross-reference. MEP F8-29 `send.ts` import changed from `@react-email/render` → `react-email` (v6 unified). Consider ADR-010 for Resend Native Templates (Alternative A) to protect Trigger.dev CPU budgets. |
+| D44| TypeScript `^6.0.3` drift in 9 sub-packages | Root `package.json` pinned `typescript: ^5.9.0` (per PAD §5.1 + `pnpm_install_fix.md`); 9 sub-package.json files had `typescript: ^6.0.3` (user manually bumped during package version update) | `pnpm_install_fix.md` explicitly states: "typescript 6.0.3 is available. We are intentionally ignoring this and staying on `^5.9.0` as mandated by PAD.md §5.1 to ensure compatibility with `erasableSyntaxOnly` and `verbatimModuleSyntax` rules." | **RESOLVED:** All 9 sub-package.json files reverted from `^6.0.3` → `^5.9.0` (packages/auth, api, config, db, email, payments, ui, services/workers, tooling/tailwind). `pnpm install` re-resolved cleanly. `pnpm check-types` passes (only expected TS18003 "No inputs found" errors for empty `src/` dirs). |
+| D45| ESLint v10 → v9 downgrade (plugin ecosystem incompatibility) | Root + apps/web pinned `eslint: ^10.6.0`; `tooling/eslint` pinned `@eslint/js: ^10.0.1`. ESLint v10 removed `context.getFilename()` and `SourceCode.getTokenOrCommentAfter` APIs. | `eslint-plugin-react@7.37.5` (latest) supports only `^9.7` — NO v10 version exists. `eslint-plugin-import@2.32.0` (latest) supports only `^9` — NO v10 version exists. All other plugins (react-hooks, tailwindcss, typescript-eslint) support both v9 and v10. | **RESOLVED:** Downgraded ESLint from `^10.6.0` → `^9.39.4` (maintenance tag, actively receiving security/bug fixes) in 3 files: root `package.json`, `apps/web/package.json`, `tooling/eslint/package.json` (`@eslint/js: ^10.0.1` → `^9.39.4`). Re-enabled React plugin block (scoped to `.tsx`/`.jsx`) and `import/order` rule in `tooling/eslint/index.js`. `pnpm lint` passes with ALL rules active (2/2 tasks, zero errors). SKILL.md §3.2 line 239 already documented "ESLint v9 flat config" — now accurate. Upgrade to ESLint v10 can be revisited when `eslint-plugin-react` and `eslint-plugin-import` release v10-compatible versions. |
 
 ---
 ## 3. Architectural Principles (non-negotiable)
@@ -437,7 +442,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 - **Checklist:**
   - [ ] Project name + one-paragraph vision
   - [ ] Tech stack table
-  - [ ] Prerequisites (Node 22+, pnpm 9+, Docker)
+  - [ ] Prerequisites (Node 22+, pnpm 11+, Docker)
   - [ ] Quick start (`pnpm install` → `cp .env.example .env.local` → `docker compose up -d` → `pnpm db:migrate` → `pnpm dev`)
   - [ ] Monorepo structure overview
   - [ ] Common commands table
@@ -566,7 +571,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 - **TDD test file:** n/a (CI config).
 - **Checklist:**
   - [ ] Triggers on `pull_request` to `develop` and `main`
-  - [ ] Uses `pnpm/action-setup@v3` with `version: 9`
+  - [ ] Uses `pnpm/action-setup@v3` with `version: 11`
   - [ ] Uses `actions/setup-node@v4` with `node-version: 22` and `cache: 'pnpm'`
   - [ ] Spins up `services.postgres` (image `postgres:17-alpine`) and `services.redis` (image `redis:7-alpine`)
   - [ ] Steps: checkout → setup pnpm → setup node → `pnpm install --frozen-lockfile` → `pnpm docker compose up -d` → wait for postgres → `pnpm db:migrate` → `pnpm db:seed` → `pnpm turbo check-types lint test build test:e2e` → `pnpm lighthouse ci` → `pnpm bundle-size` → `pnpm audit --audit-level=high`
@@ -3243,7 +3248,7 @@ pnpm test --filter=@stillwater/payments -- --coverage
   ```typescript
   import { Resend } from 'resend';
   import { env } from '@stillwater/config/env';
-  import { render } from '@react-email/render';
+  import { render } from 'react-email'; // ✅ v6 unified import (NOT @react-email/render — deprecated)
 
   const resend = new Resend(env.RESEND_API_KEY);
 
@@ -3252,6 +3257,13 @@ pnpm test --filter=@stillwater/payments -- --coverage
     props: T,
     { to, subject }: { to: string; subject: string }
   ): Promise<void> {
+    // ⚠️ React Email v6.0.0 paradigm shift (April 16, 2026):
+    // All imports from 'react-email' root. @react-email/render is deprecated.
+    // v6 bundle is 1.8MB (514KB gzipped) — pulls prismjs, marked, tailwindcss compiler.
+    // For Trigger.dev workers, consider Resend Native Templates (Alternative A):
+    //   await resend.emails.send({ from, to, subject, templateId, variables: props });
+    // This avoids the 1.8MB bundle bloat in serverless cold starts.
+    // See react_email_suggestion.md for full analysis.
     const html = await render(template(props));
     await resend.emails.send({
       from: env.EMAIL_FROM,
@@ -4423,13 +4435,13 @@ The following items require explicit project-owner sign-off before IMPLEMENT beg
 1. **Better Auth vs Auth.js** — ✅ RESOLVED. `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms: Better Auth v1.6.23 stable is correct for greenfield Next.js 16. Auth.js v5 still beta (5.0.0-beta.31), with confirmed friction (GitHub #13302 peer-dep conflicts, #13388 server-action failures). Better Auth team also patches Auth.js security. ADR-008 stands. **No action required — this question is answered.**
 2. **`proxy.ts` rename** — ✅ RESOLVED. Next.js 16.2.0 is pinned in `apps/web/package.json`; `apps/web/proxy.ts` exists in the repo. ADR-009 adopted. No reversion needed.
 3. **Self-hosted fonts** — ✅ RESOLVED. Self-hosting Cormorant Garamond + DM Sans + JetBrains Mono (all free Google Fonts, already downloaded to `packages/ui/src/fonts/`). Berkeley Mono (paid) was the Phase 1 proposal but was never acquired — JetBrains Mono (Apache 2.0) is the chosen free alternative. See PAD.md §11.2 and SKILL.md §4.4.
-4. **Sanity Cloud hosting** — Confirm Sanity Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed) vs self-hosted at `studio.stillwater.studio` (Next.js app inside monorepo).
-5. **Stripe refund workflow** — Confirm staff-initiated refunds via Stripe Dashboard vs in-app refund flow (D12). If in-app, scope addition ~2 days.
-6. **Mobile nav drawer** — Confirm Radix Dialog-based drawer (D32). If you prefer a different pattern (Sheet, Drawer primitive), specify now.
+4. **Sanity Cloud hosting** — ✅ RESOLVED. **Decision: Sanity Cloud (managed at `stillwater.sanity.studio`).** Rationale: (a) ADR-005 mandates "marketing content only" with clear Sanity/PostgreSQL boundary — Sanity Cloud enforces this naturally; (b) PAD §2.3 non-goals explicitly state "no infrastructure management" — self-hosting Sanity Studio as a Next.js app in `apps/studio/` would add infra burden (build, deploy, monitor, update); (c) Sanity Cloud is free for small teams and includes hosting, CDN, and version history; (d) Studio config (`sanity.config.ts`) still lives in the monorepo at `apps/studio/sanity.config.ts` (F4-01) — only the Studio *runtime* is hosted by Sanity. Content editors access `stillwater.sanity.studio` directly. **Action: Phase 4 F4-01 path confirmed as `apps/studio/sanity.config.ts` (config in repo, runtime in Sanity Cloud).**
+5. **Stripe refund workflow** — ✅ RESOLVED. **Decision: Stripe Dashboard for v1; defer in-app refund UI to v2.** Rationale: (a) Staff (manager/owner roles) already have Stripe Dashboard access for reconciliation per PAD §18.1; (b) In-app refunds add complexity — permission checks, audit logging, partial refund UI, webhook handling for `charge.refunded` — that isn't justified for v1 with a single studio; (c) D12 scope reduced: `paymentsRouter.refund` (F3-12) and `packages/payments/refunds.ts` (F7-07) are deferred to v2; (d) The `payment_events` table still records all Stripe events (including refunds initiated via Dashboard) for audit trail. **Action: D12 updated to note "v1: Stripe Dashboard only"; Phase 7 F7-07 scope reduced (remove in-app refund UI; keep `refunds.ts` as thin wrapper for future v2 use).**
+6. **Mobile nav drawer** — ✅ RESOLVED. **Decision: Radix Dialog-based drawer (D32 default).** Rationale: (a) SKILL.md §5.4 library discipline mandates Radix primitives — "if a UI library provides it, USE IT"; (b) Radix Dialog provides built-in focus trap, Escape-to-close, backdrop dismiss, and `aria-modal` — all required for WCAG 2.2 Level AAA (PAD §22, Goal G6); (c) D32 already specifies this pattern; (d) The drawer will be implemented in Phase 12 F12-12 (`MobileNavDrawer.tsx`) using `@radix-ui/react-dialog` (already in `apps/web/package.json` deps). **Action: Phase 12 F12-12 confirmed as Radix Dialog implementation.**
 7. **~~Berkeley Mono license~~** — ✅ RESOLVED. JetBrains Mono (Apache 2.0, open-source Google Font) selected. No license acquisition needed. The `packages/ui/src/fonts/jetbrains-mono/` directory already contains 18 woff2 files.
-8. **Refund workflow scope** — In-app refund UI in Phase 7 vs defer to v2?
-9. **Test data PII** — Vitest integration tests against Testcontainers Postgres — confirm no real member data leaks into test fixtures.
-10. **Production cutover strategy** — Big-bang deploy vs feature-flag-gated progressive rollout? Affects Phase 10.
+8. **Refund workflow scope** — ✅ RESOLVED (merged with Q5). **Decision: Defer in-app refund UI to v2.** See Q5 above for full rationale. D12 scope reduced: v1 uses Stripe Dashboard only. Phase 7 F7-07 retains `refunds.ts` as a thin wrapper (for future v2 in-app UI) but the UI itself is deferred. This saves ~2 engineering days in Phase 7.
+9. **Test data PII** — ✅ RESOLVED. **Decision: Synthetic data only — `crypto.randomUUID()` for all IDs, factory pattern for all entities, never copy real member data.** Rationale: (a) SKILL.md §21.6 already mandates this: "Test Data: Factory pattern (`getMockMember`, `getMockSession`) using `crypto.randomUUID()` — never hardcoded fixtures"; (b) GDPR/CCPA compliance — test fixtures must not contain real names, emails, phone numbers, or emergency contacts; (c) Phase 1 seed fixtures (F1-17…F1-20) will use clearly synthetic data (e.g., `member1@stillwater.test`, `+1-555-0100`); (d) Integration tests use Testcontainers Postgres with fresh synthetic data per test run. **Action: Phase 1 F1-17…F1-20 fixture files MUST use synthetic data only. Add a `PII-SAFETY.md` note to `packages/db/src/seed/` documenting the synthetic-data mandate.**
+10. **Production cutover strategy** — ✅ RESOLVED. **Decision: Feature-flag-gated progressive rollout (5% → 25% → 100%).** Rationale: (a) PostHog feature flags are already in the stack (PAD §18.1) — no new infrastructure needed; (b) Progressive rollout allows monitoring for issues at each stage (error rate, booking success rate, Stripe webhook health) before expanding; (c) Big-bang deploy is risky for a studio with active members — a booking system outage directly impacts revenue and member trust; (d) Feature flags allow instant rollback (disable flag → traffic reverts to old system) without a redeploy. **Rollout plan:** Phase 10 implements the flag (`nextgen_booking`); Phase 12 launch starts at 5% (studio owner + staff) → 25% (invited beta members) → 100% (all members). Each stage requires 48h of green metrics before expanding. **Action: Phase 10 F10-04 (`PostHogProvider`) must include the `nextgen_booking` feature flag; Phase 12 acceptance criteria includes rollout flag configuration.**
 
 ---
 
