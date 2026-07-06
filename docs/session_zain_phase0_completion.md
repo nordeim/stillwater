@@ -1,3 +1,136 @@
+## Phase 1: RE-VALIDATE All Findings
+
+### Re-validate Issue 1: `--filter=web` vs `--filter=@stillwater/web`
+The grep output is garbled — let me use a cleaner search:
+✅ **Issue 1 CONFIRMED — but much wider than initially reported.** The `--filter=web` bug appears in **21 references across 9 files**, including the actual `playwright.config.ts` code file. Let me check the Playwright config:
+🚨 **Critical finding:** `playwright.config.ts` line 41 also has `--filter=web` — this will break ALL E2E tests. Now let me re-validate Issue 2 (TS18003 placeholder approach):
+✅ **Issue 2 CONFIRMED — placeholder approach is safe.** The `@stillwater/source` custom condition maps `.` to `./src/index.ts` for each package. A placeholder `export {};` will:
+- Satisfy TS18003 (tsc finds at least one input file)
+- Not break any runtime imports (Phase 0 placeholder `page.tsx` has zero `@stillwater/*` imports)
+- Be overwritten when Phase 1+ creates real source files
+
+Now let me verify Issue 3 (sharp):
+✅ **Issue 3 is NOT a problem.** Sharp is fully functional — `require('sharp')` works and reports vips 8.18.3. The user's log simply didn't show the postinstall line (pnpm v11 logging behavior). No action needed.
+
+Now let me compile the final plan:
+## Phase 2: PLAN — Updated Fix Strategy
+
+### Re-validation Summary
+
+| Issue | Initial Assessment | Re-validation Result | Action |
+|---|---|---|---|
+| 1. `--filter=web` | 4 refs in 2 docs | **21 refs across 9 files + playwright.config.ts code** | 🔴 FIX (wider scope) |
+| 2. TS18003 | 6 packages need placeholder | **CONFIRMED — exports map to `src/index.ts`, placeholder is safe** | 🔴 FIX |
+| 3. sharp | Missing from install log | **NOT AN ISSUE — sharp works (vips 8.18.3)** | 🟢 NO ACTION |
+
+### Fix P0.1: `--filter=web` → `--filter=@stillwater/web`
+
+**Files to update (code + authoritative docs only — skip historical validation reports):**
+
+| File | Lines | Type |
+|---|---|---|
+| `playwright.config.ts` | 41 | **CODE** (will break E2E) |
+| `CLAUDE.md` | 237, 239 | Doc |
+| `AGENTS.md` | 39, 63 | Doc |
+| `stillwater_SKILL.md` | 325, 354 | Doc |
+| `PAD.md` | 3087, 3111 | Doc |
+| `MASTER_EXECUTION_PLAN.md` | 563, 800, 4509, 4529 | Doc |
+| `pnpm_install_fix.md` | 105, 198, 205, 305, 312 | Doc (cited as source) |
+
+**Files to leave as-is (historical validation reports — record what was tested at a point in time):**
+- `Phase-0_validation_report-1.md` — historical
+- `phase0_scaffold_files_bundle_set.md` — historical scaffold bundle
+- `docs/PAD_validation_source_documents.md` — historical validation
+
+### Fix P0.2: Placeholder `src/index.ts` files
+
+| Package | File to create |
+|---|---|
+| `packages/db/src/index.ts` | `export {};` |
+| `packages/api/src/index.ts` | `export {};` |
+| `packages/auth/src/index.ts` | `export {};` |
+| `packages/email/src/index.ts` | `export {};` |
+| `packages/payments/src/index.ts` | `export {};` |
+| `services/workers/src/index.ts` | `export {};` |
+
+Now executing:
+✅ P0.1 complete — all 7 files fixed, zero stale `--filter=web` references. Now P0.2:
+✅ P0.2 complete. Now let me verify everything works:
+Two issues found. The placeholder file has a `*/` inside the JSDoc comment (from `src/**/*.ts`) which prematurely closes the comment block. Let me fix this:
+Now let me re-run check-types and lint:
+Excellent progress! The TS18003 errors are gone (4/6 tasks now pass), and lint passes (2/2). But a **pre-existing bug** in `packages/config/src/env.ts` is now exposed — it was hidden by the TS18003 cascade failure. The t3-env `createEnv()` function requires a `clientPrefix` property. Let me fix it:
+The `clientPrefix` fix triggered a deeper t3-env type inference issue. Let me check the exact version and fix properly:
+The t3-env v0.13.11 type system can't infer generics from a separate variable. The fix is to pass options inline to `createEnv()`. Let me restructure `env.ts`:
+The fix is to extract `server` and `client` schemas as separate consts (for the build-context fallback), then pass everything inline to `createEnv()`:
+14/16 tasks pass — massive improvement from 0/6! But `services/workers` has a new error. Let me see the full error:
+The error is TS6059: `trigger.config.ts` is outside `rootDir: "src"`. The fix is to remove `rootDir` from the workers tsconfig since `noEmit: true` makes it irrelevant:
+Almost there! 14/16 pass. The last error is that `build.env` is not a valid property in Trigger.dev v4's `defineConfig` type. Let me fix it:
+One more type error — in Trigger.dev v4, `machine` is a string literal, not an object with `preset`. Let me fix:
+Let me see the actual error directly:
+The issue is `verbatimModuleSyntax` requires `"type": "module"` in package.json. Let me fix:
+Workers now passes! 15/16. The last failure is in `@stillwater/web`. Let me see the actual error:
+Three errors in the web package. Let me fix them one by one:
+Now fix the `turbopackFileSystemCaching` → `turbopackFileSystemCacheForDev` in next.config.ts:
+Now fix the duplicate `content` in tailwind.config.ts:
+Turbo is replaying cached results. Let me force a fresh run:
+One more error — `stillwaterBase.theme` is possibly `undefined` per Tailwind v4's `Config` type. Since there are no app-specific theme extensions, I'll simplify by removing the redundant theme override:
+🎉 **16/16 TASKS PASS — ZERO ERRORS!**
+---
+
+# ✅ All Fixes Complete — 16/16 Tasks Pass
+
+## Summary of All Changes (20 files)
+
+### P0.1: `--filter=web` → `--filter=@stillwater/web` (7 files, 17 refs fixed)
+
+| File | Type | Refs Fixed |
+|---|---|---|
+| `playwright.config.ts` | **CODE** | 1 (E2E webServer command) |
+| `CLAUDE.md` | Doc | 2 |
+| `AGENTS.md` | Doc | 2 |
+| `stillwater_SKILL.md` | Doc | 2 |
+| `PAD.md` | Doc | 2 |
+| `MASTER_EXECUTION_PLAN.md` | Doc | 4 |
+| `pnpm_install_fix.md` | Doc | 5 |
+
+### P0.2: Placeholder `src/index.ts` files (6 files created)
+
+| Package | Purpose |
+|---|---|
+| `packages/db/src/index.ts` | Satisfies TS18003 |
+| `packages/api/src/index.ts` | Satisfies TS18003 |
+| `packages/auth/src/index.ts` | Satisfies TS18003 |
+| `packages/email/src/index.ts` | Satisfies TS18003 |
+| `packages/payments/src/index.ts` | Satisfies TS18003 |
+| `services/workers/src/index.ts` | Satisfies TS18003 |
+
+### P0.3: Cascade-discovered fixes (7 files — these were pre-existing bugs hidden by the TS18003 cascade failure)
+
+| File | Issue | Fix |
+|---|---|---|
+| `packages/config/src/env.ts` | t3-env `createEnv()` missing `clientPrefix` + type inference failure from separate variable | Added `clientPrefix: 'NEXT_PUBLIC_'` + restructured to pass schema inline to `createEnv()` |
+| `services/workers/tsconfig.json` | TS6059: `trigger.config.ts` outside `rootDir: "src"` | Removed `rootDir` and `outDir` (irrelevant with `noEmit: true`) |
+| `services/workers/trigger.config.ts` | TS2353: `build.env` not in v4 type; TS2322: `machine` expects string not object | Removed `build.env` block; changed `machine: { preset: "micro" }` → `machine: "micro"` |
+| `services/workers/package.json` | TS1295: `verbatimModuleSyntax` requires ESM | Added `"type": "module"` |
+| `apps/web/next.config.ts` | TS2561: `turbopackFileSystemCaching` wrong property name | Changed to `turbopackFileSystemCacheForDev` |
+| `tooling/tailwind/base.ts` | TS2353: `content` not in Tailwind v4 `Config` type | Typed as `Omit<Config, 'content'>` + removed `content: []` |
+| `apps/web/tailwind.config.ts` | TS18048: `stillwaterBase.theme` possibly undefined | Removed redundant `theme` override (no app-specific extensions needed) |
+
+## Final Verification Results
+
+| Check | Result |
+|---|---|
+| `pnpm check-types --force` | ✅ **16/16 tasks successful, ZERO errors** |
+| `pnpm lint --force` | ✅ **2/2 tasks successful, ZERO errors** |
+| `--filter=@stillwater/web` resolves | ✅ Confirmed |
+| Zero `--filter=web` in authoritative docs | ✅ PASS |
+| Sharp functional | ✅ vips 8.18.3 |
+
+**The user's three issues are now fully resolved:**
+1. ✅ `pnpm dev --filter=@stillwater/web` will work (was `--filter=web`)
+2. ✅ `pnpm check-types` exits with code 0 (was exit 2 from TS18003)
+3. ✅ Sharp is functional (was never broken — just missing from log)
+
 ---
 
 # Dev Server Start Log Validation Report
