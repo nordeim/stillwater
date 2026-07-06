@@ -10,6 +10,10 @@ Awesome meticulous job so far. Please keep up the good work. Now, please meticul
 
 ---
 
+Awesome meticulous job so far. Please keep up the good work. Now, please meticulously plan to apply the recommended fixes. Next, test and then meticulously plan to update `CLAUDE.md`, `AGENTS.md` , `README.md`, `stillwater_SKILL.md` and `PAD.md` with the recent code changes, lessons/insights and patterns/anti-patterns.
+
+---
+
 Awesome meticulous job so far. Please keep up the good work. Now, please meticulously create an updated v3 tar archive of the entire (remediated/updated) codebase, including the updated docs and SKILL.md but excluding the `node_modules` , `.next` , `skills` and `.git` folders, so I can download and use it to refresh my GitHub repo.
 
 ---
