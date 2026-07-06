@@ -1,3 +1,145 @@
+---
+
+# Dev Server Start Log Validation Report
+
+I've meticulously analyzed the log and validated each finding against the codebase. Here are the results:
+
+---
+
+## 🔴 Issue 1 (CRITICAL): `babel-plugin-react-compiler` not installed → GET / 500
+
+### What happened
+```
+Failed to resolve package babel-plugin-react-compiler while attempting to resolve React Compiler
+React compiler is enabled in apps/web/next.config.ts. We attempted to resolve React Compiler
+relative to the next package. Is babel-plugin-react-compiler installed in your node_modules directory?
+
+GET / 500 in 3.7s
+```
+
+### Root cause
+`apps/web/next.config.ts` line 8 has `reactCompiler: true`, which tells Next.js 16 to enable the React Compiler. However, **`babel-plugin-react-compiler` is not installed** — it's not in any `package.json` and not in `node_modules`. Next.js attempts to resolve this package at startup; when it fails, the React Compiler cannot initialize, causing every page render to throw a 500 error.
+
+### Codebase validation
+- `next.config.ts` line 8: `reactCompiler: true` ✅ (confirmed present)
+- `babel-plugin-react-compiler` in any package.json: ❌ NOT found
+- `babel-plugin-react-compiler` in node_modules: ❌ NOT installed
+
+### Impact
+**This is the root cause of the GET / 500 error.** The dev server boots (Next.js reports "Ready in 1099ms") but every page request fails because the React Compiler Babel plugin can't be found.
+
+### Fix — 2 options:
+
+**Option A (Recommended — install the package):**
+```bash
+pnpm add -F @stillwater/web babel-plugin-react-compiler
+```
+This enables the React Compiler, which provides automatic memoization and performance optimizations. SKILL.md §2.1 notes: "React Compiler NOT default — requires explicit `reactCompiler: true` in `next.config.ts`". The package must be manually installed.
+
+**Option B (Alternative — disable React Compiler):**
+Remove `reactCompiler: true` from `next.config.ts`. The app will work without the compiler's automatic memoization optimizations. This is acceptable for Phase 0 but loses a performance benefit.
+
+**My recommendation: Option A** — install `babel-plugin-react-compiler` so the React Compiler works as designed. This is a one-time `pnpm add` and aligns with the documented intent.
+
+---
+
+## 🟡 Issue 2 (LOW — Already Fixed in Code): `turbopackFileSystemCaching` warning
+
+### What happened
+```
+⚠ Invalid next.config.ts options detected:
+⚠     Unrecognized key(s) in object: 'turbopackFileSystemCaching' at "experimental"
+⚠   ? turbopackFileSystemCaching (invalid experimental key)
+```
+
+### Root cause
+This is a **stale log** — the user ran `pnpm dev` before my P0.3 fix took effect. The code now has the correct property name:
+
+```typescript
+// apps/web/next.config.ts line 21 (CURRENT — already fixed)
+turbopackFileSystemCacheForDev: true,  // ✅ Correct (was turbopackFileSystemCaching)
+```
+
+I verified this against the Next.js 16 source code (`node_modules/.pnpm/next@16.2.10/.../turbopack/utils.js` line 264):
+```javascript
+return config.experimental?.turbopackFileSystemCacheForDev || false;
+```
+
+The correct property is `turbopackFileSystemCacheForDev` — which is what the code now has. **The warning in the log is from a previous run before the fix was applied.** No action needed.
+
+### Impact
+None — the code is already correct. The user should verify the warning disappears on the next `pnpm dev` run.
+
+---
+
+## 🟢 Issue 3 (LOW — Environmental): Port 3000 in use
+
+### What happened
+```
+⚠ Port 3000 is in use by process 1482523, using available port 3001 instead.
+```
+
+### Root cause
+Another process (PID 1482523) is already listening on port 3000. This is likely a stale Next.js dev server from a previous run that wasn't properly shut down.
+
+### Impact
+Low — Next.js automatically falls back to port 3001 and the server boots successfully. However, this can cause confusion (e.g., Playwright config expects port 3000).
+
+### Fix
+```bash
+# Find and kill the process using port 3000
+lsof -i :3000    # or: fuser 3000/tcp
+kill 1482523     # or: kill -9 1482523
+```
+
+---
+
+## 🟢 Issue 4 (LOW — Environmental): Slow filesystem detected
+
+### What happened
+```
+⚠ Slow filesystem detected. The benchmark took 503ms. If /home/project/stillwater/apps/web/.next/dev
+is a network drive, consider moving it to a local folder.
+```
+
+### Root cause
+The user's project is at `/home/project/stillwater/` which appears to be on a network-mounted or slow filesystem. The 503ms benchmark exceeds Next.js's threshold for "fast" local storage.
+
+### Impact
+Low — slower dev server startup and rebuild times. Not a code issue.
+
+### Fix (optional)
+If the user has a faster local drive, they can move the project there. Otherwise, this is an environmental constraint to accept. No code changes needed.
+
+---
+
+## 📋 Summary
+
+| # | Issue | Severity | Root Cause | Action Required |
+|---|---|---|---|---|
+| 1 | `babel-plugin-react-compiler` missing → 500 | 🔴 Critical | `reactCompiler: true` in next.config.ts but package not installed | **Install package** (Option A) OR disable reactCompiler (Option B) |
+| 2 | `turbopackFileSystemCaching` warning | 🟡 Low | **Already fixed in code** — log is stale | No action (verify on next run) |
+| 3 | Port 3000 in use | 🟢 Low | Stale process (environmental) | Kill process 1482523 |
+| 4 | Slow filesystem | 🟢 Low | Network drive (environmental) | No action (accept constraint) |
+
+### Recommended Action
+
+**Only one fix is needed:** Install `babel-plugin-react-compiler` to resolve the 500 error:
+
+```bash
+pnpm add -F @stillwater/web babel-plugin-react-compiler
+```
+
+This will:
+1. Install the Babel plugin that Next.js 16 React Compiler requires
+2. Allow `reactCompiler: true` in `next.config.ts` to function correctly
+3. Eliminate the "Failed to resolve package" error
+4. Fix the GET / 500 error (pages will render normally)
+
+**Shall I proceed with installing `babel-plugin-react-compiler`?** After installation, I'll verify with `pnpm check-types` + `pnpm lint` to ensure nothing breaks, and the dev server should boot cleanly on port 3000 (after killing the stale process).
+
+---
+
 ## Step 1: Install `babel-plugin-react-compiler`
 ✅ **16/16 check-types + 2/2 lint pass.** `babel-plugin-react-compiler@1.0.0` installed successfully. Now let me update all 5 documentation files.
 ## Step 2: Update CLAUDE.md — Add Gotcha 11 (React Compiler) + Gotcha 12 (t3-env) + Pitfall #21
