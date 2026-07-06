@@ -1,3 +1,214 @@
+I'll analyze the app start log meticulously, section by section, to identify all potential issues.
+Let me verify the critical findings against the actual codebase:
+---
+
+# App Start Log Validation Report
+
+I've meticulously analyzed the log. Here are my findings, organized by severity:
+
+---
+
+## 🔴 Issue 1 (CRITICAL — Blocks Dev Server): `pnpm dev --filter=web` fails
+
+### What happened
+```
+$ pnpm dev --filter=web
+× No package found with name 'web' in workspace
+```
+
+### Root cause
+The package name in `apps/web/package.json` is `@stillwater/web`, NOT `web`. Turbo's `--filter` matches by **package name**, not directory name. The documented command `pnpm dev --filter=web` is wrong.
+
+### Impact
+**User cannot start the dev server** using the documented command. This blocks all development.
+
+### Fix
+The correct commands are:
+```bash
+pnpm dev --filter=@stillwater/web    # By full package name
+# OR
+pnpm dev --filter=./apps/web          # By directory path
+# OR
+pnpm dev                              # Start ALL apps (web + workers)
+```
+
+### Documentation bug
+This wrong command appears in:
+- `CLAUDE.md` line 237: `pnpm dev --filter=web` ❌
+- `CLAUDE.md` line 239: `pnpm build --filter=web` ❌
+- `AGENTS.md` line 39: `pnpm dev --filter=web` ❌
+- `AGENTS.md` line 63: `pnpm build --filter=web` ❌
+
+**These must be fixed to `--filter=@stillwater/web` across all docs.**
+
+---
+
+## 🟡 Issue 2 (MEDIUM — Blocks CI): `pnpm check-types` fails with exit code 2
+
+### What happened
+```
+@stillwater/db:check-types: error TS18003: No inputs were found in config file
+'packages/db/tsconfig.json'. Specified 'include' paths were '["src/**/*.ts"]'
+
+Tasks: 0 successful, 6 total
+Failed: @stillwater/db#check-types
+```
+
+### Root cause
+**6 packages have `check-types` and `build` scripts but no `src/` directory (or no `.ts` files in `src/`)**:
+
+| Package | `src/` exists? | `.ts` files | TS18003? |
+|---|---|---|---|
+| `packages/db` | ❌ No | 0 | ✅ Yes (fails) |
+| `packages/api` | ❌ No | 0 | ✅ Yes (not reached — cascade) |
+| `packages/auth` | ❌ No | 0 | ✅ Yes (not reached — cascade) |
+| `packages/email` | ❌ No | 0 | ✅ Yes (not reached — cascade) |
+| `packages/payments` | ❌ No | 0 | ✅ Yes (not reached — cascade) |
+| `services/workers` | ❌ No | 0 | ✅ Yes (not reached — cascade) |
+| `packages/ui` | ✅ Yes | 1 (`index.ts`) | ❌ No (has input) |
+| `packages/config` | ✅ Yes | 2 (`env.ts`, `index.ts`) | ❌ No (has input) |
+
+TypeScript's `tsc --noEmit` fails with TS18003 when the `include` glob (`src/**/*.ts`) matches zero files. This causes exit code 2. Turbo's dependency graph (`check-types` depends on `^build`) then cascades the failure to all dependent packages — `config:build`, `ui:build`, `config:check-types`, `ui:check-types` all abort.
+
+### Impact
+- `pnpm check-types` exits with code 2 → **CI Gate 1 fails**
+- The Phase 0 DoD says "exits with code 0 (or only shows expected placeholder errors)" — but TS18003 causes exit code 2, not 0
+- All downstream packages (`api`, `auth`, `email`, `payments`, `workers`) can't be type-checked until their `src/` dirs have at least one `.ts` file
+
+### Fix
+Add a placeholder TypeScript file to each empty package's `src/` directory. The standard pattern is `src/index.ts` with `export {};` (empty export to make it a module):
+
+```bash
+# Create placeholder src/index.ts in each empty package
+for pkg in packages/db packages/api packages/auth packages/email packages/payments services/workers; do
+  mkdir -p "$pkg/src"
+  echo '// Phase 0 placeholder — will be replaced in Phases 1-8' > "$pkg/src/index.ts"
+  echo 'export {};' >> "$pkg/src/index.ts"
+done
+```
+
+This is a common monorepo scaffold pattern. The placeholders will be overwritten when Phase 1+ creates real source files.
+
+---
+
+## 🟢 Issue 3 (LOW — Verify): `sharp` and `core-js` postinstall scripts not in log
+
+### What happened
+The user's `pnpm install` log shows postinstall scripts for:
+- `esbuild@0.18.20` ✅
+- `@sentry/cli@2.58.6` ✅
+- `esbuild@0.25.12` ✅
+- `esbuild@0.28.1` ✅
+
+But **missing** compared to my previous runs:
+- `sharp@0.34.5` — not shown ❓
+- `core-js@3.49.0` — not shown ❓
+
+### Possible causes
+1. **pnpm v11 logging difference** — postinstall ran but wasn't logged (most likely)
+2. **Platform-specific skip** — sharp's install script checks for prebuilt binaries and may skip compilation
+3. **Supply chain guard** — `minimumReleaseAge: 1440` may have blocked a newly published version
+
+### Impact
+If `sharp` didn't install correctly, Next.js image optimization will fall back to WASM (slower) or throw warnings during `pnpm dev`/`pnpm build`.
+
+### Fix
+The user should verify sharp is functional:
+```bash
+pnpm why sharp                    # Should show sharp@0.34.5
+node -e "require('sharp')"        # Should not throw
+```
+
+If sharp is broken, run:
+```bash
+pnpm rebuild sharp
+```
+
+---
+
+## 🟢 Issue 4 (LOW — Known): `recharts@2.15.4` deprecated warning
+
+### What happened
+```
+apps/web | [WARN] deprecated recharts@2.15.4
+```
+
+### Status
+**Known and accepted.** Documented during P2.1 (D42 deps addition). Recharts v2 is at end-of-life; the latest npm version is 2.15.4. Phase 9 may evaluate alternatives (Visx, Nivo, or Recharts v3 when released). Not a blocker for Phase 0.
+
+---
+
+## 🟢 Issue 5 (LOW — Known): `@esbuild-kit` deprecated subdependencies
+
+### What happened
+```
+[WARN] 2 deprecated subdependencies found: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5
+```
+
+### Status
+**Harmless.** These are transitive dependencies pulled in by `tsx` (used for running TypeScript scripts like `db:seed` and `db:reset`). They don't affect production builds. Not a blocker.
+
+---
+
+## ✅ Passing Checks
+
+| Check | Status | Notes |
+|---|---|---|
+| `pnpm install` | ✅ Pass | 854 packages installed; supply chain guardrails passed |
+| `pnpm lint` | ✅ Pass | 2/2 tasks successful; all ESLint rules active |
+| Docker: `stillwater_postgres` | ✅ Healthy | Postgres 17-alpine on port 5432 |
+| Docker: `stillwater_redis` | ✅ Healthy | Redis 7-alpine on port 6379 |
+| ESLint version | ✅ 9.39.4 | "10.6.0 is available" — intentionally ignored (D45) |
+| TypeScript version | ✅ 5.9.3 | "6.0.3 is available" — intentionally ignored (D44) |
+| Trigger.dev SDK | ✅ Root import | `@trigger.dev/sdk` (not /v3 or /v4) |
+| Native builds | ✅ esbuild + @sentry/cli | Postinstall scripts ran successfully |
+
+---
+
+## Recommended Actions (Priority-Ordered)
+
+### 🔴 P0 — Must Fix Before Phase 1
+
+**1. Fix `--filter=web` → `--filter=@stillwater/web` in all docs**
+
+| File | Lines | Current | Fix |
+|---|---|---|---|
+| `CLAUDE.md` | 237, 239 | `--filter=web` | `--filter=@stillwater/web` |
+| `AGENTS.md` | 39, 63 | `--filter=web` | `--filter=@stillwater/web` |
+
+**2. Add placeholder `src/index.ts` files to 6 empty packages**
+
+| Package | Action |
+|---|---|
+| `packages/db/src/index.ts` | Create `export {};` placeholder |
+| `packages/api/src/index.ts` | Create `export {};` placeholder |
+| `packages/auth/src/index.ts` | Create `export {};` placeholder |
+| `packages/email/src/index.ts` | Create `export {};` placeholder |
+| `packages/payments/src/index.ts` | Create `export {};` placeholder |
+| `services/workers/src/index.ts` | Create `export {};` placeholder |
+
+This will make `pnpm check-types` exit with code 0.
+
+### 🟡 P1 — Should Verify
+
+**3. Verify sharp installation**
+```bash
+pnpm why sharp
+node -e "require('sharp')"
+```
+
+### 🟢 P2 — No Action Needed
+
+- `recharts@2.15.4` deprecated — accepted (D42)
+- `@esbuild-kit` deprecated subdeps — harmless
+- ESLint 9.39.4 / TypeScript 5.9.3 "available" warnings — intentionally ignored
+
+---
+
+**Shall I proceed with executing the P0 fixes** (documentation `--filter` correction + placeholder `src/index.ts` files)? These are surgical, low-risk changes that will make `pnpm check-types` pass cleanly and fix the dev server startup command.
+
+---
+
 ## Phase 1: RE-VALIDATE All Findings
 
 ### Re-validate Issue 1: `--filter=web` vs `--filter=@stillwater/web`
