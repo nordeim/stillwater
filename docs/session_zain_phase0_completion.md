@@ -1,3 +1,120 @@
+Continuing with the implementation. Let me execute all updates systematically.
+
+## IMPLEMENT 1: Update Frontmatter
+✅ Frontmatter updated. Now IMPLEMENT 2: Update §2.1 with Trigger.dev SDK import path note and ESLint row:
+✅ §2.1 updated. Now IMPLEMENT 3: Update §2.3 ADR count and add ADR-010 reference:
+✅ §2.3 updated. Now IMPLEMENT 4: Add new §9.9 Phase 0 Implementation Gotchas. Let me find where §9 ends (before §10):
+Now I'll insert §9.9 before the `---` separator on line 2058:
+✅ §9.9 added with 10 detailed gotchas. Now IMPLEMENT 5: Add new Lessons 16-22 to §12. Let me find where Lesson 15 ends:
+Now I'll add Lessons 16-22 after Lesson 15 (before the `---` on line 2914):
+✅ Lessons 16-22 added. Now IMPLEMENT 6: Update §12 intro discrepancy count (35→45) and §13.13 with new D43-D45 pitfalls:
+I notice Lesson 1 still says "35 places" in its context — let me fix that too:
+Now let me update §13.13 with the new D43-D45 pitfalls:
+✅ §13.13 updated. Now IMPLEMENT 7: Add ADR-010 to Appendix A and update Appendix C with v1.4.0 audit entry. Let me also update ADR-009's trade-offs note (it says "PAD.md still references middleware.ts — must be updated" which is now done):
+✅ ADR-010 added to Appendix A. Now let me update Appendix C with the v1.4.0 audit entry:
+✅ Appendix C updated with v1.4.0 audit entry. Now let me also update the Table of Contents to include the new §9.9:
+The TOC references section numbers (§9, §10, etc.) which still match — the new §9.9 is a subsection within §9, so the TOC doesn't need updating. Now let me run the final verification:
+## VERIFY — Cross-File Consistency Check
+All 16 verification checks pass. The only "35 discrepancies" reference remaining is in the v1.0.0 audit history (line 5139) — that's correct historical context, now annotated with "now D1–D45 after v1.4.0 additions".
+
+Let me also verify the SKILL.md is consistent with the other 4 docs:
+I notice README.md has 0 matches for "10 ADR" or "ADR-010" — let me check if it still says "9 ADRs":
+README.md has two stale references: "9 ADRs" on line 25 and "9 ADRs documented" on line 667. Also line 25 says SKILL.md is "v1.3.0" — should be "v1.4.0". Let me fix these:
+Now let me run the final lint check to make sure no markdown or code was broken:
+---
+
+# ✅ Complete — `stillwater_SKILL.md` Updated to v1.4.0
+
+## Summary of Changes
+
+### Frontmatter (v1.3.0 → v1.4.0)
+- **Version**: `1.3.0` → `1.4.0`
+- **Framework version**: Added React 19.2.3 (was just "19.2")
+- **Last updated**: `2026-07-05` → `2026-07-06`
+- **Status line**: "Phase 0 (scaffold) ready" → "Phase 0 (scaffold) ✅ COMPLETE (2026-07-06)"; added "45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved; `pnpm install` / `pnpm check-types` / `pnpm lint` all green"
+
+### §2.1 Tech Stack Table (4 rows updated, 1 row added)
+- **Trigger.dev row**: Added critical SDK import path gotcha note ("v4 PLATFORM uses v3 SDK API — `@trigger.dev/sdk/v4` DOES NOT EXIST")
+- **Sanity row**: Added Q4 resolution (Sanity Cloud hosted at `stillwater.sanity.studio`)
+- **Stripe row**: Added Q5+Q8 resolution (v1 refund scope: Stripe Dashboard only; in-app deferred to v2)
+- **React Email row**: Added ADR-010 pending reference
+- **Resend row**: Added Resend Native Templates recommendation note
+- **NEW ESLint row**: `^9.39.4` with v10 incompatibility warning + D45 reference
+
+### §2.3 ADR Table (9 → 10 ADRs)
+- Updated ADR-008 status to "Accepted" (was "Accepted (NEW)")
+- Updated ADR-009 status to "Accepted" (was "Accepted (NEW)")
+- **Added ADR-010**: Resend Native Templates for Trigger.dev workers (Proposed)
+
+### §9.9 Phase 0 Implementation Gotchas (NEW — 10 gotchas)
+Added a complete new subsection with 10 detailed gotchas, each with Symptom / Root cause / Fix / Verification / Cross-ref:
+1. `@trigger.dev/sdk/v4` import path does not exist (Critical)
+2. ESLint v10 plugin incompatibility (Critical — D45)
+3. React Email v6 paradigm shift — `@react-email/render` deprecated (Critical — D43)
+4. TypeScript `^6.0.3` drift in sub-packages (High — D44)
+5. `pg_advisory_lock` leaks under Neon PgBouncer (Critical — ADR-004)
+6. `proxy.ts` runs on Edge by default — NOT Node.js (High — ADR-009)
+7. `cacheComponents: true` + `force-dynamic` conflict (Medium)
+8. Vercel SSE timeout — 10s Hobby / 15s Pro default (Medium)
+9. shadcn/ui `style` field — `"default"` not `"new-york"` (Low)
+10. Stripe API version — Dahlia not Acacia (High)
+
+### §12 Lessons Learnt (15 → 22 lessons)
+Added 7 new lessons from actual Phase 0 implementation:
+- **Lesson 16**: Trigger.dev v4 platform uses v3 SDK API
+- **Lesson 17**: ESLint v10 is too new for the plugin ecosystem
+- **Lesson 18**: React Email v6 unified all imports
+- **Lesson 19**: TypeScript version drift across monorepo packages
+- **Lesson 20**: `pg_advisory_lock` vs `pg_advisory_xact_lock` — Neon PgBouncer decides
+- **Lesson 21**: All 10 Open Questions in MEP §9 are resolved — decisions locked
+- **Lesson 22**: Phase 0 is complete — all smoke tests green
+
+Also updated §12 intro: "35 reconciled discrepancies" → "45 reconciled discrepancies (D1–D45)"; added note that Lessons 16-22 are from actual Phase 0 implementation.
+
+### §13.13 Stillwater-Specific Pitfalls (restructured + expanded)
+- Reorganized into two groups: D15–D24 (Phase 0 scaffolding) and D43–D45 (P0–P3 remediation)
+- Added D numbers to all existing pitfalls for traceability
+- Added 9 new pitfalls covering: Trigger.dev SDK import, React Email v6 imports, ESLint v10 upgrade, TypeScript 6.0.3 pinning, `pg_advisory_lock` usage, `auth.api.getSession()` in proxy.ts, `force-dynamic` with cacheComponents, Stripe acacia API version, shadcn new-york style
+
+### Appendix A: ADRs (9 → 10)
+- Updated ADR-009 trade-offs (removed stale "PAD.md still references middleware.ts — must be updated"; added note that all docs are now updated)
+- **Added ADR-010**: Resend Native Templates for Trigger.dev Workers (Proposed) — full ADR format with Status, Context, Decision, Rationale, Trade-offs, Rejected, Source
+
+### Appendix C: Audit History (v1.4.0 entry added)
+- **Added v1.4.0 (2026-07-06)** audit entry with 13 findings covering all P0-P3 work: Trigger.dev SDK, ESLint v10, React Email v6, TS drift, advisory locks, proxy.ts comment, shadcn style, Stripe API, Open Questions, smoke test, ADR-010, discrepancy count, documentation alignment
+- Updated v1.0.0 entry to annotate which items are now ✅ resolved in v1.4.0
+- Updated "Next audit" to "After Phase 1 completes"
+
+### Cross-File Fix: README.md
+- Fixed stale "9 ADRs" → "10 ADRs (9 accepted + 1 proposed)" (line 25)
+- Fixed stale "v1.3.0" → "v1.4.0" for SKILL.md reference (line 25)
+- Fixed "9 ADRs documented" → "10 ADRs documented" in What's New table (line 667)
+
+---
+
+## Final Verification Results
+
+| Check | Result |
+|---|---|
+| SKILL.md version | ✅ `1.4.0` |
+| Last updated | ✅ `2026-07-06` |
+| Phase 0 COMPLETE status | ✅ 4 matches |
+| ADR count = 10 | ✅ 9 matches |
+| ADR-010 in Appendix A | ✅ Present |
+| §9.9 Phase 0 Gotchas | ✅ 10 gotchas |
+| Lessons count = 22 | ✅ 22 lessons (1-15 original + 16-22 new) |
+| Discrepancy count = 45 | ✅ 8 matches |
+| ESLint v9.39.4 | ✅ 6 matches |
+| Trigger.dev SDK v3 | ✅ 4 matches |
+| React Email v6.6.6 | ✅ 4 matches |
+| v1.4.0 audit entry | ✅ Present in Appendix C |
+| `pnpm lint` | ✅ 2/2 tasks pass (FULL TURBO) |
+| Cross-file consistency | ✅ All 5 docs aligned |
+
+**SKILL.md is now 5,247 lines** (was 5,039) — a net addition of 208 lines capturing all Phase 0 implementation lessons, gotchas, patterns, and anti-patterns. The document now serves as the authoritative coding standards and best practices guide, fully aligned with the P0-P3 remediation work and the other 5 documentation files.
+
+---
+
 All key files present. I also see `.turbo` and `.env.local` which should be excluded (`.env.local` contains secrets; `.turbo` is cache). Let me also check for other build artifacts and create the archive:
 Good — `.env.local` is in `.gitignore` (contains secrets, must be excluded). The `.turbo` dirs are cache (should be excluded). Let me also check for `backup/` and `package.bak`:
 Good — `package.bak` was already deleted in P2.3. The `backup/` dir contains old archives (should be excluded — it's in `.gitignore`). Let me also check the `docs/validation/` directory to ensure it's included:
