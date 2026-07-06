@@ -84,11 +84,35 @@ $ turbo lint
 Cached:    0 cached, 2 total
   Time:    9.296s 
 
-$ turbo dev --filter=web
+$ pnpm dev --filter=@stillwater/web
+$ turbo dev --filter=@stillwater/web
 • turbo 2.10.3
-  × No package found with name 'web' in workspace
 
-[ELIFECYCLE] Command failed with exit code 1.
+   • Packages in scope: @stillwater/web
+   • Running dev in 1 packages
+   • Remote caching disabled
+
+@stillwater/web:dev: cache bypass, force executing 98c1916ff23ad1c2
+@stillwater/web:dev: $ next dev --turbopack
+@stillwater/web:dev: ⚠ Port 3000 is in use by process 1482523, using available port 3001 instead.
+@stillwater/web:dev: ▲ Next.js 16.2.10 (Turbopack)
+@stillwater/web:dev: - Local:         http://localhost:3001
+@stillwater/web:dev: - Network:       http://192.168.2.132:3001
+@stillwater/web:dev: ✓ Ready in 1099ms
+@stillwater/web:dev: ⚠ Invalid next.config.ts options detected:
+@stillwater/web:dev: ⚠     Unrecognized key(s) in object: 'turbopackFileSystemCaching' at "experimental"
+@stillwater/web:dev: ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+@stillwater/web:dev: ⚠ Slow filesystem detected. The benchmark took 503ms. If /home/project/stillwater/apps/web/.next/dev is a network drive, consider moving it to a local folder.
+@stillwater/web:dev: See more: https://nextjs.org/docs/app/guides/local-development
+@stillwater/web:dev: - Experiments (use with caution):
+@stillwater/web:dev:   ? turbopackFileSystemCaching (invalid experimental key)
+@stillwater/web:dev:
+@stillwater/web:dev: ⨯ ./apps/web/next.config.ts
+@stillwater/web:dev: Failed to resolve package babel-plugin-react-compiler while attempting to resolve React Compiler
+@stillwater/web:dev: React compiler is enabled in apps/web/next.config.ts. We attempted to resolve React Compiler relative to the next package. Is babel-plugin-react-compiler installed in your node_modules directory?
+@stillwater/web:dev:
+@stillwater/web:dev:
+@stillwater/web:dev:  GET / 500 in 3.7s (next.js: 3.5s, application-code: 147ms)
 
 $ docker ps
 CONTAINER ID   IMAGE                                 COMMAND                  CREATED         STATUS                   PORTS                                         NAMES
