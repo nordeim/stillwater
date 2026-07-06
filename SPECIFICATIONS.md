@@ -2336,3 +2336,412 @@ All admin CRUD (creating a session, editing a class, managing roles) uses a Shee
 - Manual save required for critical fields
 
 ---
+
+## 10. Loading State Specifications
+
+Per PAD §10.5: every data-dependent UI must implement all four states. This section specifies loading behavior in detail.
+
+### 10.1 Loading Pattern by Context
+
+| Context | Loading pattern | Duration expectation | Spinner? |
+|---------|-----------------|---------------------|----------|
+| **First page load (SSR)** | Skeleton matching final layout exactly | < 1000ms on broadband | No |
+| **Client-side data fetch** | Skeleton (not spinner) inside slot | < 500ms typical | No |
+| **Form submission** | Button shows spinner; inputs disabled | < 2s typical | Yes (in button only) |
+| **Mutation (e.g., book class)** | Optimistic UI + rollback on error | < 500ms typical | Optimistic; spinner on roll back |
+| **Infinite scroll / pagination** | Skeleton rows (3 rows) at bottom | Continuous | No |
+| **Search / typeahead** | Subtle progress dot in input box | < 300ms | No |
+| **Background sync (SSE reconnect)** | Connection dot in footer; invisible otherwise | Up to 30s | No |
+| **Modal/Sheet opening** | Skeleton inside Sheet body | < 800ms | No |
+| **Admin table first load** | Skeleton rows (5 rows, table layout) | < 800ms | No |
+| **Admin table filter/search** | Skeleton rows (3 rows) at top | < 400ms | No |
+| **Full-page route change** | Brief skeleton flash | < 600ms | No |
+| **File upload (avatar, image)** | Progress bar in upload zone | Up to 30s | Yes (progress bar) |
+| **Stripe redirect** | Full-screen brand loading | 2-5s | Yes (calm, slow-rotate) |
+
+### 10.2 Skeleton Guidelines
+
+Skeleton design rules (matching PAD §11 design language):
+
+```
+Color:     bg-stone-200 (no shimmer animation; just static muted stone)
+Shape:     Matches final element exactly (same dimensions, same position)
+Text:      width matches final text width (e.g., heading 60% of column width)
+Avatars:   Circular skeleton
+Buttons:   Rounded rectangle skeleton matching button dimensions
+Cards:     Full card skeleton with internal layout matching
+Tables:    Skeleton rows × 5 with column structure visible
+```
+
+Anti-patterns:
+```
+✗ Shimmer/pulse animation (we use static; PAD §11.5 prefers calm)
+✗ Generic rectangular blocks where text should be
+✗ Spinner inside a layout-defining slot (use skeleton instead)
+✗ Skeletons that don't match final layout dimensions
+✗ Skeletons visible for > 5 seconds (refetch or error)
+```
+
+Edge cases:
+- Skeleton > 5 seconds: Show error state with "Taking longer than usual" message + retry
+- Skeleton < 200ms: Don't show (just let the actual content fade in)
+
+### 10.3 Suspense Boundaries
+
+Per Next.js 16 conventions (PAD §13 + Skill §5.2):
+
+```
+Layout-level Suspense boundaries:
+  /admin/layout.tsx — wraps studio shell + persistent nav
+  /studio/layout.tsx — wraps member shell + persistent nav
+  No suspense at page level for these (use SSR initial)
+
+Page-level Suspense:
+  /schedule — wraps ScheduleGrid while ISR data hydrates
+  /book/[sessionId] — wraps SeatCounter while SSE connects
+  /dashboard — wraps each widget (Upcoming, MembershipSummary, etc.)
+```
+
+Loading.tsx files use a `<Skeleton>` component matching the page's main content shape (not generic "Loading...").
+
+### 10.4 Network Resilience
+
+Per PAD §10.5 audio + UI resilience rules:
+
+- Failed tRPC query: Graceful error state with retry button (see §11.5)
+- SSE disconnect: Show amber dot + auto-retry; never block UI
+- Form submission failure: Re-enable form; preserve unsaved values
+- Optimistic UI rollback: Smooth state reversal (no flicker)
+
+---
+
+## 11. Empty State Specifications
+
+Every list, table, or count-based widget must implement a meaningful empty state per PAD §10.5.
+
+### 11.1 Empty State Templates
+
+Each empty state has: icon (or illustration), headline, subhead, optional CTA. Tone: helpful, not pitying. Never "Oops!" or "Uh oh!"
+
+### 11.2 Per-Widget Empty States
+
+| Widget | Headline | Subhead | CTA |
+|--------|----------|---------|-----|
+| **Upcoming bookings** | "Nothing booked yet." | "Find a class that fits this week." | "Browse schedule" → /schedule |
+| **Past bookings** | "Your practice starts here." | "Past sessions will show up here once you've taken your first class." | "Take your first class" → /schedule |
+| **Waitlist** | "No waitlists." | "Looking to join a full class? Browse the schedule." | "Browse schedule" → /schedule |
+| **Membership summary** | "You're not a member yet." | "Join for weekly classes, or drop in to start." | "See membership options" → /pricing |
+| **Invoices** | "No invoices yet." | (occurs only when subscription just started; rare) | (none) |
+| **Notifications list (admin)** | "All caught up." | "No items need your attention right now." | (none) |
+| **Activity feed** | "Nothing here yet." | "Activity will appear as it happens." | (none) |
+| **Anomalies panel** | "Looking healthy." | "No issues to flag. Last checked: at {timestamp}." | (none) |
+| **Members list (search empty)** | "No members match." | "Try a different name or email." | "Clear search" |
+| **Sessions list (filter empty)** | "No classes match your filters." | "Try clearing some filters." | "Clear filters" |
+| **Class catalog (admin)** | "Add your first class." | "Define a class template before scheduling sessions." | "Add a class" → /admin/classes/[id]/edit |
+| **Roster (empty session)** | "No one's booked yet." | "Members can sign up via the public schedule." | (none) |
+| **Invoices (admin)** | "No recent activity." | "Invoices appear when subscriptions are billed." | (none) |
+| **Blogs list (recent)** | "No posts yet." | "Publish from Sanity Studio to see posts here." | "Open Sanity Studio" → external |
+| **Revenue chart (no data)** | "No revenue in this range." | "Try a longer date range or select a different period." | "Reset to default range" |
+
+### 11.3 Design Tokens for Empty States
+
+- Icon: `text-stone-300`, size 48px (not too big — stays editorial)
+- Headline: `text-heading-md` Cormorant
+- Subhead: `text-body-md` DM Sans, `text-stone-600`
+- CTA: `Button variant="outline" size="md"` (not primary — this is a secondary action)
+- Centered, max-w-sm
+- Vertical padding: `--space-12` (192px) — generous breathing room
+
+---
+
+## 12. Interaction State Specifications
+
+Every interactive element has 5 explicit states (PAD §11 + WCAG §22):
+
+### 12.1 Buttons
+
+States defined in component spec (Section 3.1.1); restated here for completeness:
+
+| State | Visual | Cursor | Aria |
+|-------|--------|--------|------|
+| Rest | variant default | pointer | — |
+| Hover | variant hover color | pointer | — |
+| Focus | ring-3 ring-water-500 ring-offset-2 | pointer | aria-disabled=false |
+| Active | variant active color (darker) | pointer | — |
+| Disabled | opacity-50 | not-allowed | aria-disabled=true |
+
+### 12.2 Form Fields
+
+States defined in component spec (Section 3.1.2); restated here:
+
+| State | Visual |
+|-------|--------|
+| Rest | border-stone-300 bg-sand |
+| Hover | border-stone-400 |
+| Focus | ring-3 ring-water-500 ring-offset-2 border-water-500 |
+| Error | border-error ring-error-200 + error message shown below |
+| Disabled | bg-stone-100 text-stone-400 cursor-not-allowed |
+| Read-only | bg-transparent cursor-default (no border change) |
+
+### 12.3 Cards (ClassCard, InstructorCard, etc.)
+
+| State | Micro-interaction |
+|-------|------------------|
+| Rest | static |
+| Hover (mouse only) | lift -2px, shadow appears (150ms) |
+| Active (pressed) | returns to rest (100ms — quick snap) |
+| Focus-visible | ring-3 ring-water-500 (no lift) |
+| Disabled (when class is full) | opacity-60, no hover, no lift |
+
+Touch devices: lift disabled; hover state replaced with `:active` only.
+
+### 12.4 Links
+
+| State | Visual |
+|-------|--------|
+| Rest | text-water-600 |
+| Hover | underline (offset-4) |
+| Visited | text-water-700 (subtle) |
+| Focus-visible | ring-3 ring-water-500 ring-offset-2 around inline content |
+| Active | text-water-700 |
+
+### 12.5 Switch / Checkbox
+
+| State | Visual |
+|-------|--------|
+| Off | bg-stone-200 knob at left |
+| On | bg-water-500 knob at right with smooth 150ms tween |
+| Hover | subtle bg shift (-50 to -100 on stone scale) |
+| Focus-visible | ring-3 ring-water-500 ring-offset-2 |
+| Disabled | opacity-50 |
+
+### 12.6 Tooltip (Radix Tooltip wrapper if needed)
+
+- Show after 500ms hover delay
+- Hide after 100ms mouse-out delay
+- Position auto-flip if near edge
+- Background: stone-900, text: sand-50, font-body-sm
+- Arrow indicator on the side facing the trigger
+- Reduced-motion: instant show/hide
+
+### 12.7 Default Cursor Rules
+
+- `pointer`: clickable elements (links, buttons, interactive cards)
+- `default`: static text, decorations
+- `not-allowed`: disabled buttons, read-only fields with disabled interaction
+- `wait`: loading state on whole-page (rare; usually use per-element indication)
+- `progress`: file upload (don't use elsewhere)
+
+---
+
+## 13. Validation Rules Catalog
+
+Beyond Zod schema enforcement, business rules apply at multiple boundaries. These rules are checked at DB constraint level (where possible) AND in application logic.
+
+### 13.1 Booking Rules
+
+| # | Rule | Enforced by | Error message |
+|---|------|-------------|---------------|
+| BR-1 | Session must start in future | DB CHECK constraint + server | "This class has already started." |
+| BR-2 | Session must be status='scheduled' | DB CHECK | "This class has been cancelled." |
+| BR-3 | Unique enrollment per session+member | DB UNIQUE INDEX (sessionId, memberId) | "You're already booked into this class." |
+| BR-4 | Unique waitlist per session+member | DB UNIQUE INDEX (sessionId, memberId) WHERE status IN ('waiting', 'offered') | "You're already on this waitlist." |
+| BR-5 | Member must have active credits OR drop-in purchased | server | "No credits remaining. Buy a class pack or join as member." |
+| BR-6 | Member cannot book same session twice (even with credits) | DB UNIQUE + server | (see BR-3) |
+| BR-7 | Conditional virtual: virtual sessions need stream URL | DB CHECK + server | "Virtual sessions require a stream URL." |
+| BR-8 | Weekly booking cap (configurable) | server | "You've reached your weekly class maximum." |
+| BR-9 | Concurrent booking safety | pg_advisory_xact_lock (PAD §4.2) | "We're processing your booking..." |
+| BR-10 | Inactive members cannot book | server | "Your account is inactive. Contact support." |
+
+### 13.2 Cancellation Rules
+
+| # | Rule | Enforced by | Refund credit? |
+|---|------|-------------|----------------|
+| CR-1 | Member can only cancel own enrollment | server (session.user.id) | n/a |
+| CR-2 | Cancellation window (default 12h) | server | If outside window: no refund |
+| CR-3 | Setting `cancellationWindowHours` in studio settings | config | (configurable) |
+| CR-4 | Cancelling triggers waitlist promotion | trigger.dev job | n/a |
+| CR-5 | Cannot cancel a session that's already started | server | "Can't cancel a class that's already in progress." |
+| CR-6 | Cannot cancel session already checked-in | server | "You've already checked in. Contact staff to cancel." |
+| CR-7 | Staff cancellation has reason dropdown (required) | schema | n/a |
+
+### 13.3 Waitlist Rules
+
+| # | Rule | Enforced by |
+|---|------|------------|
+| WR-1 | Add to waitlist only if class is full | server |
+| WR-2 | Maximum position = capacity of session | server |
+| WR-3 | Offer window (default 2h, configurable via studio settings) | config + cron (waitlist-expiry job) |
+| WR-4 | Claiming consumes a credit (transferred from offer to enrollment) | server, in same transaction as claim |
+| WR-5 | Declining an offer promotes next in line | trigger.dev job |
+| WR-6 | Expiry threshold: cannot claim after `expires_at` | server |
+| WR-7 | Waitlist positions update when someone leaves (high position) | DB trigger or application logic |
+
+### 13.4 Subscription Rules
+
+| # | Rule | Enforced by |
+|---|------|------------|
+| SR-1 | One active subscription per member | server (Stripe enforces at customer level) |
+| SR-2 | Plan must be active (`isActive=true`) to subscribe | server |
+| SR-3 | Pause duration min 7 days (config) | server |
+| SR-4 | Pause duration max 90 days (config) | server |
+| SR-5 | Pause accumulates: max 90 days/year (config) | server |
+| SR-6 | Cancellation is at period end (no immediate) | Stripe subscription.cancel_at_period_end=true |
+| SR-7 | Proration: Stripe handles automatically on plan change | Stripe |
+| SR-8 | Credit grant on invoice.paid (post first payment, not on subscribe with trial) | webhook handler |
+| SR-9 | Credits expire at end of billing period (no rollover) | server (cron) |
+| SR-10 | Trial: 0–30 days, configurable per plan | Stripe |
+
+### 13.5 Permission Rules
+
+| Action | Permission | Roles allowed |
+|--------|------------|---------------|
+| Book a class | book_class | member, instructor, staff, manager, owner |
+| Cancel any member's booking | (no permission named yet — use cancel_own) | staff, manager, owner |
+| Create class | manage_classes | staff, manager, owner |
+| Edit class | manage_classes | staff, manager, owner |
+| View revenue | view_revenue | manager, owner |
+| Edit plans | manage_memberships | manager, owner |
+| Assign roles | assign_roles | owner only |
+| Studio settings | studio_settings | owner only |
+| View audit log | view_audit_log | owner |
+
+### 13.6 Rate Limit Rules (Upstash Redis)
+
+| Action | Limit | Window |
+|--------|-------|--------|
+| `bookings.book` | 10 | 60s per member |
+| `bookings.cancel` | 20 | 60s per member |
+| `memberships.subscribe` | 5 | 60s per member |
+| `/auth/signin` POST | 8 | 60s per IP |
+| `/auth/signup` POST | 3 | 60s per IP |
+| Email magic-link request | 3 | 60s per email |
+
+Implementation: `@upstash/ratelimit` middleware in tRPC (§2.3) and route handlers.
+
+---
+
+## 14. Notification Copy Catalog
+
+All toasts use tone matching the design system (calm, specific, brief). Format:
+
+### 14.1 Toast Conventions
+
+| Type | Variant | Default Duration | Position |
+|------|---------|------------------|----------|
+| Success | bg-water-500-on-sand text-stone-900 | 4000ms | bottom-left (desktop), bottom-center (mobile) |
+| Error | bg-error text-sand | 6000ms | bottom-left (desktop), bottom-center (mobile) |
+| Info | bg-stone-100 text-stone-900 | 4000ms | same |
+| Warning | bg-warning text-sand | 5000ms | same |
+
+Target: max 6 words for the title. Description: max 14 words.
+
+### 14.2 Success Toasts
+
+| Trigger | Toast Title | Description (if any) | Action button |
+|---------|------------|---------------------|---------------|
+| Booking confirmed | "You're booked." | "{class} on {time}" | "View" → /my-classes |
+| Booking cancelled | "Booking cancelled." | "{creditCount} credit refunded." | "My classes" |
+| Waitlist joined | "On the waitlist." | "Position #{position}" | "View waitlist" |
+| Waitlist spot claimed | "Spot claimed." | "You're in {class}" | "View" |
+| Subscription started | "Welcome." | "Redirecting to Stripe..." | (auto-redirect) |
+| Subscription cancelled | "Subscription set to cancel." | "Active until {date}" | "View plan" |
+| Subscription paused | "Membership paused." | "Resumes {date}" | "Manage" |
+| Profile saved | "Profile updated." | | |
+| Invoice paid | "Payment received." | "{amount} from {last4}" | "Receipt" |
+| Role assigned | "Role granted." | "{member} now has {role}" | |
+| Class created | "Class added." | "{class} available for scheduling" | "Schedule" |
+| Session created | "Sessions added." | "{count} sessions added" | "View" |
+| Session cancelled | "Sessions cancelled." | "{count} enrollees notified" | "View log" |
+
+### 14.3 Error Toasts
+
+| Trigger | Toast Title | Description |
+|---------|------------|-------------|
+| Booking failed (network) | "Booking didn't go through." | "Please try again." |
+| Booking failed (race) | "Class is now full." | "You're on the waitlist at #{position}." |
+| Booking failed (auth) | "Please sign in to book." | "Redirecting..." |
+| Payment declined | "Card declined." | "Try a different card." |
+| Network timeout | "Connection slow right now." | "Please try again." |
+| Form save failed | "Couldn't save changes." | "Please try again." |
+| Permission denied | "No access to that page." | |
+| Rate limit | "Too many requests." | "Please wait {seconds}s." |
+| Generic catch | "Unexpected error." | "We've been notified." |
+
+### 14.4 Info Toasts
+
+| Trigger | Toast Title | Description |
+|---------|------------|-------------|
+| SSE connected | "Live seat counts ready." | (silent reconnect — no toast) |
+| Profile save (debounced) | (silent — no toast) | |
+| Magic link sent | "Check your inbox." | "Sign-in link sent to {email}." |
+| Auto-saved settings | (silent in toast; sub-label visible) | |
+
+### 14.5 Warning Toasts
+
+| Trigger | Toast Title | Description |
+|---------|------------|-------------|
+| Trial ends in 3 days | "Your trial ends soon." | "Choose a plan before {date}." |
+| Subscription will cancel | "Subscription ends {date}." | "Renew to keep your benefits." |
+| Server in maintenance | "Maintenance in 30 minutes." | "Bookings may slow briefly." |
+| Waitlist position changed | "Your waitlist position changed." | "Now #{newPosition}." |
+
+### 14.6 Banners (non-toast, page-level)
+
+| Trigger | Banner | Action |
+|---------|--------|--------|
+| Payment failed (ongoing) | "Your last payment didn't go through." | "Update card → /membership" |
+| Offline | "You're offline. Your booking will save and process when you're back." | (none) |
+| Maintenance | "We'll be down for maintenance from {start} to {end}." | (none) |
+| Impersonation (admin) | "Viewing as {memberName}. Actions affect their account." | "Exit" |
+
+---
+
+## 15. Date/Time Formatting Catalog
+
+Studio timezone: `America/Los_Angeles` for v1 (per PAD §24; i18n deferred).
+
+### 15.1 Date/Time Display Patterns
+
+| Context | Format | Example |
+|---------|--------|---------|
+| Class card time | `h:mm a` | "9:30 AM" |
+| Session detail time | `h:mm a — h:mm a` | "9:30 AM — 10:30 AM" |
+| Schedule view day label | `EEE, MMM d` | "Mon, Jun 29" |
+| Schedule view month label | `MMMM yyyy` | "June 2026" |
+| Booking history date | `MMM d, yyyy` | "Jun 29, 2026" |
+| Invoice date | `MMM d, yyyy` | "Jun 29, 2026" |
+| Membership start date | `MMMM d, yyyy` | "June 29, 2026" |
+| Email tomorrow reminder | `EEE, h:mm a` | "Mon, 9:30 AM" |
+| Email 1-hour reminder | `h:mm a` | "9:30 AM" |
+
+Implementation: Use `Intl.DateTimeFormat` (no Moment.js). Respect user timezone for member views; studio timezone for admin.
+
+### 15.2 Relative Time
+
+| Context | Format | Example |
+|---------|--------|---------|
+| Activity feed | `{n}m ago`, `{n}h ago`, `{n}d ago` | "11m ago", "2h ago", "3d ago" |
+| Last visit (admin) | `Last visit: {relative}` | "Last visit: 3d ago" |
+| Session start countdown | `Starts in {n} min` | "Starts in 30 min" |
+
+Above 7 days: absolute date. Never show seconds in user-facing UI.
+
+### 15.3 Date Range Selection
+
+| Picker | Layout |
+|--------|--------|
+| Single date | Calendar popover (Cal component) |
+| Range | Two linked calendars, OR single calendar with range selection |
+| Time | Native `<input type="time">` styled to match design system |
+
+### 15.4 Time Zones
+
+Display rules:
+- **Member view**: Show in member's browser timezone (detected via `Intl.DateTimeFormat().resolvedOptions().timeZone`).
+- **Admin view**: Default to studio timezone (PT). Allow override per-user in settings (future feature).
+
+A class at "9:30 AM PT" displayed to a member in EST shows as "12:30 PM EST" — with a small "(PT)" annotation on hover/second tap to avoid timezone ambiguity.
+
+---
+
