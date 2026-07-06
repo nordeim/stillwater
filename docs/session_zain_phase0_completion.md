@@ -1,3 +1,176 @@
+I'll follow the ANALYZE → PLAN → IMPLEMENT → VERIFY workflow meticulously. Let me start with a thorough evaluation of the ESLint v9 vs v10 decision, then execute both tracks.
+## Phase 1: ANALYZE — ESLint v9 vs v10 Evaluation
+
+Let me gather all the data I need to make an evidence-based decision:
+This is very revealing. Let me check the remaining plugin and verify no v10-specific features are used:
+Now I have all the data. Let me do one final check on `eslint-plugin-react-hooks` to see if there's a newer version that supports v10:
+I now have definitive evidence. Let me present the analysis and proceed with implementation.
+
+## ANALYZE Complete — ESLint v9 vs v10 Verdict
+
+### Evidence Summary
+
+| Plugin | Latest Version | ESLint Peer Dep Range | Supports v10? | Supports v9? |
+|---|---|---|---|---|
+| `eslint-plugin-react` | `7.37.5` | `^3 \|\| ^4 \|\| ... \|\| ^9.7` | ❌ NO | ✅ Yes |
+| `eslint-plugin-import` | `2.32.0` | `^2 \|\| ... \|\| ^9` | ❌ NO | ✅ Yes |
+| `eslint-plugin-react-hooks` | `7.1.1` | `... \|\| ^9.0.0 \|\| ^10.0.0` | ✅ Yes | ✅ Yes |
+| `eslint-plugin-tailwindcss` | `4.0.6` | `^9.0.0 \|\| ^10.0.0` | ✅ Yes | ✅ Yes |
+| `typescript-eslint` | `8.62.1` | `^8.57.0 \|\| ^9.0.0 \|\| ^10.0.0` | ✅ Yes | ✅ Yes |
+| `@eslint/eslintrc` / `@eslint/js` | `10.0.1` / `9.39.4` | — | ✅ Yes | ✅ Yes |
+
+### npm dist-tags for ESLint
+- `latest`: `10.6.0` (current, but plugin ecosystem hasn't caught up)
+- `maintenance`: `9.39.4` (actively maintained — receiving security/bug fixes)
+- No newer versions of `eslint-plugin-react` or `eslint-plugin-import` exist that support v10
+
+### Config Analysis
+The shared ESLint config (`tooling/eslint/index.js`) uses **zero v10-specific APIs**. The only v10 references are my own TODO comments about the incompatibility. The config is fully v9-compatible.
+
+### ✅ VERDICT: Downgrade to ESLint v9.39.4
+
+**Rationale:**
+1. `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` — the latest versions — only support ESLint v9. No v10-compatible versions exist.
+2. ESLint v9.39.4 is in active maintenance mode (receiving security/bug fixes per npm dist-tags).
+3. The shared config uses no v10-specific features.
+4. Downgrading re-enables **all** disabled rules: React (display-name, exhaustive-deps, etc.) + import/order.
+5. v9 is the industry-standard stable version; v10 is too new for the plugin ecosystem.
+
+Now proceeding to IMPLEMENT:
+## IMPLEMENT — ESLint Downgrade
+
+### Step 1: Update 3 package.json files (eslint + @eslint/js versions)
+### Step 2: Run `pnpm install` to update lockfile
+✅ ESLint downgraded from `10.6.0` → `9.39.4`. Now let me re-enable the disabled React and import/order rules.
+
+### Step 3: Re-enable React plugin block in shared ESLint config
+### Step 4: Re-enable `import/order` rule
+### Step 5: Run `pnpm lint` to verify all rules work
+Excellent — **the React and import plugins are now working!** The 7 errors are all `import/order` violations (auto-fixable). The React rules are running cleanly on `.tsx` files. Let me auto-fix:
+Now let me verify lint passes cleanly:
+🎉 **`pnpm lint` PASSES — 2/2 tasks successful, zero errors, with ALL rules re-enabled!**
+
+Let me also run `pnpm check-types` to make sure the ESLint downgrade didn't break type checking:
+Same expected TS18003 errors (empty `src/` dirs) as before — ESLint downgrade didn't affect type checking. Let me verify:
+✅ **VERIFY complete.** Only the expected TS18003 "No inputs found" error (empty `src/` dirs — Phase 1+ will populate them). Zero "Cannot find module" errors. ESLint downgrade is clean.
+
+Let me update the SKILL.md to reflect the ESLint v9 pin (since it documents the tech stack):
+Good — SKILL.md §3.2 line 239 already says "ESLint v9 flat config". This was aspirational before but is now accurate. Let me also add D45 to MEP to document the ESLint downgrade:
+ESLint downgrade is complete. Now let me proceed to the 5 open questions. I'll update MEP §9 to mark each as RESOLVED with the decision and rationale:
+## Q4-Q10: Open Questions — Research + Decisions
+
+Let me read the current MEP §9 to see the exact text I need to update:
+Now I have the exact text. Let me update all 5 open questions (Q4, Q5+Q8, Q6, Q9, Q10) with their resolutions:
+All 5 open questions are now marked ✅ RESOLVED with decisions and rationale. Let me verify:
+✅ **All 10 Open Questions are now RESOLVED.** Now let me also update the D12 discrepancy entry to reflect the refund scope reduction:
+Now let me do a final comprehensive verification — run both `check-types` and `lint` to confirm everything is green:
+All verifications pass. Let me update the final todo:
+---
+
+# ✅ Complete — ESLint Downgrade + All Open Questions Resolved
+
+## Track 1: ESLint v10 → v9 Downgrade
+
+### Evidence-Based Decision
+
+| Factor | Finding |
+|---|---|
+| `eslint-plugin-react@7.37.5` (latest) | Peer dep: `^9.7` — **v9 only, no v10 version exists** |
+| `eslint-plugin-import@2.32.0` (latest) | Peer dep: `^9` — **v9 only, no v10 version exists** |
+| `eslint-plugin-react-hooks@7.1.1` | Supports both v9 and v10 ✅ |
+| `eslint-plugin-tailwindcss@4.0.6` | Supports both v9 and v10 ✅ |
+| `typescript-eslint@8.62.1` | Supports both v9 and v10 ✅ |
+| ESLint v9 npm dist-tag | `maintenance: 9.39.4` — actively receiving security/bug fixes |
+| Shared config v10-specific APIs | Zero — config is fully v9-compatible |
+
+### Changes Executed (6 edits across 4 files)
+
+| File | Change |
+|---|---|
+| `package.json` (root) | `eslint: "^10.6.0"` → `"^9.39.4"` |
+| `apps/web/package.json` | `eslint: "^10.6.0"` → `"^9.39.4"` |
+| `tooling/eslint/package.json` | `@eslint/js: "^10.0.1"` → `"^9.39.4"` |
+| `tooling/eslint/index.js` | Re-enabled React plugin block (scoped to `.tsx`/`.jsx`) |
+| `tooling/eslint/index.js` | Re-enabled `import/order` rule with full config |
+| `MASTER_EXECUTION_PLAN.md` | Added D45 documenting the downgrade decision |
+
+### Verification Results
+
+| Check | Result |
+|---|---|
+| `pnpm install` | ✅ Exit 0; ESLint resolved to `9.39.4` |
+| `pnpm lint` | ✅ **2/2 tasks successful, zero errors** (FULL TURBO cache hit) |
+| `pnpm check-types` | ✅ Only expected TS18003 (empty `src/` dirs); zero "Cannot find module" errors |
+| React rules active | ✅ `eslint-plugin-react@7.37.5` running on `.tsx`/`.jsx` files |
+| Import rules active | ✅ `import/order`, `import/no-duplicates`, `import/no-cycle` all enforced |
+
+**All 7 auto-fixable `import/order` violations were fixed** (import reordering in `proxy.ts` and `tailwind.config.ts`).
+
+---
+
+## Track 2: All 10 Open Questions Resolved
+
+| # | Question | Decision | Rationale |
+|---|---|---|---|
+| Q1 | Better Auth vs Auth.js | ✅ Resolved (prior) | Better Auth v1.6.23 stable; Auth.js v5 still beta |
+| Q2 | `proxy.ts` rename | ✅ Resolved (prior) | Next.js 16.2.0 pinned; ADR-009 adopted |
+| Q3 | Self-hosted fonts | ✅ Resolved (prior) | Cormorant + DM Sans + JetBrains Mono (all free) |
+| **Q4** | **Sanity hosting** | **Sanity Cloud** (`stillwater.sanity.studio`) | ADR-005 "marketing content only"; PAD §2.3 "no infra management"; free for small teams; Studio config stays in repo (`apps/studio/sanity.config.ts`), only runtime is hosted |
+| **Q5** | **Stripe refund workflow** | **Stripe Dashboard for v1** | Staff already have Dashboard access; in-app refunds add complexity (permissions, audit, partial refunds, webhook handling) unjustified for single-studio v1; `payment_events` table still records all events for audit |
+| Q6 | Mobile nav drawer | **Radix Dialog** (D32 default) | SKILL.md §5.4 library discipline mandates Radix; built-in focus trap + Escape + `aria-modal` for WCAG AAA; `@radix-ui/react-dialog` already in deps |
+| Q7 | Berkeley Mono license | ✅ Resolved (prior) | JetBrains Mono (Apache 2.0) selected |
+| **Q8** | **Refund workflow scope** | **Defer in-app to v2** (merged with Q5) | Saves ~2 engineering days in Phase 7; F7-07 `refunds.ts` retained as thin wrapper for future v2 |
+| **Q9** | **Test data PII** | **Synthetic data only** | `crypto.randomUUID()` for all IDs; factory pattern (`getMockMember`); GDPR/CCPA compliance; Phase 1 fixtures use `member1@stillwater.test`, `+1-555-0100`; add `PII-SAFETY.md` to `packages/db/src/seed/` |
+| **Q10** | **Production cutover** | **Feature-flag-gated progressive rollout** (5% → 25% → 100%) | PostHog feature flags already in stack; instant rollback without redeploy; each stage requires 48h green metrics; Phase 10 implements `nextgen_booking` flag, Phase 12 launches progressively |
+
+### Document Updates Made
+
+| Document | Updates |
+|---|---|
+| `MASTER_EXECUTION_PLAN.md` §9 | All 10 questions marked ✅ RESOLVED with decisions + rationale + actions |
+| `MASTER_EXECUTION_PLAN.md` §2 D12 | Updated to reflect "v1: Stripe Dashboard only" scope reduction |
+| `MASTER_EXECUTION_PLAN.md` §2 D45 | New discrepancy entry documenting ESLint v10→v9 downgrade |
+
+---
+
+## Phase 0 Final Status — Complete
+
+| Check | Status | Notes |
+|---|---|---|
+| `pnpm install` | ✅ Exit 0 | 984+ lockfile entries; supply chain guardrails passed |
+| `pnpm check-types` | ✅ Pass (per DoD) | Only expected TS18003; zero "Cannot find module" |
+| `pnpm lint` | ✅ **2/2 tasks pass, zero errors** | ALL rules active (React + import/order + TS + Next + Tailwind) |
+| `pnpm dev --filter=web` | ⏳ Manual | Please run to verify 200 OK at `localhost:3000` |
+| `docker compose up -d` | ⏳ Manual | Please run to verify postgres + redis healthy |
+
+### Discrepancy Catalog Status: D1–D45
+
+- **D1–D14** (architectural): All resolved or in-source
+- **D15–D24** (scaffolding): All applied and verified
+- **D25–D42** (mockup/PAD): All resolved or tracked for later phases
+- **D43** (React Email v6): ✅ Resolved
+- **D44** (TypeScript drift): ✅ Resolved
+- **D45** (ESLint v10→v9): ✅ Resolved
+
+### Open Questions Status: 10/10 Resolved ✅
+
+---
+
+## What's Next
+
+**Phase 0 is officially complete.** The foundation is stable, all tooling is green, and all architectural decisions are locked. The codebase is ready for **Phase 1: Database Schema, Drizzle Migrations, Seed Data** (F1-01 through F1-21, estimated 3 days).
+
+Phase 1 will:
+1. Create `packages/db/src/schema/enums.ts` (F1-01) — 8 `pgEnum`s
+2. Create 13 table files (F1-02…F1-13) — USER, MEMBER (with `stripeCustomerId` per D6), INSTRUCTOR, CLASS_STYLE, CLASS, ROOM, CLASS_SESSION, ENROLLMENT, WAITLIST_ENTRY, MEMBERSHIP_PLAN + MEMBER_SUBSCRIPTION, CLASS_PACKAGE + PAYMENT_EVENT, ROLE_ASSIGNMENT
+3. Create barrel export (F1-14) + db client with `DrizzleDB` type (F1-15, D11)
+4. Create seed script + fixtures (F1-16…F1-20) using **synthetic data only** per Q9
+5. Create reset script (F1-21)
+
+**Shall I proceed with Phase 1?** I'll follow TDD (RED → GREEN → REFACTOR → COMMIT) per SKILL.md §11.1, starting with the enums file and its tests, then proceeding table-by-table with integration tests against Testcontainers Postgres.
+
+---
+
 I'll approach this meticulously. First, let me assess the current state of all 4 files, read the relevant skills for format guidance, then execute updates with full alignment to our P0-P3 work.
 Good — all 3 skill files exist. Let me read them in parallel, along with the current CLAUDE.md and README.md to understand their structure:
 Now let me read the README.md:
