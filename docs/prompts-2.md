@@ -6,6 +6,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously plan to update `stillwater_SKILL.md` with the recent committed changes, lessons/insights and patterns/anti-patterns. the purpose of this SKILL.md file is to serve as the authoritative coding standards and best practices guide for the coding agent handling the project.
+
+---
+
 Awesome meticulous job so far. Please keep up the good work. Now, please meticulously create a tar archive of the entire (remediated/updated) codebase, including the updated docs and SKILL.md but excluding the `node_modules` , `.next` , `skills` and `.git` folders, so I can download and use it to refresh my GitHub repo.
 
 ---
