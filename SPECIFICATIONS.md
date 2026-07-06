@@ -1516,3 +1516,823 @@ Actions:    [Try again] [Go to dashboard]
 ```
 
 ---
+
+## 5. Form Schema Catalog (Zod)
+
+Every form in the app uses a Zod schema. Schemas are:
+- Single source of truth (shared between client validation + tRPC input)
+- Co-located with the form component when single-use, in `packages/api/src/schemas/` when shared
+- Generated types via `z.infer<typeof schema>`
+
+### 5.1 Booking Forms
+
+#### 5.1.1 `bookingSchema` — Confirms booking
+
+```typescript
+export const bookingSchema = z.object({
+  sessionId:  z.string().uuid('Invalid session ID.'),
+  notes:      z.string().max(500, 'Notes must be 500 characters or fewer.').optional(),
+});
+export type BookingFormValues = z.infer<typeof bookingSchema>;
+```
+
+Fields:
+- `sessionId` — hidden; populated from route param
+- `notes` — optional 500-char text for instructor (e.g., "first class, modifications needed")
+
+UI notes:
+- Textarea (4 rows visible)
+- Help text below: "Optional. Your instructor sees this before class."
+- Errors: inline, below textarea; required styling from Input component
+
+#### 5.1.2 `waitlistJoinSchema`
+
+```typescript
+export const waitlistJoinSchema = z.object({
+  sessionId: z.string().uuid(),
+});
+export type WaitlistJoinFormValues = z.infer<typeof waitlistJoinSchema>;
+```
+
+No visible form — triggered instantly on click of "Join waitlist" button. Errors surface as toast.
+
+### 5.2 Profile & Onboarding Forms
+
+#### 5.2.1 `profileUpdateSchema`
+
+```typescript
+export const profileUpdateSchema = z.object({
+  displayName: z.string()
+    .trim()
+    .min(1, 'Display name is required.')
+    .max(50, 'Display name must be 50 characters or fewer.'),
+  phone: z.string()
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Phone must be a valid number (e.g., +15035551234).')
+    .or(z.literal(''))
+    .optional()
+    .transform(v => v === '' ? undefined : v),
+  dateOfBirth: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format.')
+    .or(z.literal(''))
+    .optional()
+    .refine(v => !v || new Date(v) <= new Date(), {
+      message: 'Date of birth cannot be in the future.',
+    })
+    .transform(v => v === '' ? undefined : v),
+  emergencyContact: z.string().max(100).or(z.literal('')).optional()
+    .transform(v => v === '' ? undefined : v),
+  emergencyPhone: z.string()
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Phone must be valid.')
+    .or(z.literal('')).optional()
+    .transform(v => v === '' ? undefined : v),
+  notes: z.string().max(1000).or(z.literal('')).optional()
+    .transform(v => v === '' ? undefined : v),
+});
+type ProfileUpdateFormValues = z.infer<typeof profileUpdateSchema>;
+```
+
+Field UI notes:
+- All fields except `displayName` are optional
+- Each phone field shows helper text "+15035551234"
+- DOB input is a Calendar popover, not a text input
+- `notes` is a Textarea with 1000-char counter
+
+#### 5.2.2 `notificationPreferencesSchema`
+
+```typescript
+export const notificationPreferencesSchema = z.object({
+  emailBookingConfirmation: z.boolean(),
+  emailClassReminders24h: z.boolean(),
+  emailClassReminders1h: z.boolean(),
+  emailWaitlistOffer: z.boolean(),
+  emailWeeklyDigest: z.boolean(),
+  emailMembershipUpdates: z.boolean(),
+});
+```
+
+UI: one Switch per preference. All default to true on signup. No submit button required — changes save on toggle via debounced auto-save.
+
+### 5.3 Membership Forms
+
+#### 5.3.1 `subscribeSchema` — Start subscription
+
+```typescript
+export const subscribeSchema = z.object({
+  planId: z.string().uuid('Select a membership plan.'),
+  trialDays: z.coerce.number().int().min(0).max(30).optional().default(0),
+});
+```
+
+UI: Single form on /pricing page; planId is a hidden field, populated when user clicks tier CTA. On submit: full redirect to Stripe Checkout (after server creates session + returns URL).
+
+#### 5.3.2 `pauseSubscriptionSchema`
+
+```typescript
+export const pauseSubscriptionSchema = z.object({
+  resumeDate: z.coerce.date()
+    .refine(d => d > new Date(), 'Resume date must be in the future.'),
+}).transform(v => ({ resumeDate: v.resumeDate }));
+```
+
+UI: Calendar input. Min: today + 7 days. Max: today + 90 days.
+
+Validation:
+- Server additionally validates: max 90 days/year accumulated pause
+
+#### 5.3.3 `cancelSubscriptionSchema`
+
+```typescript
+export const cancelSubscriptionSchema = z.object({
+  confirm: z.literal(true, { errorMap: () => ({ message: 'Please confirm cancellation.' }) }),
+  reason: z.enum([
+    'too_expensive',
+    'not_using_enough',
+    'moving',
+    'injury_or_health',
+    'temporary_relocation',
+    'other',
+  ]).optional(),
+  feedback: z.string().max(500).optional(),
+});
+```
+
+UI: Two-step dialog. Step 1: reason selection. Step 2: confirmation checkbox + optional feedback textarea.
+
+### 5.4 Auth Forms
+
+#### 5.4.1 `magicLinkRequestSchema`
+
+```typescript
+export const magicLinkRequestSchema = z.object({
+  email: z.string().email('Please enter a valid email address.'),
+});
+```
+
+UI: Single email input on /auth/signin. On submit: server triggers Better Auth sendMagicLink, sends email, shows "Check your inbox" state.
+
+#### 5.4.2 `signUpSchema`
+
+```typescript
+export const signUpSchema = z.object({
+  email: z.string().email('Valid email required.'),
+  displayName: z.string().trim().min(1, 'Display name required.').max(50),
+  acceptedTerms: z.literal(true, { errorMap: () => ({ message: 'You must accept the Terms of Service.' }) }),
+});
+```
+
+UI: Three fields stacked. Display name collected at signup (not OAuth).
+
+### 5.5 Admin Forms
+
+#### 5.5.1 `classFormSchema` — Create/edit class
+
+```typescript
+export const classFormSchema = z.object({
+  title: z.string().trim().min(1, 'Class title is required.').max(100),
+  slug: z.string().regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only.'),
+  styleId: z.string().uuid('Select a class style.'),
+  level: z.enum(['all', 'beginner', 'intermediate', 'advanced']),
+  durationMinutes: z.coerce.number().int().min(15, 'Minimum 15 minutes.').max(240, 'Maximum 4 hours.'),
+  maxCapacity: z.coerce.number().int().min(1, 'At least 1 seat.').max(100, 'At most 100 seats.'),
+  description: z.string().max(2000).optional(),
+  imageKey: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+```
+
+UI: Multi-section form. Side panel: live preview of public /classes/[slug] page.
+
+#### 5.5.2 `sessionFormSchema` — Schedule single session
+
+```typescript
+export const sessionFormSchema = z.object({
+  classId: z.string().uuid('Select a class.'),
+  instructorId: z.string().uuid('Select an instructor.'),
+  roomId: z.string().uuid().nullable(),
+  startsAt: z.coerce.date()
+    .refine(d => d > new Date(), 'Class must start in the future.'),
+  durationMinutes: z.coerce.number().int().min(15).max(240),
+  overrideCapacity: z.coerce.number().int().min(1).max(100).nullable().optional(),
+  isVirtual: z.boolean().default(false),
+  streamUrl: z.string().url('Must be a valid URL.')
+    .or(z.literal('')).optional()
+    .transform(v => v === '' ? undefined : v),
+}).refine(
+  data => !data.isVirtual || !!data.streamUrl,
+  { message: 'Virtual sessions require a stream URL.', path: ['streamUrl'] }
+);
+```
+
+UI: Modal form. Conflict detection: when selecting instructor/time, show inline warning if another of their sessions overlaps. When selecting room/time, show same warning.
+
+#### 5.5.3 `recurringSessionSchema` — Multi-session bulk create
+
+```typescript
+export const recurringSessionSchema = z.object({
+  classId: z.string().uuid(),
+  instructorId: z.string().uuid(),
+  roomId: z.string().uuid().nullable(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+  weekdays: z.array(z.object({
+    weekday: z.coerce.number().int().min(0).max(6),
+    startsAtTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    durationMinutes: z.coerce.number().int().min(15).max(240),
+    overrideCapacity: z.coerce.number().int().min(1).max(100).optional(),
+  })).min(1, 'Schedule at least one weekday.'),
+  isVirtual: z.boolean().default(false),
+  streamUrl: z.string().url().optional().or(z.literal('')).transform(v => v === '' ? undefined : v),
+}).refine(d => d.endDate > d.startDate, {
+  message: 'End date must be after start date.',
+  path: ['endDate'],
+});
+```
+
+UI: Inline form within /admin/schedule. Shows preview "This will create N sessions between {startDate} and {endDate}." with list of generated dates. Conflicts (instructor double-booked, room unavailable) listed before submit.
+
+#### 5.5.4 `instructorFormSchema`
+
+```typescript
+export const instructorFormSchema = z.object({
+  userId: z.string().uuid(),  // from user search
+  displayName: z.string().trim().min(1).max(100),
+  slug: z.string().regex(/^[a-z0-9-]+$/),
+  bio: z.string().max(2000).optional(),
+  specialties: z.array(z.string()).max(8, 'Up to 8 specialties.'),
+  imageKey: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+```
+
+UI: User search combobox at top ("Find existing user or invite new"); displayName auto-populated from selected user.
+
+#### 5.5.5 `cancelSessionSchema` — Cancel scheduled session
+
+```typescript
+export const cancelSessionSchema = z.object({
+  sessionId: z.string().uuid(),
+  reason: z.enum(['instructor_unavailable', 'low_enrollment', 'venue_issue', 'weather', 'other']),
+  notes: z.string().max(500).optional(),
+  notifyEnrollees: z.boolean().default(true),
+});
+```
+
+UI: Modal in /admin/schedule. Confirmation two-step.
+
+#### 5.5.6 `checkInSchema`
+
+```typescript
+export const checkInSchema = z.object({
+  enrollmentId: z.string().uuid(),
+});
+// No form UI; called on button click
+```
+
+#### 5.5.7 `assignRoleSchema`
+
+```typescript
+export const assignRoleSchema = z.object({
+  memberId: z.string().uuid(),
+  role: z.enum(['member', 'instructor', 'staff', 'manager', 'owner']),
+});
+```
+
+UI: Dropdown in member detail view. Confirm dialog. Restricted to owner role only.
+
+#### 5.5.8 `broadcastMessageSchema`
+
+```typescript
+export const broadcastMessageSchema = z.object({
+  segment: z.enum(['all_members', 'active_only', 'at_risk', 'no_visit_30_days', 'trial_ending']),
+  subject: z.string().trim().min(1).max(120),
+  bodyMarkdown: z.string().min(1).max(50000),
+  sendAt: z.coerce.date().optional(),
+});
+```
+
+UI: Two-section form — audience selector first, then composer. Default segment: "all_members". Preview generated for first 3 matching users (anonymized).
+
+### 5.6 Studio Settings Forms
+
+```typescript
+// settingsStudioSchema
+export const settingsStudioSchema = z.object({
+  studioName: z.string().min(1).max(100),
+  email: z.string().email(),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/),
+  address: z.object({
+    street: z.string().min(1),
+    street2: z.string().optional().or(z.literal('')),
+    city: z.string().min(1),
+    state: z.string().length(2),
+    postalCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+    country: z.literal('US'),
+  }),
+  hours: z.record(z.string(), z.object({
+    open: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+    close: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+    closed: z.boolean().default(false),
+  })),
+  bookingRules: z.object({
+    cancellationWindowHours: z.coerce.number().int().min(1).max(48).default(12),
+    waitlistOfferWindowHours: z.coerce.number().int().min(1).max(24).default(2),
+    maxBookingsPerWeek: z.coerce.number().int().min(1).max(20).nullable(),
+  }),
+});
+```
+
+---
+
+## 6. Error Message Catalog
+
+Every error a user could see, with the exact copy. Tone: calm, specific, actionable — never blame the user, never expose technical details.
+
+### 6.1 tRPC Error Codes → User Messages
+
+| TRPCError code | When triggered | User message | Recovery action |
+|----------------|----------------|--------------|-----------------|
+| `UNAUTHORIZED` | No session | "Please sign in to continue." | Inline re-auth prompt |
+| `FORBIDDEN` | Insufficient role | "This area is for staff and owners." | Other actions remain available |
+| `NOT_FOUND` | Resource missing | "We couldn't find that. It may have been removed." | Back button + alternative paths |
+| `BAD_REQUEST` | Validation mismatch | field-level messages (see Forms) | Inline correction |
+| `CONFLICT` | Booking collision | "This class is full — join the waitlist and we'll notify you if a spot opens." | Join waitlist CTA |
+| `TOO_MANY_REQUESTS` | Rate limited | (X-RateLimit-Reset header → seconds) "Too many requests. Please wait {seconds} seconds." | Countdown auto-enables button |
+| `PAYMENT_REQUIRED` | No credits/membership | "An active membership is needed to book. View our options." | /pricing link |
+| `INTERNAL_SERVER_ERROR` | Unexpected | "Something unexpected happened. We've been notified." | Retry button |
+| `TIMEOUT` | Server timeout | "The connection is slow right now. Please try again." | Retry button |
+
+### 6.2 Booking-Specific Errors
+
+| Scenario | Where shown | Copy |
+|----------|-------------|-------|
+| Already booked | Confirmation panel | "You're already booked into this class." + "View your bookings" |
+| Already on waitlist | Confirmation panel | "You're already on the waitlist. Position #{position}." + "View waitlist" |
+| Session fully booked | ClassCard SE button | "Class full — Join waitlist" |
+| Session cancelled | Page-level | "This class has been cancelled. Browse similar upcoming classes." |
+| Session in past | Page-level redirect | "This class has already taken place." + "View past classes" |
+| No credits remaining | Confirmation panel | Replace CTA: "No credits remaining this cycle. [Buy a class pack → /pricing] [Become a member → /pricing]" |
+| Membership required (paused) | Confirmation panel | "Your membership is paused until {resumeDate}. [Resume now] [Buy a drop-in class]" |
+| Membership required (cancelled) | Confirmation panel | "Your membership has ended. [Buy a drop-in class] [Renew membership]" |
+| Subscription trial expired | Confirmation panel | "Your trial has ended. [Choose a plan → /pricing]" |
+| Booking 12h-window violation (admin override) | Confirmation modal | "Cancellations within 12 hours don't refund credits. Continue anyway?" |
+| Booking weekly limit reached (cap from settings) | Confirmation panel | "You've booked your maximum classes this week ({count}). [Cancel another to continue] [Contact us to increase]" |
+| Network failure mid-book | Toast | "Your booking didn't go through. Please try again." |
+| Race condition (someone else took the spot) | Toast after SSE | "Someone else just grabbed the last spot. You're on the waitlist at position #{position}." |
+
+### 6.3 Payment & Subscription Errors
+
+| Scenario | Copy |
+|----------|-------|
+| Stripe Checkout failed | "Your payment couldn't be processed. Please check your card details or try a different card." |
+| 3DS authentication required | "Your bank requires additional verification. Please complete the prompts on your bank's site." |
+| Card declined (generic) | "Your card was declined. Please contact your bank or try a different payment method." |
+| Card declined (insufficient funds) | "Insufficient funds. Please try a different card." |
+| Card declined (expired) | "This card has expired. Please update your payment method." |
+| Payment failed on renewal | (Email + in-app banner) "Your latest payment didn't go through. Update your card to keep your membership active." |
+| Cancell inside pending period | "Your subscription is set to cancel on {date}. Until then, you'll keep your credits." |
+| Can't pause (already paused) | "Your membership is already paused until {date}." |
+| Can't pause (at max days) | "You've used your {days}-day pause limit for the year. Cancel and rejoin when you're ready." |
+| Can't resume (not paused) | "Your membership is currently active. Nothing to resume." |
+| Plan change — new price higher | "Your plan will upgrade immediately. You'll be charged {proratedAmount} today." |
+| Plan change — new price lower | "Your plan will downgrade on {nextBillingDate}. Until then, you keep current credits." |
+| Refund auto-decline (window exceeded) | "Refunds are available until {time} before class. After that, your credit is consumed." |
+| Stripe portal unavailable | "The billing portal is temporarily unavailable. Try again in a few minutes or contact us." |
+
+### 6.4 Session/Waitlist Errors
+
+| Scenario | Copy |
+|----------|-------|
+| Waitlist offered — claim success | "You claimed your spot! You're booked into {class}." |
+| Waitlist offered — expired | "Your offer expired. You've been removed from this waitlist." |
+| Waitlist offered — spot taken (race) | "This spot was just taken. You're still on the waitlist at position #{newPosition}." |
+| Try to join non-full session | (UI prevents it: only bookable if not full) |
+| Try to leave non-existent waitlist | "You're not on this waitlist." |
+| Try to claim with no offer | "You don't have an active offer. Check back later or join a different waitlist." |
+| Reverse check-in (undo) | Reverts to "checked_out" state. No copy needed beyond toast. |
+| Mark no-show after class | "Marked as no-show. Credit not refunded." |
+
+### 6.5 Profile/Auth Errors
+
+| Scenario | Copy |
+|----------|-------|
+| Magic link sent (success) | "Check your inbox at {email}. The link expires in 10 minutes." |
+| Magic link expired | "This sign-in link has expired. [Request a new one]" |
+| Magic link already used | "This sign-in link was already used. [Sign in again]" |
+| Email already registered | "An account with this email already exists. [Sign in instead]" |
+| OAuth failed | "We couldn't sign you in with Google. Please try email instead." |
+| OAuth account but no email | "Your Google account doesn't share an email. We need one to set up your account." |
+| Insufficient role | "You don't have access to that page. [Return to dashboard]" |
+| Session expired mid-action | "Your session expired. Please sign in again — you'll return to where you left off." |
+| Profile save (network) | "We couldn't save your changes. Please try again." |
+| Email field empty | "Email is required. (Standard email validation: proper format)" |
+| Email invalid | "Please enter a valid email address." |
+| Phone invalid | "Phone numbers only. Include the country code, e.g., +15035551234." |
+| Date of birth in future | "Date of birth cannot be in the future." |
+| Display name too long | "Display name must be 50 characters or fewer." |
+| Emergency contact missing name+phone | "Provide a name and a phone number we can reach in an emergency." |
+
+### 6.6 Admin-Specific Errors
+
+| Scenario | Copy |
+|----------|-------|
+| Cancel session with active enrollees | "Are you sure? {count} members are enrolled. They'll be notified and refunded." Confirm dialog |
+| Schedule conflict (instructor) | "{Instructor name} is already booked to teach {otherClass} in this slot. Pick a different time or instructor." |
+| Schedule conflict (room) | "{Room name} is in use at that time. Pick a different room or time." |
+| Edit class past sessions | "This class has sessions that have already taken place. Editing may show unexpected results on attendee history." |
+| Archive class with future sessions | "{count} future sessions are scheduled. Archive anyway?" Confirm dialog |
+| Delete instructor with upcoming sessions | "{name} teaches {count} upcoming sessions. Reassign them first." |
+| Assign role to non-member | "This user isn't a member yet. They must have an active subscription to receive this role." |
+| Revoke role (self) | "You can't revoke your own owner role. Promote another person to owner first." |
+| Audit log entry truncation | "This filter returned more than 1,000 actions. Refine the date range to narrow results." |
+| Bulk action partial failure | "{successCount} succeeded. {failureCount} failed: {reasons}" |
+
+### 6.7 Network/Connectivity Errors
+
+| Scenario | Copy |
+|----------|-------|
+| Page failed to load | "We had trouble loading this page. [Retry] [Go home]" |
+| SSE disconnected | (Silent reconnect. Subtle indicator: connection dot in footer turns from green to amber) |
+| SSE reconnected after failure | (Toast: "Reconnected. Showing current seat counts.") |
+| API call timed out | "The connection is slow right now. Please try again." |
+| Offline (PWA) | (Banner: "You're offline. Your booking will be saved and processed when you're back.") |
+
+---
+
+## 7. Responsive Behavior Specifications
+
+Breakpoints (per Tailwind v4 defaults; PAD §11.4):
+- `sm`: 640px — phone landscape, small tablets
+- `md`: 768px — tablet portrait
+- `lg`: 1024px — tablet landscape, small laptop
+- `xl`: 1280px — desktop
+- `2xl`: 1536px — wide desktop
+
+Behavioral rules (the headline rule: **no horizontal scrollbars; thumb-reach for actions**)
+
+### 7.1 Navigation
+
+| Viewport | Behavior |
+|----------|----------|
+| <768px | Hamburger menu (top right). Below menu: logo, "Schedule", "Membership", "Sign in". Drawer slides from right, full screen. Active route highlighted. |
+| 768–1023px | Top nav: logo (left), primary links (center, condensed), Sign in + Account (right). No hamburger. |
+| ≥1024px | Full nav as designed: logo (left col), primary links (center 6, reordered), search icon, CTA "Book a class", Account avatar (right). |
+
+Account menu behavior:
+- Mobile: full-screen list of profile options
+- Desktop: dropdown anchored to avatar, 240px wide
+
+### 7.2 Schedule Page (`/schedule`)
+
+| Viewport | View | Layout |
+|----------|------|--------|
+| <768px | **Day view** | Day tabs at top (Mon/Tue/...) horizontal scroll. Below: vertical list of sessions, hour-grouped. Each ClassCard is full width. Tap card → detail. |
+| 768–1023px | **Week view** | 7-column grid, sessions stacked by time within each column. |
+| ≥1024px | **Week view, expanded** | Same week view with seat counts visible inline. |
+
+Filter bar:
+- Mobile: horizontal scroll of chips, full filter opens bottom sheet via "Filters" button
+- Tablet+: inline filterbar above grid
+
+### 7.3 Booking Flow (`/book/[sessionId]`)
+
+| Viewport | Layout |
+|----------|--------|
+| <768px | Single column. Sticky session summary header at top, content below. Notes field full width. CTA buttons stacked, primary on top. |
+| ≥768px | Two-column: 60% session detail / 40% confirmation panel. Sticky session summary is 80px tall. |
+
+### 7.4 Marketing Page Hero
+
+| Viewport | Image position | Headline size |
+|----------|----------------|---------------|
+| <768px | Below headline (stacked) | text-display-lg |
+| 768–1023px | Side: 50/50 split | text-display-xl |
+| ≥1024px | Side: 40/60 image-dominant | text-display-2xl |
+
+### 7.5 Admin Tables
+
+| Viewport | Behavior |
+|----------|----------|
+| <768px | Cards (not table). Each row becomes a flat card with key fields stacked. Filters via top dropdown. |
+| 768–1023px | 5–6 columns max. Stack remaining fields via row expansion. |
+| ≥1024px | Full table as designed. |
+
+### 7.6 Forms
+
+- All form fields span 100% width on mobile, max-w-md on larger screens.
+- Multi-column forms (e.g., address: street + street2) collapse to single column under 768px.
+- Submit button: sticky on mobile at bottom of viewport; inline on desktop.
+- Date pickers: full-screen modal on mobile, popover on desktop.
+
+### 7.7 Toast/Notification Positioning
+
+- All toasts: bottom-left on desktop (text-readable; top-right is the generic default but we prefer NOT covering action buttons).
+- Mobile: bottom-center, 16px margin, max-w-[calc(100%-32px)].
+
+### 7.8 Modals/Dialogs
+
+- Mobile: full-screen modal (slide up from bottom).
+- Desktop: centered, max-w per size variant in Section 3.1.4.
+
+### 7.9 Scale-Aware Typography
+
+The fluid type scale in PAD §11.2 (`clamp()`) automatically adapts to viewport. Additional rules:
+- Hero headlines never exceed 7rem even at 2xl viewport.
+- Body text never exceeds 1.25rem for readability.
+- Long-form content (blog posts): single column max-w-narrow (720px) on all viewports; padding scales (--space-4 mobile, --space-7 desktop).
+
+---
+
+## 8. Animation Choreography
+
+Every motion follows the tokens in PAD §11.5. No animation without purpose.
+
+### 8.1 Timing Rules
+
+| Animation | Duration | Easing | Trigger |
+|-----------|----------|--------|---------|
+| Hover transitions | 150ms | --ease-sharp | Mouse enter/leave |
+| Focus ring | 100ms | --ease-sharp | Focus visible |
+| Button press | 100ms | --ease-sharp | Mouse down |
+| Toast enter | 300ms | --ease-gentle | Toast mount |
+| Toast exit | 200ms | --ease-sharp | Timer/dismiss |
+| Dialog open | 300ms | --ease-gentle | Open trigger |
+| Dialog close | 200ms | --ease-gentle | Close trigger |
+| Page transition | 300ms | --ease-breathe | Route change |
+| Skeleton pulse | 1200ms | ease-in-out loop | Loading state |
+| SeatCounter update | 300ms | --ease-gentle | When SSE value changes |
+| Live badge flip | 600ms | --ease-breathe | SSE connection state change |
+| Form field focus highlight | 100ms | --ease-sharp | Field focus |
+| Form submit | 400ms | --ease-gentle | Submit click → button shows spinner |
+| Booking success card | 800ms | --ease-breathe | Booking mutated successfully (decorative confetti is BANNED) |
+| Waitlist position change | 400ms | --ease-gentle | SSE position update |
+| Schedule view change (week→day) | 300ms | --ease-breathe | View toggle |
+| Calendar popover | 200ms | --ease-gentle | Popover open |
+| Dropdown/popover | 150ms | --ease-sharp | Dropdown open |
+
+### 8.2 Banned Motion
+
+The following are explicitly **not allowed**:
+
+```
+✗ Autoplaying video on first page load
+✗ Slideshow / carousel on hero (no auto-advance)
+✗ Parallax scroll
+✗ Parallax mouse-follow effects
+✗ Bouncing / elastic / spring overshoots
+✗ More than 1 simultaneous animation per region (no flashing)
+✗ Cursor-tracking gradients
+✗ Heavy decorative loops (>2s continuous animation on a non-interactive element)
+✗ Spinner on a layout-defining element (skeleton or skeleton + indicator only)
+```
+
+### 8.3 Reduced Motion Behavior
+
+When `prefers-reduced-motion: reduce`:
+- All durations → `0.01ms`
+- All transitions → none
+- Skeleton pulse → static muted background
+- Toast enter/leave → instant
+- Dialog open/close → instant
+- Page transitions → instant
+- Any parallax/cursor effect → disabled
+
+Implementation (global, per PAD §11.5 + Skill §8.6):
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+```
+
+### 8.4 Element-Specific Choreography
+
+#### 8.4.1 Button
+
+```
+Rest:       bg-clay-400 text-sand (or other variant)
+Hover:      bg-clay-500 (smooth 150ms)
+Active:     bg-clay-600 (100ms)
+Focus:      ring-3 ring-water-500 ring-offset-2 (100ms)
+Loading:    spinner fades in over 100ms; text fades out
+Disabled:   opacity-50 cursor-not-allowed
+```
+
+#### 8.4.2 Class Card (`/schedule`)
+
+```
+Idle:       static
+Hover:      subtle lift (translate-y-[-2px], shadow appears 150ms)
+Active:     returns to rest (100ms)
+Booked:     check icon appears, slight pulse on confirmation (1x)
+Full:       no hover lift; cursor: not-allowed hover style
+```
+
+#### 8.4.3 Seat Counter (`SeatCounter` component)
+
+```
+Initial render:   fill width from 0% to current % over 600ms (--ease-gentle)
+Live update:      When count changes, pulse-fill width with smooth tween 300ms
+Edge case:        When class becomes full, fill color transitions: water-500 → clay-400
+Edge case:        When wait­list joins, badge appears: scale-95 → 100 with bounce-less ease-gentle over 200ms
+```
+
+#### 8.4.4 Modal/Dialog
+
+```
+Open:    overlay fade-in 200ms → content slide-up from below 8px + fade-in 300ms
+Close:   reverse: content fade-out 150ms → overlay fade-out 200ms
+Focus:   first focusable element auto-focused on open; trap focus inside
+Escape:  closes dialog
+```
+
+#### 8.4.5 Toast
+
+```
+Position:        bottom-left desktop, bottom-center mobile
+Enter:           slide-up from below 8px + fade-in 300ms --ease-gentle
+Exit:            fade-out + slide-down 8px 200ms --ease-sharp
+Auto-dismiss:    4000ms; pause on hover; resume on hover-out
+Stack:           vertical stack, newest at bottom; 8px gap
+Max visible:     3; older toast collapses into a "{N} more" indicator
+```
+
+#### 8.4.6 Form Submit
+
+```
+Input idle:       background stone-50
+Focus:           ring-water-500 (see Input pattern above)
+Loading:         Spinner fades in over 200ms; inputs become disabled
+Error:           Border transitions to error color 100ms; error message slides down 8px + fade-in 200ms
+Success:         Button checkmark swap 200ms; page navigates OR form morphs to success state
+```
+
+### 8.5 Scroll Behavior
+
+- Default scroll-behavior: smooth (per PAD §11.5)
+- Reduced-motion: scroll-behavior auto
+- Sticky elements (filterbar, session summary header): animate from y-[-100%] to y-0 over 200ms when entering viewport; reverse on leave
+
+### 8.6 SSE-Specific Animations
+
+The `useSessionAvailability` hook connects on mount and updates state. Animations triggered by SSE:
+- Initial connection: small green/pulsing dot in footer appears; "Live connected" micro-toast appears after first event
+- Disconnect: dot turns amber, pulse stops
+- Reconnect: dot turns green; no announcement (silent success)
+- Seat count change: SeatCounter animates smoothly
+- Class becomes full: button morph (Book class → Join waitlist) with color change over 300ms
+
+---
+
+## 9. Admin Dashboard Specifications
+
+The admin dashboard (PAD §8.4, `/admin`, `/admin/getDashboard`) requires more detailed specification than a generic section because it determines operational effectiveness.
+
+### 9.1 Layout (KPIDashboard component)
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ Studio overview                          [Date: Today ▾]          │
+├────────────────────────────────────────────────────────────────────┤
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                │
+│ │ Today    │ │ Waitlist │ │ Active   │ │ At-risk  │                │
+│ │ Bookings │ │ Activity │ │ Members  │ │ Members  │                │
+│ │   142    │ │     8    │ │   234    │ │    12    │                │
+│ │ ↑ 12%    │ │ ┘ Normal │ │ ↑ 3%     │ │ ┘ -3     │                │
+│ └──────────┘ └──────────┘ └──────────┘ └──────────┘                │
+├────────────────────────────────────────────────────────────────────┤
+│ Today's Schedule           ┌────────────┐ │ Activity & Notifications│
+│ ┌─────────────────────────┐│ Quick      │ │ ┌─────────────────────┐ │
+│ │ 6:00am Vinyasa Flow     ││ Actions    │ │ │ • 11:42 John M.     │ │
+│ │    Sarah K • 12 / 14    ││            │ │ │   canceled booking  │ │
+│ │ ──────                  ││ • Cancel   │ │ │ • 11:38 Stripe      │ │
+│ │ 7:30am Restorative      ││   session  │ │ │   $25.00 from Maya  │ │
+│ │    Daniel R • 8 / 10    ││ • Send     │ │ │ • 11:21 2 new wait- │ │
+│ │ ──────                  ││   email    │ │ │   list signups      │ │
+│ │ 9:00am Yin Yoga         ││ • Resolve  │ │ │ • 11:15 No-show:    │ │
+│ │    Lin H • 9 / 10       ││   alert    │ │ │   James P.          │ │
+│ │ ──────                  ││            │ │ │                     │ │
+│ [+ show more]             ││            │ │ [View full activity] │ │
+│ └─────────────────────────┘└────────────┘ │ └─────────────────────┘ │
+├────────────────────────────────────────────┴────────────────────┤
+│ Anomalies                                                        │
+│ ┌────────────────────────────────────────────────────────────────┐ │
+│ │ 🔴 3 members' payments failed in the last 24h                 │ │
+│ │    [Resolve now]                                               │ │
+│ │ 🟡 12 members haven't visited in 30+ days                      │ │
+│ │    [Send re-engagement email]                                 │ │
+│ │ 🟠 Avg waitlist wait time this month is 4.2 days (up from 2.1)│ │
+│ │    [Investigate]                                              │ │
+│ └────────────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.2 KPI Cards
+
+Each KPI card shows:
+```
+┌────────────────────────────┐
+│ LABEL          (icon, top-right)│
+│ BIG NUMBER      (display-xl) │
+│ Trend indicator        (with comparison period) │
+│ Mini sparkline           (last 30 days)        │
+└────────────────────────────┘
+```
+
+KPI definitions:
+- **Today Bookings**: Count of confirmed enrollments for sessions today + tomorrow midnight
+- **Waitlist Activity**: New waitlist joins in last 24h; trend vs prior 24h; badge color: green (declining) | amber (rising slightly) | red (rising fast = capacity issues)
+- **Active Members**: Members with at least one session in last 30 days
+- **At-Risk Members**: Members whose 30-day attendance is < 50% of their 90-day average
+  - Editor note: this KPI surfaces deep in dashboard for operational triage
+
+### 9.3 Today's Schedule (sidebar widget)
+
+Vertical timeline of all scheduled sessions for today (`today, today's date in studio timezone`), ordered by start time.
+
+Each row:
+```
+[Time] [Class title] [Instructor]
+       [seat_count/capacity • status_badge]
+       [Check-in ↪]
+```
+- Time column: monospace, 60px width, right-aligned
+- Class title: display-md
+- Seat count: small, with progress bar underneath
+- Status badge after class: "Active" / "Cancelled" / "Completed"
+- Action: "Check-in ↪" link → /admin/schedule/[sessionId]?tab=roster
+
+Empty state: "No sessions scheduled today."
+
+### 9.4 Anomalies Panel
+
+Auto-flagged issues with severity icon + 1-line description + action button. Categories:
+- Payment failures (red)
+- Inactive members beyond threshold (amber)
+- Performance metrics exceeded (orange)
+- Waitlist capacity issues (red)
+- Class cancellations (informational)
+
+Each anomaly is dismissable with "[Investigate later]" link that archives it. Dismissed anomalies reappear if condition persists after 24h.
+
+### 9.5 Activity Feed (right column)
+
+Reverse-chronological list of admin actions and system events. Each row:
+```
+[Time]    [Actor or "System"]   [Event description]
+11:42     John M.               canceled Cancelled their Sun 9am Yin Yoga booking
+11:38     Stripe                $25.00 membership payment received from Maya
+11:21     System                2 newly joined the Sun 9am Yin Yoga waitlist
+11:15     Daniel R.             marked James P. as no-show for Mon 9am Class
+```
+
+Filter by event type (admin actions / payments / waitlists / cancellations).
+
+### 9.6 Revenue Page (`/admin/revenue`)
+
+```
+[Date range: Last 30 days ▾]  [Export CSV]
+
+KPI Strip:
+  MRR $4,820     ARR $57,840    Churn 2.1% (lower is better)
+
+Revenue Chart (line):
+  X axis: time (daily/weekly/monthly toggle)
+  Y axis: dollars
+  Two lines: Active MRR (color #1), New MRR this period (color #2)
+  Below chart: legend, hover for tooltips
+
+Breakdown table:
+  Plan         Active subs    MRR   Δ 30d
+  Monthly 8    102             $3,060  +5
+  Monthly 12   51              $2,040  +2
+  ...
+
+Below: Top cancel reasons (last 30d):
+  too_expensive      8
+  moving             3
+  ...
+```
+
+### 9.7 Member Detail Page (`/admin/members/[id]`)
+
+Tabs:
+- **Profile** — Name, email, phone, joined date, contact info, custom notes
+- **Activity** — Attendance rate (90-day, 30-day), session history (tabular), upcoming bookings
+- **Subscription** — Current plan, status, invoices (last 5), payment methods
+- **Roles** — Assigned roles, ability to add/remove (owner only)
+
+Each tab is a separate URL hash (`#activity`, `#subscription`, `#roles`) for shareability.
+
+### 9.8 Drawers / Sheets (admin CRUD)
+
+All admin CRUD (creating a session, editing a class, managing roles) uses a Sheet (right-side drawer), not a separate page. The drawer:
+- Slides in from right
+- 480px max width on desktop; full-width on mobile
+- Has its own header (with close button), body, footer (Cancel + Save)
+- Auto-saves on blur for non-critical fields (slug, sortOrder)
+- Manual save required for critical fields
+
+---

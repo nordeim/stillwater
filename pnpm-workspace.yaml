@@ -1,5 +1,6 @@
 # Stillwater Monorepo — pnpm workspace configuration
 # All packages and apps declared here are linked locally via workspace: protocol
+# ⚠️ pnpm v11+ reads ALL non-auth settings from this file (not package.json)
 
 packages:
   # Primary applications
@@ -14,7 +15,40 @@ packages:
   # Shared tooling configurations (ESLint, TypeScript, Tailwind)
   - "tooling/*"
 
-# Custom condition for monorepo source-resolution (D15)
+# ─────────────────────────────────────────────────────────────────────────────
+# pnpm v11 Dependency Resolution & Security
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Custom condition for monorepo source-resolution (MEP D15)
 # Without this, pnpm resolves @stillwater/* packages to non-existent dist/
 customConditions:
   - "@stillwater/source"
+
+# Force stable OpenTelemetry versions to bypass NPM registry desyncs.
+# Resolves: ERR_PNPM_NO_MATCHING_VERSION for @opentelemetry/core@2.9.0
+# (Sentry 10.63.0 demands 2.9.0, but 2.8.0 is the latest fully propagated stable release)
+overrides:
+  "@opentelemetry/core": "2.8.0"
+  "@opentelemetry/sdk-trace-base": "2.8.0"
+  "@opentelemetry/api": "^1.9.0"
+  "@opentelemetry/semantic-conventions": "^1.28.0"
+
+# Explicitly allow postinstall scripts for native/critical binaries.
+# Resolves: ERR_PNPM_IGNORED_BUILDS
+# (Replaces the deprecated `onlyBuiltDependencies` from pnpm v9/v10)
+allowBuilds:
+  "@sentry/cli": true
+  "esbuild": true
+  "sharp": true
+  "core-js": true
+
+# Supply Chain Guardrails (Zero-day protection)
+# Delays installation of newly published versions by 24 hours (1440 minutes).
+# Malicious packages are typically discovered and removed within an hour.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+
+# Exceptions to the minimum release age rule for trusted, frequently updating packages
+# (react-hook-form@7.81.0 was auto-added by pnpm v11's supply chain guard during your last install)
+minimumReleaseAgeExclude:
+  - "react-hook-form@7.81.0"
