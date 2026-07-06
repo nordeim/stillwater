@@ -2,6 +2,11 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+Awesome meticulous review, analysis and planning. Please keep up the good work. now, please meticulously review and update @CLAUDE.md , @AGENTS.md , @README.md and @PAD.md to align with the latest code changes, issues fixed, gotchas to look out for, troubleshooting tips, lessons learnt, outstanding issues and recommendations.
+Please note that CLAUDE.md (created using included skill `skills/claude-md/SKILL.md`), AGENTS.md (to create using included skill `skills/agents-md/SKILL.md` and README.md (created using skill `skills/readme-md/SKILL.md`) are 'forward-looking' based on the details gleaned from the original `design.md`, `PAD.md` and `static_landing_page_mockup.html` (the HTML mockup is only used for visual and aesthetics UI/UX guidance only). The intention is to continuously update these documentation as the coding progresses to maintain alignment with the current status.
+
+---
+
 awesome meticulous job so far. please keep up the good work. now, please meticulously review and analyze the research validation findings on `stillwater_SKILL.md` in the attached report files, then meticulously validate the findings against the codebase to check for alignment.
 
 ---
