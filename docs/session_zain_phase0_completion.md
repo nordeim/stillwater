@@ -1,3 +1,76 @@
+All verification passes. Let me create the v2 archive:
+Now let me verify the archive contents — confirm all key files are included and exclusions are clean:
+---
+
+# ✅ V2 Archive Ready for Download
+
+## Archive Details
+
+| Property | Value |
+|---|---|
+| **File** | `/home/z/my-project/download/stillwater-phase0-complete-v2.tar.gz` |
+| **Size** | 1.8 MB |
+| **Files in archive** | 212 |
+| **SHA256** | `937354bc823cbee4b99c5dad200d35fd2cec6cf8b4e758aa4633111b6aa72a39` |
+
+## What Changed Since V1
+
+The v2 archive incorporates all 3 validation-driven fixes that were applied across the codebase and all 6 documentation files:
+
+### Fix 1: Trigger.dev SDK Import Path (Critical)
+- `services/workers/trigger.config.ts`: Changed `from "@trigger.dev/sdk/v3"` → `from "@trigger.dev/sdk"` (root import per official Trigger.dev v4 docs)
+- Updated across SKILL.md (§2.1, §9.9 Gotcha 1, §12 Lesson 16, §13.13), CLAUDE.md (Gotcha 1, Pitfall #15), AGENTS.md (Gotcha 1), PAD.md (§17.2 code example), MEP.md (Phase 8 header + F8-01 code example)
+
+### Fix 5: Stripe snake_case Contradiction
+- SKILL.md §9.4 line 1871: Changed "v22+ uses camelCase" → "Pre-v22 used camelCase; v22+ aligns with API wire format using snake_case" — now consistent with 4 other locations
+
+### Fix 2: proxy.ts Runtime Language Softening
+- `apps/web/proxy.ts` comment: "Edge runtime by default" → "Edge or Node.js runtime (Next.js 16 docs inconsistent on default)"
+- Softened absolute "Edge by default" claims across all 6 docs (SKILL.md, CLAUDE.md, AGENTS.md, README.md, PAD.md, MEP.md) — the 2-layer auth pattern is correct regardless of runtime
+
+## Verification Results (All 16 checks PASS)
+
+| Check | Result |
+|---|---|
+| All 9 key documentation files included | ✅ |
+| All 9 key code files included | ✅ |
+| All 8 config files included | ✅ |
+| Zero `node_modules` entries | ✅ |
+| Zero `.git` entries | ✅ |
+| Zero `skills/` entries | ✅ |
+| Zero `.turbo` cache entries | ✅ |
+| Zero `.next` build output | ✅ |
+| `.env.local` excluded (secrets) | ✅ |
+| Zero `backup/` entries | ✅ |
+| Zero `*.tar.gz` files | ✅ |
+| `pnpm lint` passes (2/2 tasks) | ✅ |
+| Zero `/v3` or `/v4` imports in code | ✅ |
+| Root `@trigger.dev/sdk` import in trigger.config.ts | ✅ |
+| Zero "Edge by default" absolute claims | ✅ |
+| Zero Stripe camelCase contradictions | ✅ |
+
+## How to Use
+
+1. **Download** `/home/z/my-project/download/stillwater-phase0-complete-v2.tar.gz`
+2. **Extract**: `tar -xzf stillwater-phase0-complete-v2.tar.gz`
+3. **Copy** the `stillwater/` directory contents into your local GitHub repo clone, overwriting existing files
+4. **Review** changes with `git diff` / `git status`
+5. **Commit**: `docs: align all docs + code with validation findings (Trigger.dev root import, Stripe snake_case fix, proxy.ts runtime softening)`
+6. **Push** to your GitHub repo
+
+After refreshing your repo:
+```bash
+pnpm install          # Regenerates node_modules from pnpm-lock.yaml
+docker compose up -d  # Starts Postgres 17 + Redis 7
+pnpm check-types      # Should pass (only expected TS18003)
+pnpm lint             # Should pass (2/2 tasks, all rules active)
+pnpm dev --filter=web # Boots Next.js 16 on localhost:3000
+```
+
+The codebase is Phase 0 complete, validated against external research, and ready for Phase 1 (Database Schema, Drizzle Migrations, Seed Data).
+
+---
+
 I'll analyze the app start log meticulously, section by section, to identify all potential issues.
 Let me verify the critical findings against the actual codebase:
 ---
