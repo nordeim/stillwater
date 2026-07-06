@@ -10,10 +10,11 @@
 
 import type { Config } from "tailwindcss";
 
-export const stillwaterBase = {
-  // ── Content sources ─────────────────────────────────────────────
-  // Each app extends this with its own src paths
-  content: [],
+export const stillwaterBase: Omit<Config, 'content'> = {
+  // ── Theme ──────────────────────────────────────────────────────
+  // NOTE: In Tailwind v4, content paths are configured via @source
+  // directives in CSS, not in the JS config. Each app declares its
+  // own content paths in its tailwind.config.ts.
 
   theme: {
     extend: {

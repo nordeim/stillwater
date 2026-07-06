@@ -560,7 +560,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 - **TDD test file:** n/a (config).
 - **Checklist:**
   - [ ] `testDir: './e2e'`
-  - [ ] `webServer: { command: 'pnpm dev --filter=web', url: 'http://localhost:3000', reuseExistingServer: true }`
+  - [ ] `webServer: { command: 'pnpm dev --filter=@stillwater/web', url: 'http://localhost:3000', reuseExistingServer: true }`
   - [ ] `projects: [{ name: 'chromium' }, { name: 'firefox' }, { name: 'webkit' }]`
   - [ ] `use: { baseURL: 'http://localhost:3000', trace: 'on-first-retry' }`
   - [ ] `reporter: [['html'], ['@axe-core/playwright/reporter']]`
@@ -797,7 +797,7 @@ pnpm db:migrate                             # exits 0 (no schema yet)
 pnpm check-types                            # green
 pnpm lint                                   # green
 pnpm test                                   # green (config tests pass)
-pnpm dev --filter=web                       # boots on :3000
+pnpm dev --filter=@stillwater/web                       # boots on :3000
 curl http://localhost:3000                  # 200 + "Stillwater" in body
 ```
 
@@ -4506,7 +4506,7 @@ pnpm db:seed
 
 # Dev
 pnpm dev                    # All apps
-pnpm dev --filter=web       # Just web
+pnpm dev --filter=@stillwater/web       # Just web
 pnpm jobs:dev               # Trigger.dev local worker
 
 # Quality
@@ -4526,7 +4526,7 @@ pnpm db:reset               # LOCAL ONLY
 
 # Build
 pnpm build
-pnpm build --filter=web
+pnpm build --filter=@stillwater/web
 
 # Deploy
 pnpm jobs:deploy            # Trigger.dev cloud

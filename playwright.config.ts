@@ -38,7 +38,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev --filter=web',
+    command: 'pnpm dev --filter=@stillwater/web',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env['CI'],
     timeout: 60_000,

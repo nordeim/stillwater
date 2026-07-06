@@ -234,9 +234,9 @@ pnpm dev                                # Next.js on :3000 + Trigger.dev worker
 | Command                          | Purpose                                            |
 |----------------------------------|----------------------------------------------------|
 | `pnpm dev`                       | Start all apps in dev mode (Turbopack)             |
-| `pnpm dev --filter=web`          | Start only `apps/web`                              |
+| `pnpm dev --filter=@stillwater/web`          | Start only `apps/web`                              |
 | `pnpm build`                     | Production build across all packages               |
-| `pnpm build --filter=web`        | Build only web app                                 |
+| `pnpm build --filter=@stillwater/web`        | Build only web app                                 |
 | `pnpm check-types`               | TypeScript type check across all packages          |
 | `pnpm lint`                      | ESLint across all packages                         |
 | `pnpm lint:fix`                  | Auto-fix ESLint issues                             |
@@ -526,6 +526,10 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 18. **Pinning `typescript: ^6.0.3` in sub-packages**: PAD §5.1 mandates `^5.9.0` for `erasableSyntaxOnly` + `verbatimModuleSyntax` compatibility. See D44 + `pnpm_install_fix.md`.
 19. **Using Zod v3 patterns**: Zod v4 has breaking changes — `z.string().url()` accepts any scheme (use `z.url({ protocol: /^https:$/ })`); `{ errorMap }` removed; `{ message }` deprecated; `z.ZodIssueCode` deprecated (use string literal `'custom'`).
 20. **Using Stripe `currentPeriodEnd` (camelCase)**: Stripe SDK v22 uses snake_case API (`current_period_end`), and it moved to `items.data[0].current_period_end` in the Dahlia API (2026-06-24).
+21. **Enabling `reactCompiler: true` without installing `babel-plugin-react-compiler`**: The package is NOT a built-in — it must be manually installed (`pnpm add -F @stillwater/web babel-plugin-react-compiler`). Without it, every page returns 500. See Gotcha 11.
+22. **Passing t3-env schema as a separate variable to `createEnv()`**: TypeScript can't infer generics — pass schema inline. Also, `clientPrefix: 'NEXT_PUBLIC_'` is required. See Gotcha 12.
+23. **Using Trigger.dev v3-style `machine: { preset: "micro" }` or `build.env`**: v4 changed the type — `machine` is now a string literal; `build.env` was removed. See Gotcha 13.
+24. **Using `--filter=web` instead of `--filter=@stillwater/web`**: Turbo matches by package name, not directory. The package name is `@stillwater/web`.
 
 ---
 
@@ -722,6 +726,30 @@ These are real issues encountered during Phase 0 implementation. Each has a veri
 
 **Fix:** SKILL.md §15.6 code example updated to `apiVersion: '2026-06-24.dahlia'`. Always use snake_case field names (`current_period_end`, not `currentPeriodEnd`).
 
+### Gotcha 11: `reactCompiler: true` requires `babel-plugin-react-compiler` (Critical)
+
+**Symptom:** Dev server boots ("Ready in 1099ms") but every page returns HTTP 500. Log shows: "Failed to resolve package babel-plugin-react-compiler while attempting to resolve React Compiler."
+
+**Root cause:** `next.config.ts` has `reactCompiler: true`, which tells Next.js 16 to enable the React Compiler. However, `babel-plugin-react-compiler` is NOT a built-in — it must be manually installed as a devDependency. Without it, Next.js cannot initialize the React Compiler Babel plugin, causing every page render to fail.
+
+**Fix:** Install the package: `pnpm add -F @stillwater/web babel-plugin-react-compiler`. The package is now in `apps/web/package.json` devDependencies as `^1.0.0`.
+
+### Gotcha 12: t3-env `createEnv()` requires `clientPrefix` + inline schema (High)
+
+**Symptom:** `pnpm check-types` fails with TS2345: "Type ... is not assignable to parameter of type 'EnvOptions'... Property 'clientPrefix' is missing."
+
+**Root cause:** t3-env v0.13.11's `createEnv()` requires a `clientPrefix` property (e.g., `'NEXT_PUBLIC_'`). Additionally, TypeScript cannot infer the generic types when the schema is passed as a separate variable — the schema must be passed inline to `createEnv()`.
+
+**Fix:** `packages/config/src/env.ts` was restructured: schemas extracted as `serverSchema` and `clientSchema` consts (for the build-context fallback), then passed inline to `createEnv({ clientPrefix: 'NEXT_PUBLIC_', server: serverSchema, client: clientSchema, runtimeEnv: {...} })`.
+
+### Gotcha 13: Trigger.dev v4 type changes — `machine` is string, `build.env` removed (High)
+
+**Symptom:** `pnpm check-types` fails with TS2353 ("'env' does not exist in type") and TS2322 ("Type '{ preset: string; }' is not assignable to type 'micro' | 'small-1x' | ...").
+
+**Root cause:** Trigger.dev v4 SDK changed the `defineConfig` type signature: `machine` is now a string literal (`"micro"`, `"small-1x"`, etc.), not an object with `preset`. The `build.env` property was removed — environment variables are injected at runtime by Trigger.dev Cloud.
+
+**Fix:** `services/workers/trigger.config.ts` updated: `machine: { preset: "micro" }` → `machine: "micro"`; removed `build.env` block.
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -740,6 +768,13 @@ These are real issues encountered during Phase 0 implementation. Each has a veri
 | Better Auth Google OAuth `redirect_uri_mismatch` | Preview URL not in Google Console | Add `https://stillwater-pr-<n>.vercel.app/api/auth/callback/google` to authorized redirect URIs. |
 | `proxy.ts` not running | `config.matcher` too restrictive | Verify matcher excludes `_next/static`, `_next/image`, favicon, and asset extensions. See `apps/web/proxy.ts`. |
 | Tailwind v4 classes not applying | `globals.css` import order | Must import `@stillwater/ui/globals` BEFORE `tailwindcss`; `@theme` block maps every token. |
+| Dev server returns 500 on every page | `babel-plugin-react-compiler` not installed | `pnpm add -F @stillwater/web babel-plugin-react-compiler`. `reactCompiler: true` requires this package. See Gotcha 11. |
+| `pnpm check-types` fails TS2345 in `packages/config` | t3-env `createEnv()` missing `clientPrefix` | Add `clientPrefix: 'NEXT_PUBLIC_'` and pass schema inline to `createEnv()`. See Gotcha 12. |
+| `pnpm check-types` fails TS2353/TS2322 in `trigger.config.ts` | Trigger.dev v4 type changes | `machine` is string not object; `build.env` removed. See Gotcha 13. |
+| `pnpm check-types` fails TS1295 in workers | `verbatimModuleSyntax` requires ESM | Add `"type": "module"` to `services/workers/package.json`. |
+| `pnpm check-types` fails TS6059 in workers | `rootDir: "src"` excludes `trigger.config.ts` | Remove `rootDir` and `outDir` from workers tsconfig (irrelevant with `noEmit: true`). |
+| `pnpm dev --filter=web` fails "No package found" | Package name is `@stillwater/web`, not `web` | Use `--filter=@stillwater/web` or `--filter=./apps/web`. |
+| `turbopackFileSystemCaching` warning in dev | Stale property name | Use `turbopackFileSystemCacheForDev` (Next.js 16.2.10). |
 
 ---
 

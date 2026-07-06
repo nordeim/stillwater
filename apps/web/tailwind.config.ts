@@ -25,17 +25,8 @@ const config: Config = {
     "../../packages/ui/src/**/*.{ts,tsx}",
   ],
 
-  // Extend the shared base config
+  // Extend the shared base config (includes theme tokens, fonts, colors)
   ...stillwaterBase,
-
-  theme: {
-    ...stillwaterBase.theme,
-    extend: {
-      ...stillwaterBase.theme.extend,
-
-      // App-specific overrides (none needed for v1)
-    },
-  },
 
   plugins: [
     // Typography plugin for blog/long-form content

@@ -102,7 +102,7 @@ pnpm why @opentelemetry/core
 
 # 2. Verify that the native binaries compiled successfully
 # If sharp failed to build, Next.js image optimization will throw warnings here
-pnpm dev --filter=web
+pnpm dev --filter=@stillwater/web
 ```
 
 ### Expected Validation Criteria:
@@ -195,14 +195,14 @@ pnpm lint
 docker compose up -d
 
 # 4. Boot the Next.js 16 Application
-pnpm dev --filter=web
+pnpm dev --filter=@stillwater/web
 ```
 
 ### 🎯 Definition of Done (Phase 0)
 If the following criteria are met, **Phase 0 is officially complete**:
 1. `pnpm check-types` exits with code `0` (or only shows expected placeholder errors for files we haven't written yet, but **no** "Cannot find module '@stillwater/db'" errors).
 2. `docker compose ps` shows `postgres` and `redis` as `healthy` / `running`.
-3. `pnpm dev --filter=web` successfully boots Next.js 16 with Turbopack and serves a 200 OK response at `http://localhost:3000`.
+3. `pnpm dev --filter=@stillwater/web` successfully boots Next.js 16 with Turbopack and serves a 200 OK response at `http://localhost:3000`.
 
 Once you confirm the smoke test is green, you have successfully navigated the pnpm v11 migration, the React Email v6 paradigm shift, and the OpenTelemetry registry desync. 
 
@@ -302,14 +302,14 @@ pnpm check-types
 pnpm lint
 
 # 4. Boot the Next.js 16 Application with Turbopack
-pnpm dev --filter=web
+pnpm dev --filter=@stillwater/web
 ```
 
 ### 🎯 Definition of Done (Phase 0)
 If the following criteria are met, **Phase 0 is officially complete**:
 1. `docker compose ps` shows `postgres` and `redis` as `healthy` / `running`.
 2. `pnpm check-types` exits with code `0` (or only shows expected placeholder errors for files we haven't written yet, but **no** "Cannot find module '@stillwater/db'" errors).
-3. `pnpm dev --filter=web` successfully boots Next.js 16 and serves a 200 OK response at `http://localhost:3000` (showing the placeholder "Stillwater" page).
+3. `pnpm dev --filter=@stillwater/web` successfully boots Next.js 16 and serves a 200 OK response at `http://localhost:3000` (showing the placeholder "Stillwater" page).
 
 ---
 

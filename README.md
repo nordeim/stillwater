@@ -593,6 +593,13 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | `proxy.ts` not running                                        | Verify `config.matcher` excludes `_next/static`, `_next/image`, and asset extensions. See `apps/web/proxy.ts`. |
 | `proxy.ts` crashes with "Edge runtime cannot access database" | Do NOT call `auth.api.getSession()` in `proxy.ts`. Use `getSessionCookie()` (cookie-only). Full validation in Server Component layouts (ADR-009). |
 | Tailwind v4 classes not applying                              | Verify `globals.css` imports `@stillwater/ui/globals` BEFORE `tailwindcss`; `@theme` block maps every token. |
+| Dev server returns 500 on every page                          | `babel-plugin-react-compiler` not installed. Run `pnpm add -F @stillwater/web babel-plugin-react-compiler`. Required by `reactCompiler: true` in `next.config.ts`. |
+| `pnpm check-types` fails TS2345 in `packages/config`          | t3-env `createEnv()` missing `clientPrefix`. Add `clientPrefix: 'NEXT_PUBLIC_'` and pass schema inline (not as separate variable). |
+| `pnpm check-types` fails TS2353/TS2322 in `trigger.config.ts` | Trigger.dev v4 type changes: `machine` is string literal (not object), `build.env` removed. |
+| `pnpm check-types` fails TS1295 in workers                    | `verbatimModuleSyntax` requires ESM. Add `"type": "module"` to `services/workers/package.json`. |
+| `pnpm check-types` fails TS6059 in workers                    | `rootDir: "src"` excludes `trigger.config.ts`. Remove `rootDir`/`outDir` (irrelevant with `noEmit: true`). |
+| `pnpm dev --filter=web` fails "No package found"              | Package name is `@stillwater/web`, not `web`. Use `--filter=@stillwater/web` or `--filter=./apps/web`. |
+| `turbopackFileSystemCaching` warning in dev                   | Stale property name. Use `turbopackFileSystemCacheForDev` (Next.js 16.2.10). |
 
 ---
 

@@ -322,7 +322,7 @@ Infrastructure clients (Stripe, Resend, Trigger.dev, Sanity, Upstash) MUST use `
 ```bash
 # Dev
 pnpm dev                              # All apps (Next.js + Trigger.dev worker)
-pnpm dev --filter=web                 # Just web
+pnpm dev --filter=@stillwater/web                 # Just web
 pnpm jobs:dev                         # Trigger.dev local worker
 
 # Quality
@@ -351,7 +351,7 @@ pnpm db:reset                         # LOCAL ONLY — refuses in production
 
 # Build & deploy
 pnpm build                            # Build all packages
-pnpm build --filter=web               # Build only web
+pnpm build --filter=@stillwater/web               # Build only web
 pnpm jobs:deploy                      # Deploy Trigger.dev tasks to cloud
 # Vercel deploy handled by CI on main merge
 
@@ -2127,6 +2127,27 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Verification:** `rg "apiVersion" --glob '!*.md'` → should show `'2026-06-24.dahlia'`.
 **Cross-ref:** §15.6, `CLAUDE.md` Gotcha 10.
 
+#### Gotcha 11: `reactCompiler: true` requires `babel-plugin-react-compiler` package (Critical)
+**Symptom:** Dev server boots ("Ready in 1099ms") but every page returns HTTP 500. Log: "Failed to resolve package babel-plugin-react-compiler while attempting to resolve React Compiler."
+**Root cause:** `next.config.ts` has `reactCompiler: true`, which tells Next.js 16 to enable the React Compiler. However, `babel-plugin-react-compiler` is NOT a built-in — it must be manually installed as a devDependency. Without it, Next.js cannot initialize the React Compiler Babel plugin, causing every page render to fail.
+**Fix:** `pnpm add -F @stillwater/web babel-plugin-react-compiler`. Package is now in `apps/web/package.json` as `^1.0.0`.
+**Verification:** `rg 'babel-plugin-react-compiler' apps/web/package.json` → should show `^1.0.0`.
+**Cross-ref:** `CLAUDE.md` Gotcha 11, `AGENTS.md` Gotcha 11.
+
+#### Gotcha 12: t3-env `createEnv()` requires `clientPrefix` + inline schema (High)
+**Symptom:** `pnpm check-types` fails with TS2345: "Property 'clientPrefix' is missing in type."
+**Root cause:** t3-env v0.13.11's `createEnv()` requires a `clientPrefix` property (e.g., `'NEXT_PUBLIC_'`). Additionally, TypeScript cannot infer the generic types when the schema is passed as a separate variable — the schema must be passed inline to `createEnv()`.
+**Fix:** `packages/config/src/env.ts` restructured: schemas extracted as `serverSchema` and `clientSchema` consts (for the build-context fallback), then passed inline to `createEnv({ clientPrefix: 'NEXT_PUBLIC_', server: serverSchema, client: clientSchema, runtimeEnv: {...} })`.
+**Verification:** `pnpm check-types --force` → 16/16 tasks pass.
+**Cross-ref:** `CLAUDE.md` Gotcha 12, `AGENTS.md` Gotcha 12.
+
+#### Gotcha 13: Trigger.dev v4 type changes — `machine` is string, `build.env` removed (High)
+**Symptom:** `pnpm check-types` fails with TS2353 ("'env' does not exist in type") and TS2322 ("Type '{ preset: string; }' is not assignable to type 'micro' | 'small-1x' | ...").
+**Root cause:** Trigger.dev v4 SDK changed the `defineConfig` type signature: `machine` is now a string literal (`"micro"`, `"small-1x"`, etc.), not an object with `preset`. The `build.env` property was removed — environment variables are injected at runtime by Trigger.dev Cloud, not declared in config.
+**Fix:** `services/workers/trigger.config.ts` updated: `machine: { preset: "micro" }` → `machine: "micro"`; removed `build.env` block. Also added `"type": "module"` to `services/workers/package.json` (required by `verbatimModuleSyntax`) and removed `rootDir`/`outDir` from tsconfig (incompatible with `trigger.config.ts` outside `src/`).
+**Verification:** `pnpm check-types --force` → 16/16 tasks pass.
+**Cross-ref:** `CLAUDE.md` Gotcha 13, `AGENTS.md` Gotcha 13.
+
 ---
 
 ## §10. Debugging Guide
@@ -3010,6 +3031,32 @@ The discrepancy catalog now has 45 entries (D1–D45), all resolved or tracked. 
 
 **Fix references:** MEP §6 Phase 0 (acceptance criteria), this SKILL.md §2.1 (version pins), §9.9 (gotchas), §12 (lessons), `CLAUDE.md` (full agent briefing), `AGENTS.md` (compact instructions).
 
+### Lesson 23: React Compiler requires manual package install — `reactCompiler: true` is not enough
+
+**Context:** Next.js 16's `reactCompiler: true` config flag enables the React Compiler, which provides automatic memoization and performance optimizations. However, the compiler itself (`babel-plugin-react-compiler`) is NOT bundled with Next.js — it must be manually installed as a devDependency. Without it, the dev server boots successfully ("Ready in 1099ms") but every page returns HTTP 500 with "Failed to resolve package babel-plugin-react-compiler."
+
+This was discovered when the user ran `pnpm dev --filter=@stillwater/web` and got a 500 on GET /. The root cause was not a code error — it was a missing devDependency that `reactCompiler: true` silently requires.
+
+**What to do differently:** When enabling `reactCompiler: true` in `next.config.ts`, always install `babel-plugin-react-compiler` immediately: `pnpm add -F @stillwater/web babel-plugin-react-compiler`. Verify with `rg 'babel-plugin-react-compiler' apps/web/package.json`. The package is now `^1.0.0`.
+
+**Fix references:** §9.9 Gotcha 11, `CLAUDE.md` Gotcha 11, `AGENTS.md` Gotcha 11.
+
+### Lesson 24: TS18003 cascade hides pre-existing type errors — fix placeholders first, then fix what surfaces
+
+**Context:** During Phase 0, `pnpm check-types` failed with TS18003 ("No inputs were found") for 6 packages that had empty `src/` directories. This was expected. However, the TS18003 failure caused a turbo cascade that aborted ALL downstream packages — including `packages/config` which had a pre-existing t3-env type error (missing `clientPrefix`) that was never reached.
+
+After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade was unblocked and 3 more pre-existing bugs surfaced:
+1. `packages/config/src/env.ts` — t3-env `createEnv()` missing `clientPrefix` + type inference failure from separate variable
+2. `services/workers/trigger.config.ts` — Trigger.dev v4 type changes (`machine` is string, `build.env` removed)
+3. `services/workers/package.json` — `verbatimModuleSyntax` requires `"type": "module"`
+4. `apps/web/next.config.ts` — `turbopackFileSystemCaching` → `turbopackFileSystemCacheForDev`
+5. `tooling/tailwind/base.ts` — Tailwind v4 `Config` type doesn't have `content` property
+6. `apps/web/tailwind.config.ts` — `stillwaterBase.theme` possibly undefined
+
+**What to do differently:** When `pnpm check-types` fails with cascading errors, fix the root cause (TS18003) first, then re-run to surface hidden errors. The cascade masks real bugs. After fixing all 6 cascade-discovered issues, `pnpm check-types` went from 0/6 to 16/16 tasks passing.
+
+**Fix references:** §9.9 Gotchas 11-13, `CLAUDE.md` Gotchas 11-13, `AGENTS.md` Gotchas 11-14.
+
 ---
 
 ## §13. Pitfalls to Avoid
@@ -3202,6 +3249,15 @@ The discrepancy catalog now has 45 entries (D1–D45), all resolved or tracked. 
 - **Don't set `export const dynamic = 'force-dynamic'` when `cacheComponents: true` is enabled** — incompatible; causes build error. SSE/streaming routes are dynamic by default. See §9.9 Gotcha 7, §13.8.
 - **Don't use Stripe `apiVersion: '2024-12-18.acacia'`** — SDK v22.3.0 pins "Dahlia" API (2026-06-24). Use `apiVersion: '2026-06-24.dahlia'`. SDK uses snake_case (`current_period_end`, not `currentPeriodEnd`). See §9.9 Gotcha 10, §15.6.
 - **Don't use shadcn `style: "new-york"`** — the actual `apps/web/components.json` has `"style": "default"`. See §9.9 Gotcha 9.
+
+**P0.3 cascade-discovered bugs (all resolved ✅):**
+- **Don't enable `reactCompiler: true` without installing `babel-plugin-react-compiler`** — it's NOT a built-in. `pnpm add -F @stillwater/web babel-plugin-react-compiler`. Without it, every page returns 500. See §9.9 Gotcha 11, §12 Lesson 23.
+- **Don't pass t3-env schema as a separate variable to `createEnv()`** — TypeScript can't infer generics. Pass inline. Also, `clientPrefix: 'NEXT_PUBLIC_'` is required. See §9.9 Gotcha 12.
+- **Don't use Trigger.dev v3-style `machine: { preset: "micro" }` or `build.env`** — v4 changed the type: `machine` is now a string literal; `build.env` was removed. See §9.9 Gotcha 13.
+- **Don't use `rootDir: "src"` in workers tsconfig when `trigger.config.ts` is outside `src/`** — TS6059. Remove `rootDir`/`outDir` (irrelevant with `noEmit: true`).
+- **Don't use `"type": "commonjs"` (or omit `"type"`) in workers package.json** — `verbatimModuleSyntax` requires ESM. Add `"type": "module"`.
+- **Don't use `turbopackFileSystemCaching`** — the correct Next.js 16.2.10 property is `turbopackFileSystemCacheForDev`.
+- **Don't use `--filter=web`** — Turbo matches by package name. Use `--filter=@stillwater/web` or `--filter=./apps/web`.
 
 ---
 

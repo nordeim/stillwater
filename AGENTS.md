@@ -36,7 +36,7 @@
 pnpm install
 
 # Dev (Next.js 16 + Turbopack)
-pnpm dev --filter=web          # Just web
+pnpm dev --filter=@stillwater/web          # Just web
 pnpm dev                       # All apps + workers
 pnpm jobs:dev                  # Trigger.dev local worker only
 
@@ -60,7 +60,7 @@ pnpm test:e2e                  # Playwright (5 browser projects)
 
 # Build
 pnpm build                     # All packages
-ANALYZE=true pnpm build --filter=web  # Bundle analyzer
+ANALYZE=true pnpm build --filter=@stillwater/web  # Bundle analyzer
 
 # Infrastructure
 docker compose up -d           # Postgres 17 + Redis 7 + Adminer
@@ -189,6 +189,30 @@ const nextConfig = {
   },
 };
 ```
+
+### 11. `reactCompiler: true` requires `babel-plugin-react-compiler`
+
+`next.config.ts` has `reactCompiler: true`. This requires `babel-plugin-react-compiler` to be installed as a devDependency in `apps/web`. Without it, every page returns HTTP 500. Already installed as `^1.0.0` — do NOT remove it.
+
+### 12. t3-env `createEnv()` — pass schema inline, not as variable
+
+`t3-env` v0.13.11 requires `clientPrefix: 'NEXT_PUBLIC_'` and cannot infer generics from a separate variable. The schema must be passed inline to `createEnv()`. See `packages/config/src/env.ts` for the correct pattern.
+
+### 13. Trigger.dev v4 — `machine` is string, `build.env` removed
+
+```typescript
+// ✅ CORRECT — v4
+machine: "micro",
+build: { external: ["@neondatabase/serverless"] },
+
+// ❌ WRONG — v3 pattern (TS errors)
+machine: { preset: "micro" },  // TS2322
+build: { env: { ... } },       // TS2353 — build.env removed in v4
+```
+
+### 14. `--filter=@stillwater/web` (NOT `--filter=web`)
+
+Turbo matches by package name. The package name is `@stillwater/web`, not `web`. All docs now use `--filter=@stillwater/web`.
 
 ---
 

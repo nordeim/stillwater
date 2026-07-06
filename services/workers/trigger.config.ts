@@ -64,24 +64,18 @@ export default defineConfig({
 
   // ── Machine configuration ───────────────────────────────────────
   // Shared default — tasks override for heavy operations
-  machine: {
-    preset: "micro", // 0.25 vCPU, 256MB RAM — sufficient for email + DB ops
-  },
+  // v4: machine is a string literal (not an object with preset)
+  machine: "micro", // 0.25 vCPU, 256MB RAM — sufficient for email + DB ops
 
   // ── Build configuration ─────────────────────────────────────────
   build: {
     // External modules that should not be bundled
     // (they're available in the Node.js runtime)
     external: ["@neondatabase/serverless"],
-
-    // Environment variables exposed to the build
-    env: {
-      DATABASE_URL: process.env.DATABASE_URL ?? "",
-      DATABASE_URL_UNPOOLED: process.env.DATABASE_URL_UNPOOLED ?? "",
-      RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
-      EMAIL_FROM: process.env.EMAIL_FROM ?? "",
-      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "",
-      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
-    },
+    // Note: Environment variables (DATABASE_URL, RESEND_API_KEY, etc.)
+    // are injected at runtime by Trigger.dev Cloud — no need to declare
+    // them in build.env (that property was removed in SDK v4).
+    // Configure env vars in the Trigger.dev dashboard or via `trigger.dev`
+    // CLI: `trigger.dev env set DATABASE_URL=...`
   },
 });

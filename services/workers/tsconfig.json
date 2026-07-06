@@ -4,8 +4,6 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2022",
-    "rootDir": "src",
-    "outDir": "dist",
     "noEmit": true,
     "tsBuildInfoFile": ".turbo/tsconfig.tsbuildinfo"
   },

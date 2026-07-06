@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   // ── Experimental features ──────────────────────────────────────
   experimental: {
     // Turbopack file-system caching (beta)
-    turbopackFileSystemCaching: true,
+    turbopackFileSystemCacheForDev: true,
   },
 
   // ── Logging ────────────────────────────────────────────────────
