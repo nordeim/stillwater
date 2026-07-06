@@ -24,14 +24,14 @@
   "dependencies": {
     "@stillwater/config": "workspace:*",
     "@stillwater/db": "workspace:*",
-    "stripe": "^17.6.0",
-    "zod": "^3.24.1"
+    "stripe": "^22.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@stillwater/typescript-config": "workspace:*",
-    "@types/node": "^22.13.4",
-    "@vitest/coverage-v8": "^3.0.5",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "@types/node": "^26.1.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }
