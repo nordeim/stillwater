@@ -1,4 +1,32 @@
-Continuing with the implementation. Let me execute all updates systematically.
+I'll follow the Meticulous Approach. Let me start by thoroughly analyzing the current `stillwater_SKILL.md` structure to understand what exists, then plan the updates precisely.
+## Phase 1: ANALYZE — SKILL.md Structure Inventory
+
+Let me read the full TOC and key sections to understand what exists:
+Now let me read the key sections that need updating — §1.4 status line, §2.1, §9, §12, §13, §14, §16, Appendix A, Appendix C:
+Now let me read the Appendix A (ADRs) and Appendix C (Audit History) to understand what needs updating:
+Now let me read the §9.1 (Next.js 16 Anti-Patterns) and §13.8 (Next.js 16 Pitfalls) to understand what exists:
+Now I have a complete understanding of the SKILL.md structure. Let me read the §13.13 Stillwater-Specific Pitfalls section to see what exists:
+Now I have a complete picture. Let me update the todos and plan the implementation:
+## Phase 2: PLAN — SKILL.md Update Strategy
+
+Based on my analysis, here are the gaps between the current SKILL.md (v1.3.0) and the P0-P3 work completed:
+
+### Gaps Identified
+
+| # | Gap | Section | Action |
+|---|---|---|---|
+| 1 | Frontmatter `version` still 1.3.0; `last_updated` still 2026-07-05; status line says "Phase 0 ready" not "complete" | Frontmatter | Update to v1.4.0, 2026-07-06, "Phase 0 COMPLETE" |
+| 2 | §2.1 Trigger.dev row doesn't note the SDK import path gotcha (`/v3` not `/v4`) | §2.1 | Add import path note |
+| 3 | §2.1 doesn't mention ESLint v9 pin (critical — do NOT upgrade to v10) | §2.1 | Add ESLint row |
+| 4 | §2.3 says "9 ADRs" — should be "10 ADRs (9 accepted + 1 proposed)" | §2.3 | Update count + add ADR-010 |
+| 5 | §9 has no Phase 0 implementation gotchas (Trigger.dev SDK, ESLint v10, React Email v6, TS 6.0.3, advisory lock scope) | §9 | Add new §9.9 |
+| 6 | §12 has Lessons 1-15 but no Phase 0 implementation lessons (16-22) | §12 | Add 7 new lessons |
+| 7 | §13.13 has D15-D24 pitfalls but not D43-D45 (React Email, TS drift, ESLint downgrade) | §13.13 | Add 3 new pitfalls |
+| 8 | Appendix A has ADR-001 through ADR-009 but not ADR-010 (Resend Native Templates) | Appendix A | Add ADR-010 |
+| 9 | Appendix C has v1.0.0 entry but no v1.4.0 entry documenting Phase 0 completion | Appendix C | Add v1.4.0 audit entry |
+| 10 | "35 reconciled discrepancies" references should be "45" (D1-D45) | §12 intro, Appendix C | Update count |
+
+Now let me execute all updates:
 
 ## IMPLEMENT 1: Update Frontmatter
 ✅ Frontmatter updated. Now IMPLEMENT 2: Update §2.1 with Trigger.dev SDK import path note and ESLint row:
