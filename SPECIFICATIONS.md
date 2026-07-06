@@ -2745,3 +2745,72 @@ A class at "9:30 AM PT" displayed to a member in EST shows as "12:30 PM EST" —
 
 ---
 
+## PAD.md Cross-Reference Update
+
+The following sections of PAD.md should be updated to reference this companion document:
+
+```
+### Section 8 (API Architecture) — after §8.4:
+> **For the complete procedure catalog (~50 procedures with Zod schemas),
+> see SPECIFICATIONS.md §2.**
+
+### Section 10 (Frontend Architecture) — after §10.5:
+> **For component interfaces (TypeScript contracts), see SPECIFICATIONS.md §3.**
+> **For page content & copy, see SPECIFICATIONS.md §4.**
+> **For form schemas, see SPECIFICATIONS.md §5.**
+
+### Section 11 (Design System) — after §11.6:
+> **For interaction states (hover, focus, active), see SPECIFICATIONS.md §12.**
+> **For animation choreography, see SPECIFICATIONS.md §8.**
+
+### Section 22 (Accessibility) — keep (already complete):
+> **For date/time formatting rules (i18n deferred), see SPECIFICATIONS.md §15.**
+
+### Section 28 (Error Handling) — after §28.3:
+> **For the complete error message catalog (every user-facing string),
+> see SPECIFICATIONS.md §6.**
+
+### New Section 32 after Appendix E:
+> **Cross-Reference: This document is the companion to SPECIFICATIONS.md,
+> which provides component interfaces, page content, form schemas,
+> error messages, responsive behavior, animation choreography, and
+> validation rules that complement the architectural decisions documented here.**
+```
+
+These updates are intentional **cross-references, not migrations**. PAD.md remains the canonical architectural document; SPECIFICATIONS.md is the implementation reference.
+
+---
+
+## Delivery Summary
+
+What this document delivers (cross-referenced to PAD.md sections it complements):
+
+| § | Section | Coverage | Lines | PAD.md sections complemented |
+|---|---------|----------|-------|------------------------------|
+| 1 | Document Convention | Conventions + tone guide | ~25 | All |
+| 2 | Complete tRPC Procedure Catalog | 56 procedures across 11 routers with full Zod schemas and outputs | ~470 | §8.4 expansion |
+| 3 | Component Interface Catalog | 25 component interfaces (shared + app-specific + email + hooks) | ~580 | §10.1, §11.6 |
+| 4 | Page Content Specifications | 16 routes with full content blocks, SEO specs, interactions | ~580 | §12 |
+| 5 | Form Schema Catalog | 14 form schemas with all Zod validations and UI notes | ~440 | §10.4 + §8 (Zod) |
+| 6 | Error Message Catalog | 100+ error strings organized by domain with recovery actions | ~360 | §28 expansion |
+| 7 | Responsive Behavior Specifications | 9 contexts with mobile/tablet/desktop rules | ~140 | §11.4 |
+| 8 | Animation Choreography | 18 animation specs + banned list + reduced-motion behavior | ~280 | §11.5 |
+| 9 | Admin Dashboard Specifications | 7 dashboard sub-pages with full layouts and KPIs | ~210 | §8 (admin router) |
+| 10 | Loading State Specifications | 13 loading contexts with skeleton rules | ~120 | §10.5 |
+| 11 | Empty State Specifications | 16 empty states with full copy + CTAs | ~120 | §10.5 |
+| 12 | Interaction State Specifications | 7 element types × 5 states | ~80 | §22 |
+| 13 | Validation Rules Catalog | 5 categories × 31 numbered rules | ~250 | §8 (Zod) + §7 (DB constraints) |
+| 14 | Notification Copy Catalog | 50+ toast strings + 4 banner scenarios | ~200 | §28 |
+| 15 | Date/Time Formatting Catalog | 25+ display patterns + relative time + timezone | ~120 | §24 |
+| Total | | | **2,750+** | Bridges architectural → implementation |
+
+Together with PAD.md, this document provides a **coding agent with everything needed to implement every visible feature** without architectural ambiguity. A coding agent hitting both documents together can:
+
+- Implement data layer from PAD.md §7 + SPECS.md §13
+- Implement API layer from PAD.md §8 + SPECS.md §2 (procedures) + §5 (schemas) + §13 (rules)
+- Implement UI layer from PAD.md §10–11 + SPECS.md §3 (interfaces) + §4 (content) + §7 (responsive) + §8 (animation) + §10 (loading) + §11 (empty) + §12 (states)
+- Implement error handling from PAD.md §28 + SPECS.md §6 (strings) + §14 (toasts)
+- Implement date/time from SPECS.md §15
+
+The remaining ambiguities (visual styling details beyond tokens, copy nuances, edge-case UX preferences) require human review.
+
