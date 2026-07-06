@@ -10,6 +10,10 @@ yes, please meticulously plan to proceed with the recommended fixes. but first r
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously review and validate the app start log below to look out for any potential issues.
+
+---
+
 awesome meticulous job so far. please keep up the good work. now, please meticulously review and validate the dev server start log below against the codebase to identify the potential issues and their root causes.
 
 ---
