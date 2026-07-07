@@ -1,7 +1,7 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 1.7.0
+version: 1.8.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-07
 ---
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–3 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle. Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration (HTTP handler + RSC server caller + React client + query keys). 326 tests (104 api + 102 auth + 107 db + 13 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` all green. Phase 4–12 pending.
+**Phase 0–3 Status**: ✅ COMPLETE (with Phase 1–2 remediation applied). Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle (single clean migration `0000_dear_dagger.sql` regenerated after fixing silent `ALTER COLUMN` failure). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration (HTTP handler + RSC server caller + React client + query keys). Database client now auto-selects `pg` (local) vs `neon-http` (production) driver. Seed script correctly loads `.env.local` before DB instantiation. 326+ tests (104 api + 102 auth + 107 db + 13 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` all green. Phase 4–12 pending.
 
 ---
 
@@ -990,6 +990,44 @@ fetchRequestHandler({
     : {}),
 });
 ```
+
+### Gotcha 30: Migration `ALTER COLUMN ... SET DATA TYPE` fails silently on incompatible types (Phase 1–2 remediation)
+
+**Symptom:** `pnpm db:migrate` exits with code 1 after "Using 'pg' driver for database querying" with **no error message**. drizzle-kit swallows the PostgreSQL error.
+
+**Root cause:** Migration `0001_supreme_sabretooth.sql` contained `ALTER TABLE "users" ALTER COLUMN "email_verified" SET DATA TYPE boolean;`. PostgreSQL **cannot automatically cast** `timestamp` → `boolean` without a `USING` clause (e.g., `USING (email_verified IS NOT NULL)`). Without it, PG throws:
+```
+ERROR: column "email_verified" cannot be cast automatically to type boolean
+```
+But drizzle-kit 0.31.10 **swallows this error** — it exits with code 1 without printing the PostgreSQL error message. This is a drizzle-kit bug (poor error reporting), but the root cause is the migration SQL itself.
+
+**Fix:** For fresh databases (no production data), delete both old migrations and regenerate a single consolidated migration from the current schema. The current schema already has `emailVerified` as `boolean`, so the new migration creates it correctly from scratch — no `ALTER COLUMN` needed. Run `rm drizzle/migrations/*.sql`, then `pnpm db:generate`. For databases with data, add a `USING` clause manually.
+
+### Gotcha 31: Database driver must switch between `pg` (local) and `neon-http` (Neon) (Phase 1–2 remediation)
+
+**Symptom:** `pnpm db:seed` fails with `NeonDbError: Error connecting to database: TypeError: fetch failed`.
+
+**Root cause:** `packages/db/src/index.ts` unconditionally used `drizzle-orm/neon-http`, which makes HTTP requests to a Neon endpoint. Local Docker Postgres speaks TCP, not HTTP — the `neon` driver cannot connect to it.
+
+**Fix:** `packages/db/src/index.ts` now dynamically selects the driver: URLs containing `neon.tech` use `neon-http`; all others use `node-postgres` with `pg.Pool`. The `pg.iconpackage` is in `dependencies` (not devDependencies) so it's available at runtime for local development. No consumer code changes needed — the `db` export is transparent. 
+
+**Verification:** `pnpm db:migrate` prints "Using 'pg' driver for database querying" (drizzle-kit logs the driver), then applies the migration successfully.
+
+### Gotcha 32: Seed script must load `.env.local` before importing `db` (Phase 1–2 remediation)
+
+**Symptom:** Seed script fails with `SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string` — the `pg` Pool is initialized with a fallback connection string (no password) because `DATABASE_URL` wasn't set yet.
+
+**Root cause:** The seed script imports `db` from `../index`, which reads `process.env['DATABASE_URL']` at import time. But `.env.local` isn't loaded by default when running via `tsx` — the env var is `undefined`, and the Pool is created with a fallback URL that has no password.
+
+**Fix:** `packages/db/src/seed/env.ts` loads `.env.local` via `dotenv` when `DATABASE_URL` is not set. It's imported at the top of `seed/index.ts` — before the `db` import — so the env is available by the time the `db` client is instantiated. 
+
+### Gotcha 33: Zod v4 enforces strict UUID v4 variant (Phase 3)
+
+**Sym_ibt:** Seed fixtures with UUIDs like `00000000-0000-4000-g000-000000000001` fail Zod v4 validation: `invalid_format`.
+
+**Root cause:** Zod v4 v4 enforces the RFC 4122 variant nibble (first character of the 4th group) must be `8`, `9`, `a`, or `b`. The `g` variant in test fixtures is invalid. This affects `packages/db/src/seed/fixtures/membership-plans.ts`.
+
+**Fix:** Use valid v4 variant in test fixtures: `00000000-0000-4000-a000-000000000001` (variant `a`).
 
 ---
 

@@ -147,3 +147,32 @@
    CLAUDE.md's guidance, except for the Trigger.dev /v3 line, which is both wrong and self-contradicting.
 
   Want me to fix the five items? The Trigger.dev line (1) is a one-line edit, and (2)/(3)/(4)/(5) are small wording-version corrections. 
+
+---
+
+✅ Seed Script Fix — Complete & Verified
+Summary of Changes
+1. Dynamic Database Driver Selection (packages/db/src/index.ts)
+- Problem: index.ts unconditionally used drizzle-orm/neon-http, which only works with Neon's HTTP endpoint. Local Docker Postgres (TCP) was unreachable.
+- Fix: Added dynamic driver detection based on DATABASE_URL. If the URL contains neon.tech, use neon-http. Otherwise, use node-postgres with pg.Pool.
+- This ensures the same db export works everywhere — local dev (via Docker Postgres) and production (via Neon).
+2. Environment Loading for Seed Script (packages/db/src/seed/env.ts + seed/index.ts)
+- Problem: The seed script imported db before DATABASE_URL was loaded from .env.local, causing the pg Pool to initialize with a fallback URL (no password).
+- Fix: Created seed/env.ts that loads .env.local via dotenv when DATABASE_URL is not set. Imported it at the top of seed/index.ts before the db import.
+3. Invalid UUID Fix (packages/db/src/seed/fixtures/membership-plans.ts)
+- Problem: Zod v4 enforces strict UUID v4 validation. The fixture UUIDs had g in the variant position (e.g., 00000000-0000-4000-g000-000000000001), which is invalid — must be 8, 9, a, or b.
+- Fix: Changed the variant nibble from g to a in all three membership plan fixtures.
+4. Dependency Update (packages/db/package.json)
+- Moved "pg": "^8.13.1" from devDependencies to dependencies so it's available at runtime for local development.
+Verification Results
+Command	Result
+pnpm db:migrate	✅ Success — single clean migration applied
+pnpm db:seed	✅ Success — 5 users, 5 members, 3 instructors, 4 class styles, 4 classes, 2 rooms, 7 sessions, 3 membership plans
+pnpm check-types	✅ 16/16 successful
+pnpm lint	✅ 2/2 successful
+pnpm test --filter=@stillwater/db	✅ 16 files, 107 tests passed
+pnpm test --filter=@stillwater/auth	✅ 4 files, 102 tests passed
+pnpm test --filter=@stillwater/api	✅ 13 files, 104 tests passed
+pnpm test --filter=@stillwater/web	✅ 3 files, 13 tests passed
+Total: 326 tests passed — no regressions.
+

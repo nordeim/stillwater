@@ -3,6 +3,8 @@
 > Compact instruction file for AI coding agents working in the Stillwater monorepo.
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
+>
+> **Updated:** 2026-07-07 (v1.8.0) — Added Gotchas 24–26 (migration regeneration, db driver selection, seed env loading). Total: 26 gotchas.
 
 ---
 
@@ -259,6 +261,30 @@ Test UUIDs must have version digit `4` and variant `8/9/a/b` in the 4th group. `
 
 Don't pass `undefined` to optional properties (e.g., tRPC `onError`). Use `...(cond ? { prop: fn } : {})` instead. See `CLAUDE.md` Gotcha 29.
 
+### 24. Migration fails silently: `ALTER COLUMN ... SET DATA TYPE` without `USING`
+
+**Symptom:** `pnpm db:migrate` exits with code 1 after "Using 'pg' driver for database querying" with no error message. drizzle-kit swallows the PostgreSQL error.
+
+**Root cause:** Migration contains `ALTER TABLE "users" ALTER COLUMN "email_verified" SET DATA TYPE boolean;`. PostgreSQL cannot automatically cast `timestamp` → `boolean`. It requires a `USING` clause (e.g., `USING (email_verified IS NOT NULL)`). Without it, PG throws an error, but drizzle-kit 0.31.10 silently exits with code 1.
+
+**Fix:** For fresh databases (no production data), delete old migrations and regenerate a single clean migration: `rm drizzle/migrations/*.sql`, then `pnpm db:generate`. The new migration will create the column with the correct type from scratch — no `ALTER COLUMN` needed. For databases with data, add a `USING` clause manually. See `suggested_fix.md` for full analysis.
+
+### 25. Database driver: `pg` for local, `neon-http` for production
+
+**Symptom:** `pnpm db:seed` fails with `NeonDbError: Error connecting to database: TypeError: fetch failed` — the `neon-http` driver cannot connect to local Docker Postgres.
+
+**Root cause:** `packages/db/src/index.ts` unconditionally used `drizzle-orm/neon-http`, which makes HTTP requests to a Neon endpoint. Local Docker Postgres speaks TCP, not HTTP.
+
+**Fix:** `packages/db/src/index.ts` now dynamically selects the driver: URLs containing `neon.tech` use `neon-http`; all others use `node-postgres` with `pg.Pool`. The `pg` package is in `dependencies` (not devDependencies) so it's available at runtime for local development. No consumer code changes needed — the `db` export is transparent.
+
+### 26. Seed script must load `.env.local` before importing `db`
+
+**Symptom:** Seed script fails with `SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string` — the `pg` Pool is initialized with a fallback connection string (no password) because `DATABASE_URL` wasn't set yet.
+
+**Root cause:** The seed script imports `db` from `../index`, which reads `process.env['DATABASE_URL']` at import time. But `.env.local` isn't loaded until later.
+
+**Fix:** `packages/db/src/seed/env.ts` loads `.env.local` via `dotenv` when `DATABASE_URL` is not set. Imported at the top of `seed/index.ts` before the `db` import. Works because ESM evaluates side-effect imports in order of appearance.
+
 ---
 
 ## Phase status (as of 2026-07-07)
@@ -266,7 +292,7 @@ Don't pass `undefined` to optional properties (e.g., tRPC `onError`). Use `...(c
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
-| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migration `0000`. 107 db tests. |
+| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, single clean migration `0000_dear_dagger.sql`. 107 db tests. |
 | 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth + 11 web tests. |
 | 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration (HTTP handler + RSC caller + React client + query keys). 104 api + 2 web tests. |
 | 4 — Marketing | ⬜ Next | Sanity CMS + ISR marketing pages. |
@@ -297,7 +323,7 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ```bash
 pnpm check-types       # Must be green (16/16 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (326 tests: 104 api + 102 auth + 107 db + 13 web)
+pnpm test              # Must be green (326+ tests: 104 api + 102 auth + 107 db + 13 web)
 ```
 
 Integration tests (require Docker Postgres): `pnpm test:integration --filter=@stillwater/db`
@@ -311,7 +337,7 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
 3. `stillwater_SKILL.md` — distilled project skill (v1.4.1; 21 source skills condensed); authoritative tech-stack specifics
-4. `PAD.md` — Project Architecture Document (31 sections, 10 ADRs; v1.7.0); culmination of the above into codebase architecture
+4. `PAD.md` — Project Architecture Document (31 sections, 10 ADRs; v1.8.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
 6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.7.0 with Phase 3 gotchas 25–29)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)

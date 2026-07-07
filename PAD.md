@@ -85,6 +85,7 @@ Now — implementing the full document:
 | 1.5.0   | 2026-07-07 | Claw Code / Phase 1 | Active | Phase 1 complete — 14 tables, 8 enums, 5 critical indexes (§7.3) implemented via Drizzle ORM in `packages/db/src/schema/`; migration `0000_chemical_obadiah_stane.sql` generated; 91 unit tests + 7 integration tests; db client (`DrizzleDB` type) exported from `packages/db/src/index.ts` (resolves D11); `stripeCustomerId` column added to `members` table (resolves D6); 3 additional indexes beyond §7.3 (`idx_members_stripe_customer_id`, `idx_enrollments_session_member` unique, `idx_role_assignments_member_role` unique); idempotent seed script + local-only reset script |
 | 1.6.0   | 2026-07-07 | Claw Code / Phase 2 | Active | Phase 2 complete — Better Auth v1.6.23 fully configured (Google OAuth + Magic Link plugin + customSession plugin for memberId/roles enrichment); 3 Better Auth schema tables added (`session`, `account`, `verification` in `packages/db/src/schema/auth-tables.ts`); `users.emailVerified` changed from `timestamp` to `boolean` (Better Auth requirement); RBAC permission matrix (13 permissions × 6 roles) in `packages/auth/src/rbac.ts`; server-side auth helpers (`getSession`/`requireAuth`/`requireRole`) in `apps/web/src/lib/auth.ts`; 2-layer auth pattern verified (cookie-only `proxy.ts` + 4 layout guards); Better Auth route handler at `/api/auth/[...all]/route.ts`; sign-in page (Google + Magic Link) + sign-out route + error page; migration `0001_supreme_sabretooth.sql`; 220 tests (102 auth + 107 db + 11 web) |
 | 1.7.0   | 2026-07-07 | Claw Code / Phase 3 | Active | Phase 3 complete — 10 tRPC routers (~30 procedures) in `packages/api/src/routers/`; 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`; booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004; rate limiting on `bookings.book` (10/min via Upstash); root router merging all 10 routers in `packages/api/src/root.ts`; web tRPC integration (HTTP handler + RSC server caller + React client + query key factory); `pg` driver added to `packages/db` devDeps for local Postgres migrations (drizzle-kit driver selection fix); Phase 7 procedures stubbed with `PRECONDITION_FAILED`; 326 tests (104 api + 102 auth + 107 db + 13 web) |
+| 1.8.0   | 2026-07-07 | Claw Code / Remediation | Active | Phase 1–2 remediation — migration regeneration fix: single clean migration `0000_dear_dagger.sql` (17 CREATE TABLE + 8 CREATE TYPE + 8 CREATE INDEX + 17 ALTER TABLE); `ALTER COLUMN ... SET DATA TYPE` failure documented; database driver auto-selection (`pg` for local, `neon-http` for Neon) in `packages/db/src/index.ts`; seed script env loading (`seed/env.ts`) to fix `DATABASE_URL` missing at import time; Zod v4 UUID fixture validation fix (variant `g` → `a` in 3 membership plan fixtures); `pg` moved from `devDependencies` to `dependencies` in `packages/db/package.json`; 326+ tests passing; `pnpm db:migrate` and `pnpm db:seed` both green |
 
 ### How to Maintain This Document
 
@@ -726,7 +727,7 @@ graph TD
 
 ### 7.1 Entity Relationship Diagram
 
-> **Implementation Status:** ✅ Phase 1 COMPLETE (2026-07-07). All 14 entities below are implemented as Drizzle `pgTable` definitions in `packages/db/src/schema/`. The `members` table includes an additional `stripeCustomerId` column (D6 fix — not shown in ERD below) for Stripe webhook customer lookups. See `packages/db/src/schema/` for the canonical TypeScript definitions and `packages/db/drizzle/migrations/0000_chemical_obadiah_stane.sql` for the generated DDL.
+> **Implementation Status:** ✅ Phase 1 COMPLETE (2026-07-07). All 14 entities below are implemented as Drizzle `pgTable` definitions in `packages/db/src/schema/`. The `members` table includes an additional `stripeCustomerId` column (D6 fix — not shown in ERD below) for Stripe webhook customer lookups. See `packages/db/src/schema/` for the canonical TypeScript definitions and `packages/db/drizzle/migrations/0000_dear_dagger.sql` for the generated DDL (single clean migration consolidated from prior two-migration sequence).
 
 ```mermaid
 erDiagram
@@ -967,6 +968,61 @@ Rules:
   - All migrations are additive by default; deprecate columns before dropping
   - Column renames: add new column → backfill → migrate reads → drop old
   - Every migration PR requires a rollback script as a PR comment
+```
+
+**Migration Regeneration (when `ALTER COLUMN ... SET DATA TYPE` fails with no error message):**
+
+If `pnpm db:migrate` exits silently (exit code 1, no PostgreSQL error displayed), check for `ALTER COLUMN ... SET DATA TYPE` statements in the migration SQL. PostgreSQL cannot automatically cast incompatible types (e.g., `timestamp` → `boolean`) without a `USING` clause. drizzle-kit 0.31.10 swallows the error.
+
+For **fresh databases** (no production data), the cleanest fix is to:
+1. Delete old migrations: `rm drizzle/migrations/*.sql`
+2. Regenerate a single clean migration: `pnpm db:generate`
+3. Re-migrate: `pnpm db:migrate`
+4. Seed: `pnpm db:seed`
+
+For **databases with data**, add a `USING` clause manually to the migration SQL before applying.
+
+**Current Migration:** Single clean migration `0000_dear_dagger.sql` (consolidated from the corrupted `0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql` pair) — contains no `ALTER COLUMN ... SET DATA TYPE` statements.
+
+### 7.5 Database Client Driver Selection
+
+The `db` client exported from `packages/db/src/index.ts` dynamically selects the appropriate driver based on `DATABASE_URL`:
+
+- **Neon URLs** (containing `neon.tech`): Uses `drizzle-orm/neon-http` — makes HTTP requests to Neon's serverless endpoint. Required for production (Vercel → Neon).
+- **Non-Neon URLs** (local Docker, other PostgreSQL): Uses `drizzle-orm/node-postgres` with `pg.Pool` — connects via TCP socket. Required for local development (`docker compose up -d`).
+
+```typescript
+// packages/db/src/index.ts (simplified)
+const isNeonUrl = connectionString.includes('neon.tech');
+
+let sql: ReturnType<typeof neon> | Pool;
+if (isNeonUrl) {
+  sql = neon(connectionString);
+} else {
+  sql = new Pool({ connectionString });
+}
+
+export const db = isNeonUrl
+  ? drizzleNeon(sql as ReturnType<typeof neon>, { schema })
+  : drizzlePg(sql as Pool, { schema });
+```
+
+This approach ensures a single `db` export works transparently in both environments without consumer code changes. The `pg` package is declared in `dependencies` (not devDependencies) so it's available at runtime for local development.
+
+**Verification:** `pnpm db:migrate` logs "Using 'pg' driver for database querying" when running locally.
+
+### 7.6 Seed Script & Environment Loading
+
+**Seed script:** `packages/db/src/seed/index.ts` — idempotent development data seeder (5 members, 3 instructors, 4 class styles, 4 classes, 2 rooms, 7 sessions, 3 membership plans). Uses `onConflictDoNothing` for safe re-runs.
+
+**Environment loading:** The seed script must load `.env.local` *before* importing the `db` client, because `db` reads `DATABASE_URL` at import time (during module evaluation). If `.env.local` isn't loaded first, the `pg` Pool is created with a fallback URL that has no password, causing `SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string`.
+
+**Fix:** `packages/db/src/seed/env.ts` loads `.env.local` via `dotenv` when `DATABASE_URL` is not set. It's imported as a side-effect at the top of `seed/index.ts` — before the `db` import — so the env is available when the `db` module is evaluated.
+
+```typescript
+// packages/db/src/seed/index.ts
+import './env'; // Must be first — loads .env.local before db is imported
+import { db } from '../index';
 ```
 
 ---
