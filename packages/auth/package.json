@@ -18,17 +18,22 @@
     "build": "tsc --build",
     "dev": "tsc --build --watch",
     "clean": "rm -rf dist .turbo",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@stillwater/config": "workspace:*",
     "@stillwater/db": "workspace:*",
     "better-auth": "^1.6.23",
+    "resend": "^6.17.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@stillwater/typescript-config": "workspace:*",
     "@types/node": "^26.1.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.9"
   }
 }

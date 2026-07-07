@@ -1,7 +1,7 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 1.5.0
+version: 1.6.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-07
 ---
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–1 Status**: ✅ COMPLETE (Phase 0: 2026-07-06, Phase 1: 2026-07-07). Phase 0: All 10 D15–D24 patches applied. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle; 91 unit tests + 7 integration tests; migration `0000_chemical_obadiah_stane.sql` generated. `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` all green. Phase 2–12 pending.
+**Phase 0–2 Status**: ✅ COMPLETE (Phase 0: 2026-07-06, Phase 1: 2026-07-07, Phase 2: 2026-07-07). Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle; migration `0000_chemical_obadiah_stane.sql`. Phase 2: Better Auth v1.6.23 with Google OAuth + Magic Link + RBAC (13 permissions × 6 roles); 3 Better Auth schema tables (session, account, verification); `users.emailVerified` changed to boolean; 2-layer auth pattern (cookie-only `proxy.ts` + 4 layout guards); migration `0001_supreme_sabretooth.sql`. 220 tests (102 auth + 107 db + 11 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` all green. Phase 3–12 pending.
 
 ---
 
@@ -824,6 +824,99 @@ Test files are run by vitest (which uses esbuild, not tsc), so they don't need t
 
 Run integration tests explicitly via `pnpm test:integration` (requires `docker compose up -d` first).
 
+### Gotcha 19: Better Auth `magicLink` is a plugin, NOT a social provider (Phase 2)
+
+**Symptom:** `authClient.signIn.magicLink` is `undefined` — TypeScript error TS2339.
+
+**Root cause:** Better Auth's Magic Link is at `better-auth/plugins/magic-link` (a plugin), not at `better-auth/providers` (where Google lives). The client-side `authClient` must also register the `magicLinkClient` plugin from `better-auth/client/plugins` — otherwise `signIn.magicLink` doesn't exist on the client object.
+
+**Fix:**
+```typescript
+// Server-side (packages/auth/src/config.ts)
+import { magicLink } from 'better-auth/plugins/magic-link';
+export const auth = betterAuth({
+  plugins: [magicLink({ sendMagicLink: async ({ email, url }) => { /* ... */ } })],
+});
+
+// Client-side (packages/auth/src/client.ts)
+import { magicLinkClient } from 'better-auth/client/plugins';
+export const authClient = createAuthClient({
+  plugins: [magicLinkClient()],  // ← REQUIRED for signIn.magicLink on client
+});
+```
+
+### Gotcha 20: Better Auth `customSession` plugin for session enrichment (Phase 2)
+
+**Symptom:** `session.user.memberId` and `session.user.roles` are `undefined` — the MEP F2-01 `session.sessionData` callback API doesn't exist in Better Auth v1.6.23.
+
+**Root cause:** The MEP F2-01 interface referenced a `session.sessionData` callback that was from an earlier Better Auth API. In v1.6.23, session enrichment is done via the `customSession` plugin from `better-auth/plugins/custom-session`.
+
+**Fix:** Use `customSession` plugin instead of `session.sessionData`:
+```typescript
+import { customSession } from 'better-auth/plugins/custom-session';
+export const auth = betterAuth({
+  plugins: [
+    customSession(async (sessionData) => {
+      const member = await db.query.members.findFirst({
+        where: (m, { eq }) => eq(m.userId, sessionData.user.id),
+      });
+      return { ...sessionData, user: { ...sessionData.user, memberId: member?.id ?? null, roles: [...] } };
+    }),
+  ],
+});
+```
+
+### Gotcha 21: `users.emailVerified` must be boolean for Better Auth (Phase 2)
+
+**Symptom:** Better Auth throws type errors or behaves unexpectedly when `emailVerified` is a timestamp.
+
+**Root cause:** Better Auth v1.6.23 expects `emailVerified` as a `boolean` (default `false`), NOT a `timestamp`. Phase 1 created the column as `timestamp('email_verified', { mode: 'date' })` per PAD §7.2. This is a known divergence — PAD §7.2 specified timestamp, but Better Auth requires boolean.
+
+**Fix:** Phase 2 Cycle 0 changed `users.emailVerified` from `timestamp` to `boolean('email_verified').default(false).notNull()`. Migration `0001_supreme_sabretooth.sql` applies this change (destructive — drops timestamp column, adds boolean column). Also requires updating seed fixtures: `emailVerified: new Date()` → `emailVerified: true`.
+
+### Gotcha 22: `drizzleAdapter` schema mapping for plural table names (Phase 2)
+
+**Symptom:** Better Auth can't find the `user` table — it looks for `user` (singular) but our table is `users` (plural).
+
+**Root cause:** Better Auth's default schema uses singular table names (`user`, `session`, `account`, `verification`). Phase 1 created `users` (plural) per PAD §7.2. The `drizzleAdapter` needs explicit `schema` config to map Better Auth's defaults to our table names.
+
+**Fix:** Configure `drizzleAdapter` with `schema` mapping:
+```typescript
+drizzleAdapter(db, {
+  provider: 'pg',
+  schema: {
+    user: { modelName: 'users' },
+    session: { modelName: 'session' },
+    account: { modelName: 'account' },
+    verification: { modelName: 'verification' },
+  },
+}),
+```
+
+### Gotcha 23: `'guest'` role is NOT in the `studio_role` DB enum (Phase 2)
+
+**Symptom:** TypeScript error: `Type '"guest"' is not assignable to type '"member" | "instructor" | "staff" | "manager" | "owner"'`.
+
+**Root cause:** The `studio_role` PostgreSQL enum (PAD §7.2) has 5 values: `member`, `instructor`, `staff`, `manager`, `owner`. The `guest` role (unauthenticated users) is NOT stored in the database — it only exists in the PAD §9.2 permission matrix. The `StudioRole` type derived from `studioRoleEnum.enumValues` doesn't include `'guest'`.
+
+**Fix:** In `packages/auth/src/rbac.ts`, define a separate `Role` type that extends `StudioRole` with `'guest'`:
+```typescript
+export type Role = StudioRole | 'guest';
+```
+The `can()` function accepts `Role[]` (not `StudioRole[]`) so it can check permissions for unauthenticated users: `can(['guest'], 'schedule:view')` returns `true`.
+
+### Gotcha 24: `import 'server-only'` throws in vitest — must mock (Phase 2)
+
+**Symptom:** `pnpm test` fails with "This module cannot be imported from a Client Component module" when testing `apps/web/src/lib/auth.ts`.
+
+**Root cause:** The `server-only` package throws when imported outside a Next.js Server Component context. Vitest runs in Node.js (not Next.js server context), so the import fails.
+
+**Fix:** Mock `server-only` at the top of the test file:
+```typescript
+vi.mock('server-only', () => ({}));
+```
+This must come BEFORE the import of the module under test. The mock returns an empty module, allowing the test to proceed. The actual `server-only` guard works correctly in production (Next.js Server Component context).
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -840,6 +933,12 @@ Run integration tests explicitly via `pnpm test:integration` (requires `docker c
 | `import { db } from '@stillwater/db'` throws in test context | `neon()` validates connection string format | The db client uses try/catch fallback. Ensure `DATABASE_URL` env var is set for integration tests, or use the `skipIf` guard. See Gotcha 16. |
 | `pnpm test` fails with "No test files found" in `packages/db` | Vitest can't find test files | Ensure `packages/db/vitest.config.ts` exists and `pnpm install` has run. Phase 1 added 15 test files. |
 | Schema test asserts `.unique` but gets `undefined` | Drizzle 0.45 API: uniqueness is `.isUnique`, not `.unique` | Use `.isUnique` in test assertions. FK cascade behavior is verified via migration SQL, not column properties. See Gotcha 14. |
+| `authClient.signIn.magicLink` is `undefined` (TS2339) | magicLink client plugin not registered | Import `magicLinkClient` from `better-auth/client/plugins` and add to `createAuthClient({ plugins: [magicLinkClient()] })`. See Gotcha 19. |
+| `session.user.memberId` / `roles` are `undefined` | MEP F2-01 `session.sessionData` API doesn't exist in v1.6.23 | Use `customSession` plugin from `better-auth/plugins/custom-session` instead. See Gotcha 20. |
+| Better Auth can't find `user` table | drizzleAdapter not configured with `schema` mapping | Add `schema: { user: { modelName: 'users' } }` to `drizzleAdapter` config. See Gotcha 22. |
+| `Type '"guest"' is not assignable to StudioRole` | `guest` not in `studio_role` DB enum | Use `Role` type (`StudioRole \| 'guest'`) from `rbac.ts` for permission checks. See Gotcha 23. |
+| `server-only` throws "cannot be imported from Client Component" in tests | `server-only` package throws outside Next.js server context | Mock at top of test: `vi.mock('server-only', () => ({}))`. See Gotcha 24. |
+| `z.string().email()` lint error: `email` is deprecated | Zod v4 deprecated `z.string().email()` | Use `z.email('message')` instead (Zod v4 native). |
 | `Cannot find module '@stillwater/db'` | `.npmrc` missing `custom-conditions=@stillwater/source` | D15 fix — both `.npmrc` AND `pnpm-workspace.yaml` must declare the custom condition. |
 | `pnpm lint` crashes on `proxy.ts` with `getFilename is not a function` | ESLint v10 installed (should be v9) | Downgrade: `pnpm add -Dw eslint@^9.39.4` + `pnpm add -D -F @stillwater/eslint-config @eslint/js@^9.39.4`. See D45. |
 | `react-email` templates import from `@react-email/components` | React Email v6 unified all imports | Change to `import { Html, Button } from 'react-email'`. See D43. |

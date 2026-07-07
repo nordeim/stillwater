@@ -1,13 +1,13 @@
 /**
  * F1-14 — Schema barrel export
  *
- * Re-exports all 14 tables and 8 enums for use by the db client (F1-15)
- * and the tRPC API layer (Phase 3).
+ * Re-exports all 14 Phase 1 tables + 8 enums + 3 Better Auth tables (Phase 2 Cycle 0)
+ * for use by the db client (F1-15) and the tRPC API layer (Phase 3).
  *
  * This file is the schema entry point referenced by drizzle.config.ts:
  *   schema: "./src/schema/index.ts"
  *
- * Source: MASTER_EXECUTION_PLAN.md F1-14, PAD.md §7.1.
+ * Source: MASTER_EXECUTION_PLAN.md F1-14, PAD.md §7.1, Phase 2 Cycle 0.
  */
 
 // Enums (8)
@@ -17,6 +17,9 @@ export * from './enums';
 export * from './users';
 export * from './members';
 export * from './instructors';
+
+// Better Auth tables (3 — Phase 2 Cycle 0)
+export * from './auth-tables';
 
 // Class catalog tables (3)
 export * from './class-styles';

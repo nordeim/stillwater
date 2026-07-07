@@ -36,10 +36,11 @@ describe('F1-02: users table', () => {
     expect(users.createdAt.hasDefault).toBe(true);
   });
 
-  it('has emailVerified timestamp (nullable)', () => {
+  it('has emailVerified boolean (Better Auth requirement — Phase 2 Cycle 0)', () => {
     expect(users.emailVerified).toBeDefined();
-    expect(users.emailVerified.getSQLType()).toBe('timestamp');
-    // emailVerified is nullable — notNull should be falsy
-    expect(users.emailVerified.notNull).toBeFalsy();
+    expect(users.emailVerified.getSQLType()).toBe('boolean');
+    // emailVerified defaults to false (Better Auth convention)
+    expect(users.emailVerified.hasDefault).toBe(true);
+    expect(users.emailVerified.notNull).toBe(true);
   });
 });

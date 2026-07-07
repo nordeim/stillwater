@@ -53,7 +53,7 @@ export const demoMembers: DemoMember[] = [
       id: '00000000-0000-4000-a000-000000000001',
       email: 'maya.chen@stillwater.test',
       name: 'Maya Chen',
-      emailVerified: new Date('2026-06-01'),
+      emailVerified: true,
     },
     member: {
       id: '00000000-0000-4000-a000-000000000011',
@@ -72,7 +72,7 @@ export const demoMembers: DemoMember[] = [
       id: '00000000-0000-4000-a000-000000000002',
       email: 'mei.tanaka@stillwater.test',
       name: 'Mei Tanaka',
-      emailVerified: new Date('2026-06-01'),
+      emailVerified: true,
     },
     member: {
       id: '00000000-0000-4000-a000-000000000012',
@@ -91,7 +91,7 @@ export const demoMembers: DemoMember[] = [
       id: '00000000-0000-4000-a000-000000000003',
       email: 'james.harlow@stillwater.test',
       name: 'James Harlow',
-      emailVerified: new Date('2026-06-01'),
+      emailVerified: true,
     },
     member: {
       id: '00000000-0000-4000-a000-000000000013',
@@ -110,7 +110,7 @@ export const demoMembers: DemoMember[] = [
       id: '00000000-0000-4000-a000-000000000004',
       email: 'aiko.mori@stillwater.test',
       name: 'Aiko Mori',
-      emailVerified: new Date('2026-06-01'),
+      emailVerified: true,
     },
     member: {
       id: '00000000-0000-4000-a000-000000000014',
@@ -129,7 +129,7 @@ export const demoMembers: DemoMember[] = [
       id: '00000000-0000-4000-a000-000000000005',
       email: 'alex.rivera@stillwater.test',
       name: 'Alex Rivera',
-      emailVerified: new Date('2026-06-01'),
+      emailVerified: true,
     },
     member: {
       id: '00000000-0000-4000-a000-000000000015',

@@ -65,7 +65,7 @@ Now — implementing the full document:
 
 ---
 
-> **Document Status:** `ACTIVE — v1.5.0`
+> **Document Status:** `ACTIVE — v1.6.0`
 > **Classification:** Internal Engineering Reference
 > **Audience:** Engineers, Architects, Technical Leads, DevOps
 > **Owner:** Engineering Lead
@@ -83,6 +83,7 @@ Now — implementing the full document:
 | 1.3.0   | 2026-07-05 | Claw Code | Active | ADR-009 softening: `proxy.ts` runtime documented as "Edge or Node.js" (Next.js 16 docs inconsistent on default); ADR-010 (Resend Native Templates) proposed |
 | 1.4.0   | 2026-07-07 | Claw Code / Remediation | Active | Phase 0 complete; React Email v6 bundle warning added to §16.3 + ADR-010 context; React pin aligned to actual `^19.2.7`; documentation suite cross-checked against stillwater_SKILL.md v1.4.1 |
 | 1.5.0   | 2026-07-07 | Claw Code / Phase 1 | Active | Phase 1 complete — 14 tables, 8 enums, 5 critical indexes (§7.3) implemented via Drizzle ORM in `packages/db/src/schema/`; migration `0000_chemical_obadiah_stane.sql` generated; 91 unit tests + 7 integration tests; db client (`DrizzleDB` type) exported from `packages/db/src/index.ts` (resolves D11); `stripeCustomerId` column added to `members` table (resolves D6); 3 additional indexes beyond §7.3 (`idx_members_stripe_customer_id`, `idx_enrollments_session_member` unique, `idx_role_assignments_member_role` unique); idempotent seed script + local-only reset script |
+| 1.6.0   | 2026-07-07 | Claw Code / Phase 2 | Active | Phase 2 complete — Better Auth v1.6.23 fully configured (Google OAuth + Magic Link plugin + customSession plugin for memberId/roles enrichment); 3 Better Auth schema tables added (`session`, `account`, `verification` in `packages/db/src/schema/auth-tables.ts`); `users.emailVerified` changed from `timestamp` to `boolean` (Better Auth requirement); RBAC permission matrix (13 permissions × 6 roles) in `packages/auth/src/rbac.ts`; server-side auth helpers (`getSession`/`requireAuth`/`requireRole`) in `apps/web/src/lib/auth.ts`; 2-layer auth pattern verified (cookie-only `proxy.ts` + 4 layout guards); Better Auth route handler at `/api/auth/[...all]/route.ts`; sign-in page (Google + Magic Link) + sign-out route + error page; migration `0001_supreme_sabretooth.sql`; 220 tests (102 auth + 107 db + 11 web) |
 
 ### How to Maintain This Document
 
@@ -1056,6 +1057,8 @@ export interface TRPCContext {
 ---
 
 ## 9. Authentication & Authorization
+
+> **Implementation Status:** ✅ Phase 2 COMPLETE (2026-07-07). Better Auth v1.6.23 fully configured in `packages/auth/src/config.ts` with Google OAuth + Magic Link plugin + customSession plugin (session enrichment with `memberId` + `roles`). 3 Better Auth schema tables (`session`, `account`, `verification`) in `packages/db/src/schema/auth-tables.ts`. RBAC permission matrix (13 × 6) in `packages/auth/src/rbac.ts`. Server-side auth helpers in `apps/web/src/lib/auth.ts`. 2-layer auth pattern: Layer 1 (proxy.ts, cookie-only) + Layer 2 (4 layout guards). `users.emailVerified` changed from `timestamp` to `boolean` per Better Auth requirement. Migration `0001_supreme_sabretooth.sql`. 220 tests (102 auth + 107 db + 11 web).
 
 ### 9.1 Authentication Flow
 

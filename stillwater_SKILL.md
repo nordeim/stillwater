@@ -7,7 +7,7 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 1.5.0
+version: 1.6.0
 project_type: nextjs-monorepo
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-07
@@ -17,7 +17,7 @@ last_updated: 2026-07-07
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v1.5.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phases 2–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. `pnpm install` / `pnpm check-types` / `pnpm lint` all green.
+> **Status:** v1.6.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phases 3–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. `pnpm install` / `pnpm check-types` / `pnpm lint` all green.
 
 ---
 
@@ -2176,6 +2176,57 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Verification:** `pnpm check-types --force` → 16/16 tasks pass.
 **Cross-ref:** `CLAUDE.md` Gotcha 13, `AGENTS.md` Gotcha 13.
 
+### 9.10 Better Auth Anti-Patterns (Phase 2)
+
+#### Bug: `magicLink` treated as social provider (Phase 2 — High)
+**Symptom:** `authClient.signIn.magicLink` is `undefined` — TS2339.
+**Root cause:** Better Auth's Magic Link is a plugin (`better-auth/plugins/magic-link`), NOT a social provider (`better-auth/social-providers`). The client must also register `magicLinkClient` from `better-auth/client/plugins`.
+**Fix:**
+```typescript
+// Server
+import { magicLink } from 'better-auth/plugins/magic-link';
+betterAuth({ plugins: [magicLink({ sendMagicLink: async ({ email, url }) => { ... } })] });
+
+// Client
+import { magicLinkClient } from 'better-auth/client/plugins';
+createAuthClient({ plugins: [magicLinkClient()] });  // ← REQUIRED
+```
+See Lesson 30, `CLAUDE.md` Gotcha 19.
+
+#### Bug: `session.sessionData` callback doesn't exist in v1.6.23 (Phase 2 — High)
+**Symptom:** `session.user.memberId` and `session.user.roles` are `undefined`.
+**Root cause:** The MEP F2-01 `session.sessionData` API was from an earlier Better Auth version. In v1.6.23, session enrichment uses the `customSession` plugin.
+**Fix:**
+```typescript
+import { customSession } from 'better-auth/plugins/custom-session';
+betterAuth({
+  plugins: [
+    customSession(async (sessionData) => {
+      const member = await db.query.members.findFirst({ where: (m, { eq }) => eq(m.userId, sessionData.user.id) });
+      return { ...sessionData, user: { ...sessionData.user, memberId: member?.id ?? null, roles: [...] } };
+    }),
+  ],
+});
+```
+See Lesson 31, `CLAUDE.md` Gotcha 20.
+
+#### Bug: `drizzleAdapter` can't find `user` table (Phase 2 — Medium)
+**Symptom:** Better Auth error: table `user` not found.
+**Root cause:** Better Auth's default uses singular table names. Our table is `users` (plural).
+**Fix:** Pass `schema` config to `drizzleAdapter`:
+```typescript
+drizzleAdapter(db, {
+  provider: 'pg',
+  schema: { user: { modelName: 'users' }, session: { modelName: 'session' }, account: { modelName: 'account' }, verification: { modelName: 'verification' } },
+})
+```
+See Lesson 33, `CLAUDE.md` Gotcha 22.
+
+#### Bug: `emailVerified` type mismatch (Phase 2 — High)
+**Symptom:** Better Auth throws type errors or session creation fails.
+**Root cause:** `emailVerified` is `timestamp` in Phase 1 schema but Better Auth expects `boolean`.
+**Fix:** Change to `boolean('email_verified').default(false).notNull()`. Requires destructive migration + seed fixture update. See Lesson 32, `CLAUDE.md` Gotcha 21.
+
 ---
 
 ## §10. Debugging Guide
@@ -3149,6 +3200,81 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 
 **Fix references:** `packages/db/src/seed/index.integration.test.ts`, `packages/db/vitest.config.ts`, `CLAUDE.md` Gotcha 18, `AGENTS.md` Gotcha 17. See §13.3 + §15.14.
 
+### Lesson 30: Better Auth `magicLink` is a plugin — register on BOTH server + client (Phase 2)
+
+**Context:** During Phase 2 TDD cycle 1, `authClient.signIn.magicLink` was `undefined` — TypeScript error TS2339. Better Auth's Magic Link is NOT at `better-auth/providers` (where Google lives). It's a plugin at `better-auth/plugins/magic-link`. The client-side `authClient` must also register the `magicLinkClient` plugin from `better-auth/client/plugins` — otherwise `signIn.magicLink` doesn't exist on the client object.
+
+**What to do differently:**
+- Server-side: `import { magicLink } from 'better-auth/plugins/magic-link'` → add to `betterAuth({ plugins: [magicLink({ ... })] })`
+- Client-side: `import { magicLinkClient } from 'better-auth/client/plugins'` → add to `createAuthClient({ plugins: [magicLinkClient()] })`
+- The MEP F2-01 interface didn't mention the client plugin — this was discovered during implementation
+
+**Fix references:** `packages/auth/src/config.ts`, `packages/auth/src/client.ts`, `CLAUDE.md` Gotcha 19, `AGENTS.md` Gotcha 18. See §5.6 + §9.10.
+
+### Lesson 31: Better Auth `customSession` plugin — NOT `session.sessionData` (Phase 2)
+
+**Context:** The MEP F2-01 interface referenced a `session.sessionData` callback for enriching the session with `memberId` + `roles`. This API doesn't exist in Better Auth v1.6.23. The MEP was written against an earlier Better Auth API that has since been superseded.
+
+**What to do differently:**
+- Use the `customSession` plugin from `better-auth/plugins/custom-session` instead of `session.sessionData`
+- The `customSession` function takes a callback that receives `{ user, session }` and returns an enriched object
+- The plugin must be added to `betterAuth({ plugins: [customSession(async (sessionData) => { ... })] })`
+
+**Fix references:** `packages/auth/src/config.ts`, `CLAUDE.md` Gotcha 20, `AGENTS.md` Gotcha 19. See §5.6 + §9.10 + §15.15.
+
+### Lesson 32: `users.emailVerified` must be boolean for Better Auth — not timestamp (Phase 2)
+
+**Context:** Phase 1 created `users.emailVerified` as `timestamp('email_verified', { mode: 'date' })` per PAD §7.2. Better Auth v1.6.23 expects `emailVerified` as a `boolean` (default `false`). This is a known divergence — PAD §7.2 specified timestamp, but Better Auth requires boolean.
+
+**What to do differently:**
+- When a third-party library expects a specific column type, always verify against the library's schema docs (not just the PAD)
+- The fix required a destructive migration (drop timestamp column, add boolean column) — acceptable because Phase 1 had no production data
+- Seed fixtures also needed updating: `emailVerified: new Date()` → `emailVerified: true`
+
+**Fix references:** `packages/db/src/schema/users.ts`, `packages/db/src/seed/fixtures/members.ts`, migration `0001_supreme_sabretooth.sql`, `CLAUDE.md` Gotcha 21. See §13.4.
+
+### Lesson 33: `drizzleAdapter` schema mapping for plural table names (Phase 2)
+
+**Context:** Better Auth's default schema uses singular table names (`user`, `session`, `account`, `verification`). Phase 1 created `users` (plural) per PAD §7.2. The `drizzleAdapter` couldn't find the `user` table — it looked for `user` (singular).
+
+**What to do differently:**
+- When using Better Auth's `drizzleAdapter` with custom table names, pass a `schema` config object mapping Better Auth's defaults to your table names:
+  ```typescript
+  drizzleAdapter(db, {
+    provider: 'pg',
+    schema: { user: { modelName: 'users' }, session: { modelName: 'session' }, ... },
+  })
+  ```
+- The `modelName` in the schema config tells Better Auth which Drizzle table to use for each entity
+
+**Fix references:** `packages/auth/src/config.ts`, `CLAUDE.md` Gotcha 22. See §5.6 + §15.15.
+
+### Lesson 34: `'guest'` role is NOT in the `studio_role` DB enum — use `Role` type (Phase 2)
+
+**Context:** During Phase 2 TDD cycle 3 (RBAC matrix), TypeScript error: `Type '"guest"' is not assignable to type '"member" | "instructor" | "staff" | "manager" | "owner"'`. The `studio_role` PostgreSQL enum (PAD §7.2) has 5 values — `guest` is NOT stored in the database (guests are unauthenticated users). The `StudioRole` type derived from `studioRoleEnum.enumValues` doesn't include `'guest'`.
+
+**What to do differently:**
+- Define a separate `Role` type in `rbac.ts` that extends `StudioRole` with `'guest'`: `export type Role = StudioRole | 'guest'`
+- The `can()` function accepts `Role[]` (not `StudioRole[]`) so it can check permissions for unauthenticated users: `can(['guest'], 'schedule:view')` returns `true`
+- `StudioRole` remains the type for stored roles (from the DB enum); `Role` is the type for the permission matrix (includes `guest`)
+
+**Fix references:** `packages/auth/src/rbac.ts`, `CLAUDE.md` Gotcha 23. See §13.10.
+
+### Lesson 35: `import 'server-only'` throws in vitest — must mock (Phase 2)
+
+**Context:** During Phase 2 TDD cycle 4 (server-side auth helpers), `pnpm test` failed with "This module cannot be imported from a Client Component module" when testing `apps/web/src/lib/auth.ts`. The `server-only` package throws when imported outside a Next.js Server Component context. Vitest runs in Node.js (not Next.js server context).
+
+**What to do differently:**
+- Mock `server-only` at the top of any test file that imports a module with `import 'server-only'`:
+  ```typescript
+  vi.mock('server-only', () => ({}));
+  ```
+- This must come BEFORE the import of the module under test
+- The mock returns an empty module, allowing the test to proceed
+- The actual `server-only` guard works correctly in production (Next.js Server Component context)
+
+**Fix references:** `apps/web/src/lib/auth.test.ts`, `CLAUDE.md` Gotcha 24, `AGENTS.md` Gotcha 20. See §13.3.
+
 ---
 
 ## §13. Pitfalls to Avoid
@@ -3188,6 +3314,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't use `setTimeout` sleeps in unit tests** — use `vi.useFakeTimers()`.
 - **Don't run integration tests without Docker** (Phase 1) — use `.integration.test.ts` suffix + `describe.skipIf()` guard. Integration tests are excluded from default `pnpm test` by the package's `vitest.config.ts`. Run via `pnpm test:integration` after `docker compose up -d`. See Lesson 29.
 - **Don't let `tsconfig.json` `exclude` override the base config's test-file patterns** (Phase 1) — when a package specifies its own `exclude` array, it replaces (not merges with) the base. Always repeat `src/**/*.test.ts` + `src/**/*.integration.test.ts` patterns. See Lesson 28.
+- **Don't forget to mock `server-only` in vitest** (Phase 2) — `import 'server-only'` throws outside Next.js server context. Add `vi.mock('server-only', () => ({}))` at the top of test files that import modules using `server-only`. See Lesson 35.
 
 ### 13.4 Drizzle ORM Pitfalls
 
@@ -3201,6 +3328,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't assert `.unique` on Drizzle columns** (Phase 1) — Drizzle 0.45 stores uniqueness as `.isUnique` (boolean), not `.unique` (undefined). FK config is at the table level, not on the column. See Lesson 25.
 - **Don't use object syntax for partial index `.where()`** (Phase 1) — use `sql` tagged template: `.where(sql\`${table.status} = 'scheduled'\`)`. Object syntax causes TS2353. See Lesson 26.
 - **Don't call `neon()` with a placeholder connection string without try/catch** (Phase 1) — `neon()` validates format at call time. Use `process.env` directly (not Zod `env`) with try/catch fallback. See Lesson 27 + §15.6.
+- **Don't use `timestamp` for `emailVerified` when using Better Auth** (Phase 2) — Better Auth v1.6.23 expects `boolean` (default `false`), NOT `timestamp`. Phase 1 used timestamp per PAD §7.2; Phase 2 Cycle 0 changed to boolean. See Lesson 32.
 
 ### 13.5 Stripe Pitfalls
 
@@ -3294,6 +3422,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't skip owner-check on resource access** — `getBooking(id)` MUST return null if `row.memberId !== session.memberId`. See §15.1 for the pattern.
 - **Don't trust client-side role checks** — verify role server-side via `requireRole()` in the tRPC procedure, not just in the UI.
 - **Don't return 401 when you mean 403** — 401 = not authenticated; 403 = authenticated but not authorized. Mixing them breaks client error handling.
+- **Don't use `'guest'` as a `StudioRole`** (Phase 2) — `'guest'` is NOT in the `studio_role` DB enum (only `member`, `instructor`, `staff`, `manager`, `owner`). Use the `Role` type (`StudioRole | 'guest'`) from `rbac.ts` for permission checks. See Lesson 34.
 
 **Secrets management (source: `security-and-hardening/SKILL.md` §Secrets Management):**
 
@@ -4519,6 +4648,163 @@ describe.skipIf(
 
 **Source:** Phase 1 implementation (Cycles 1-7), `packages/db/src/schema/*.ts`, `packages/db/src/index.ts`, `packages/db/src/seed/index.integration.test.ts`. See Lessons 25-29.
 
+### 15.15 Pattern: Better Auth Config + 2-Layer Auth + RBAC (Phase 2)
+
+This pattern consolidates the Phase 2 auth implementation: Better Auth server config with Drizzle adapter + Google + Magic Link + customSession, client config with magicLinkClient, server-side auth helpers, RBAC permission matrix, and the 2-layer auth pattern (proxy.ts + layout guards).
+
+#### Better Auth server config
+
+```typescript
+// packages/auth/src/config.ts
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { google } from 'better-auth/social-providers';           // Google is a social provider
+import { magicLink } from 'better-auth/plugins/magic-link';      // Magic Link is a PLUGIN (not provider)
+import { customSession } from 'better-auth/plugins/custom-session'; // Session enrichment (NOT session.sessionData)
+import { db } from '@stillwater/db';
+import { resend } from './resend-client';
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema: {                                                           // Map Better Auth defaults to our table names
+      user: { modelName: 'users' },                                     // 'user' → 'users' (plural)
+      session: { modelName: 'session' },
+      account: { modelName: 'account' },
+      verification: { modelName: 'verification' },
+    },
+  }),
+  secret: process.env.BETTER_AUTH_SECRET ?? 'placeholder',
+  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+  emailAndPassword: { enabled: false },                                 // Passwordless only
+  socialProviders: {
+    google: { clientId: process.env.GOOGLE_CLIENT_ID ?? '', clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '', scope: ['email', 'profile'] },
+  },
+  plugins: [
+    magicLink({
+      sendMagicLink: async ({ email, url }) => { await resend.emails.send({ from: process.env.EMAIL_FROM ?? '', to: email, subject: 'Sign in', html: `<a href="${url}">Sign in</a>` }); },
+      expiresIn: 10 * 60,                                               // 10 minutes (SKILL §5.6.1)
+    }),
+    customSession(async (sessionData) => {                               // Enrich session with memberId + roles
+      const member = await db.query.members.findFirst({ where: (m, { eq }) => eq(m.userId, sessionData.user.id) });
+      if (!member) return { ...sessionData, user: { ...sessionData.user, memberId: null, roles: ['member'], activeSubscription: null } };
+      const roles = await db.query.roleAssignments.findMany({ where: (ra, { eq }) => eq(ra.memberId, member.id) });
+      return { ...sessionData, user: { ...sessionData.user, memberId: member.id, roles: roles.map(r => r.role), activeSubscription: null } };
+    }),
+  ],
+});
+```
+
+#### Better Auth client config
+
+```typescript
+// packages/auth/src/client.ts
+import { createAuthClient } from 'better-auth/react';
+import { magicLinkClient } from 'better-auth/client/plugins';           // REQUIRED for signIn.magicLink
+
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+  plugins: [magicLinkClient()],                                         // ← MUST match server magicLink plugin
+});
+export const { signIn, signOut, useSession } = authClient;
+```
+
+#### Server-side auth helpers (Layer 2)
+
+```typescript
+// apps/web/src/lib/auth.ts
+import 'server-only';                                                   // Prevents client bundle import
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { auth } from '@stillwater/auth';
+import type { StudioRole } from '@stillwater/auth';
+
+export async function getSession() {
+  return auth.api.getSession({ headers: await headers() });             // Better Auth: explicit headers (NOT auth())
+}
+export async function requireAuth() {
+  const session = await getSession();
+  if (!session) redirect('/auth/sign-in');                              // Throws NEXT_REDIRECT — NEVER try/catch
+  return session;
+}
+export async function requireRole(...roles: StudioRole[]) {
+  const session = await requireAuth();
+  if (!session.user.roles.some(r => roles.includes(r))) redirect('/dashboard');
+  return session;
+}
+```
+
+#### RBAC permission matrix
+
+```typescript
+// packages/auth/src/rbac.ts
+import type { StudioRole } from './types';
+export type Role = StudioRole | 'guest';                                // 'guest' NOT in DB enum — for permission matrix only
+export type Permission = 'schedule:view' | 'class:book' | /* ... 11 more */;
+
+const MATRIX: Record<Permission, Role[]> = {
+  'schedule:view': ['guest', 'member', 'instructor', 'staff', 'manager', 'owner'],
+  'class:book':    [         'member', 'instructor', 'staff', 'manager', 'owner'],
+  // ... 11 more per PAD §9.2
+};
+
+export function can(roles: Role[], permission: Permission): boolean {
+  return roles.some(r => MATRIX[permission].includes(r));
+}
+```
+
+#### 2-layer auth pattern (Layer 1: proxy.ts — already correct)
+
+```typescript
+// apps/web/proxy.ts — Layer 1 (cookie-only, NO DB, Edge-compatible)
+import { getSessionCookie } from 'better-auth/cookies';
+// NO import from @stillwater/auth — proxy must be lightweight
+export function proxy(request: NextRequest) {
+  const sessionCookie = getSessionCookie(request);                      // Cookie-existence ONLY
+  if (!sessionCookie) return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+  return NextResponse.next();                                           // Layer 2 (layouts) does full validation
+}
+```
+
+#### Layout guards (Layer 2: full validation + RBAC)
+
+```typescript
+// apps/web/src/app/(studio)/layout.tsx
+import { requireAuth } from '@/lib/auth';
+export default async function StudioLayout({ children }) {
+  const session = await requireAuth();                                  // Full DB-backed validation
+  return <div>{children}</div>;
+}
+
+// apps/web/src/app/(admin)/layout.tsx
+import { requireRole } from '@/lib/auth';
+export default async function AdminLayout({ children }) {
+  await requireRole('staff', 'manager', 'owner');                       // RBAC at layout boundary
+  return <div>{children}</div>;
+}
+```
+
+#### Test pattern (mock server-only + auth.api.getSession)
+
+```typescript
+// apps/web/src/lib/auth.test.ts
+vi.mock('server-only', () => ({}));                                     // REQUIRED — throws in vitest
+vi.mock('next/headers', () => ({ headers: vi.fn() }));
+vi.mock('next/navigation', () => ({ redirect: vi.fn((url) => { throw new Error(`NEXT_REDIRECT: ${url}`); }) }));
+vi.mock('@stillwater/auth', () => ({ auth: { api: { getSession: vi.fn() } } }));
+```
+
+**Key takeaways:**
+1. **Magic Link is a plugin** — register `magicLinkClient` on BOTH server + client
+2. **customSession for enrichment** — NOT `session.sessionData` (doesn't exist in v1.6.23)
+3. **drizzleAdapter schema mapping** — `user: { modelName: 'users' }` for plural table names
+4. **emailVerified must be boolean** — Better Auth requirement (not timestamp)
+5. **'guest' is NOT a StudioRole** — use `Role` type for permission matrix only
+6. **server-only mock in tests** — `vi.mock('server-only', () => ({}))` before any import
+7. **2-layer auth**: proxy.ts (cookie-only) + layouts (full validation) — NEVER mix
+
+**Source:** Phase 2 implementation (Cycles 0-8), `packages/auth/src/`, `apps/web/src/lib/auth.ts`, `apps/web/proxy.ts`, `apps/web/src/app/(studio)/layout.tsx`, `apps/web/src/app/(admin)/layout.tsx`. See Lessons 30-35.
+
 ---
 
 ## §16. Coding Anti-Patterns
@@ -5468,6 +5754,22 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 **Next audit:** After Phase 1 (Database Schema, Drizzle Migrations, Seed Data) completes.
 
+### v1.6.0 (2026-07-07) — Phase 2 Complete + Better Auth Patterns/Lessons
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| Phase 2 complete: Better Auth v1.6.23, RBAC 13×6 matrix, 2-layer auth, 4 layout guards | — | ✅ Phase 2 IMPLEMENT complete — 10 TDD cycles, 26 files (F2-01 to F2-19 + 3 Better Auth schema tables), 220 tests (102 auth + 107 db + 11 web), migration `0001_supreme_sabretooth.sql` |
+| Better Auth `magicLink` is a plugin, NOT a social provider — needs `magicLinkClient` on client | High | ✅ Documented — Lesson 30, §9.10 anti-pattern, `CLAUDE.md` Gotcha 19, `AGENTS.md` Gotcha 18 |
+| `session.sessionData` API doesn't exist in v1.6.23 — use `customSession` plugin | High | ✅ Documented — Lesson 31, §9.10 anti-pattern, `CLAUDE.md` Gotcha 20, `AGENTS.md` Gotcha 19 |
+| `users.emailVerified` must be boolean (not timestamp) for Better Auth | High | ✅ Documented — Lesson 32, §13.4 pitfall, §9.10 anti-pattern, `CLAUDE.md` Gotcha 21 |
+| `drizzleAdapter` schema mapping for plural table names (`user` → `users`) | Medium | ✅ Documented — Lesson 33, §9.10 anti-pattern, `CLAUDE.md` Gotcha 22 |
+| `'guest'` role NOT in `studio_role` DB enum — use `Role` type for permission matrix | Medium | ✅ Documented — Lesson 34, §13.10 pitfall, `CLAUDE.md` Gotcha 23 |
+| `import 'server-only'` throws in vitest — must mock | Medium | ✅ Documented — Lesson 35, §13.3 pitfall, `CLAUDE.md` Gotcha 24, `AGENTS.md` Gotcha 20 |
+| §15.15 Pattern: Better Auth Config + 2-Layer Auth + RBAC (consolidated) | — | ✅ Added — canonical reference for all future auth work |
+| §9.10 Better Auth Anti-Patterns (new subsection) | — | ✅ Added — 4 bugs documented (magicLink plugin, customSession, drizzleAdapter schema, emailVerified type) |
+
+**Trigger:** Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) implementation complete. 10 TDD cycles produced 26 files, 220 tests, and 1 migration. 6 new gotchas (19-24) added to `CLAUDE.md`; 3 new gotchas (18-20) added to `AGENTS.md`. This SKILL update distills the Phase 2 lessons into 6 new Lessons (30-35), 4 new pitfalls (§13.3, §13.4, §13.10), 4 new anti-patterns (§9.10), and 1 new consolidated coding pattern (§15.15). `pnpm check-types` 16/16 green, `pnpm lint` 2/2 green, `pnpm test` 220/220 green.
+
 ### v1.5.0 (2026-07-07) — Phase 1 Complete + Drizzle Patterns/Lessons
 
 | Finding | Severity | Status |
@@ -5611,4 +5913,4 @@ Alerts:
 
 ---
 
-*End of `stillwater_SKILL.md` v1.5.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 implementation lessons (Lessons 1-29) distilled from actual TDD cycles. For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+*End of `stillwater_SKILL.md` v1.6.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 implementation lessons (Lessons 1-35) distilled from actual TDD cycles. For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*

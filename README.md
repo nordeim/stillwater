@@ -10,7 +10,7 @@
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%201%20complete-success)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%202%20complete-success)](#project-status)
 
 > **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
@@ -567,8 +567,8 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 |-------|----------------------------------------------------|---------------|-----------|
 | 0     | Monorepo scaffold + tooling + Docker + fixes       | ✅ Complete   | 2         |
 | 1     | DB schema, Drizzle migrations, seed data           | ✅ Complete   | 3         |
-| 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ⬜ Next       | 3         |
-| 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ⬜ Pending     | 5         |
+| 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ✅ Complete   | 3         |
+| 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ⬜ Next       | 5         |
 | 4     | Marketing surface with Sanity CMS                  | ⬜ Pending     | 4         |
 | 5     | Booking flow + SSE real-time seats                 | ⬜ Pending     | 5         |
 | 6     | Member dashboard + membership management           | ⬜ Pending     | 4         |
@@ -578,7 +578,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~15% complete** | **~50 days** |
+| **Total** |                                                | **~20% complete** | **~50 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -678,6 +678,22 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 
 ## What's New
 
+### v1.3.0 (2026-07-07) — Phase 2 Complete: Better Auth + RBAC + 2-Layer Auth
+
+| Change | Details |
+|---|---|
+| Better Auth v1.6.23 fully configured | `packages/auth/src/config.ts` — drizzleAdapter (maps `user` → `users`), Google OAuth, Magic Link plugin (10 min expiry), customSession plugin (memberId + roles enrichment) |
+| 3 Better Auth schema tables added | `session`, `account`, `verification` in `packages/db/src/schema/auth-tables.ts` — migration `0001_supreme_sabretooth.sql` |
+| `users.emailVerified` changed to boolean | Was `timestamp` (Phase 1 per PAD §7.2); Better Auth requires `boolean` — migration applies destructive column type change |
+| RBAC permission matrix (13 × 6) | `packages/auth/src/rbac.ts` — 13 permissions × 6 roles matching PAD §9.2 verbatim; `can(roles, permission)` function; 85 tests covering all 78 cases |
+| Server-side auth helpers | `apps/web/src/lib/auth.ts` — `getSession()`, `requireAuth()`, `requireRole()` with `import 'server-only'`; 5 tests with mocked `auth.api.getSession` + `next/navigation` redirect |
+| 2-layer auth pattern verified | Layer 1: `proxy.ts` (cookie-only via `getSessionCookie()`) — 6 grep-verification tests pass. Layer 2: 4 layout guards (`(studio)/layout.tsx`, `(admin)/layout.tsx`, `revenue/layout.tsx`, `settings/layout.tsx`) |
+| Better Auth route handler | `apps/web/src/app/api/auth/[...all]/route.ts` — `toNextJsHandler(auth)` (NOT Auth.js `handlers`); file path `[...all]` (NOT `[...nextauth]`) |
+| Sign-in page (Google + Magic Link) | `apps/web/src/app/auth/sign-in/page.tsx` + `SignInForm.tsx` + `MagicLinkForm.tsx` — react-hook-form + Zod v4 (`z.email()`); error page for OAuthFailed/MagicLinkExpired/SessionExpired |
+| Sign-out route | `apps/web/src/app/auth/sign-out/route.ts` — POST-only (GET returns 405), delegates to Better Auth, 303 redirect to `/` |
+| 6 Phase 2 gotchas documented (19–24) | magicLink is plugin (not provider), customSession for enrichment, emailVerified boolean requirement, drizzleAdapter schema mapping, 'guest' not in DB enum, server-only mock in tests |
+| 220 tests passing | 102 auth + 107 db + 11 web (was 107 in Phase 1) |
+
 ### v1.2.0 (2026-07-07) — Phase 1 Complete: Database Schema + Migrations + Seed
 
 | Change                                          | Details                                                     |
@@ -731,11 +747,11 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 
 | Document                                  | Purpose                                                              |
 |-------------------------------------------|----------------------------------------------------------------------|
-| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 10 ADRs; v1.5.0) |
+| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 10 ADRs; v1.6.0) |
 | [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.3.0) |
-| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.4.1; 21 source skills condensed)   |
-| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.5.0; 18 gotchas) |
-| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (17 gotchas)  |
+| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.5.0; 21 source skills condensed; 29 lessons) |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.6.0; 24 gotchas) |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (20 gotchas)  |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |
 | [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture (some sections superseded by ADRs) |
 | [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |
