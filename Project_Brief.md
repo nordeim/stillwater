@@ -106,3 +106,44 @@
   The documents are internally consistent and the code matches the resolutions. The only "drift" is that design.md retains an unstruck old phase table and a few preserved Auth.js v5 snippets — both
   clearly labeled as historical, and both overridden by the MEP/PAD canonical decisions. If you want, I can strike that stale table in design.md so there's zero chance of someone implementing the wrong
   auth approach.
+
+---
+
+● I verified CLAUDE.md's factual claims against the actual repo and the two source docs. Here's the assessment.
+
+  Verdict: Largely accurate, with a handful of stale/incorrect claims
+
+  CLAUDE.md correctly captures the architecture, principles, and Phase 0 completion status — those match the code. But it has 5 factual inaccuracies, one of which is an internal self-contradiction that would actively mislead an agent.
+
+  ✅ Accurate claims (verified against code)
+
+  - Version pins: Next 16.2 ✓, React 19.2.3 ✓, TS 5.9.0 ✓, Tailwind 4.3 ✓, tRPC v11 ✓, Drizzle 0.45 ✓, Better Auth 1.6.23 ✓, Stripe 22.3 ✓, React Email 6.6 ✓, Resend 6.17 ✓, pnpm 11.9 ✓
+  - Phase 0 ✅ COMPLETE ✓, Phases 1–12 pending ✓ (matches repo — only placeholder homepage + design tokens exist)
+  - PAD has 31 numbered sections ✓, 9 accepted ADRs (+1 pending ADR-010) ✓
+  - The Gotchas, library-discipline rules, and 2-layer auth pattern all match the resolved code
+
+  ⚠️  Inaccuracies
+
+  1. Internal contradiction — Trigger.dev SDK path (most serious)
+  Line 13 of CLAUDE.md says: "Trigger.dev v4 (SDK import path is @trigger.dev/sdk/v3 — see Gotchas)". But Gotcha 1 (same file) says "NEVER import from @trigger.dev/sdk/v3", and services/workers/trigger.config.ts uses the root import. An
+  agent reading line 13 would do the wrong thing. The /v3 note should be deleted.
+
+  2. apps/studio described as existing — it isn't
+  CLAUDE.md's Architecture section lists apps/studio (Sanity Studio) as part of the monorepo. Only apps/web exists; apps/studio is a Phase 4 deliverable. This describes the target structure, not current state.
+
+  3. Sanity CMS in the tech stack — not installed
+  CLAUDE.md lists "Sanity CMS v3" as a current dependency. No sanity package is in any package.json (it's Phase 4 planning). The "stack" list mixes installed + planned.
+
+  4. Stale version citation — PAD.md
+  CLAUDE.md cites PAD as v1.2.0, but PAD's body already contains the v1.3.0/v1.4.0 changes (proxy.ts "Edge or Node.js" softening at §5.1, ADR-010 pending at §17). The v1.2.0 stamp in PAD's own header is also stale — both should be
+  v1.4.0.
+
+  5. Stale version citation — stillwater_SKILL.md
+  CLAUDE.md cites it as v1.3.0, but the file's own frontmatter says version: 1.4.0.
+
+  Does it "accurately represent the unfinished code via PAD/MEP"?
+
+  Yes — the content (phases, discrepancies, patterns) is consistent with PAD and MEP. The problem isn't the architectural description; it's version stamps and a couple of "planned described as present" items. An agent could safely follow
+   CLAUDE.md's guidance, except for the Trigger.dev /v3 line, which is both wrong and self-contradicting.
+
+  Want me to fix the five items? The Trigger.dev line (1) is a one-line edit, and (2)/(3)/(4)/(5) are small wording-version corrections. 
