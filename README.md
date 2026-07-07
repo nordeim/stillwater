@@ -681,6 +681,17 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 
 ## What's New
 
+### v1.5.0 (2026-07-07) — Phase 1–2 Remediation: Migration, Driver, Seed Fixes
+
+| Change | Details |
+|---|---|
+| Single clean migration regenerated | `0000_dear_dagger.sql` (17 CREATE TABLE + 8 CREATE TYPE + 8 CREATE INDEX + 17 ALTER TABLE) — consolidated from corrupted two-migration sequence that had silent `ALTER COLUMN ... SET DATA TYPE boolean` failure |
+| Database driver auto-selection | `packages/db/src/index.ts` now selects `pg` (local) or `neon-http` (Neon) based on `DATABASE_URL`. `pg` moved from devDeps to deps |
+| Seed script env loading | `packages/db/src/seed/env.ts` loads `.env.local` before `db` import, fixing `SASL: client password must be a string` |
+| Zod v4 UUID fixtures fixed | 3 membership plan fixtures had invalid variant `g` → changed to `a` (valid RFC 4122 variant) |
+| `pnpm db:migrate` + `pnpm db:seed` | Both commands now work end-to-end on fresh databases |
+| 4 new gotchas documented | Gotchas 24–27 (migration regeneration, db driver, seed env, UUID v4 variant) added to AGENTS.md and CLAUDE.md |
+
 ### v1.4.0 (2026-07-07) — Phase 3 Complete: tRPC v11 API Layer
 
 | Change | Details |

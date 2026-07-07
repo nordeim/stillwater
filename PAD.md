@@ -65,7 +65,7 @@ Now — implementing the full document:
 
 ---
 
-> **Document Status:** `ACTIVE — v1.7.0`
+> **Document Status:** `ACTIVE — v1.8.0`
 > **Classification:** Internal Engineering Reference
 > **Audience:** Engineers, Architects, Technical Leads, DevOps
 > **Owner:** Engineering Lead
