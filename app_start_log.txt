@@ -119,3 +119,101 @@ CONTAINER ID   IMAGE                                 COMMAND                  CR
 aadb87182238   redis:7-alpine                        "docker-entrypoint.s…"   3 minutes ago   Up 3 minutes (healthy)   127.0.0.1:6379->6379/tcp                      stillwater_redis
 46097618131f   postgres:17-alpine                    "docker-entrypoint.s…"   3 minutes ago   Up 3 minutes (healthy)   127.0.0.1:5432->5432/tcp                      stillwater_postgres
 
+$ pnpm install
+Scope: all 13 workspace projects
+✓ Lockfile passes supply-chain policies (1034 entries in 8s)
+Lockfile is up to date, resolution step is skipped
+Packages: +9 -7
++++++++++-------
+Progress: resolved 9, reused 8, downloaded 1, added 8, done
+Done in 10.3s using pnpm v11.9.0
+(venv) pete@pop-os:/home/project/stillwater
+$ pnpm check-types                          # 16/16 pass ✅
+pnpm lint                                 # 2/2 pass ✅
+pnpm dev --filter=@stillwater/web         # Boots on localhost:3000 ✅
+$ turbo check-types
+• turbo 2.10.3
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running check-types in 12 packages
+   • Remote caching disabled
+
+@stillwater/db:check-types: cache miss, executing 417159980db470bc
+@stillwater/db:build: cache miss, executing 99a889c0fdde37a9
+@stillwater/ui:build: cache miss, executing 1c8351233eb2825e
+@stillwater/config:check-types: cache miss, executing 262c6fff090f348e
+@stillwater/config:build: cache miss, executing bb0534b6f13feedd
+@stillwater/ui:check-types: cache miss, executing 0ca3faefb293f7ee
+@stillwater/ui:check-types: $ tsc --noEmit
+@stillwater/db:check-types: $ tsc --noEmit
+@stillwater/config:check-types: $ tsc --noEmit
+@stillwater/config:build: $ tsc --build
+@stillwater/db:build: $ tsc --build
+@stillwater/ui:build: $ tsc --build
+@stillwater/payments:check-types: cache miss, executing 851050e0f6a74cf0
+@stillwater/auth:build: cache miss, executing a943db784a69bfd1
+@stillwater/email:build: cache miss, executing e59666fd9540582f
+@stillwater/auth:check-types: cache miss, executing ee3bf490c037d998
+@stillwater/email:check-types: cache miss, executing 9ce72250238575ee
+@stillwater/payments:build: cache miss, executing cd8672811caf11d6
+@stillwater/auth:check-types: $ tsc --noEmit
+@stillwater/email:check-types: $ tsc --noEmit
+@stillwater/email:build: $ tsc --build
+@stillwater/auth:build: $ tsc --build
+@stillwater/payments:build: $ tsc --build
+@stillwater/payments:check-types: $ tsc --noEmit
+@stillwater/api:build: cache miss, executing 43913c70897a7e56
+@stillwater/api:check-types: cache miss, executing 68c7750b60bcb1c1
+@stillwater/workers:check-types: cache miss, executing ab22847ad8a2c341
+@stillwater/api:build: $ tsc --build
+@stillwater/api:check-types: $ tsc --noEmit
+@stillwater/workers:check-types: $ tsc --noEmit
+@stillwater/web:check-types: cache miss, executing f6558e64a49bf0bd
+@stillwater/web:check-types: $ tsc --noEmit
+
+ Tasks:    16 successful, 16 total
+Cached:    0 cached, 16 total
+  Time:    12.896s
+
+$ turbo lint
+• turbo 2.10.3
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running lint in 12 packages
+   • Remote caching disabled
+
+@stillwater/web:lint: cache miss, executing 47752f124435d3a2
+@stillwater/workers:lint: cache miss, executing 24fb8b29f428e32a
+@stillwater/web:lint: $ eslint .
+@stillwater/workers:lint: $ eslint .
+
+ Tasks:    2 successful, 2 total
+Cached:    0 cached, 2 total
+  Time:    6.292s
+
+$ turbo dev --filter=@stillwater/web
+• turbo 2.10.3
+
+   • Packages in scope: @stillwater/web
+   • Running dev in 1 packages
+   • Remote caching disabled
+
+@stillwater/web:dev: cache bypass, force executing 6429d81d014ccc3d
+@stillwater/web:dev: $ next dev --turbopack
+@stillwater/web:dev: ⚠ Port 3000 is in use by process 1482523, using available port 3001 instead.
+@stillwater/web:dev: ▲ Next.js 16.2.10 (Turbopack)
+@stillwater/web:dev: - Local:         http://localhost:3001
+@stillwater/web:dev: - Network:       http://192.168.2.132:3001
+@stillwater/web:dev: ✓ Ready in 477ms
+@stillwater/web:dev: ⚠ Slow filesystem detected. The benchmark took 291ms. If /home/project/stillwater/apps/web/.next/dev is a network drive, consider moving it to a local folder.
+@stillwater/web:dev: See more: https://nextjs.org/docs/app/guides/local-development
+@stillwater/web:dev:
+@stillwater/web:dev:  GET / 200 in 526ms (next.js: 269ms, application-code: 256ms)
+^C - Shutting down Turborepo tasks...Press CTRL+C again to exit forcefully.
+@stillwater/web:dev:
+@stillwater/web:dev: [ELIFECYCLE] Command failed.
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    2m2.255s
+

@@ -1,6 +1,6 @@
-/* Stillwater — JetBrains Mono (Berkeley Mono fallback) */
+/* Stillwater — JetBrains Mono (self-hosted, Apache 2.0) */
 /* Free open-source font under Apache License 2.0 */
-/* Used as fallback for Berkeley Mono (paid) per PAD §11.3 */
+/* Font-mono choice per PAD §11.2 + SKILL §4.4 — Berkeley Mono (paid) was replaced by JetBrains Mono (open-source) */
 
 @font-face {
   font-family: 'JetBrains Mono';

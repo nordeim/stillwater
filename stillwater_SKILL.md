@@ -7,17 +7,17 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 1.4.0
+version: 1.5.0
 project_type: nextjs-monorepo
-framework_version: "Next.js 16.2, React 19.2.3, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
-last_updated: 2026-07-06
+framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
+last_updated: 2026-07-07
 ---
 
 # Stillwater — Project Skill File
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v1.4.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phases 1–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. `pnpm install` / `pnpm check-types` / `pnpm lint` all green.
+> **Status:** v1.5.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phases 2–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. `pnpm install` / `pnpm check-types` / `pnpm lint` all green.
 
 ---
 
@@ -146,7 +146,7 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | Layer | Technology | Version | Critical Note |
 |-------|-----------|---------|---------------|
 | Framework | Next.js (App Router, Turbopack) | `^16.2.0` | `proxy.ts` replaces `middleware.ts` (ADR-009); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16); top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); React Compiler NOT default — requires explicit `reactCompiler: true` in `next.config.ts` |
-| UI Runtime | React | `^19.2.3` | ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3; No `forwardRef` (ref as regular prop in React 19); React Compiler requires explicit opt-in via `reactCompiler: true` in `next.config.ts` (NOT default) |
+| UI Runtime | React | `^19.2.7` | ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3 (actual repo pin is `^19.2.7`); No `forwardRef` (ref as regular prop in React 19); React Compiler requires explicit opt-in via `reactCompiler: true` in `next.config.ts` (NOT default) |
 | Language | TypeScript | `^5.9.0` | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (added TS 5.0; requires `import type` for type-only imports), `erasableSyntaxOnly: true` (added TS 5.8; FORBIDS `enum`, `namespace`, and parameter properties — use string unions or Drizzle `pgEnum()`) — see §13 for pitfalls |
 | Styling | Tailwind CSS | `^4.3.0` | CSS-first `@theme` in `globals.css`; NO `tailwind.config.js` required; `@source` directives required in monorepo (see §13.6); `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) |
 | Component Lib | Radix UI + shadcn/ui | latest | Initialize with `style: "default"`, `baseColor: "stone"`; `--radius: 0` overrides all defaults |
@@ -158,7 +158,7 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | Background Jobs | Trigger.dev | **v4** | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. **⚠️ SDK import (validated July 2026):** Per official Trigger.dev v4 docs: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file in `@trigger.dev/sdk@4.5.0`, but root import is the official v4 path and future-proofs against `/v3` removal). See §9.9 Gotcha 1 + §12 Lesson 16. |
 | Monorepo | Turborepo | `^2.10.0` | Task graph + remote caching; `@stillwater/source` custom condition; graceful shutdown + deferred input hashing (2.10+) |
 | Package Manager | pnpm | `^11.0.0` | `custom-conditions=@stillwater/source` in `.npmrc`; `pnpm-workspace.yaml` with `packages: ['.']`; pnpm 9.x is EOL — use 11.x+ |
-| CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005). Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed — MEP §9 Q4 resolved); config in `apps/studio/sanity.config.ts` |
+| CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005). Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed — MEP §9 Q4 resolved); config in `apps/studio/sanity.config.ts` (**Phase 4 deliverable — not yet scaffolded** as of 2026-07-07) |
 | Payments | Stripe | `^22.3.0` | "Dahlia" API (2026-06-24) pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward); SDK exposes snake_case to match API wire format (NOT camelCase); Subscriptions + credit packs + customer portal; idempotent webhooks (UNIQUE INDEX + `pg_advisory_xact_lock`). **v1 refund scope:** Stripe Dashboard only — in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved; D12 updated). |
 | Email Templates | React Email | `^6.6.6` | 13 templates, single-column 600px, CAN-SPAM compliant. ⚠️ v6.0.0 paradigm shift (April 16, 2026): all imports from `react-email` root (NOT `@react-email/components` or `@react-email/render` which are deprecated). v6 bundle is 1.8MB (514KB gzipped) — see `react_email_suggestion.md` Alternative A (Resend Native Templates) for Trigger.dev workers. Pending ADR-010 will formalize the Resend Native Templates decision. See §9.9 Gotcha 3 + §12 Lesson 18. |
 | Email Delivery | Resend | `^6.17.1` | 2,400 emails/day free tier. Supports Resend Native Templates (template ID + variables API) as zero-runtime-rendering alternative to local JSX rendering. Recommended for Trigger.dev workers to avoid 1.8MB React Email v6 bundle bloat (pending ADR-010). |
@@ -248,7 +248,7 @@ pnpm dev
 | `/apps/web/components.json` | shadcn/ui config: `style: default`, `baseColor: stone` | None |
 | `/packages/db/drizzle.config.ts` | Uses `DATABASE_URL_UNPOOLED` for migrations | None |
 | `/packages/config/src/env.ts` | t3-env Zod-validated env schema (34 vars) | NEW file |
-| `/services/workers/trigger.config.ts` | Trigger.dev v4 config (`@trigger.dev/sdk/v4`); 11 task IDs; `maxDuration: 120` (CPU budget) | None |
+| `/services/workers/trigger.config.ts` | Trigger.dev v4 config (`@trigger.dev/sdk` root import — NOT `/v3` deprecated, NOT `/v4` which doesn't exist); 11 task IDs; `maxDuration: 120` (CPU budget) | None |
 
 ### 3.3 Environment Variables (34 total)
 
@@ -1815,6 +1815,34 @@ return ctx.db.transaction(async (tx) => {
 });
 ```
 
+#### Bug: Asserting `.unique` on Drizzle columns (Phase 1 — High)
+**Symptom:** Schema unit tests fail with `expect(emailColumn.unique).toBe(true)` — `unique` is `undefined`.
+**Root cause:** Drizzle 0.45 stores uniqueness on the column config object as `.isUnique` (boolean), not as a direct `.unique` property. The unique constraint name is in `.uniqueName`. Foreign keys are stored at the table level (accessible via `getTableConfig` in the generated migration SQL), not on the column — `.foreignKey` is `undefined` on columns.
+**Fix:** In schema tests, assert `.isUnique` (not `.unique`). For FK cascade behavior, verify via the generated migration SQL (`drizzle-kit generate` output contains `ON DELETE cascade`/`restrict`/`set null`). See `packages/db/src/schema/*.test.ts` for the established pattern. See Lesson 25.
+
+#### Bug: Partial index `.where()` with object syntax (Phase 1 — High)
+**Symptom:** `pnpm check-types` fails with TS2353: `'status' does not exist in type 'SQL<unknown>'` on `.where({ status: 'scheduled' })`.
+**Root cause:** Drizzle 0.45's index builder `.where()` method expects a `SQL` object (from the `sql` tagged template), not a plain JavaScript object. The object syntax was never valid but TypeScript only caught it at the index definition site.
+**Fix:** Import `sql` from `drizzle-orm` and use template syntax:
+```typescript
+import { sql } from 'drizzle-orm';
+// ✅ CORRECT
+index('idx_sessions_starts_at_status')
+  .on(table.startsAt, table.status)
+  .where(sql`${table.status} = 'scheduled'`)
+
+// ❌ WRONG — TS2353
+index('idx_sessions_starts_at_status')
+  .on(table.startsAt, table.status)
+  .where({ status: 'scheduled' })
+```
+See `packages/db/src/schema/sessions.ts`, `enrollments.ts`, `waitlist.ts`, `memberships.ts` for the 4 partial indexes. See Lesson 26.
+
+#### Bug: `neon()` throws on placeholder connection string (Phase 1 — High)
+**Symptom:** `import { db } from '@stillwater/db'` throws in test context: "Database connection string format for `neon()` should be: postgresql://user:password@host.tld/dbname".
+**Root cause:** The `neon()` function from `@neondatabase/serverless` validates the connection string format at call time. In test/build contexts, `env.DATABASE_URL` returns a placeholder which fails validation. Per §3.4, infrastructure clients must use `process.env` directly (not the Zod `env` module) to avoid throwing.
+**Fix:** Wrap `neon()` in try/catch with a no-op fallback (see §15.6 Pattern: Infrastructure Client with Null Fallback + §15.14). See Lesson 27.
+
 ### 9.4 Stripe Webhook Anti-Patterns
 
 #### Bug: Non-idempotent webhook handler (Critical)
@@ -3057,6 +3085,70 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 
 **Fix references:** §9.9 Gotchas 11-13, `CLAUDE.md` Gotchas 11-13, `AGENTS.md` Gotchas 11-14.
 
+### Lesson 25: Drizzle 0.45 column API — `.isUnique` not `.unique`; FKs at table level (Phase 1)
+
+**Context:** During Phase 1 TDD cycle 2 (identity tables), schema unit tests failed with `expect(emailColumn.unique).toBe(true)` — `unique` was `undefined`. Investigation revealed Drizzle 0.45 stores uniqueness on the column config object, not as a direct `.unique` property.
+
+**What to do differently:**
+- In schema tests, assert `.isUnique` (boolean), not `.unique` (undefined)
+- The unique constraint name is in `.uniqueName`
+- Foreign keys are stored at the **table level** (accessible via `getTableConfig` in the generated migration SQL), not on the column — `.foreignKey` is `undefined` on columns
+- For FK cascade behavior, verify via the generated migration SQL (`drizzle-kit generate` output contains `ON DELETE cascade`/`restrict`/`set null`)
+
+**Fix references:** `packages/db/src/schema/*.test.ts`, `CLAUDE.md` Gotcha 14, `AGENTS.md` Gotcha 15. See §13.4 for the pitfall.
+
+### Lesson 26: Drizzle partial index `.where()` requires `sql` template, not object (Phase 1)
+
+**Context:** During Phase 1 TDD cycle 4 (booking tables), `pnpm check-types` failed with TS2353: `'status' does not exist in type 'SQL<unknown>'` on `.where({ status: 'scheduled' })`. The object syntax was never valid but TypeScript only caught it at the index definition site.
+
+**What to do differently:**
+- Import `sql` from `drizzle-orm` and use template syntax for partial index WHERE clauses:
+  ```typescript
+  index('idx_sessions_starts_at_status')
+    .on(table.startsAt, table.status)
+    .where(sql`${table.status} = 'scheduled'`)
+  ```
+- The `.where()` method on an index builder expects a `SQL` object, not a plain JavaScript object
+- This pattern applies to all 4 PAD §7.3 partial indexes: `idx_sessions_starts_at_status`, `idx_enrollments_session_status`, `idx_waitlist_session_position`, `idx_subscriptions_member_status`
+
+**Fix references:** `packages/db/src/schema/sessions.ts`, `enrollments.ts`, `waitlist.ts`, `memberships.ts`, `CLAUDE.md` Gotcha 15, `AGENTS.md` Gotcha 16. See §13.4 + §15.14.
+
+### Lesson 27: `neon()` validates connection string — db client needs try/catch fallback (Phase 1)
+
+**Context:** During Phase 1 TDD cycle 6 (db client), `import { db } from '@stillwater/db'` threw in test context: "Database connection string format for `neon()` should be: postgresql://user:password@host.tld/dbname". The `neon()` function from `@neondatabase/serverless` validates the connection string format at call time. In test/build contexts, `env.DATABASE_URL` returns a placeholder which fails validation.
+
+**What to do differently:**
+- Infrastructure clients (db, Stripe, Resend, Trigger.dev, Sanity, Upstash) MUST use `process.env` directly with null fallback, NOT the Zod `env` module — env validation throws in browser/build contexts (per §3.4)
+- Wrap connection-string-dependent initialization in try/catch with a no-op fallback that throws a clear error only when a query is actually executed
+- This allows module import in any context; actual queries fail with a clear message if DATABASE_URL isn't set
+
+**Fix references:** `packages/db/src/index.ts`, §15.6 Pattern: Infrastructure Client with Null Fallback, `CLAUDE.md` Gotcha 16. See §13.4 + §15.14.
+
+### Lesson 28: `packages/db/tsconfig.json` must exclude test files from tsc (Phase 1)
+
+**Context:** During Phase 1 TDD cycle 2, `pnpm check-types` failed with TS7053 errors in `*.test.ts` files: "Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'PgTable<...>'". The root cause: `packages/db/tsconfig.json` had its own `exclude` array that **overrode** the `library.json` base config's test-file exclusions.
+
+**What to do differently:**
+- When a package's `tsconfig.json` specifies an `exclude` array, it **replaces** (not merges with) the base config's `exclude`
+- Always include test file patterns in every package's `tsconfig.json` `exclude` array: `src/**/*.test.ts`, `src/**/*.test.tsx`, `src/**/*.spec.ts`, `src/**/*.spec.tsx`, `src/**/*.integration.test.ts`
+- Test files are run by vitest (which uses esbuild, not tsc), so they don't need tsc type-checking
+- The `tooling/typescript/library.json` base config already excludes these patterns, but the override must repeat them
+
+**Fix references:** `packages/db/tsconfig.json`, `CLAUDE.md` Gotcha 17. See §13.3.
+
+### Lesson 29: Integration tests must use `skipIf` guard + `.integration.test.ts` suffix (Phase 1)
+
+**Context:** During Phase 1 TDD cycle 7 (seed script), the integration test required a live PostgreSQL database. In environments without Docker (or where `DATABASE_URL` is a placeholder), the test would fail on import.
+
+**What to do differently:**
+- Use a **two-layer guard** for integration tests:
+  1. **File naming**: `.integration.test.ts` suffix — excluded from default `pnpm test` by the package's `vitest.config.ts` `exclude` array
+  2. **Runtime guard**: `describe.skipIf(!process.env['DATABASE_URL'] || process.env['DATABASE_URL'].includes('placeholder'))(...)` skips the suite if DATABASE_URL is unset or a placeholder
+- Run integration tests explicitly via `pnpm test:integration` (requires `docker compose up -d` first)
+- Each package that has integration tests should have its own `vitest.config.ts` with the `exclude` array (the root `vitest.config.ts` doesn't exclude `.integration.test.ts` by default)
+
+**Fix references:** `packages/db/src/seed/index.integration.test.ts`, `packages/db/vitest.config.ts`, `CLAUDE.md` Gotcha 18, `AGENTS.md` Gotcha 17. See §13.3 + §15.14.
+
 ---
 
 ## §13. Pitfalls to Avoid
@@ -3094,6 +3186,8 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't ignore flaky concurrent booking tests** — flakiness usually means the advisory lock isn't held.
 - **Don't truncate idempotency-key tables between Stripe webhook tests** — false greens.
 - **Don't use `setTimeout` sleeps in unit tests** — use `vi.useFakeTimers()`.
+- **Don't run integration tests without Docker** (Phase 1) — use `.integration.test.ts` suffix + `describe.skipIf()` guard. Integration tests are excluded from default `pnpm test` by the package's `vitest.config.ts`. Run via `pnpm test:integration` after `docker compose up -d`. See Lesson 29.
+- **Don't let `tsconfig.json` `exclude` override the base config's test-file patterns** (Phase 1) — when a package specifies its own `exclude` array, it replaces (not merges with) the base. Always repeat `src/**/*.test.ts` + `src/**/*.integration.test.ts` patterns. See Lesson 28.
 
 ### 13.4 Drizzle ORM Pitfalls
 
@@ -3104,6 +3198,9 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't forget `onDelete: "cascade"` on foreign keys** if cascade deletes are intended.
 - **Don't use lazy Proxy for DrizzleAdapter** — DrizzleAdapter validates db object structure.
 - **Don't forget advisory locks for booking concurrency** — ADR-004.
+- **Don't assert `.unique` on Drizzle columns** (Phase 1) — Drizzle 0.45 stores uniqueness as `.isUnique` (boolean), not `.unique` (undefined). FK config is at the table level, not on the column. See Lesson 25.
+- **Don't use object syntax for partial index `.where()`** (Phase 1) — use `sql` tagged template: `.where(sql\`${table.status} = 'scheduled'\`)`. Object syntax causes TS2353. See Lesson 26.
+- **Don't call `neon()` with a placeholder connection string without try/catch** (Phase 1) — `neon()` validates format at call time. Use `process.env` directly (not Zod `env`) with try/catch fallback. See Lesson 27 + §15.6.
 
 ### 13.5 Stripe Pitfalls
 
@@ -3265,7 +3362,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 
 ### 14.1 Code Organization
 
-- **Turborepo monorepo**: `apps/web`, `apps/studio`, `packages/*` (7 shared libs), `services/workers`, `tooling/*`
+- **Turborepo monorepo**: `apps/web`, `apps/studio` (**Phase 4 deliverable — not yet scaffolded**), `packages/*` (7 shared libs), `services/workers`, `tooling/*`
 - **Package dependency graph**: `web → api + ui + auth + config`; `api → db + payments + config`; `auth → db + config`; `workers → db + email + config`
 - **`@stillwater/source` custom condition**: workspace packages resolve to source (`./src/index.ts`) instead of built `dist/`
 - **3 route groups**: `(marketing)` public ISR, `(studio)` auth-gated SSR, `(admin)` RBAC-gated SSR
@@ -3342,6 +3439,12 @@ This separates concerns: Agent A thinks about behavior, Agent B thinks about imp
 - Cursor-based pagination with UUID tiebreaker
 - No `SELECT *` — project only needed columns
 - No N+1 — use Drizzle `with` for relations
+- Use `pgEnum()` for all PostgreSQL enums (NOT TypeScript `enum` — `erasableSyntaxOnly` forbids it) (Phase 1)
+- Use `sql` tagged template for partial index `.where()` clauses: `.where(sql\`${table.status} = 'scheduled'\`)` (Phase 1 — see Lesson 26)
+- Use `process.env` directly (not Zod `env` module) for db client initialization — wrap `neon()` in try/catch with no-op fallback (Phase 1 — see Lesson 27 + §15.6)
+- Use `onConflictDoNothing()` on all seed inserts for idempotency (Phase 1 — `packages/db/src/seed/index.ts`)
+- Use `uniqueIndex()` for idempotency keys (e.g., `idx_payment_events_stripe_id`) and double-booking prevention (e.g., `idx_enrollments_session_member`) (Phase 1)
+- FK cascade rules: `CASCADE` (children die with parent), `RESTRICT` (prevent parent deletion if children exist), `SET NULL` (orphan children) — choose per entity semantics (Phase 1 — 15 FKs implemented)
 
 ### 14.6 Security Conventions
 
@@ -4242,6 +4345,179 @@ async function getBooking(
 ```
 
 **Test coverage:** Every owner-checked query MUST have tests for: (1) owner can read, (2) non-owner gets 404, (3) admin can read any, (4) unauthenticated gets 401. See §15.11 for factory pattern to generate test members.
+
+### 15.14 Pattern: Drizzle Schema Definition + Partial Index + DB Client (Phase 1)
+
+This pattern consolidates the three Phase 1 Drizzle patterns into a single reference: schema table definition with partial index, db client with lazy init, and the corresponding test structure. These are the canonical patterns for all future `packages/db/src/schema/*.ts` files.
+
+#### Schema table with partial index
+
+```typescript
+// packages/db/src/schema/sessions.ts
+import { pgTable, uuid, text, integer, boolean, timestamp, index } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';  // ← REQUIRED for partial index .where()
+import { sessionStatusEnum } from './enums';
+import { classes } from './classes';
+import { instructors } from './instructors';
+import { rooms } from './rooms';
+
+export const classSessions = pgTable(
+  'class_sessions',  // ← PostgreSQL table name (snake_case)
+  {
+    // Columns — camelCase TS names map to snake_case DB names via first arg
+    id: uuid('id').primaryKey().defaultRandom(),
+    classId: uuid('class_id').notNull().references(() => classes.id, { onDelete: 'cascade' }),
+    instructorId: uuid('instructor_id').notNull().references(() => instructors.id, { onDelete: 'restrict' }),
+    roomId: uuid('room_id').references(() => rooms.id, { onDelete: 'set null' }),  // nullable FK
+    startsAt: timestamp('starts_at', { mode: 'date' }).notNull(),
+    endsAt: timestamp('ends_at', { mode: 'date' }).notNull(),
+    status: sessionStatusEnum('status').default('scheduled').notNull(),  // pgEnum column
+    isVirtual: boolean('is_virtual').default(false).notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    // Partial index — .where() REQUIRES sql tagged template, NOT object
+    index('idx_sessions_starts_at_status')
+      .on(table.startsAt, table.status)
+      .where(sql`${table.status} = 'scheduled'`),  // ✅ CORRECT
+      // .where({ status: 'scheduled' })  // ❌ WRONG — TS2353
+  ],
+);
+```
+
+#### Unique index (double-booking prevention + idempotency)
+
+```typescript
+// packages/db/src/schema/enrollments.ts — uniqueIndex prevents double-booking
+import { uniqueIndex } from 'drizzle-orm/pg-core';
+
+export const enrollments = pgTable(
+  'enrollments',
+  { /* ... columns ... */ },
+  (table) => [
+    // Unique constraint: one enrollment per (session, member)
+    uniqueIndex('idx_enrollments_session_member').on(table.sessionId, table.memberId),
+    // Partial index: fast seat counts (only confirmed enrollments)
+    index('idx_enrollments_session_status')
+      .on(table.sessionId, table.status)
+      .where(sql`${table.status} = 'confirmed'`),
+  ],
+);
+```
+
+#### DB client with lazy init (try/catch fallback)
+
+```typescript
+// packages/db/src/index.ts
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from './schema';
+
+// Use process.env directly (NOT Zod env module) — infrastructure clients
+// must not throw in build/test contexts (§3.4)
+const connectionString =
+  process.env['DATABASE_URL'] ?? 'postgresql://placeholder@localhost:5432/placeholder';
+
+// neon() validates connection string format — wrap in try/catch for
+// test/build contexts where DATABASE_URL is a placeholder
+let sql: ReturnType<typeof neon>;
+try {
+  sql = neon(connectionString);
+} catch {
+  // No-op fallback — throws clear error only when a query is executed
+  sql = (() => {
+    throw new Error('Database not configured. Set DATABASE_URL in your environment.');
+  }) as unknown as ReturnType<typeof neon>;
+}
+
+export const db = drizzle(sql, { schema });
+export type DrizzleDB = typeof db;
+export type Schema = typeof schema;
+
+// Re-export all schema tables + enums for: import { db, users, classLevelEnum } from '@stillwater/db'
+export * from './schema';
+```
+
+#### Schema unit test structure
+
+```typescript
+// packages/db/src/schema/sessions.test.ts
+import { describe, it, expect } from 'vitest';
+import { classSessions } from './sessions';
+
+describe('F1-08: class_sessions table', () => {
+  it('has the correct table name', () => {
+    expect(classSessions[Symbol.for('drizzle:Name')]).toBe('class_sessions');
+  });
+
+  it('has status column using sessionStatusEnum defaulting to scheduled', () => {
+    expect(classSessions.status).toBeDefined();
+    expect(classSessions.status.enumValues).toEqual([
+      'scheduled', 'cancelled', 'completed', 'in_progress',
+    ]);
+    expect(classSessions.status.hasDefault).toBe(true);
+  });
+
+  it('has id column as uuid primaryKey with defaultRandom', () => {
+    expect(classSessions.id.getSQLType()).toBe('uuid');
+    expect(classSessions.id.primary).toBe(true);
+    expect(classSessions.id.hasDefault).toBe(true);
+  });
+
+  it('has roomId column as uuid nullable (FK to rooms)', () => {
+    expect(classSessions.roomId.getSQLType()).toBe('uuid');
+    expect(classSessions.roomId.notNull).toBeFalsy();  // nullable
+  });
+
+  it('has all PAD §7.2 CLASS_SESSION columns', () => {
+    const expectedColumns = ['id', 'classId', 'instructorId', 'roomId', 'startsAt', 'endsAt', 'status', /* ... */];
+    for (const col of expectedColumns) {
+      expect(classSessions[col]).toBeDefined(`Column ${col} should exist`);
+    }
+  });
+});
+```
+
+#### Integration test with skipIf guard
+
+```typescript
+// packages/db/src/seed/index.integration.test.ts
+import { describe, it, expect, beforeAll } from 'vitest';
+import { db } from '../index';
+import { users } from '../schema';
+import { seed } from './index';
+
+// Two-layer guard:
+// 1. File suffix .integration.test.ts — excluded from default `pnpm test` by vitest.config.ts
+// 2. Runtime skipIf — skips if DATABASE_URL is unset or placeholder
+describe.skipIf(
+  !process.env['DATABASE_URL'] || process.env['DATABASE_URL'].includes('placeholder')
+)('F1-16: Seed script (integration)', () => {
+  beforeAll(async () => { await seed(); });
+
+  it('inserts exactly 5 users', async () => {
+    const result = await db.select().from(users);
+    expect(result).toHaveLength(5);
+  });
+
+  it('is idempotent — re-running seed does not duplicate rows', async () => {
+    const before = (await db.select().from(users)).length;
+    await seed();  // re-run
+    const after = (await db.select().from(users)).length;
+    expect(after).toBe(before);  // onConflictDoNothing
+  });
+});
+```
+
+**Key takeaways:**
+1. **Schema files**: `pgTable('snake_case_name', { camelCase: type('snake_case') }, (table) => [indexes])`
+2. **Partial indexes**: `.where(sql\`condition\`)` — NEVER object syntax
+3. **FK cascades**: `.references(() => refTable.id, { onDelete: 'cascade' | 'restrict' | 'set null' })`
+4. **DB client**: `process.env` + try/catch fallback (NOT Zod `env` module)
+5. **Tests**: assert `.isUnique` (not `.unique`), use `[Symbol.for('drizzle:Name')]` for table name, `.getSQLType()` for column type, `.enumValues` for pgEnum columns
+6. **Integration tests**: `.integration.test.ts` suffix + `describe.skipIf()` runtime guard
+
+**Source:** Phase 1 implementation (Cycles 1-7), `packages/db/src/schema/*.ts`, `packages/db/src/index.ts`, `packages/db/src/seed/index.integration.test.ts`. See Lessons 25-29.
 
 ---
 
@@ -5176,7 +5452,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 | Finding | Severity | Status |
 |---------|----------|--------|
-| Trigger.dev SDK import path: `@trigger.dev/sdk/v4` does not exist | Critical | Resolved — reverted to `/v3` (v4 platform uses v3 SDK API). D45-adjacent. See §9.9 Gotcha 1, §12 Lesson 16. |
+| Trigger.dev SDK import path: `@trigger.dev/sdk/v4` does not exist | Critical | ✅ Resolved — final fix is root `@trigger.dev/sdk` import per §12 Lesson 16 step 4 (July 2026 validation). D45-adjacent. See §9.9 Gotcha 1. |
 | ESLint v10 crashes: `eslint-plugin-react` + `eslint-plugin-import` have no v10 versions | Critical | Resolved — downgraded ESLint from `^10.6.0` → `^9.39.4` in 3 files. D45. See §9.9 Gotcha 2, §12 Lesson 17. |
 | React Email v6 paradigm shift: `@react-email/render` deprecated | Critical | Resolved — PAD.md + SKILL.md updated to `^6.6.6`; MEP F8-29 import changed to `react-email` root. D43. See §9.9 Gotcha 3, §12 Lesson 18. |
 | TypeScript `^6.0.3` drift in 9 sub-packages | High | Resolved — all 9 reverted to `^5.9.0`. D44. See §9.9 Gotcha 4, §12 Lesson 19. |
@@ -5191,6 +5467,37 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 | Documentation suite not aligned | High | ✅ CLAUDE.md, AGENTS.md, README.md, PAD.md, SKILL.md, MEP.md all updated and cross-checked. |
 
 **Next audit:** After Phase 1 (Database Schema, Drizzle Migrations, Seed Data) completes.
+
+### v1.5.0 (2026-07-07) — Phase 1 Complete + Drizzle Patterns/Lessons
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| Phase 1 complete: 14 tables, 8 enums, 5 critical indexes, migration generated | — | ✅ Phase 1 IMPLEMENT complete — 9 TDD cycles, 21 files (F1-01 to F1-21), 91 unit tests + 7 integration tests, migration `0000_chemical_obadiah_stane.sql` |
+| Drizzle 0.45 column API: `.unique` is undefined; `.isUnique` is the boolean property | High | ✅ Documented — Lesson 25, §13.4 pitfall, §9.3 anti-pattern, `CLAUDE.md` Gotcha 14 |
+| Drizzle partial index `.where()` requires `sql` template, not object (TS2353) | High | ✅ Documented — Lesson 26, §13.4 pitfall, §9.3 anti-pattern, `CLAUDE.md` Gotcha 15, §15.14 pattern |
+| `neon()` validates connection string — db client needs try/catch fallback | High | ✅ Documented — Lesson 27, §13.4 pitfall, §9.3 anti-pattern, `CLAUDE.md` Gotcha 16, §15.14 pattern |
+| `packages/db/tsconfig.json` `exclude` overrides base config test-file patterns (TS7053) | Medium | ✅ Documented — Lesson 28, §13.3 pitfall, `CLAUDE.md` Gotcha 17 |
+| Integration tests need `.integration.test.ts` suffix + `skipIf` guard for Docker-less envs | Medium | ✅ Documented — Lesson 29, §13.3 pitfall, `CLAUDE.md` Gotcha 18, §15.14 pattern |
+| §15.14 Pattern: Drizzle Schema Definition + Partial Index + DB Client (consolidated) | — | ✅ Added — canonical reference for all future `packages/db/src/schema/*.ts` files |
+| §14.5 Database Conventions expanded with 7 Phase 1 conventions | — | ✅ Added — `pgEnum`, `sql` template, `process.env` for db client, `onConflictDoNothing`, `uniqueIndex`, FK cascade rules |
+| §9.3 Drizzle Anti-Patterns: 3 new bugs documented | — | ✅ Added — `.unique` assertion, partial index object syntax, `neon()` placeholder throw |
+
+**Trigger:** Phase 1 (Database Schema, Drizzle Migrations, Seed Data) implementation complete. 9 TDD cycles (RED → GREEN → REFACTOR → COMMIT) produced 21 files, 91 unit tests, 7 integration tests, and 1 migration. 5 new gotchas (14-18) added to `CLAUDE.md`; 3 new gotchas (15-17) added to `AGENTS.md`. This SKILL update distills the Phase 1 lessons into 5 new Lessons (25-29), 5 new pitfalls (§13.3 + §13.4), 3 new anti-patterns (§9.3), 7 new database conventions (§14.5), and 1 new consolidated coding pattern (§15.14). `pnpm check-types` 16/16 green, `pnpm lint` 2/2 green, `pnpm test` 91/91 green.
+
+### v1.4.1 (2026-07-07) — Documentation Remediation Pass
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| §3.2 line 251 said trigger.config.ts uses `@trigger.dev/sdk/v4` (doesn't exist) | Critical | ✅ Fixed — changed to `@trigger.dev/sdk` root import per §9.9 Gotcha 1 + §12 Lesson 16 |
+| Appendix C line 5179 said "reverted to `/v3`" (stale — final fix was root import) | High | ✅ Fixed — updated to "final fix is root `@trigger.dev/sdk` import per §12 Lesson 16 step 4" |
+| §2.1 line 161 referenced `apps/studio/sanity.config.ts` as existing (Phase 4 deliverable) | High | ✅ Fixed — appended "(**Phase 4 deliverable — not yet scaffolded** as of 2026-07-07)" |
+| §14.1 line 3268 listed `apps/studio` without Phase 4 caveat | High | ✅ Fixed — appended "(**Phase 4 deliverable — not yet scaffolded**)" |
+| §2.1 line 149 said React `^19.2.3` (actual repo pin is `^19.2.7`) | Low | ✅ Fixed — changed to `^19.2.7` with CVE floor note preserved |
+| Footer line 5307 said v1.3.0 (stale) | Medium | ✅ Fixed — bumped to v1.4.1 |
+| Frontmatter line 10 said v1.4.0 (stale) | Medium | ✅ Fixed — bumped to v1.4.1 |
+| `framework_version` in frontmatter said React 19.2.3 (stale) | Low | ✅ Fixed — changed to React 19.2.7 |
+
+**Trigger:** Independent audit by Super Z agent (2026-07-07) cross-referencing SKILL against actual codebase, source skills, and 8 web searches for ground truth. All 8 fixes are mechanical text substitutions; no logic changes. `pnpm check-types` / `pnpm lint` unaffected (this is a documentation-only pass).
 
 ### v1.0.0 (2026-07-04) — Initial Plan Release
 
@@ -5304,4 +5611,4 @@ Alerts:
 
 ---
 
-*End of `stillwater_SKILL.md` v1.3.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+*End of `stillwater_SKILL.md` v1.5.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 implementation lessons (Lessons 1-29) distilled from actual TDD cycles. For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*

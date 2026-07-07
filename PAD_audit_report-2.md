@@ -2,6 +2,24 @@ I have conducted a meticulous, deep-dive web research validation of the attached
 
 Below is the comprehensive validation report of the PAD's core claims, assumptions, and technology choices.
 
+> ⚠️ **HISTORICAL DOCUMENT — SUPERSEDED**
+>
+> This report reflects the state of PAD.md / SKILL.md / MEP.md as of its writing date.
+> The project has since advanced to **PAD v1.4.0 / SKILL v1.4.1 / MEP v1.3.0**.
+>
+> Several technical claims herein have been corrected in the current documents,
+> including but not limited to:
+> - **Trigger.dev SDK import path**: reports may claim `/v4` (doesn't exist) or
+>   `/v3` (deprecated). The canonical import is the **root** `@trigger.dev/sdk`
+>   per official Trigger.dev v4 docs (see SKILL §9.9 Gotcha 1 + §12 Lesson 16).
+> - **pnpm version**: reports may cite 9.15.4; actual is 11.9.0.
+> - **Tailwind version**: reports may cite ^4.1.0; actual is ^4.3.0.
+> - **React version**: reports may cite ^19.2.3; actual repo pin is ^19.2.7.
+> - **ADR count**: reports may cite 9 ADRs; current is 10 (ADR-010 proposed).
+>
+> **Do not rely on this report for current technical guidance.** Consult the
+> canonical documents listed in `CLAUDE.md` "Canonical Sources" section.
+
 ### 1. Next.js 16 & The `proxy.ts` Paradigm (ADR-009) ✅ VALIDATED
 The PAD's assertion regarding the shift from middleware to proxy is entirely accurate and reflects the latest platform changes.
 *   **Release & Renaming:** Next.js 16 was officially released in October 2025, bringing stable Turbopack and significant caching improvements [[11]]. As documented in the PAD, this release officially deprecates `middleware.ts` in favor of a new `proxy.ts` file convention [[4]].

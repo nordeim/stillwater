@@ -1,3 +1,20 @@
+> ⚠️ **HISTORICAL DOCUMENT — SUPERSEDED**
+>
+> This is the original Phase 0 scaffold proposal. **Phase 0 is now COMPLETE (2026-07-06)**
+> and the actual scaffolded code on disk is the canonical source. Several entries in this
+> file were patched during Phase 0 implementation (D15–D24) and post-Phase-0 remediation:
+>
+> - **Trigger.dev SDK**: this file cites `@trigger.dev/sdk: ^3.3.17` + `import from "@trigger.dev/sdk/v3"`.
+>   Actual installed version is `^4.5.0` with **root** `@trigger.dev/sdk` import per SKILL §9.9 Gotcha 1.
+> - **Font-mono**: this file cites `"Berkeley Mono"` (paid, unlicensed). Actual self-hosted font
+>   is **JetBrains Mono** (Apache 2.0) per SKILL §4.4 + PAD §11.2.
+> - **ESLint**: this file may cite v10.x. Actual is `^9.39.4` (v10 blocked by plugin ecosystem).
+> - **TypeScript**: this file may cite `^6.0.3` in some sub-packages. Actual is `^5.9.0` everywhere.
+>
+> **Do not copy from this file.** The canonical Phase 0 artifacts are the actual files on disk
+> in the repo. Consult `stillwater_SKILL.md` §3 (Bootstrapping & Configuration) for the current
+> file inventory and `MASTER_EXECUTION_PLAN.md` §6 Phase 0 for the patched state.
+
 Excellent — I now have deep, current intelligence on the full stack. Critical updates from research:
 
 - **Next.js 16** is now available, and critically, `proxy.ts` replaces `middleware.ts` to clarify the network boundary.

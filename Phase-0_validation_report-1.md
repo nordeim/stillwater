@@ -1,3 +1,21 @@
+> ⚠️ **HISTORICAL DOCUMENT — SUPERSEDED**
+>
+> This report reflects the state of PAD.md / SKILL.md / MEP.md as of its writing date.
+> The project has since advanced to **PAD v1.4.0 / SKILL v1.4.1 / MEP v1.3.0**.
+>
+> Several technical claims herein have been corrected in the current documents,
+> including but not limited to:
+> - **Trigger.dev SDK import path**: reports may claim `/v4` (doesn't exist) or
+>   `/v3` (deprecated). The canonical import is the **root** `@trigger.dev/sdk`
+>   per official Trigger.dev v4 docs (see SKILL §9.9 Gotcha 1 + §12 Lesson 16).
+> - **pnpm version**: reports may cite 9.15.4; actual is 11.9.0.
+> - **Tailwind version**: reports may cite ^4.1.0; actual is ^4.3.0.
+> - **React version**: reports may cite ^19.2.3; actual repo pin is ^19.2.7.
+> - **ADR count**: reports may cite 9 ADRs; current is 10 (ADR-010 proposed).
+>
+> **Do not rely on this report for current technical guidance.** Consult the
+> canonical documents listed in `CLAUDE.md` "Canonical Sources" section.
+
 # 🪷 Claw Code — Phase 0 VALIDATE Report
 ## Scaffolding Bundle Validation Against PAD v1.1.0 / MEP v1.1.0
 

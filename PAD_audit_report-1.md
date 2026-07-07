@@ -1,5 +1,23 @@
 Based on my review of the PAD and targeted verification against current web sources, most of the technical claims and version-specific assertions in the document check out — but a few deserve caveats or corrections. Here's the validation summary.
 
+> ⚠️ **HISTORICAL DOCUMENT — SUPERSEDED**
+>
+> This report reflects the state of PAD.md / SKILL.md / MEP.md as of its writing date.
+> The project has since advanced to **PAD v1.4.0 / SKILL v1.4.1 / MEP v1.3.0**.
+>
+> Several technical claims herein have been corrected in the current documents,
+> including but not limited to:
+> - **Trigger.dev SDK import path**: reports may claim `/v4` (doesn't exist) or
+>   `/v3` (deprecated). The canonical import is the **root** `@trigger.dev/sdk`
+>   per official Trigger.dev v4 docs (see SKILL §9.9 Gotcha 1 + §12 Lesson 16).
+> - **pnpm version**: reports may cite 9.15.4; actual is 11.9.0.
+> - **Tailwind version**: reports may cite ^4.1.0; actual is ^4.3.0.
+> - **React version**: reports may cite ^19.2.3; actual repo pin is ^19.2.7.
+> - **ADR count**: reports may cite 9 ADRs; current is 10 (ADR-010 proposed).
+>
+> **Do not rely on this report for current technical guidance.** Consult the
+> canonical documents listed in `CLAUDE.md` "Canonical Sources" section.
+
 ## Next.js 16 / proxy.ts Claims Confirmed
 
 The PAD's claim that Next.js 16 replaces `middleware.ts` with `proxy.ts` is accurate and well-documented. Next.js officially renamed the file convention in the v16 beta (October 2025) and finalized it in the stable release, framing it as clarifying the file's role as a "network boundary" rather than generic middleware. A key nuance the PAD doesn't fully highlight: the runtime also shifted from Edge to Node.js by default, giving full Node API access — this is a meaningful upgrade beyond just a rename. The PAD's own guidance to keep auth checks lightweight (cookie-only) in `proxy.ts` also matches official Next.js/Better Auth recommendations, which caution against full session validation with DB calls at this layer for performance reasons. [nextjs](https://nextjs.org/docs/messages/middleware-to-proxy)

@@ -14,8 +14,8 @@
 
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
-| Version     | 1.2.0                                                              |
-| Status      | ACTIVE — PLAN (verified against PAD v1.3.0 / SKILL v1.3.0; re-validated 2026-07-05) |
+| Version     | 1.3.0                                                              |
+| Status      | ACTIVE — PLAN (verified against PAD v1.4.0 / SKILL v1.4.1; re-validated 2026-07-07) |
 | Date        | 2026-07-04                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
@@ -29,6 +29,7 @@
 | 1.0.0   | 2026-07-04 | Claw Code  | Initial plan synthesised from 4 upstream documents |
 | 1.1.0   | 2026-07-05 | Claw Code / Audit | Backported Phase 2 Audit Fixes (C1–C5) + Stack Alignments from PAD v1.1.0 / SKILL v1.2.0 |
 | 1.2.0   | 2026-07-05 | Claw Code / Validation | Re-validated against PAD v1.3.0 / SKILL v1.3.0: fixed Stripe apiVersion (Basil→Dahlia), env count (25→34), berkeley-mono→jetbrains-mono across D25/D34/D41/F0-23/F0-24/Phase 12/§3.2/Open Questions; marked D9 + proxy.ts questions as resolved; added .html mockup to Source Document Map |
+| 1.3.0   | 2026-07-07 | Claw Code / Remediation | Re-validated against PAD v1.4.0 / SKILL v1.4.1: confirmed Trigger.dev SDK root import is canonical across all source docs; no content fixes needed in MEP body (Phase 8 F8-01–F8-11 task definitions already correct); version stamps aligned across docs |
 
 ### Source Document Map
 
@@ -4535,6 +4536,6 @@ pnpm jobs:deploy            # Trigger.dev cloud
 
 ---
 
-**End of MASTER_EXECUTION_PLAN.md v1.0.0**
+**End of MASTER_EXECUTION_PLAN.md v1.3.0**
 
 > Awaiting VALIDATE checkpoint. Once confirmed, Phase 0 IMPLEMENT begins immediately.

@@ -1,26 +1,27 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 1.1.0
-framework_version: "Next.js 16.2, React 19.2, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
-last_updated: 2026-07-06
+version: 1.5.0
+framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
+last_updated: 2026-07-07
 ---
 
 # Stillwater
 
 Enterprise-grade yoga studio management platform. Turborepo monorepo combining a public marketing surface (Next.js 16 + Sanity CMS, ISR), a member booking application (real-time seat availability via SSE), an RBAC-gated admin surface, Stripe subscription billing, and Trigger.dev v4 background jobs.
 
-**Tech Stack**: Next.js 16.2 (App Router, Turbopack, React Compiler), React 19.2.3, TypeScript 5.9.0 strict, Tailwind CSS v4.3, tRPC v11, Drizzle ORM 0.45, PostgreSQL 17 (Neon), Better Auth 1.6.23, Trigger.dev v4 (SDK import path is `@trigger.dev/sdk/v3` — see Gotchas), Stripe 22.3 ("Dahlia" API), Sanity CMS v3, React Email 6.6 + Resend 6.17, pnpm 11.9 workspaces.
+**Tech Stack**: Next.js 16.2 (App Router, Turbopack, React Compiler), React 19.2.7, TypeScript 5.9.0 strict, Tailwind CSS v4.3, tRPC v11, Drizzle ORM 0.45, PostgreSQL 17 (Neon), Better Auth 1.6.23, Trigger.dev v4 (SDK import path is `@trigger.dev/sdk` root — see Gotchas), Stripe 22.3 ("Dahlia" API), Sanity CMS v3, React Email 6.6 + Resend 6.17, pnpm 11.9 workspaces.
 
-**Canonical Sources** (read in this order when in doubt):
-1. `MASTER_EXECUTION_PLAN.md` — 13-phase plan + 45 reconciled discrepancies (D1–D45) + all 10 Open Questions resolved
-2. `PAD.md` — Project Architecture Document (31 sections, 9 ADRs; v1.2.0)
-3. `stillwater_SKILL.md` — distilled project skill (v1.3.0; 21 source skills condensed)
-4. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files)
-5. `design.md` / `static_landing_page_html_mockup.md` — conceptual + visual reference (mockup is UI/UX guidance only)
-6. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
+**Canonical Sources** (read in this order when in doubt — precedence: design specs → visual guidance → tech stack → architecture culmination → derived working copy):
+1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
+2. `static_landing_page_mockup.html` + `static_landing_page_html_mockup.md` — visual + UI/UX aesthetics guidance only (token VALUES come from SKILL §4.1 / PAD §11.4)
+3. `stillwater_SKILL.md` — distilled project skill (v1.4.1; 21 source skills condensed); authoritative tech-stack specifics
+4. `PAD.md` — Project Architecture Document (31 sections, 10 ADRs; v1.4.0); culmination of the above into codebase architecture
+5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
+6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
+7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0 Status**: ✅ COMPLETE (2026-07-06). All 10 D15–D24 patches applied. `pnpm install` / `pnpm check-types` / `pnpm lint` all green. Phase 1–12 pending.
+**Phase 0–1 Status**: ✅ COMPLETE (Phase 0: 2026-07-06, Phase 1: 2026-07-07). Phase 0: All 10 D15–D24 patches applied. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle; 91 unit tests + 7 integration tests; migration `0000_chemical_obadiah_stane.sql` generated. `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` all green. Phase 2–12 pending.
 
 ---
 
@@ -576,7 +577,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
 ### Architecture
 
-- **Turborepo monorepo**: `apps/web` (Next.js), `apps/studio` (Sanity Studio), `packages/*` (7 shared libs), `services/workers` (Trigger.dev), `tooling/*` (3 shared configs)
+- **Turborepo monorepo**: `apps/web` (Next.js), `apps/studio` (Sanity Studio — **Phase 4 deliverable, not yet scaffolded**), `packages/*` (7 shared libs), `services/workers` (Trigger.dev), `tooling/*` (3 shared configs)
 - **Package dependency graph** (PAD §6.3): `web → api + ui + auth + config`; `api → db + payments + config`; `auth → db + config`; `workers → db + email + config`
 - **`@stillwater/source` custom condition**: Declared in `.npmrc` + `pnpm-workspace.yaml` — workspace packages resolve to source (`./src/index.ts`) instead of built `dist/`, enabling zero-rebuild dev iteration
 - **3 route groups**: `(marketing)` public ISR, `(studio)` auth-gated SSR, `(admin)` RBAC-gated SSR
@@ -593,11 +594,17 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ### Database / Data Layer
 
 - **PostgreSQL 17** on Neon (serverless, branching for preview envs)
-- **14 tables**: `users`, `members`, `instructors`, `class_styles`, `classes`, `rooms`, `class_sessions`, `enrollments`, `waitlist_entries`, `membership_plans`, `member_subscriptions`, `class_packages`, `payment_events`, `role_assignments`
-- **8 enums**: `class_level`, `session_status`, `enrollment_status`, `waitlist_status`, `subscription_status`, `billing_interval`, `studio_role`, `payment_status`
-- **5 critical indexes** (4 partial + 1 unique): see `PAD.md` §7.4
-- **Two DB URLs**: `DATABASE_URL` (pooled, app queries) + `DATABASE_URL_UNPOOLED` (migrations only)
-- **Read replica** for admin revenue reports (PAD §22.4)
+- **14 tables** ✅ implemented in Phase 1: `users`, `members`, `instructors`, `class_styles`, `classes`, `rooms`, `class_sessions`, `enrollments`, `waitlist_entries`, `membership_plans`, `member_subscriptions`, `class_packages`, `payment_events`, `role_assignments` — see `packages/db/src/schema/`
+- **8 enums** ✅ implemented in Phase 1: `class_level`, `session_status`, `enrollment_status`, `waitlist_status`, `subscription_status`, `billing_interval`, `studio_role`, `payment_status` — see `packages/db/src/schema/enums.ts`
+- **5 critical indexes** ✅ implemented in Phase 1 (4 partial + 1 unique): `idx_sessions_starts_at_status`, `idx_enrollments_session_status`, `idx_waitlist_session_position`, `idx_subscriptions_member_status`, `idx_payment_events_stripe_id` — see `PAD.md` §7.3
+- **3 additional indexes** (Phase 1): `idx_members_stripe_customer_id` (D6 webhook lookup), `idx_enrollments_session_member` (unique — double-booking prevention), `idx_role_assignments_member_role` (unique — duplicate grant prevention)
+- **15 FK constraints** with cascade rules: CASCADE (members→users, enrollments→sessions/members, waitlist→sessions/members, etc.), RESTRICT (class_sessions→instructors, member_subscriptions→membership_plans), SET NULL (class_sessions→rooms, payment_events→members)
+- **Two DB URLs**: `DATABASE_URL` (pooled, app queries) + `DATABASE_URL_UNPOOLED` (migrations only — PgBouncer breaks prepared statements)
+- **Drizzle ORM 0.45**: schema in TypeScript (`packages/db/src/schema/`); neon-http serverless driver; `db` client exported from `packages/db/src/index.ts` with `DrizzleDB` type
+- **Migration**: `drizzle-kit generate` → `0000_chemical_obadiah_stane.sql` (Phase 1); apply via `pnpm db:migrate`
+- **Seed**: `pnpm db:seed` loads 5 members, 3 instructors, 4 classes, 7 sessions, 3 membership plans — idempotent via `onConflictDoNothing`
+- **Reset**: `pnpm db:reset` (LOCAL ONLY — refuses in production) drops schema, re-migrates, re-seeds
+- **Read replica** for admin revenue reports (PAD §22.4 — Phase 9)
 - **Migration rules**: Additive by default; deprecate columns before dropping; column renames = add new → backfill → migrate reads → drop old; every migration PR requires rollback script
 
 ### Environment Variables
@@ -750,6 +757,73 @@ These are real issues encountered during Phase 0 implementation. Each has a veri
 
 **Fix:** `services/workers/trigger.config.ts` updated: `machine: { preset: "micro" }` → `machine: "micro"`; removed `build.env` block.
 
+### Gotcha 14: Drizzle 0.45 column API — `.isUnique` not `.unique` (Phase 1)
+
+**Symptom:** Schema unit tests fail with `expect(emailColumn.unique).toBe(true)` — `unique` is `undefined`.
+
+**Root cause:** Drizzle 0.45 stores uniqueness on the column config object, not as a direct `.unique` property. The accessible property is `.isUnique` (boolean). The unique constraint name is in `.uniqueName`. Similarly, foreign keys are stored at the table level (accessible via `getTableConfig` in the generated migration SQL), not on the column — `.foreignKey` is `undefined` on columns.
+
+**Fix:** In schema tests, assert `.isUnique` (not `.unique`). For FK cascade behavior, verify via the generated migration SQL (`drizzle-kit generate` output contains `ON DELETE cascade`/`restrict`/`set null`). See `packages/db/src/schema/*.test.ts` for the established pattern.
+
+### Gotcha 15: Drizzle partial index `.where()` requires SQL template, not object (Phase 1)
+
+**Symptom:** `pnpm check-types` fails with TS2353: `'status' does not exist in type 'SQL<unknown>'` on `.where({ status: 'scheduled' })`.
+
+**Root cause:** Drizzle 0.45's index builder `.where()` method expects a `SQL` object (from the `sql` tagged template), not a plain JavaScript object. The object syntax was never valid but TypeScript only caught it at the index definition site.
+
+**Fix:** Import `sql` from `drizzle-orm` and use template syntax:
+```typescript
+import { sql } from 'drizzle-orm';
+// ✅ CORRECT
+index('idx_sessions_starts_at_status')
+  .on(table.startsAt, table.status)
+  .where(sql`${table.status} = 'scheduled'`)
+```
+See `packages/db/src/schema/sessions.ts`, `enrollments.ts`, `waitlist.ts`, `memberships.ts` for the 4 partial indexes that use this pattern.
+
+### Gotcha 16: `neon()` validates connection string format — db client needs try/catch (Phase 1)
+
+**Symptom:** `import { db } from '@stillwater/db'` throws in test context: "Database connection string format for `neon()` should be: postgresql://user:password@host.tld/dbname".
+
+**Root cause:** The `neon()` function from `@neondatabase/serverless` validates the connection string format at call time. In test/build contexts, `env.DATABASE_URL` returns a placeholder (`postgresql://placeholder@localhost:5432/placeholder`) which fails validation. Per SKILL §3.4, infrastructure clients must use `process.env` directly (not the Zod `env` module) to avoid throwing.
+
+**Fix:** `packages/db/src/index.ts` wraps `neon()` in a try/catch with a no-op fallback that throws a clear error only when a query is actually executed:
+```typescript
+const connectionString = process.env['DATABASE_URL'] ?? 'postgresql://placeholder@localhost:5432/placeholder';
+let sql: ReturnType<typeof neon>;
+try {
+  sql = neon(connectionString);
+} catch {
+  sql = (() => { throw new Error('Database not configured. Set DATABASE_URL.') }) as unknown as ReturnType<typeof neon>;
+}
+export const db = drizzle(sql, { schema });
+```
+This allows module import in any context; actual queries fail with a clear message if DATABASE_URL isn't set.
+
+### Gotcha 17: `packages/db/tsconfig.json` must exclude test files from tsc (Phase 1)
+
+**Symptom:** `pnpm check-types` fails with TS7053 errors in `*.test.ts` files: "Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'PgTable<...>'".
+
+**Root cause:** `packages/db/tsconfig.json` had its own `exclude` array that overrode the `library.json` base config's test-file exclusions. The base config excludes `**/*.test.ts` etc., but the db package's `exclude: ["node_modules", "dist", ".turbo"]` replaced it, causing tsc to type-check test files. Test files use dynamic indexing (`members[col]`) which strict mode rejects.
+
+**Fix:** `packages/db/tsconfig.json` `exclude` array now includes all test file patterns:
+```json
+"exclude": ["node_modules", "dist", ".turbo", "src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.spec.ts", "src/**/*.spec.tsx", "src/**/*.integration.test.ts"]
+```
+Test files are run by vitest (which uses esbuild, not tsc), so they don't need tsc type-checking.
+
+### Gotcha 18: Integration tests must use `skipIf` guard for environments without Docker (Phase 1)
+
+**Symptom:** `pnpm test` fails in CI or environments without Docker because the seed integration test tries to connect to a non-existent Postgres.
+
+**Root cause:** The seed integration test (`packages/db/src/seed/index.integration.test.ts`) requires a live PostgreSQL database. In environments without Docker (or where `DATABASE_URL` is a placeholder), the test cannot run.
+
+**Fix:** Two-layer guard:
+1. **File naming**: `.integration.test.ts` suffix — excluded from default `pnpm test` by `packages/db/vitest.config.ts` `exclude` array
+2. **Runtime guard**: `describe.skipIf(!process.env['DATABASE_URL'] || process.env['DATABASE_URL'].includes('placeholder'))(...)` skips the suite if DATABASE_URL is unset or a placeholder
+
+Run integration tests explicitly via `pnpm test:integration` (requires `docker compose up -d` first).
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -760,7 +834,12 @@ These are real issues encountered during Phase 0 implementation. Each has a veri
 | `pnpm install` warns `ERR_PNPM_IGNORED_BUILDS` | `pnpm-workspace.yaml` `allowBuilds` block | `allowBuilds` map allows `@sentry/cli`, `esbuild`, `sharp`, `core-js` postinstall scripts. |
 | `[WARN] The "pnpm" field in package.json is no longer read` | Root `package.json` has orphaned `pnpm` block | Delete the `pnpm.overrides` + `pnpm.onlyBuiltDependencies` block — moved to `pnpm-workspace.yaml` in pnpm v11. |
 | `missing peer eslint` warning | ESLint not hoisted to root | `pnpm add -Dw eslint` installs eslint at workspace root (satisfies shared plugin peer deps). |
-| `TS18003: No inputs were found` in `packages/db` | `packages/db/src/` doesn't exist yet | EXPECTED at Phase 0. Phase 1 creates `src/schema/*.ts`. Not a real error — `pnpm check-types` DoD allows this. |
+| `TS18003: No inputs were found` in `packages/db` | `packages/db/src/` doesn't exist yet | ✅ FIXED in Phase 1 — `packages/db/src/schema/*.ts` now exists with 14 table definitions. If you see this error, run `pnpm install` to ensure workspace symlinks are created. |
+| `TS7053: Element implicitly has an 'any' type` in `packages/db/src/schema/*.test.ts` | `packages/db/tsconfig.json` `exclude` array missing test file patterns | Add `src/**/*.test.ts` + `src/**/*.integration.test.ts` to the `exclude` array. See Gotcha 17. Test files are run by vitest, not tsc. |
+| Drizzle partial index `.where({ status: '...' })` fails TS2353 | `.where()` expects `SQL` object, not plain object | Use `sql\`\${table.status} = 'scheduled'\` template syntax. Import `sql` from `drizzle-orm`. See Gotcha 15. |
+| `import { db } from '@stillwater/db'` throws in test context | `neon()` validates connection string format | The db client uses try/catch fallback. Ensure `DATABASE_URL` env var is set for integration tests, or use the `skipIf` guard. See Gotcha 16. |
+| `pnpm test` fails with "No test files found" in `packages/db` | Vitest can't find test files | Ensure `packages/db/vitest.config.ts` exists and `pnpm install` has run. Phase 1 added 15 test files. |
+| Schema test asserts `.unique` but gets `undefined` | Drizzle 0.45 API: uniqueness is `.isUnique`, not `.unique` | Use `.isUnique` in test assertions. FK cascade behavior is verified via migration SQL, not column properties. See Gotcha 14. |
 | `Cannot find module '@stillwater/db'` | `.npmrc` missing `custom-conditions=@stillwater/source` | D15 fix — both `.npmrc` AND `pnpm-workspace.yaml` must declare the custom condition. |
 | `pnpm lint` crashes on `proxy.ts` with `getFilename is not a function` | ESLint v10 installed (should be v9) | Downgrade: `pnpm add -Dw eslint@^9.39.4` + `pnpm add -D -F @stillwater/eslint-config @eslint/js@^9.39.4`. See D45. |
 | `react-email` templates import from `@react-email/components` | React Email v6 unified all imports | Change to `import { Html, Button } from 'react-email'`. See D43. |

@@ -65,7 +65,7 @@ Now — implementing the full document:
 
 ---
 
-> **Document Status:** `ACTIVE — v1.2.0`
+> **Document Status:** `ACTIVE — v1.5.0`
 > **Classification:** Internal Engineering Reference
 > **Audience:** Engineers, Architects, Technical Leads, DevOps
 > **Owner:** Engineering Lead
@@ -80,6 +80,9 @@ Now — implementing the full document:
 | 1.0.0   | 2025-07-04 | Claw Code / Arch | Active   | Initial comprehensive draft   |
 | 1.1.0   | 2026-07-05 | Claw Code / Audit | Active | 5 critical audit fixes (C1–C5) + 11 version-alignment fixes |
 | 1.2.0   | 2026-07-05 | Claw Code / Validation | Active | Fix 2 stale "Auth.js" refs in §20.1 OWASP table; fix malformed D9 color token; remove orphaned --color-fog |
+| 1.3.0   | 2026-07-05 | Claw Code | Active | ADR-009 softening: `proxy.ts` runtime documented as "Edge or Node.js" (Next.js 16 docs inconsistent on default); ADR-010 (Resend Native Templates) proposed |
+| 1.4.0   | 2026-07-07 | Claw Code / Remediation | Active | Phase 0 complete; React Email v6 bundle warning added to §16.3 + ADR-010 context; React pin aligned to actual `^19.2.7`; documentation suite cross-checked against stillwater_SKILL.md v1.4.1 |
+| 1.5.0   | 2026-07-07 | Claw Code / Phase 1 | Active | Phase 1 complete — 14 tables, 8 enums, 5 critical indexes (§7.3) implemented via Drizzle ORM in `packages/db/src/schema/`; migration `0000_chemical_obadiah_stane.sql` generated; 91 unit tests + 7 integration tests; db client (`DrizzleDB` type) exported from `packages/db/src/index.ts` (resolves D11); `stripeCustomerId` column added to `members` table (resolves D6); 3 additional indexes beyond §7.3 (`idx_members_stripe_customer_id`, `idx_enrollments_session_member` unique, `idx_role_assignments_member_role` unique); idempotent seed script + local-only reset script |
 
 ### How to Maintain This Document
 
@@ -720,6 +723,8 @@ graph TD
 ## 7. Data Architecture
 
 ### 7.1 Entity Relationship Diagram
+
+> **Implementation Status:** ✅ Phase 1 COMPLETE (2026-07-07). All 14 entities below are implemented as Drizzle `pgTable` definitions in `packages/db/src/schema/`. The `members` table includes an additional `stripeCustomerId` column (D6 fix — not shown in ERD below) for Stripe webhook customer lookups. See `packages/db/src/schema/` for the canonical TypeScript definitions and `packages/db/drizzle/migrations/0000_chemical_obadiah_stane.sql` for the generated DDL.
 
 ```mermaid
 erDiagram

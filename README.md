@@ -10,7 +10,7 @@
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%200%20complete-success)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%201%20complete-success)](#project-status)
 
 > **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
@@ -22,7 +22,7 @@ Stillwater is the operational backbone and digital face of a boutique yoga studi
 
 The platform replaces a class of brittle brochure-site-plus-Stripe-link yoga websites with a SaaS-grade product: PostgreSQL advisory locks for double-booking prevention, idempotent Stripe webhook processing, an 11-job Trigger.dev v4 background worker for emails and waitlist promotion, and WCAG 2.2 Level AAA accessibility for the 35–65 demographic the studio serves.
 
-The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 10 ADRs (9 accepted + 1 proposed); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v1.4.0) condensing 21 source skills.
+The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 10 ADRs (9 accepted + 1 proposed); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v1.4.1) condensing 21 source skills.
 
 ---
 
@@ -254,9 +254,24 @@ curl http://localhost:3000
 docker compose ps postgres
 # Expected: "healthy" status
 
-# Database has seed data
-docker compose exec postgres psql -U stillwater -d stillwater_dev -c "SELECT count(*) FROM users;"
+# All 14 tables created (Phase 1)
+docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dt'
+# Expected: 14 tables listed (users, members, instructors, class_styles, classes, rooms,
+#           class_sessions, enrollments, waitlist_entries, membership_plans,
+#           member_subscriptions, class_packages, payment_events, role_assignments)
+
+# All 8 enums created (Phase 1)
+docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dT'
+# Expected: 8 enum types listed (class_level, session_status, enrollment_status, waitlist_status,
+#           subscription_status, billing_interval, studio_role, payment_status)
+
+# Seed data loaded (Phase 1)
+docker compose exec postgres psql -U stillwater -d stillwater_dev -c 'SELECT count(*) FROM users;'
 # Expected: 5
+
+# Unit tests pass (91 tests, no DB needed)
+pnpm test --filter=@stillwater/db
+# Expected: "Test Files  15 passed (15)" + "Tests  91 passed (91)"
 
 # Adminer GUI available
 open http://localhost:8080
@@ -551,8 +566,8 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | Phase | Focus                                              | Status        | Est. Days |
 |-------|----------------------------------------------------|---------------|-----------|
 | 0     | Monorepo scaffold + tooling + Docker + fixes       | ✅ Complete   | 2         |
-| 1     | DB schema, Drizzle migrations, seed data           | ⬜ Next       | 3         |
-| 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ⬜ Pending     | 3         |
+| 1     | DB schema, Drizzle migrations, seed data           | ✅ Complete   | 3         |
+| 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ⬜ Next       | 3         |
 | 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ⬜ Pending     | 5         |
 | 4     | Marketing surface with Sanity CMS                  | ⬜ Pending     | 4         |
 | 5     | Booking flow + SSE real-time seats                 | ⬜ Pending     | 5         |
@@ -563,7 +578,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~8% complete** | **~50 days** |
+| **Total** |                                                | **~15% complete** | **~50 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -581,11 +596,14 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | `import { defineConfig } from "@trigger.dev/sdk/v4"` fails   | The `/v4` export DOES NOT EXIST. Use `@trigger.dev/sdk/v3` (v4 platform uses v3 SDK API). See CLAUDE.md Gotcha 1. |
 | `import { render } from '@react-email/render'` — module not found | React Email v6 unified all imports. Use `import { render } from 'react-email'`. See D43. |
 | `typescript 6.0.3 is available` warning during install       | Expected — we intentionally stay on `^5.9.0` for `erasableSyntaxOnly` + `verbatimModuleSyntax`. See D44. |
-| `TS18003: No inputs were found` in `packages/db`             | EXPECTED at Phase 0 — `packages/db/src/` doesn't exist yet. Phase 1 creates schema files. Not a real error. |
+| `TS18003: No inputs were found` in `packages/db`             | ✅ FIXED in Phase 1 — `packages/db/src/schema/*.ts` now exists with 14 table definitions. If seen, run `pnpm install` to ensure workspace symlinks. |
 | `Cannot find module '@stillwater/db'`                        | `.npmrc` missing `custom-conditions=@stillwater/source` (D15). Both `.npmrc` AND `pnpm-workspace.yaml` must declare it. |
 | `docker compose up` fails on `./infrastructure/postgres/init`| Directory + `00-create-extensions.sql` exist (D18). Verify `docker-compose.yml` volume mount path. |
 | `pnpm db:migrate` errors with "DATABASE_URL_UNPOOLED missing"| `.env.local` must define `DATABASE_URL_UNPOOLED` (not just `DATABASE_URL`) — migrations use direct connection (PgBouncer breaks prepared statements). |
-| `next lint` deprecated warning in Next.js 16                 | Use `eslint .` instead (D23). `apps/web/package.json` `lint` script already updated. |
+| `pnpm check-types` fails TS7053 in `packages/db` schema tests | `packages/db/tsconfig.json` `exclude` array must include `src/**/*.test.ts` + `src/**/*.integration.test.ts`. See CLAUDE.md Gotcha 17. |
+| Drizzle partial index `.where({ status: '...' })` fails TS2353 | `.where()` expects `sql` template, not object. Use `sql\`\${table.status} = 'scheduled'\``. See CLAUDE.md Gotcha 15. |
+| `import { db }` throws "connection string format" in tests    | `neon()` validates URL format. db client uses try/catch fallback. Set `DATABASE_URL` for integration tests. See CLAUDE.md Gotcha 16. |
+| `pnpm test` fails "No test files found" in `packages/db`      | Run `pnpm install` to create workspace symlinks. Phase 1 added 15 test files to `packages/db/src/schema/`. |
 | `experimental.serverComponentsExternalPackages` ignored       | Moved to top-level `serverExternalPackages` in Next.js 16 (D21). |
 | Stripe webhook returns 400 "Invalid signature"               | Verify `STRIPE_WEBHOOK_SECRET` matches `whsec_...` from Stripe Dashboard; use `stripe listen --forward-to localhost:3000/api/webhooks/stripe` for local testing. |
 | Better Auth Google OAuth redirect_uri mismatch               | Add `https://stillwater-pr-<n>.vercel.app/api/auth/callback/google` to Google Console authorized redirect URIs for preview envs. |
@@ -660,6 +678,22 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 
 ## What's New
 
+### v1.2.0 (2026-07-07) — Phase 1 Complete: Database Schema + Migrations + Seed
+
+| Change                                          | Details                                                     |
+|-------------------------------------------------|-------------------------------------------------------------|
+| 14 PostgreSQL tables implemented via Drizzle ORM | `packages/db/src/schema/` — users, members, instructors, class_styles, classes, rooms, class_sessions, enrollments, waitlist_entries, membership_plans, member_subscriptions, class_packages, payment_events, role_assignments |
+| 8 PostgreSQL enums as Drizzle `pgEnum`          | `packages/db/src/schema/enums.ts` — class_level, session_status, enrollment_status, waitlist_status, subscription_status, billing_interval, studio_role, payment_status |
+| 5 PAD §7.3 critical indexes (4 partial + 1 unique) | `idx_sessions_starts_at_status`, `idx_enrollments_session_status`, `idx_waitlist_session_position`, `idx_subscriptions_member_status`, `idx_payment_events_stripe_id` |
+| 3 additional indexes (D6 + double-booking + RBAC) | `idx_members_stripe_customer_id`, `idx_enrollments_session_member` (unique), `idx_role_assignments_member_role` (unique) |
+| 15 FK constraints with cascade rules             | CASCADE (9), RESTRICT (2), SET NULL (2), NO ACTION (2) — verified in migration SQL |
+| Neon-http Drizzle db client + `DrizzleDB` type  | `packages/db/src/index.ts` — replaces Phase 0 placeholder; resolves D11 |
+| Idempotent seed script (5 members, 3 instructors, 4 classes, 7 sessions, 3 plans) | `packages/db/src/seed/index.ts` — uses `onConflictDoNothing`; factory pattern `getMockMember(overrides)` |
+| Local-only DB reset script                      | `packages/db/src/scripts/reset.ts` — refuses in production; drops → migrates → seeds |
+| 91 unit tests + 7 integration tests              | TDD: RED → GREEN → REFACTOR → COMMIT per cycle; integration tests excluded from default run (need Docker) |
+| Migration `0000_chemical_obadiah_stane.sql` generated | 14 `CREATE TABLE` + 8 `CREATE TYPE` + 8 `CREATE INDEX` + 15 `ALTER TABLE ... ADD CONSTRAINT` |
+| 5 Phase 1 gotchas documented (14–18)            | Drizzle 0.45 API (`.isUnique`), partial index `sql` template, `neon()` validation, tsconfig test exclusion, integration test `skipIf` guard |
+
 ### v1.1.0 (2026-07-06) — Phase 0 Complete + P0–P3 Remediation
 
 | Change                                          | Source Document              |
@@ -697,13 +731,13 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 
 | Document                                  | Purpose                                                              |
 |-------------------------------------------|----------------------------------------------------------------------|
-| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 9 ADRs)        |
-| [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions) |
-| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.3.0; 21 source skills condensed)   |
-| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt      |
-| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents               |
-| [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (39 files)               |
-| [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture      |
+| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 10 ADRs; v1.5.0) |
+| [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.3.0) |
+| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.4.1; 21 source skills condensed)   |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.5.0; 18 gotchas) |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (17 gotchas)  |
+| [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |
+| [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture (some sections superseded by ADRs) |
 | [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |
 | [`pnpm_install_fix.md`](./pnpm_install_fix.md) | pnpm v11 migration, OTEL overrides, native build unblocking     |
 | [`static_landing_page_html_mockup.md`](./static_landing_page_html_mockup.md) | Landing page spec + complete HTML mockup (UI/UX guidance only) |

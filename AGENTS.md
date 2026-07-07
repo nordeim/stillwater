@@ -21,7 +21,7 @@
 | Drizzle ORM | 0.45.0 (`^0.45.2`) | `neon-http` driver; `db.$count` requires ≥0.34 |
 | PostgreSQL | 17 (Neon) | Two URLs: `DATABASE_URL` (pooled) + `DATABASE_URL_UNPOOLED` (migrations only) |
 | Better Auth | 1.6.23 (`^1.6.23`) | Replaces Auth.js v5 (ADR-008). Drizzle adapter. |
-| Trigger.dev | v4 platform, **v3 SDK API** | `import { defineConfig } from "@trigger.dev/sdk/v3"` — the `/v4` export DOES NOT EXIST. See Gotcha 1. |
+| Trigger.dev | v4 platform, **root SDK import** | `import { defineConfig } from "@trigger.dev/sdk"` — NEVER use `/v3` (deprecated) or `/v4` (doesn't exist). See Gotcha 1. |
 | Stripe | 22.3.0 (`^22.3.0`) | "Dahlia" API (2026-06-24); snake_case; `current_period_end` at `items.data[0]` |
 | React Email | 6.6.6 (`^6.6.6`) | v6 unified all imports to `react-email` root. `@react-email/render` is DEPRECATED. |
 | Resend | 6.17.1 (`^6.17.1`) | |
@@ -75,7 +75,7 @@ docker compose ps              # Verify healthy
 
 ```
 apps/web/          → Next.js 16 (marketing + studio + admin route groups)
-apps/studio/       → Sanity Studio config (runtime hosted at stillwater.sanity.studio — Q4 decision)
+apps/studio/       → Sanity Studio config (Phase 4 deliverable — not yet scaffolded; runtime will be hosted at stillwater.sanity.studio per Q4 decision)
 packages/api/      → tRPC routers (10 routers, 4 procedure tiers)
 packages/db/       → Drizzle schema (14 tables, 8 enums, 5 critical indexes)
 packages/auth/     → Better Auth config
@@ -214,15 +214,35 @@ build: { env: { ... } },       // TS2353 — build.env removed in v4
 
 Turbo matches by package name. The package name is `@stillwater/web`, not `web`. All docs now use `--filter=@stillwater/web`.
 
+### 15. Drizzle 0.45 column API — `.isUnique` not `.unique` (Phase 1)
+
+Schema tests must assert `.isUnique` (boolean), not `.unique` (undefined). FK cascade behavior is verified via migration SQL, not column properties. See `CLAUDE.md` Gotcha 14.
+
+### 16. Drizzle partial index `.where()` requires `sql` template (Phase 1)
+
+```typescript
+// ❌ WRONG — TS2353
+index('idx').on(table.status).where({ status: 'scheduled' })
+// ✅ CORRECT
+import { sql } from 'drizzle-orm';
+index('idx').on(table.status).where(sql`${table.status} = 'scheduled'`)
+```
+
+See `CLAUDE.md` Gotcha 15.
+
+### 17. `packages/db` integration tests need Docker (Phase 1)
+
+`pnpm test` runs 91 unit tests (no DB needed). Integration tests (`*.integration.test.ts`) are excluded by default — run via `pnpm test:integration` after `docker compose up -d`. See `CLAUDE.md` Gotcha 18.
+
 ---
 
-## Phase status (as of 2026-07-06)
+## Phase status (as of 2026-07-07)
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. `pnpm install` / `check-types` / `lint` green. |
-| 1 — DB Schema | ⬜ Pending | Next. F1-01…F1-21 (14 tables, 8 enums, 5 indexes, seed). |
-| 2 — Auth | ⬜ Pending | F2-01…F2-19 (Better Auth + 2-layer proxy.ts). proxy.ts already has cookie-only pattern applied early. |
+| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migration `0000_chemical_obadiah_stane.sql`. 91 unit tests + 7 integration tests (skipped without DB). `pnpm db:generate` / `check-types` / `lint` / `test` all green. |
+| 2 — Auth | ⬜ Next | F2-01…F2-19 (Better Auth + 2-layer proxy.ts). proxy.ts already has cookie-only pattern applied early. |
 | 3–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
 
 All 10 Open Questions in MEP §9 are ✅ RESOLVED. See `MASTER_EXECUTION_PLAN.md` §9 for decisions on Sanity hosting (Cloud), Stripe refunds (Dashboard for v1), mobile nav (Radix Dialog), test data (synthetic only), production cutover (feature-flag-gated).
@@ -248,10 +268,12 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ## Pre-commit checklist
 
 ```bash
-pnpm check-types       # Must be green (TS18003 "No inputs found" in empty src/ dirs is expected)
+pnpm check-types       # Must be green (16/16 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (if tests exist for the phase)
+pnpm test              # Must be green (91 unit tests in @stillwater/db; integration tests excluded)
 ```
+
+Integration tests (require Docker Postgres): `pnpm test:integration --filter=@stillwater/db`
 
 Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Conventional Commits format: `feat(bookings): add advisory lock for concurrent booking safety`.
 
@@ -259,11 +281,13 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 
 ## Canonical sources (read in this order)
 
-1. `MASTER_EXECUTION_PLAN.md` — 13-phase plan + 45 discrepancies + 10 resolved questions
-2. `PAD.md` — Project Architecture Document (31 sections, 9 ADRs)
-3. `stillwater_SKILL.md` — distilled project skill (v1.3.0)
-4. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt)
-5. `scaffolding_files.md` — Phase 0 ready-to-paste configs
-6. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
+1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
+2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
+3. `stillwater_SKILL.md` — distilled project skill (v1.4.1; 21 source skills condensed); authoritative tech-stack specifics
+4. `PAD.md` — Project Architecture Document (31 sections, 10 ADRs; v1.5.0); culmination of the above into codebase architecture
+5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.5.0 with Phase 1 gotchas 14–18)
+7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
+8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 
 **The HTML mockup (`static_landing_page_mockup.html`) is for visual/aesthetic UI/UX guidance ONLY.** Do not copy its code directly — it has 7 accessibility bugs (D29–D35) and uses stale token names (`--sp-N`, `--dur-*`) that must be remapped to PAD tokens (`--space-N`, `--duration-*`) during the Phase 12 port.

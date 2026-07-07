@@ -34,7 +34,7 @@ export const stillwaterBase: Omit<Config, 'content'> = {
           "sans-serif",
         ],
         mono: [
-          "Berkeley Mono",
+          "JetBrains Mono",
           "ui-monospace",
           "SFMono-Regular",
           "Menlo",
@@ -80,7 +80,7 @@ export const stillwaterBase: Omit<Config, 'content'> = {
         },
       },
 
-      // ── Spacing ────────────────────────────────────────────────
+      // ── Spacing (13-stop scale, 4px base — matches packages/ui/src/tokens/spacing.css + SKILL §4.1 + PAD §11.4) ─
       spacing: {
         "px": "1px",
         "0.5": "2px",
@@ -88,19 +88,20 @@ export const stillwaterBase: Omit<Config, 'content'> = {
         "2": "8px",
         "3": "12px",
         "4": "16px",
-        "5": "24px",
-        "6": "32px",
-        "7": "48px",
-        "8": "64px",
-        "9": "96px",
-        "10": "128px",
-        "11": "192px",
-        "12": "256px",
+        "5": "20px",     // editorial half-step
+        "6": "24px",
+        "7": "32px",     // primary component gap
+        "8": "48px",
+        "9": "64px",     // section padding
+        "10": "96px",
+        "11": "128px",
+        "12": "192px",   // large section breaks
+        "13": "256px",
       },
 
-      // ── Max-widths ─────────────────────────────────────────────
+      // ── Max-widths (matches packages/ui/src/tokens/spacing.css + SKILL §4.1) ─
       maxWidth: {
-        content: "1360px",
+        content: "1280px",
         narrow:  "720px",
         wide:    "1440px",
       },
@@ -119,11 +120,16 @@ export const stillwaterBase: Omit<Config, 'content'> = {
         "label":       ["0.6875rem",                 { lineHeight: "1.4" }],
       },
 
-      // ── Border Radius (intentionally minimal) ──────────────────
+      // ── Border Radius (sharp edges by design per PAD §11.1 + SKILL §4.1; --radius: 0 propagates through all shadcn components) ─
       borderRadius: {
-        none: "0",
-        sm:   "2px",
+        none:   "0",
+        sm:     "0",
         DEFAULT: "0",  // Stillwater: no softness — sharp edges for editorial feel
+        md:     "0",
+        lg:     "0",
+        xl:     "0",
+        "2xl":  "0",
+        full:   "9999px",  // ONLY for avatars and status dots (per SKILL §4.1)
       },
 
       // ── Animation ─────────────────────────────────────────────

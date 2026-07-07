@@ -202,7 +202,7 @@ stillwater/
 │   │   │   │   └── settings/
 │   │   │   ├── api/                  # Thin API proxy to backend
 │   │   │   └── layout.tsx
-│   │   └── middleware.ts             # Auth + i18n routing
+│   │   └── proxy.ts                  # Auth + i18n routing (renamed from middleware.ts per ADR-009)
 │   │
 │   └── admin/                        # Separate admin SPA (optional)
 │
@@ -237,7 +237,7 @@ stillwater/
 │   │   │   └── rbac.ts
 │   │   └── context.ts
 │   │
-│   ├── auth/                         # Auth.js v5 configuration
+│   ├── auth/                         # Better Auth v1.6.23 configuration (replaces Auth.js v5 per ADR-008)
 │   ├── email/                        # React Email templates
 │   ├── payments/                     # Stripe abstraction layer
 │   └── config/                       # Shared env schema (t3-env)
@@ -524,10 +524,16 @@ export const bookingsRouter = createTRPCRouter({
 
 ### 📨 LAYER 5: BACKGROUND JOBS — Trigger.dev
 
+> ⚠️ **SUPERSEDED — This section's original Trigger.dev `/v3` import has been replaced.** See:
+> - **ADR-007** (PAD.md §29): Trigger.dev v4 (v3 deprecated — new v3 deploys stop working April 1, 2026)
+> - **stillwater_SKILL.md §9.9 Gotcha 1 + §12 Lesson 16**: Per official Trigger.dev v4 docs: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v4` subpath does NOT exist; the root import IS the v4 path.
+>
+> The code block below is preserved as a historical record of the Phase 1 proposal. **Do not implement it as-is.** Use `import { task } from '@trigger.dev/sdk'` (root import) per the current `services/workers/trigger.config.ts`.
+
 ```typescript
 // services/workers/waitlist-processor.ts
 
-import { task } from '@trigger.dev/sdk/v3';
+import { task } from '@trigger.dev/sdk/v3';  // ⚠️ DEPRECATED v3-era pattern — use root import in production
 import { db } from '@stillwater/db';
 
 export const processWaitlistPromotion = task({
@@ -808,6 +814,13 @@ ARCHITECTURE DECISIONS — Awaiting Confirmation:
 ---
 
 ## 🚀 Proposed Implementation Phases
+
+> ⚠️ **SUPERSEDED — This phase table is historical.** The canonical 13-phase plan (Phases 0–12) lives in `MASTER_EXECUTION_PLAN.md`. Key divergences:
+> - **Phase 2** now uses **Better Auth v1.6.23 + `proxy.ts`** (NOT Auth.js v5 + `middleware.ts`) per ADR-008 + ADR-009.
+> - Trigger.dev is now **v4** (NOT v3) per ADR-007.
+> - The total scope is no longer "~33 engineering days" — see MEP §6 for the current phased breakdown.
+>
+> The table below is preserved as the original Phase 1 proposal. **Do not use it for planning.** Consult `MASTER_EXECUTION_PLAN.md`.
 
 Once you confirm the plan, here is the phased rollout:
 
