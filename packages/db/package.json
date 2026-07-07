@@ -37,8 +37,10 @@
   "devDependencies": {
     "@stillwater/typescript-config": "workspace:*",
     "@types/node": "^26.1.0",
+    "@types/pg": "^8.11.10",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
+    "pg": "^8.13.1",
     "testcontainers": "^11.0.3",
     "tsx": "^4.23.0",
     "typescript": "^5.9.0",
