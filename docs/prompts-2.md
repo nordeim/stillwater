@@ -7,6 +7,12 @@ Please note that CLAUDE.md (created using included skill `skills/claude-md/SKILL
 
 ---
 
+Awesome meticulous job so far. Please keep up the good work. Now, please meticulously plan to fix all conflicts/discrepancies and bugs in project source documents, followed by the code. But first, re-evaluate and re-validate your findings against the codebase and the document files themselves to ensure alignment before proceeding with the remediation execution.
+
+Note that `design.md` (requirement specifications), ` static_landing_page_mockup.html` (the HTML mockup is for visual and UI/UX aesthetics guidance only) and `stillwater_SKILL.md` (programming and tech stack specifics guide) take precedence; they culminate in (deriving) the actual codebase architecture specifications in `PAD.md`. `MASTER_EXECUTION_PLAN.md` is the derived (aggregation) from the above documents and serves as the working copy for the coding agent for actually building the codebase. Therefore, the documentation updates must respect this precedence/order. 
+
+---
+
 awesome meticulous job so far. please keep up the good work. now, please meticulously review and analyze the research validation findings on `stillwater_SKILL.md` in the attached report files, then meticulously validate the findings against the codebase to check for alignment.
 
 ---
