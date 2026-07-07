@@ -349,7 +349,7 @@ sequenceDiagram
 | Layer | Technology | Version | Rationale | Rejected Alternatives |
 |-------|-----------|---------|-----------|----------------------|
 | **Frontend Framework** | Next.js | `^16.2.0` | App Router, Turbopack stable, React Compiler (opt-in via `reactCompiler: true` — NOT default; requires `babel-plugin-react-compiler` devDependency installed separately), `proxy.ts` (replaces `middleware.ts` — can run on Edge or Node.js runtime; Next.js 16 docs are inconsistent on the default), streaming, ISR, top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16) | Remix (less ecosystem), Nuxt (different team skills) |
-| **UI Library** | React | `^19.2.3` | Concurrent features, `use()`, Server Components. ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3. | — |
+| **UI Library** | React | `^19.2.7` | Concurrent features, `use()`, Server Components. ⚠️ **CVE-2025-55182 floor** ("React2Shell" RCE, CVSS 10.0) — never downgrade below 19.2.3. | — |
 | **Language** | TypeScript | `^5.9.0` | Strict mode end-to-end; `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (requires `import type`), `erasableSyntaxOnly: true` (FORBIDS `enum` and `namespace`) | — |
 | **Styling** | Tailwind CSS | `^4.3.0` | Utility-first, zero dead CSS in production, v4's CSS-first `@theme`, `@source` directives for monorepo content scanning; `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) | CSS Modules (verbose), styled-components (runtime cost) |
 | **Component Primitives** | Radix UI | latest | Fully accessible, unstyled, composable | Headless UI (fewer components), Ark UI (less mature) |
@@ -1117,7 +1117,7 @@ export interface TRPCContext {
 
 ## 9. Authentication & Authorization
 
-> **Implementation Status:** ✅ Phase 2 COMPLETE (2026-07-07). Better Auth v1.6.23 fully configured in `packages/auth/src/config.ts` with Google OAuth + Magic Link plugin + customSession plugin (session enrichment with `memberId` + `roles`). 3 Better Auth schema tables (`session`, `account`, `verification`) in `packages/db/src/schema/auth-tables.ts`. RBAC permission matrix (13 × 6) in `packages/auth/src/rbac.ts`. Server-side auth helpers in `apps/web/src/lib/auth.ts`. 2-layer auth pattern: Layer 1 (proxy.ts, cookie-only) + Layer 2 (4 layout guards). `users.emailVerified` changed from `timestamp` to `boolean` per Better Auth requirement. Migration `0001_supreme_sabretooth.sql`. 220 tests (102 auth + 107 db + 11 web).
+> **Implementation Status:** ✅ Phase 2 COMPLETE (2026-07-07). Better Auth v1.6.23 fully configured in `packages/auth/src/config.ts` with Google OAuth + Magic Link plugin + customSession plugin (session enrichment with `memberId` + `roles`). 3 Better Auth schema tables (`session`, `account`, `verification`) in `packages/db/src/schema/auth-tables.ts`. RBAC permission matrix (13 × 6) in `packages/auth/src/rbac.ts`. Server-side auth helpers in `apps/web/src/lib/auth.ts`. 2-layer auth pattern: Layer 1 (proxy.ts, cookie-only) + Layer 2 (4 layout guards). `users.emailVerified` changed from `timestamp` to `boolean` per Better Auth requirement. Migration `0000_dear_dagger.sql`. 220 tests (102 auth + 107 db + 11 web).
 
 ### 9.1 Authentication Flow
 

@@ -15,7 +15,7 @@
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
 | Version     | 1.3.0                                                              |
-| Status      | ACTIVE — PLAN (verified against PAD v1.4.0 / SKILL v1.4.1; re-validated 2026-07-07) |
+| Status      | ACTIVE — PLAN (verified against PAD v1.8.0 / SKILL v1.4.1; re-validated 2026-07-07) |
 | Date        | 2026-07-04                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
@@ -29,14 +29,14 @@
 | 1.0.0   | 2026-07-04 | Claw Code  | Initial plan synthesised from 4 upstream documents |
 | 1.1.0   | 2026-07-05 | Claw Code / Audit | Backported Phase 2 Audit Fixes (C1–C5) + Stack Alignments from PAD v1.1.0 / SKILL v1.2.0 |
 | 1.2.0   | 2026-07-05 | Claw Code / Validation | Re-validated against PAD v1.3.0 / SKILL v1.3.0: fixed Stripe apiVersion (Basil→Dahlia), env count (25→34), berkeley-mono→jetbrains-mono across D25/D34/D41/F0-23/F0-24/Phase 12/§3.2/Open Questions; marked D9 + proxy.ts questions as resolved; added .html mockup to Source Document Map |
-| 1.3.0   | 2026-07-07 | Claw Code / Remediation | Re-validated against PAD v1.4.0 / SKILL v1.4.1: confirmed Trigger.dev SDK root import is canonical across all source docs; no content fixes needed in MEP body (Phase 8 F8-01–F8-11 task definitions already correct); version stamps aligned across docs |
+| 1.3.0   | 2026-07-07 | Claw Code / Remediation | Re-validated against PAD v1.8.0 / SKILL v1.4.1: confirmed Trigger.dev SDK root import is canonical across all source docs; no content fixes needed in MEP body (Phase 8 F8-01–F8-11 task definitions already correct); version stamps aligned across docs |
 
 ### Source Document Map
 
 | Source                                  | Lines   | Purpose                                                                | Used For                                   |
 |-----------------------------------------|---------|------------------------------------------------------------------------|--------------------------------------------|
 | `design.md`                             | 813     | Phase 1 architecture critique across 3 paths + merged optimal arch     | Conceptual framing, 12-phase skeleton      |
-| `PAD.md`                                | 3,209   | Definitive Project Architecture Document (31 sections, 9 ADRs)         | All architectural decisions, schema, API   |
+| `PAD.md`                                | 3,209   | Definitive Project Architecture Document (31 sections, 10 ADRs + ADR-010 proposed)         | All architectural decisions, schema, API   |
 | `scaffolding_files.md`                  | 2,298   | Phase 0 IMPLEMENT — 39 ready-to-paste config files                     | Phase 0 file contents, version pins        |
 | `static_landing_page_mockup.html`     | 2,927   | Standalone HTML mockup — **visual/aesthetic reference** for Phase 12 side-by-side comparison | Phase 12 visual fidelity |
 | `static_landing_page_html_mockup.md`    | 3,056   | Landing page design spec + complete self-contained HTML mockup         | Phase 12 landing-page port (conceptual guidance)                 |
@@ -124,8 +124,8 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 |----|-----------------------------|--------------------------------|----------------------------------------|------------------------------|--------------------------------------------------------------------------------|
 | D1 | Auth library                | **RESOLVED IN SOURCE (PAD v1.1.0 §5.1)** | Better Auth v1.6.23 stable (scaffolding L1–9; guide confirms) | n/a                          | **RESOLVED:** PAD.md v1.1.0 now correctly specifies Better Auth v1.6.23. Original conflict: Auth.js v5 (PAD §5, L353) vs Better Auth (scaffolding). | 
 | D2 | Middleware file             | **RESOLVED IN SOURCE (PAD v1.1.0 §6.1)** | `apps/web/proxy.ts`                    | n/a                          | **RESOLVED:** PAD.md v1.1.0 now correctly specifies `proxy.ts`. Original conflict: `apps/web/middleware.ts` vs `apps/web/proxy.ts`. |
-| D3 | Worker file count           | 11 jobs in catalog (PAD §13.1) | 7 worker files in tree (L610–617)      | n/a                          | **11 files** (catalog is canonical; missing 4 files to be created)              |
-| D4 | Email template count        | 13 templates in catalog        | 8 template files in tree (L579–586)    | n/a                          | **13 files** (catalog is canonical; missing 5 to be created)                    |
+| D3 | Worker file count           | 11 jobs in catalog (PAD §13.1) | 0 implemented (Phase 8 pending)      | n/a                          | **0 implemented** (Phase 8 pending; 11 planned per PAD §13.1)              |
+| D4 | Email template count        | 13 templates in catalog        | 0 implemented (Phase 8 pending)    | n/a                          | **0 implemented** (Phase 8 pending; 13 planned per PAD §17.3)                    |
 | D5 | `enums.ts` file             | Referenced at `schema/enums.ts`| Missing from tree                      | n/a                          | **Create `packages/db/src/schema/enums.ts`** (export Drizzle `pgEnum`s)         |
 | D6 | `members.stripeCustomerId`  | Referenced in payment mapping  | Missing from MEMBER table def          | n/a                          | **Add column** `stripeCustomerId text UNIQUE` to MEMBER table                   |
 | D7 | Worker naming mismatch      | `class-reminder-24h`, `-1h`    | `class-reminder.ts` (singular)         | n/a                          | **Two files**: `class-reminder-24h.ts`, `class-reminder-1h.ts`                  |
@@ -519,7 +519,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
   - [RED] Test 3: `env` accepts valid config and exposes typed `env.DATABASE_URL`
   - [RED] Test 4: `NEXT_PUBLIC_*` vars are excluded from server-side schema (cannot be accessed via `env.SERVER_*`)
 - **Checklist:**
-  - [ ] All 25 env vars from `.env.example` declared in schema
+  - [ ] All 34 env vars from `.env.example` declared in schema
   - [ ] Server vs client split correct (`server` for keys without `NEXT_PUBLIC_`)
   - [ ] `runtimeEnv` maps every var to `process.env`
   - [ ] All 4 RED tests now GREEN
@@ -4322,7 +4322,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 | 20    | Performance Targets                    | Phase 10 + per-route bundle budgets                                        |
 | 21    | Accessibility                          | Phase 11 (WCAG AAA audit) + per-component tests                            |
 | 22    | Deployment & Environments              | Phase 0 (CI workflows), Phase 10 (Vercel + Neon)                           |
-| 23    | ADRs                                   | ADR-001 to ADR-007 (existing) + ADR-008 (Better Auth v1.6.23) + ADR-009 (proxy.ts) — ✅ all 9 ADRs now in PAD.md §29 |
+| 23    | ADRs                                   | ADR-001 to ADR-007 (existing) + ADR-008 (Better Auth v1.6.23) + ADR-009 (proxy.ts) + ADR-010 (Resend Native Templates proposed) — ✅ all 10 ADRs in PAD.md §29 |
 | 24    | Glossary                               | This document Appendix C                                                   |
 
 ### 7.2 scaffolding_files.md coverage
@@ -4479,7 +4479,7 @@ After each phase, the following must be GREEN before merging to `develop`:
 
 ## Appendix B: Environment Variables Reference
 
-All 25 env vars from `/.env.example` (scaffolding) — see scaffolding_files.md §5 for verbatim values.
+All 34 env vars from `/.env.example` (scaffolding) — see scaffolding_files.md §5 for verbatim values.
 
 Critical env vars consumed per package:
 - `packages/config/src/env.ts` — Zod-validated schema for ALL env vars (created in Phase 0)

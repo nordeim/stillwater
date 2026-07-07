@@ -1,178 +1,146 @@
-● Here's a grounded picture of Stillwater, based on both the briefing docs and what's actually checked into the repo right now.
+# Project Brief — Stillwater
 
-  What it is
+> **Updated:** 2026-07-08 (post-Phase 3)
+> Status: Phases 0–3 ✅ complete · Phases 4–12 ⬜ pending
 
-  An enterprise-grade platform for a single yoga studio (Southeast Portland). It's not a SaaS — it's one studio's bespoke operations system: public marketing site, member class-booking, staff/admin
-  tools, Stripe subscriptions, and background email/job processing. The whole product is wrapped around an "Editorial Calm" design identity (warm mineral palette: stone/clay/water/sand — no gradients,
-  no drop shadows, no pill buttons).
+## What it is
 
-  Current build state — the honest picture
+Stillwater is an enterprise-grade platform for a single yoga studio (Southeast Portland). It's not a SaaS — it's one studio's bespoke operations system: public marketing site, member class-booking, staff/admin tools, Stripe subscriptions, and background email/job processing. The whole product is wrapped around an "Editorial Calm" design identity (warm mineral palette: stone/clay/water/sand — no gradients, no drop shadows, no pill buttons).
 
-  Phase 0 (scaffold) is done; Phases 1–12 are not started. What exists concretely:
+## Current build state (the honest picture)
 
-  - Monorepo is real and wired: Turborepo + pnpm workspaces, 7 shared packages (db, api, auth, ui, config, payments, email), apps/web (Next.js 16), services/workers (Trigger.dev).
-  - Design system is the most complete part: fully self-hosted fonts (Cormorant Garamond, DM Sans, JetBrains Mono — .woff2 files in packages/ui), and a complete token system (colors.css, typography.css,
-   spacing.css, motion.css). The warm-mineral palette is locked in.
-  - Config is real: packages/config/src/env.ts has a thorough t3-env + Zod schema with build-context fallbacks.
-  - Almost nothing is implemented yet: the homepage is a Phase-0 placeholder. Every package src/ other than config and ui is just a barrel index.ts — no routers, no schema, no auth logic, no components.
-   The DB schema, tRPC routers, Better Auth setup, booking flow, Stripe integration are all documented but not written.
+**Phases 0 through 3 are complete and green.** Phases 4 through 12 are not yet started.
 
-  So ~230KB of planning docs (PAD, MEP, SKILL, audit reports, mockups) describe a system where only the foundation and design tokens are actually built.
+- **Phase 0 (Scaffold):** Complete. Turborepo + pnpm workspaces, 7 shared packages, 11 tooling configs, Docker Compose setup, and the full design system (self-hosted fonts, CSS tokens).
+- **Phase 1 (Database):** Complete. 14-table Drizzle schema, 8 enums, 5 critical indexes, a single clean migration (`0000_dear_dagger.sql`), an idempotent seed script, and dynamic database driver selection (`pg` for local Docker, `neon-http` for production Neon).
+- **Phase 2 (Auth & RBAC):** Complete. Better Auth v1.6.23 with Google OAuth, Magic Link, and a `customSession` plugin for `memberId`/`roles` enrichment. RBAC permission matrix (13 permissions × 6 roles). 2-layer auth pattern: lightweight `proxy.ts` (cookie-only existence check) and full validation in Server Component layouts (`requireAuth` / `requireRole`).
+- **Phase 3 (API / tRPC):** Complete. 10 routers with ~30 procedures, 4 access tiers (public, protected, staff, owner), advisory lock booking concurrency, rate limiting (Upstash Redis), and full web integration (HTTP handler, RSC caller, React client, query keys).
 
-  The plan (13 phases)
-
-  1. Phase 0 ✅ — scaffold, configs, design tokens
-  2. Phases 1–3 — DB schema + Drizzle migrations + seed, auth (Better Auth), tRPC API foundation (10 routers)
-  3. Phases 4–5 — Sanity CMS marketing + booking flow with real-time seat availability (SSE)
-  4. Phases 6–9 — memberships, Stripe billing, admin surface (RBAC), background jobs (Trigger.dev)
-  5. Phases 10–12 — testing, E2E, landing-page port from the static mockup
-
-  Notable architectural commitments
-
-  - Booking concurrency: PostgreSQL pg_advisory_xact_lock (transaction-scoped — critical under Neon's PgBouncer), not optimistic locking.
-  - Idempotent Stripe webhooks: unique index + transaction-scoped advisory lock.
-  - Two-layer auth (proxy.ts cookie-check at Edge + full RBAC validation in Server Components).
-  - WCAG 2.2 AAA is a stated non-negotiable (7:1 contrast, full keyboard nav).
-  - Hard rules baked into the repo: TypeScript strict/no-any, Radix/shadcn primitives only (no custom modals), Zod at every boundary, React Compiler enabled (needs babel-plugin-react-compiler
-  installed).
-
-  A couple of things worth flagging
-
-  - There's a substantial diff_output.txt (187KB) and app_start_log.txt in the root — looks like leftover working artifacts rather than project source.
-  - The docs are extremely thorough but far outpace the code. The biggest near-term risk is that the plan is so large (13 phases) that "what's done" is still essentially just the skeleton.
-
-  Want me to go deeper on any layer — e.g., walk through the MASTER_EXECUTION_PLAN phases in detail, the DB schema design, or what the Phase 1 kickoff would actually involve?
-
-❯ is the MASTER_EXECUTION_PLAN in sync with design.md and PAD.md?
-
-● Good question to verify rather than assume. These three are large (MEP 232KB, PAD 142KB, design 35KB), and the docs claim 45 discrepancies were reconciled in the MEP. Let me actually check the
-  cross-references rather than trust the claim. I'll start by mapping each file's structure and pulling the key decision points.
-
-● Most claims check out against the code. Two things to chase down: D45 (my grep returned empty) and a possible staleness in design.md's own phase table. Let me verify both.
-
-● Bash(cd /home/project/stillwater
-      echo "=== D45: eslint versions (raw) ==="…)
-  ⎿  === D45: eslint versions (raw) ===
-     apps/web/package.json:82:    "eslint": "^9.39.4",
-     tooling/eslint/package.json:10:    "@eslint/js": "^9.39.4",
-     … +25 lines (ctrl+o to expand)
-
-● Bash(cd /home/project/stillwater
-      echo "=== MEP §7.1 PAD coverage (head) ==="…)
-  ⎿  === MEP §7.1 PAD coverage (head) ===
-     ### 7.1 PAD.md section-by-section coverage
-     … +21 lines (ctrl+o to expand)
-
-● One more check — the MEP asserts "all 9 ADRs now in PAD.md §29" but my earlier PAD heading scan stopped at §26. Let me confirm the ADR section exists and where.
-
-● Bash(cd /home/project/stillwater
-      echo "=== PAD ADR section location ==="…)
-  ⎿  === PAD ADR section location ===
-     52:29. Architecture Decision Records (ADRs)
-     123:29. [Architecture Decision Records](#29-architecture-decision-records)
-     … +33 lines (ctrl+o to expand)
-
-● I have enough now to answer accurately. Let me summarize the verification.
-
-  Verdict: Yes — MEP, PAD, and design.md are in sync, with one caveat
-
-  I read the discrepancy table (D1–D45) and verified the "RESOLVED" claims against the actual repo files, not just the doc's self-assertion. The three documents are consistent with each other and with
-  the code.
-
-  What checks out
-
-  - D15 (custom @stillwater/source condition): present in both .npmrc and pnpm-workspace.yaml ✓
-  - D21 (top-level serverExternalPackages): correct in apps/web/next.config.ts ✓
-  - D24 (stray tui turbo key): removed ✓
-  - D44 (TypeScript pinned ^5.9.0): confirmed in db/api/ui packages ✓
-  - D45 (ESLint downgraded to ^9.39.4): correct in all 3 files ✓
-  - D9 (malformed --color-stone-200 / orphan --color-fog): fixed ✓
-  - D34 (self-hosted fonts): Cormorant, DM Sans, JetBrains Mono .woff2 all present ✓
-  - D1 (PAD specifies Better Auth v1.6.23): confirmed in PAD §5.1 ✓
-  - ADR tracking: MEP claims all 9 ADRs live in PAD §29 — confirmed (PAD §29, ADR-001 onward) ✓
-  - design.md → MEP phase mapping (§7.4): a clean 1:1 mapping Phase 0–11, with Phase 12 (landing port) as the MEP-only addition ✓
-
-  The one caveat (not a contradiction, but worth knowing)
-
-  design.md is the oldest source and is explicitly marked superseded in parts. Two specifics:
-  1. Its implementation-phase table (lines 816–827) still says "Phase 2 — Auth (Auth.js v5)" and estimates "~33 engineering days." The rest of design.md flags Auth.js v5 as DO NOT USE (5 mentions, all
-  in historical/preserved-block context), and the MEP/PAD/clauDE.md all use Better Auth + proxy.ts. So that phase table is stale relative to the canonical resolution — the doc labels the proposal block
-  as "partially superseded" but doesn't strike the table itself.
-  2. design.md itself says its color/spacing token names were refined in PAD §11 — and the code uses PAD's naming, so the code follows the newer source. Consistent, but design.md's prose tokens are
-  historical.
-
-  Bottom line
-
-  The documents are internally consistent and the code matches the resolutions. The only "drift" is that design.md retains an unstruck old phase table and a few preserved Auth.js v5 snippets — both
-  clearly labeled as historical, and both overridden by the MEP/PAD canonical decisions. If you want, I can strike that stale table in design.md so there's zero chance of someone implementing the wrong
-  auth approach.
+**Phases 4–12:** Pending. No Sanity Studio, no marketing pages, no booking UI, no Stripe client, no background jobs, no admin surface.
 
 ---
 
-● I verified CLAUDE.md's factual claims against the actual repo and the two source docs. Here's the assessment.
+## Phase completion table
 
-  Verdict: Largely accurate, with a handful of stale/incorrect claims
-
-  CLAUDE.md correctly captures the architecture, principles, and Phase 0 completion status — those match the code. But it has 5 factual inaccuracies, one of which is an internal self-contradiction that would actively mislead an agent.
-
-  ✅ Accurate claims (verified against code)
-
-  - Version pins: Next 16.2 ✓, React 19.2.3 ✓, TS 5.9.0 ✓, Tailwind 4.3 ✓, tRPC v11 ✓, Drizzle 0.45 ✓, Better Auth 1.6.23 ✓, Stripe 22.3 ✓, React Email 6.6 ✓, Resend 6.17 ✓, pnpm 11.9 ✓
-  - Phase 0 ✅ COMPLETE ✓, Phases 1–12 pending ✓ (matches repo — only placeholder homepage + design tokens exist)
-  - PAD has 31 numbered sections ✓, 9 accepted ADRs (+1 pending ADR-010) ✓
-  - The Gotchas, library-discipline rules, and 2-layer auth pattern all match the resolved code
-
-  ⚠️  Inaccuracies
-
-  1. Internal contradiction — Trigger.dev SDK path (most serious)
-  Line 13 of CLAUDE.md says: "Trigger.dev v4 (SDK import path is @trigger.dev/sdk/v3 — see Gotchas)". But Gotcha 1 (same file) says "NEVER import from @trigger.dev/sdk/v3", and services/workers/trigger.config.ts uses the root import. An
-  agent reading line 13 would do the wrong thing. The /v3 note should be deleted.
-
-  2. apps/studio described as existing — it isn't
-  CLAUDE.md's Architecture section lists apps/studio (Sanity Studio) as part of the monorepo. Only apps/web exists; apps/studio is a Phase 4 deliverable. This describes the target structure, not current state.
-
-  3. Sanity CMS in the tech stack — not installed
-  CLAUDE.md lists "Sanity CMS v3" as a current dependency. No sanity package is in any package.json (it's Phase 4 planning). The "stack" list mixes installed + planned.
-
-  4. Stale version citation — PAD.md
-  CLAUDE.md cites PAD as v1.2.0, but PAD's body already contains the v1.3.0/v1.4.0 changes (proxy.ts "Edge or Node.js" softening at §5.1, ADR-010 pending at §17). The v1.2.0 stamp in PAD's own header is also stale — both should be
-  v1.4.0.
-
-  5. Stale version citation — stillwater_SKILL.md
-  CLAUDE.md cites it as v1.3.0, but the file's own frontmatter says version: 1.4.0.
-
-  Does it "accurately represent the unfinished code via PAD/MEP"?
-
-  Yes — the content (phases, discrepancies, patterns) is consistent with PAD and MEP. The problem isn't the architectural description; it's version stamps and a couple of "planned described as present" items. An agent could safely follow
-   CLAUDE.md's guidance, except for the Trigger.dev /v3 line, which is both wrong and self-contradicting.
-
-  Want me to fix the five items? The Trigger.dev line (1) is a one-line edit, and (2)/(3)/(4)/(5) are small wording-version corrections. 
+| Phase | Status | Quick Summary |
+|---|---|---|
+| 0 — Scaffold | ✅ Complete | Monorepo, tooling, Docker, design tokens |
+| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 indexes, migration, seed |
+| 2 — Auth & RBAC | ✅ Complete | Better Auth, Google OAuth, Magic Link, RBAC matrix |
+| 3 — tRPC API | ✅ Complete | 10 routers, ~30 procedures, advisory locks, rate limiting |
+| 4 — Marketing | ⬜ Pending | Sanity CMS, ISR pages |
+| 5 — Booking | ⬜ Pending | Booking flow, SSE real-time seat availability |
+| 6 — Dashboard | ⬜ Pending | Member dashboard, membership management |
+| 7 — Payments | ⬜ Pending | Stripe subscriptions, credit packs |
+| 8 — Background Jobs | ⬜ Pending | 11 Trigger.dev tasks, 13 email templates |
+| 9 — Admin Surface | ⬜ Pending | RBAC-gated admin for schedules, members, revenue |
+| 10 — Observability | ⬜ Pending | Monitoring, performance budgets |
+| 11 — Accessibility | ⬜ Pending | WCAG AAA audit, SEO, OG images |
+| 12 — Landing Page | ⬜ Pending | Port static mockup to Next.js production |
 
 ---
 
-✅ Seed Script Fix — Complete & Verified
-Summary of Changes
-1. Dynamic Database Driver Selection (packages/db/src/index.ts)
-- Problem: index.ts unconditionally used drizzle-orm/neon-http, which only works with Neon's HTTP endpoint. Local Docker Postgres (TCP) was unreachable.
-- Fix: Added dynamic driver detection based on DATABASE_URL. If the URL contains neon.tech, use neon-http. Otherwise, use node-postgres with pg.Pool.
-- This ensures the same db export works everywhere — local dev (via Docker Postgres) and production (via Neon).
-2. Environment Loading for Seed Script (packages/db/src/seed/env.ts + seed/index.ts)
-- Problem: The seed script imported db before DATABASE_URL was loaded from .env.local, causing the pg Pool to initialize with a fallback URL (no password).
-- Fix: Created seed/env.ts that loads .env.local via dotenv when DATABASE_URL is not set. Imported it at the top of seed/index.ts before the db import.
-3. Invalid UUID Fix (packages/db/src/seed/fixtures/membership-plans.ts)
-- Problem: Zod v4 enforces strict UUID v4 validation. The fixture UUIDs had g in the variant position (e.g., 00000000-0000-4000-g000-000000000001), which is invalid — must be 8, 9, a, or b.
-- Fix: Changed the variant nibble from g to a in all three membership plan fixtures.
-4. Dependency Update (packages/db/package.json)
-- Moved "pg": "^8.13.1" from devDependencies to dependencies so it's available at runtime for local development.
-Verification Results
-Command	Result
-pnpm db:migrate	✅ Success — single clean migration applied
-pnpm db:seed	✅ Success — 5 users, 5 members, 3 instructors, 4 class styles, 4 classes, 2 rooms, 7 sessions, 3 membership plans
-pnpm check-types	✅ 16/16 successful
-pnpm lint	✅ 2/2 successful
-pnpm test --filter=@stillwater/db	✅ 16 files, 107 tests passed
-pnpm test --filter=@stillwater/auth	✅ 4 files, 102 tests passed
-pnpm test --filter=@stillwater/api	✅ 13 files, 104 tests passed
-pnpm test --filter=@stillwater/web	✅ 3 files, 13 tests passed
-Total: 326 tests passed — no regressions.
+## What exists on disk (verified)
 
+These are the files you can actually `cat` and `test` today:
+
+### Database & Schema
+- `packages/db/src/schema/*.ts` — 14 Drizzle tables (users, members, instructors, class styles, classes, rooms, sessions, enrollments, waitlist, payments, memberships, role assignments, plus auth tables `session`, `account`, `verification`).
+- `packages/db/src/schema/enums.ts` — 8 enums (class level, membership status, seat status, etc.).
+- `packages/db/drizzle/migrations/0000_dear_dagger.sql` — Single clean migration (regenerated after ALTER COLUMN silent-failure fix).
+- `packages/db/src/seed/index.ts` + `seed/env.ts` — Idempotent seed script loading synthetic demo data (5 users, 5 members, 3 instructors, 4 class styles, 4 classes, 2 rooms, 7 sessions, 3 membership plans). Loads `.env.local` before importing `db`.
+- `packages/db/src/index.ts` — Dynamic driver: `pg.Pool` for local Docker, `neon-http` for Neon URLs.
+- `packages/db/src/index.test.ts` + `schema/*.test.ts` — 16 test files, 107 tests.
+
+### Authentication & Authorization
+- `packages/auth/src/config.ts` — Better Auth config (Google OAuth, Magic Link, Drizzle adapter).
+- `packages/auth/src/rbac.ts` — Permission matrix (13 permissions × 6 roles).
+- `packages/auth/src/client.ts` — Typed `authClient` with `magicLinkClient` plugin.
+- `packages/auth/src/types.ts` — `ActiveSubscriptionSummary` and session enrichment types.
+- `apps/web/src/lib/auth.ts` — Server helpers: `getSession()`, `requireAuth()`, `requireRole()` (Layer 2 of 2-layer auth).
+- `apps/web/proxy.ts` — Next.js 16 `proxy` function: `getSessionCookie()` only, no DB, no RBAC (Layer 1).
+- `packages/auth/src/*.test.ts` — 4 test files, 102 tests.
+
+### API Layer
+- `packages/api/src/routers/*.ts` — 10 routers: `admin`, `bookings`, `classes`, `instructors`, `members`, `memberships`, `payments`, `schedule`, `sessions`, `waitlist`.
+- `packages/api/src/trpc.ts` — 4 procedure tiers: `publicProcedure`, `protectedProcedure`, `staffProcedure`, `ownerProcedure`.
+- `packages/api/src/root.ts` — Root router merging all 10 routers.
+- `packages/api/src/context.ts` — tRPC context with session injection.
+- `packages/api/src/middleware/rateLimit.ts` — Upstash Redis rate limiting on `bookings.book`.
+- `packages/api/src/*.test.ts` — 13 test files, 104 tests.
+
+### Web App
+- `apps/web/src/app/api/auth/[...all]/route.ts` — Better Auth catch-all handler.
+- `apps/web/src/app/api/trpc/[trpc]/route.ts` — tRPC HTTP handler.
+- `apps/web/src/lib/trpc/server.ts` — RSC server caller.
+- `apps/web/src/lib/trpc/client.tsx` — React Query + tRPC client provider.
+- `apps/web/src/lib/trpc/query-keys.ts` — Query key factory.
+- `apps/web/*.test.ts` — 3 test files, 13 tests.
+
+### Config & Infrastructure
+- `packages/config/src/env.ts` — t3-env Zod-validated schema covering **34 environment variables** with build-context Ernst fallbacks.
+- `.npmrc` + `pnpm-workspace.yaml` — `@stillwater/source` custom condition declared in both.
+- `docker-compose.yml` — Postgres 17 + Redis 7 + Adminer.
+- `infrastructure/postgres/init/00-create-extensions.sql` — Docker init (uuid-ossp + pgcrypto).
+
+### Design System
+- `packages/ui/src/fonts/` — Self-hosted Cormorant Garamond, DM Sans, JetBrains Mono (`.woff2`).
+- `packages/ui/src/index.ts` — CSS design token exports (colors, typography, spacing, motion).
+
+---
+
+## Live quality gates (2026-07-08)
+
+Run `pnpm check-types`, `pnpm lint`, and `pnpm test`.
+
+| Gate | Result |
+|---|---|
+| `pnpm check-types` | **16/16 successful** ✅ |
+| `pnpm lint` | **2/2 successful** ✅ |
+| `pnpm test` | **326 tests passing** ✅ |
+
+Test breakdown:
+- `packages/db` — 16 test files / **107 tests**
+- `packages/auth` — 4 test files / **102 tests**
+- `packages/api` — 13 test files / **104 tests**
+- `apps/web` — 3 test files / **13 tests**
+
+---
+
+## Notable architectural commitments (now implemented vs pending)
+
+| Commitment | Status | Where it's enforced |
+|---|---|---|
+| PostgreSQL advisory locks for booking | ✅ Implemented | `packages/api/src/routers/bookings.ts` uses `pg_advisory_xact_lock()` |
+| 2-layer auth (cookie-only proxy + full RBAC in layouts) | ✅ Implemented | `apps/web/proxy.ts` (Layer 1) + `apps/web/src/lib/auth.ts` (Layer 2) |
+| RBAC permission matrix (13 × 6 roles) | ✅ Implemented | `packages/auth/src/rbac.ts` |
+| Zod at every boundary | ✅ Implemented | `env.ts`, tRPC `input` schemas, rate-limit middleware |
+| React Compiler | ✅ Enabled | `apps/web/next.config.ts` — `reactCompiler: true` |
+| Library discipline (Radix/shadcn only) | ✅ Enforced | `packages/ui` imports from `@radix-ui/*` |
+| Self-hosted fonts (zero FOUT) | ✅ Enforced | `packages/ui/src/fonts/` |
+| Idempotent Stripe webhooks | 🔜 Pending | Schema ready (`payments` table); implementation in Phase 7 |
+| WCAG 2.2 AAA | 🔜 Pending | Accessibility audit scheduled for Phase 11 |
+| E2E testing | 🔜 Pending | Playwright config exists; no E2E scenarios written yet |
+
+---
+
+## What is NOT yet built
+
+To avoid false expectations:
+
+- **`apps/studio/`** — Not scaffolded. Sanity Studio will be hosted at `stillwater.sanity.studio` (Phase 4 decision).
+- **Marketing pages** — No `(marketing)` route group, no Sanity CMS integration, no ISR.
+- **Booking UI / SSE** — No `/book`, class schedule display, or real-time seat availability.
+- **Member dashboard** — No `/(studio)/` route group or membership management pages.
+- **Stripe integration** — `packages/payments/src/index.ts` is a `// Phase 0 placeholder`. No subscriptions, credit packs, or checkout.
+- **Background jobs** — `services/workers/src/index.ts` is a placeholder. Zero Trigger.dev task files. Zero email templates (`packages/email/src/index.ts` is a placeholder).
+- **Admin surface** — No `(admin)` route group or RBAC-gated management UI.
+- **E2E / visual regression** — Playwright config exists but no test scenarios.
+
+---
+
+## Things worth flagging
+
+- **`diff_output.txt` and `app_start_log.txt`** — Leftover working artifacts from early Phase 0 sessions; not project source. Safe to remove.
+- **Docs still outpace code.** The repository contains ~230 KB of planning docs (PAD, MEP, SKILL, audit reports, mockups). The gap between documentation and implementation widens with each phase. Verify against the live test suite, not just the docs.
+- **Migration is canonical.** The single `0000_dear_dagger.sql` is the definitive DB state; the two-migration sequence (`0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql`) referenced in some older PAD callouts is historical and was deleted during the Phase 1–2 remediation.
