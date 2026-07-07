@@ -1,7 +1,10 @@
 /**
  * F1-15 — Database client + types (resolves D11)
  *
- * Exports the Drizzle ORM client using the neon-http serverless driver.
+ * Exports the Drizzle ORM client, dynamically selecting the driver based on
+ * the DATABASE_URL. Local development uses node-postgres (pg Pool); Neon
+ * production uses the neon-http serverless driver.
+ *
  * The schema barrel is re-exported so consumers can do:
  *   import { db, users, members } from '@stillwater/db';
  *
@@ -14,8 +17,10 @@
  *         stillwater_SKILL.md §3.4 (infrastructure clients use process.env).
  */
 
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { neon } from '@neondatabase/serverless';
+import { Pool } from 'pg';
 import * as schema from './schema';
 
 // Use process.env directly with fallback — env module throws in build context
@@ -25,12 +30,19 @@ const connectionString =
   process.env['DATABASE_URL'] ??
   'postgresql://placeholder@localhost:5432/placeholder';
 
-// Create the neon serverless SQL client, then wrap it with Drizzle.
-// neon() validates the connection string format, so we guard with a try/catch
-// to allow module import in environments without a real database.
-let sql: ReturnType<typeof neon>;
+// Detect whether the target is Neon (production) or local Postgres (dev)
+const isNeonUrl = connectionString.includes('neon.tech');
+
+// Create the appropriate SQL client, then wrap it with Drizzle.
+// Both constructors are lazy — no network connection is made until the first query.
+let sql: ReturnType<typeof neon> | Pool;
+
 try {
-  sql = neon(connectionString);
+  if (isNeonUrl) {
+    sql = neon(connectionString);
+  } else {
+    sql = new Pool({ connectionString });
+  }
 } catch {
   // Fallback: return a no-op SQL function for test/build contexts.
   // Actual queries will fail, but module import succeeds.
@@ -49,7 +61,9 @@ try {
  * For transactions (e.g., booking with advisory lock per ADR-004):
  *   await db.transaction(async (tx) => { ... });
  */
-export const db = drizzle(sql, { schema });
+export const db = isNeonUrl
+  ? drizzleNeon(sql as ReturnType<typeof neon>, { schema })
+  : drizzlePg(sql as Pool, { schema });
 
 /**
  * The Drizzle database type. Use this for typing function parameters:

@@ -17,6 +17,7 @@
  * Source: MASTER_EXECUTION_PLAN.md F1-16.
  */
 
+import './env'; // Load .env.local before db client is instantiated
 import { db } from '../index';
 import {
   users,

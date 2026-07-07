@@ -19,7 +19,7 @@ type NewPlan = InferInsertModel<typeof membershipPlans>;
 
 export const demoMembershipPlans: NewPlan[] = [
   {
-    id: '00000000-0000-4000-g000-000000000001',
+    id: '00000000-0000-4000-a000-000000000001',
     name: 'Pay As You Go',
     stripePriceId: 'price_placeholder_dropin_0001',
     interval: 'month', // Drop-in uses month interval but 1 credit per cycle
@@ -31,7 +31,7 @@ export const demoMembershipPlans: NewPlan[] = [
     sortOrder: 1,
   },
   {
-    id: '00000000-0000-4000-g000-000000000002',
+    id: '00000000-0000-4000-a000-000000000002',
     name: 'Unlimited',
     stripePriceId: 'price_placeholder_unlimited_0001',
     interval: 'month',
@@ -43,7 +43,7 @@ export const demoMembershipPlans: NewPlan[] = [
     sortOrder: 2,
   },
   {
-    id: '00000000-0000-4000-g000-000000000003',
+    id: '00000000-0000-4000-a000-000000000003',
     name: '10 Classes',
     stripePriceId: 'price_placeholder_10pack_0001',
     interval: 'month',
