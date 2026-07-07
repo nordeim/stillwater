@@ -10,7 +10,7 @@
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%202%20complete-success)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%203%20complete-success)](#project-status)
 
 > **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
@@ -568,8 +568,8 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 0     | Monorepo scaffold + tooling + Docker + fixes       | ✅ Complete   | 2         |
 | 1     | DB schema, Drizzle migrations, seed data           | ✅ Complete   | 3         |
 | 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ✅ Complete   | 3         |
-| 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ⬜ Next       | 5         |
-| 4     | Marketing surface with Sanity CMS                  | ⬜ Pending     | 4         |
+| 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ✅ Complete   | 5         |
+| 4     | Marketing surface with Sanity CMS                  | ⬜ Next       | 4         |
 | 5     | Booking flow + SSE real-time seats                 | ⬜ Pending     | 5         |
 | 6     | Member dashboard + membership management           | ⬜ Pending     | 4         |
 | 7     | Stripe integration (subscriptions + credit packs)  | ⬜ Pending     | 4         |
@@ -578,7 +578,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~20% complete** | **~50 days** |
+| **Total** |                                                | **~30% complete** | **~50 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -678,6 +678,23 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 
 ## What's New
 
+### v1.4.0 (2026-07-07) — Phase 3 Complete: tRPC v11 API Layer
+
+| Change | Details |
+|---|---|
+| 10 tRPC routers implemented (~30 procedures) | `packages/api/src/routers/` — schedule, classes, sessions, bookings, waitlist, members, instructors, memberships, payments, admin |
+| 4 procedure access tiers | `publicProcedure`, `protectedProcedure`, `staffProcedure`, `ownerProcedure` in `packages/api/src/trpc.ts` |
+| Booking router with advisory lock (ADR-004) | `pg_advisory_xact_lock` inside transaction; capacity check + waitlist auto-join; discriminated union return |
+| Rate limiting on bookings.book | Upstash sliding window (10/min per user) via `packages/api/src/middleware/rateLimit.ts` |
+| RBAC enforced at tRPC middleware layer | `protectedProcedure` → `staffProcedure` → `ownerProcedure` chain; throws UNAUTHORIZED/FORBIDDEN |
+| Phase 7 stubs | Stripe-dependent procedures (memberships.subscribe, payments.*) throw `PRECONDITION_FAILED` until Phase 7 |
+| Jobs client stub | `ctx.jobs.trigger()` is a console.warn stub until Phase 8 (Trigger.dev tasks) |
+| Root router + barrel export | `packages/api/src/root.ts` merges all 10 routers; `AppRouter` type exported for client inference |
+| Web tRPC integration | HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`) |
+| 5 Phase 3 gotchas documented (25–29) | tRPC middleware factory, Zod v4 UUID strictness, Drizzle relational types, mock chain `.where()`, `exactOptionalPropertyTypes` spread-conditional |
+| 326 tests passing | 104 api + 102 auth + 107 db + 13 web (was 220 in Phase 2) |
+| `pg` driver fix for local migrations | Added `pg` (^8.13.1) to `packages/db` devDeps — drizzle-kit now uses TCP driver instead of neon WebSocket |
+
 ### v1.3.0 (2026-07-07) — Phase 2 Complete: Better Auth + RBAC + 2-Layer Auth
 
 | Change | Details |
@@ -747,11 +764,11 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 
 | Document                                  | Purpose                                                              |
 |-------------------------------------------|----------------------------------------------------------------------|
-| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 10 ADRs; v1.6.0) |
+| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 10 ADRs; v1.7.0) |
 | [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.3.0) |
-| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.5.0; 21 source skills condensed; 29 lessons) |
-| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.6.0; 24 gotchas) |
-| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (20 gotchas)  |
+| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.6.0; 21 source skills condensed; 35 lessons) |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.7.0; 29 gotchas) |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (23 gotchas)  |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |
 | [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture (some sections superseded by ADRs) |
 | [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |

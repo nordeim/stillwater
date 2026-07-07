@@ -1,4 +1,20 @@
-// Stillwater Phase 0 placeholder — will be overwritten in Phases 1-8.
-// Exists to satisfy TS18003 (tsc requires at least one input file in include glob).
+/**
+ * F3-15 — packages/api barrel export
+ *
+ * Public API surface for the @stillwater/api package.
+ *
+ * Source: MEP Phase 3 F3-15.
+ */
 
-export {};
+export { appRouter, type AppRouter } from './root';
+export { createContext } from './context';
+export {
+  router,
+  publicProcedure,
+  protectedProcedure,
+  staffProcedure,
+  ownerProcedure,
+  middleware,
+  type TRPCContext,
+} from './trpc';
+export { rateLimit } from './middleware/rateLimit';

@@ -7,7 +7,7 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 1.6.0
+version: 1.7.0
 project_type: nextjs-monorepo
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-07
@@ -17,7 +17,7 @@ last_updated: 2026-07-07
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v1.6.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phases 3–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. `pnpm install` / `pnpm check-types` / `pnpm lint` all green.
+> **Status:** v1.7.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phases 4–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. `pnpm install` / `pnpm check-types` / `pnpm lint` all green.
 
 ---
 
@@ -2227,6 +2227,33 @@ See Lesson 33, `CLAUDE.md` Gotcha 22.
 **Root cause:** `emailVerified` is `timestamp` in Phase 1 schema but Better Auth expects `boolean`.
 **Fix:** Change to `boolean('email_verified').default(false).notNull()`. Requires destructive migration + seed fixture update. See Lesson 32, `CLAUDE.md` Gotcha 21.
 
+### 9.11 tRPC v11 Anti-Patterns (Phase 3)
+
+#### Bug: Middleware as raw function instead of `t.middleware()` (Phase 3 — High)
+**Symptom:** `No result from middlewares - did you forget to return next()`
+**Root cause:** Custom middleware (e.g., rateLimit) was written as a plain function `({ ctx, next }) => { ... }` instead of using tRPC's `t.middleware()` factory.
+**Fix:** Use the `middleware` export from `trpc.ts` and call `next({ ctx })`:
+```typescript
+import { middleware } from '../trpc';
+export function rateLimit(opts) {
+  return middleware(async ({ ctx, next }) => {
+    // ... rate limit check
+    return next({ ctx });  // ← MUST pass ctx
+  });
+}
+```
+See Lesson 36, `CLAUDE.md` Gotcha 25.
+
+#### Bug: Drizzle relational query types infer as `never` (Phase 3 — Medium)
+**Symptom:** `Property 'maxCapacity' does not exist on type 'never'` after `findFirst({ with: { class: true } })`.
+**Root cause:** Drizzle v0.45 can't infer nested `with` relation types without `defineRelations()` (v2 API, requires ≥1.0.0-beta).
+**Fix:** Cast the result to access nested fields. See Lesson 38, `CLAUDE.md` Gotcha 27.
+
+#### Bug: Mock chain missing `.where()` step (Phase 3 — Medium)
+**Symptom:** `ctx.db.update(...).set(...).where is not a function` in tests.
+**Root cause:** Mock chain doesn't mirror the full Drizzle builder API.
+**Fix:** Add `.where()` between `.set()` and `.returning()`. See Lesson 39, `CLAUDE.md` Gotcha 28.
+
 ---
 
 ## §10. Debugging Guide
@@ -3275,6 +3302,96 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 
 **Fix references:** `apps/web/src/lib/auth.test.ts`, `CLAUDE.md` Gotcha 24, `AGENTS.md` Gotcha 20. See §13.3.
 
+### Lesson 36: tRPC middleware must use `t.middleware()` factory — not raw function (Phase 3)
+
+**Context:** During Phase 3 TDD cycle 2, the rate-limit middleware was written as a plain function `({ ctx, next }) => { ... }` instead of using tRPC's `t.middleware()` factory. This caused `No result from middlewares - did you forget to return next()` errors when the middleware was used via `.use()` on a procedure.
+
+**What to do differently:**
+- Always use the `middleware` export from `trpc.ts` (which is `t.middleware`) to create middleware factories
+- The middleware must call `next({ ctx })` (passing the context explicitly), NOT just `next()`
+- Raw functions don't integrate with tRPC v11's procedure builder type system — the factory wraps the function with proper typing
+
+**Fix references:** `packages/api/src/middleware/rateLimit.ts`, `CLAUDE.md` Gotcha 25, `AGENTS.md` Gotcha 21. See §9.11 + §15.16.
+
+### Lesson 37: Zod v4 `z.string().uuid()` is strict — test UUIDs must use valid v4 format (Phase 3)
+
+**Context:** During Phase 3 TDD cycles, Zod validation failed on test UUIDs like `11111111-1111-1111-1111-111111111111` with `invalid_format` error. Zod v4 enforces RFC 4122 v4 UUID format strictly — the variant digit (first character of the 4th group) must be `8`, `9`, `a`, or `b`.
+
+**What to do differently:**
+- All test fixture UUIDs must use valid v4 format: version digit `4` in the 3rd group, variant `8/9/a/b` in the 4th group
+- Use `11111111-1111-4111-8111-111111111111` (not `11111111-1111-1111-1111-111111111111`)
+- The nil UUID (`00000000-0000-0000-0000-000000000000`) is also rejected by Zod v4
+- Seed data in Phase 1 used `00000000-0000-4000-...` format which is valid — test fixtures must match
+
+**Fix references:** All `packages/api/src/routers/*.test.ts`, `CLAUDE.md` Gotcha 26, `AGENTS.md` Gotcha 22. See §13.2.
+
+### Lesson 38: Drizzle relational query types infer as `never` without `defineRelations()` (Phase 3)
+
+**Context:** During Phase 3, TypeScript error `Property 'maxCapacity' does not exist on type 'never'` when accessing `session.class?.maxCapacity` after `findFirst({ with: { class: true } })`. Drizzle ORM v0.45's relational query API v1 (`db.query.*`) uses `with` for eager loading, but TypeScript can't infer the nested relation types unless `defineRelations()` (v2 API, requires ≥1.0.0-beta) is called.
+
+**What to do differently:**
+- In Drizzle v0.45, cast the result to access nested `with` fields:
+  ```typescript
+  const sessionData = session as {
+    overrideCapacity: number | null;
+    class: { maxCapacity: number | null } | null;
+  };
+  ```
+- When upgrading to Drizzle ORM 1.0+, call `defineRelations()` to get proper type inference without casts
+- This affects ALL relational queries using `with: { relation: true }` — not just bookings
+
+**Fix references:** `packages/api/src/routers/bookings.ts`, `CLAUDE.md` Gotcha 27. See §13.4.
+
+### Lesson 39: Drizzle mock chains must mirror the full builder API — `.where()` between `.set()` and `.returning()` (Phase 3)
+
+**Context:** During Phase 3 TDD, `ctx.db.update(...).set(...).where is not a function` in tests. The mock chain for Drizzle's update builder was `update().set({ returning })` — missing the `.where()` step. The actual Drizzle API calls `update().set().where().returning()`, so the mock must mirror the full chain.
+
+**What to do differently:**
+- Always trace the exact Drizzle method chain used in the router code and mirror it in the mock
+- For updates: `update → set → where → returning`
+- For selects: `select → from → where` (note: `from()` returns a thenable that also has `.where()`)
+- For inserts: `insert → values → returning`
+- For transaction mocks: `transaction(cb)` must call `cb(tx)` and return the result
+
+**Fix references:** `packages/api/src/routers/bookings.test.ts`, `CLAUDE.md` Gotcha 28. See §9.8.
+
+### Lesson 40: `exactOptionalPropertyTypes` — optional properties need spread-conditional, not ternary with `undefined` (Phase 3)
+
+**Context:** During Phase 3, `TS2379: Type 'undefined' is not assignable to type 'HTTPErrorHandler'` on `fetchRequestHandler({ onError: undefined })`. TypeScript's `exactOptionalPropertyTypes: true` (enabled in Stillwater's tsconfig) forbids explicitly passing `undefined` to optional properties.
+
+**What to do differently:**
+- Use spread-conditional instead of ternary with `undefined`:
+  ```typescript
+  // ❌ WRONG — passes undefined to optional prop
+  { onError: cond ? fn : undefined }
+  // ✅ CORRECT — spreads the key only when condition is true
+  ...(cond ? { onError: fn } : {})
+  ```
+- This applies to ALL optional properties when `exactOptionalPropertyTypes: true` is set
+- The pattern is: `...(condition ? { prop: value } : {})`
+
+**Fix references:** `apps/web/src/app/api/trpc/[trpc]/route.ts`, `CLAUDE.md` Gotcha 29, `AGENTS.md` Gotcha 23. See §13.2.
+
+### Lesson 41: Phase 7+ stubs — throw `PRECONDITION_FAILED` for unimplemented integrations (Phase 3)
+
+**Context:** Phase 3 implemented 10 routers, but several procedures depend on Stripe (Phase 7) and Trigger.dev (Phase 8). These can't be fully implemented yet. The pattern: stub with a clear error that tells the caller the integration is pending.
+
+**What to do differently:**
+- For Stripe-dependent procedures (memberships.subscribe, payments.*):
+  ```typescript
+  throw new TRPCError({
+    code: 'PRECONDITION_FAILED',
+    message: 'Stripe integration pending Phase 7',
+  });
+  ```
+- For Trigger.dev-dependent side effects (ctx.jobs.trigger):
+  - Create a stub jobs client in context.ts: `{ trigger: async () => console.warn('...') }`
+  - Replace with real TriggerClient in Phase 8
+- The `PRECONDITION_FAILED` (412) code is semantically correct — the server understands the request but refuses to process it because a prerequisite (Stripe integration) is not met
+- Tests for stubbed procedures should assert the error is thrown, not mock the integration
+
+**Fix references:** `packages/api/src/routers/memberships.ts`, `packages/api/src/routers/payments.ts`, `packages/api/src/context.ts`. See §15.16.
+
 ---
 
 ## §13. Pitfalls to Avoid
@@ -3329,6 +3446,8 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - **Don't use object syntax for partial index `.where()`** (Phase 1) — use `sql` tagged template: `.where(sql\`${table.status} = 'scheduled'\`)`. Object syntax causes TS2353. See Lesson 26.
 - **Don't call `neon()` with a placeholder connection string without try/catch** (Phase 1) — `neon()` validates format at call time. Use `process.env` directly (not Zod `env`) with try/catch fallback. See Lesson 27 + §15.6.
 - **Don't use `timestamp` for `emailVerified` when using Better Auth** (Phase 2) — Better Auth v1.6.23 expects `boolean` (default `false`), NOT `timestamp`. Phase 1 used timestamp per PAD §7.2; Phase 2 Cycle 0 changed to boolean. See Lesson 32.
+- **Don't use invalid v4 UUIDs in test fixtures** (Phase 3) — Zod v4 `z.string().uuid()` enforces RFC 4122 strictly (variant digit must be 8/9/a/b). `11111111-1111-1111-1111-111111111111` is INVALID. See Lesson 37.
+- **Don't pass `undefined` to optional properties** (Phase 3) — `exactOptionalPropertyTypes: true` forbids it. Use spread-conditional: `...(cond ? { prop: fn } : {})`. See Lesson 40.
 
 ### 13.5 Stripe Pitfalls
 
@@ -4805,6 +4924,164 @@ vi.mock('@stillwater/auth', () => ({ auth: { api: { getSession: vi.fn() } } }));
 
 **Source:** Phase 2 implementation (Cycles 0-8), `packages/auth/src/`, `apps/web/src/lib/auth.ts`, `apps/web/proxy.ts`, `apps/web/src/app/(studio)/layout.tsx`, `apps/web/src/app/(admin)/layout.tsx`. See Lessons 30-35.
 
+### 15.16 Pattern: tRPC Router + Context + Rate Limiting + Web Integration (Phase 3)
+
+This pattern consolidates the Phase 3 tRPC implementation: procedure factory with 4 access tiers, context builder, rate-limit middleware (using `t.middleware()` factory), router with advisory lock, root router merging, and web integration (HTTP handler + RSC server caller + React client).
+
+#### tRPC factory with 4 procedure tiers
+
+```typescript
+// packages/api/src/trpc.ts
+import { initTRPC, TRPCError } from '@trpc/server';
+
+export interface TRPCContext {
+  db: DrizzleDB;
+  session: { user: { id: string; memberId: string | null; roles: StudioRole[] } } | null;
+  jobs: { trigger: (task: string, payload: unknown) => Promise<unknown> };
+  redis: { get: (k: string) => Promise<string | null>; set: (k: string, v: string) => Promise<string | null> };
+  req: Request;
+}
+
+const t = initTRPC.context<TRPCContext>().create();
+export const router = t.router;
+export const middleware = t.middleware;  // ← MUST use this for custom middleware
+
+export const publicProcedure = t.procedure;
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.session) throw new TRPCError({ code: 'UNAUTHORIZED' });
+  return next({ ctx: { ...ctx, session: ctx.session } });
+});
+export const staffProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (!ctx.session.user.roles.some(r => ['staff', 'manager', 'owner'].includes(r)))
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  return next();
+});
+export const ownerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (!ctx.session.user.roles.includes('owner'))
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  return next();
+});
+```
+
+#### Rate-limit middleware (MUST use `t.middleware()`)
+
+```typescript
+// packages/api/src/middleware/rateLimit.ts
+import { middleware } from '../trpc';  // ← NOT a raw function
+
+export function rateLimit(opts: { limit: number; window: '1 m' | '1 h' }) {
+  return middleware(async ({ ctx, next }) => {  // ← factory-wrapped
+    const { success } = await limiter.limit(ctx.session?.user.id ?? 'anon');
+    if (!success) throw new TRPCError({ code: 'TOO_MANY_REQUESTS' });
+    return next({ ctx });  // ← MUST pass ctx
+  });
+}
+```
+
+#### Booking router with advisory lock (ADR-004)
+
+```typescript
+// packages/api/src/routers/bookings.ts
+export const bookingsRouter = router({
+  book: protectedProcedure
+    .use(rateLimit({ limit: 10, window: '1 m' }))
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.transaction(async (tx) => {
+        // Advisory lock (ADR-004)
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(${hashBigInt(input.sessionId)})`);
+        // ... capacity check, enrollment insert
+      });
+    }),
+  cancel: protectedProcedure
+    .input(z.object({ enrollmentId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // Ownership-enforced update (IDOR prevention)
+      const [updated] = await ctx.db.update(enrollments)
+        .set({ status: 'cancelled', cancelledAt: new Date() })
+        .where(and(eq(enrollments.id, input.enrollmentId), eq(enrollments.memberId, ctx.session!.user.memberId!)))
+        .returning();
+      if (!updated) throw new TRPCError({ code: 'NOT_FOUND' });
+      await ctx.jobs.trigger('waitlist.promote', { sessionId: updated.sessionId });
+      return updated;
+    }),
+});
+```
+
+#### Root router + barrel export
+
+```typescript
+// packages/api/src/root.ts
+export const appRouter = router({
+  schedule: scheduleRouter, classes: classesRouter, /* ... 8 more */
+});
+export type AppRouter = typeof appRouter;
+
+// packages/api/src/index.ts (barrel)
+export { appRouter, type AppRouter, createContext, router, publicProcedure, protectedProcedure, staffProcedure, ownerProcedure, rateLimit } from '.';
+```
+
+#### Web integration (HTTP handler + RSC caller + React client)
+
+```typescript
+// apps/web/src/app/api/trpc/[trpc]/route.ts — HTTP handler
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+const handler = (req: Request) => fetchRequestHandler({
+  endpoint: '/api/trpc', req, router: appRouter, createContext,
+  // exactOptionalPropertyTypes: spread-conditional (NOT ternary with undefined)
+  ...(process.env.NODE_ENV === 'development' ? { onError: ({ path, error }) => console.error(...) } : {}),
+});
+export { handler as GET, handler as POST };
+
+// apps/web/src/lib/trpc/server.ts — RSC caller (zero HTTP round-trip)
+import 'server-only';
+export async function apiCaller() {
+  const ctx = await createContext({ req: new Request('http://localhost', { headers: await headers() }) });
+  return appRouter.createCaller(ctx);
+}
+
+// apps/web/src/lib/trpc/client.tsx — React client
+'use client';
+export const trpc = createTRPCReact<AppRouter>();
+export function TRPCProvider({ children }) { /* tRPC + React Query setup */ }
+```
+
+#### Phase 7+ stub pattern
+
+```typescript
+// For procedures that depend on Stripe (Phase 7) or Trigger.dev (Phase 8)
+subscribe: protectedProcedure
+  .input(z.object({ planId: z.string().uuid() }))
+  .mutation(async () => {
+    throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Stripe integration pending Phase 7' });
+  }),
+```
+
+#### Test pattern (mock ctx + mock rateLimit)
+
+```typescript
+// Mock rateLimit as no-op middleware
+vi.mock('../middleware/rateLimit', () => ({
+  rateLimit: () => async ({ next }: { next: () => Promise<unknown> }) => next(),
+}));
+// Mock Drizzle chains: update().set().where().returning() (NOT update().set({ returning }))
+const returning = vi.fn().mockResolvedValue([updated]);
+const where = vi.fn().mockReturnValue({ returning });
+const set = vi.fn().mockReturnValue({ where });
+const update = vi.fn().mockReturnValue({ set });
+```
+
+**Key takeaways:**
+1. **Middleware factory**: Use `t.middleware()` — NOT raw functions; call `next({ ctx })`
+2. **Zod v4 UUIDs**: Use valid v4 format (variant 8/9/a/b) in all test fixtures
+3. **Drizzle relational types**: Cast for nested `with` fields (v0.45 limitation)
+4. **Mock chains**: Mirror the full Drizzle builder API (update→set→where→returning)
+5. **exactOptionalPropertyTypes**: Spread-conditional for optional props
+6. **Phase 7+ stubs**: `PRECONDITION_FAILED` for unimplemented integrations
+7. **Advisory lock**: `pg_advisory_xact_lock` inside transaction for booking (ADR-004)
+
+**Source:** Phase 3 implementation (Cycles 0-12), `packages/api/src/`, `apps/web/src/lib/trpc/`, `apps/web/src/app/api/trpc/`. See Lessons 36-41.
+
 ---
 
 ## §16. Coding Anti-Patterns
@@ -5754,6 +6031,22 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 **Next audit:** After Phase 1 (Database Schema, Drizzle Migrations, Seed Data) completes.
 
+### v1.7.0 (2026-07-07) — Phase 3 Complete + tRPC Patterns/Lessons
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| Phase 3 complete: 10 tRPC routers (~30 procedures), 4 access tiers, advisory lock, rate limiting, web integration | — | ✅ Phase 3 IMPLEMENT complete — 6 TDD cycles, 19 files (F3-01 to F3-19), 326 tests (104 api + 102 auth + 107 db + 13 web) |
+| tRPC middleware must use `t.middleware()` factory — NOT raw function | High | ✅ Documented — Lesson 36, §9.11 anti-pattern, `CLAUDE.md` Gotcha 25, `AGENTS.md` Gotcha 21 |
+| Zod v4 `z.string().uuid()` is strict — test UUIDs must use valid v4 format (variant 8/9/a/b) | High | ✅ Documented — Lesson 37, §13.2 pitfall, `CLAUDE.md` Gotcha 26, `AGENTS.md` Gotcha 22 |
+| Drizzle relational query types infer as `never` without `defineRelations()` | Medium | ✅ Documented — Lesson 38, §9.11 anti-pattern, `CLAUDE.md` Gotcha 27 |
+| Drizzle mock chains must include `.where()` between `.set()` and `.returning()` | Medium | ✅ Documented — Lesson 39, §9.11 anti-pattern, `CLAUDE.md` Gotcha 28 |
+| `exactOptionalPropertyTypes` — optional `onError` needs spread-conditional | Medium | ✅ Documented — Lesson 40, §13.2 pitfall, `CLAUDE.md` Gotcha 29, `AGENTS.md` Gotcha 23 |
+| Phase 7+ stubs: `PRECONDITION_FAILED` for unimplemented Stripe/Trigger.dev integrations | — | ✅ Documented — Lesson 41, §15.16 pattern |
+| §15.16 Pattern: tRPC Router + Context + Rate Limiting + Web Integration (consolidated) | — | ✅ Added — canonical reference for all future tRPC work |
+| §9.11 tRPC v11 Anti-Patterns (new subsection) | — | ✅ Added — 3 bugs documented (middleware factory, relational types, mock chains) |
+
+**Trigger:** Phase 3 (tRPC v11 Routers) implementation complete. 6 TDD cycles produced 19 files, 326 tests. 5 new gotchas (25-29) added to `CLAUDE.md`; 3 new gotchas (21-23) added to `AGENTS.md`. This SKILL update distills the Phase 3 lessons into 6 new Lessons (36-41), 3 new pitfalls (§13.2), 3 new anti-patterns (§9.11), and 1 new consolidated coding pattern (§15.16). `pnpm check-types` 16/16 green, `pnpm lint` 2/2 green, `pnpm test` 326/326 green.
+
 ### v1.6.0 (2026-07-07) — Phase 2 Complete + Better Auth Patterns/Lessons
 
 | Finding | Severity | Status |
@@ -5913,4 +6206,4 @@ Alerts:
 
 ---
 
-*End of `stillwater_SKILL.md` v1.6.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 implementation lessons (Lessons 1-35) distilled from actual TDD cycles. For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+*End of `stillwater_SKILL.md` v1.7.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 implementation lessons (Lessons 1-41) distilled from actual TDD cycles. For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*

@@ -247,17 +247,30 @@ MEP F2-01's `session.sessionData` API doesn't exist in v1.6.23. Use `customSessi
 
 Add `vi.mock('server-only', () => ({}))` at the top of any test file that imports a module with `import 'server-only'`. See `CLAUDE.md` Gotcha 24.
 
+### 21. tRPC middleware must use `t.middleware()` factory (Phase 3)
+
+Rate-limit middleware written as a raw function fails with "No result from middlewares". Use `middleware` from `trpc.ts` and call `next({ ctx })`. See `CLAUDE.md` Gotcha 25.
+
+### 22. Zod v4 UUID validation is strict — use valid v4 format (Phase 3)
+
+Test UUIDs must have version digit `4` and variant `8/9/a/b` in the 4th group. `11111111-1111-1111-1111-111111111111` is INVALID. Use `11111111-1111-4111-8111-111111111111`. See `CLAUDE.md` Gotcha 26.
+
+### 23. `exactOptionalPropertyTypes` — spread-conditional for optional props (Phase 3)
+
+Don't pass `undefined` to optional properties (e.g., tRPC `onError`). Use `...(cond ? { prop: fn } : {})` instead. See `CLAUDE.md` Gotcha 29.
+
 ---
 
 ## Phase status (as of 2026-07-07)
 
 | Phase | Status | Notes |
 |---|---|---|
-| 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. `pnpm install` / `check-types` / `lint` green. |
-| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migration `0000_chemical_obadiah_stane.sql`. 107 db tests. |
-| 2 — Auth | ✅ Complete | Better Auth v1.6.23 (Google + Magic Link + customSession); RBAC 13×6 matrix; 2-layer auth (proxy.ts + 4 layout guards); 3 Better Auth tables (session, account, verification); `users.emailVerified` → boolean; migration `0001_supreme_sabretooth.sql`. 102 auth + 11 web tests. |
-| 3 — tRPC | ⬜ Next | F3-01…F3-14 (10 routers, ~30 procedures). |
-| 4–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
+| 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
+| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migration `0000`. 107 db tests. |
+| 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth + 11 web tests. |
+| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration (HTTP handler + RSC caller + React client + query keys). 104 api + 2 web tests. |
+| 4 — Marketing | ⬜ Next | Sanity CMS + ISR marketing pages. |
+| 5–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
 
 All 10 Open Questions in MEP §9 are ✅ RESOLVED. See `MASTER_EXECUTION_PLAN.md` §9 for decisions on Sanity hosting (Cloud), Stripe refunds (Dashboard for v1), mobile nav (Radix Dialog), test data (synthetic only), production cutover (feature-flag-gated).
 
@@ -284,7 +297,7 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ```bash
 pnpm check-types       # Must be green (16/16 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (220 tests: 102 auth + 107 db + 11 web)
+pnpm test              # Must be green (326 tests: 104 api + 102 auth + 107 db + 13 web)
 ```
 
 Integration tests (require Docker Postgres): `pnpm test:integration --filter=@stillwater/db`
@@ -298,9 +311,9 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
 3. `stillwater_SKILL.md` — distilled project skill (v1.4.1; 21 source skills condensed); authoritative tech-stack specifics
-4. `PAD.md` — Project Architecture Document (31 sections, 10 ADRs; v1.6.0); culmination of the above into codebase architecture
+4. `PAD.md` — Project Architecture Document (31 sections, 10 ADRs; v1.7.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.6.0 with Phase 2 gotchas 19–24)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.7.0 with Phase 3 gotchas 25–29)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 

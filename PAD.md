@@ -65,7 +65,7 @@ Now — implementing the full document:
 
 ---
 
-> **Document Status:** `ACTIVE — v1.6.0`
+> **Document Status:** `ACTIVE — v1.7.0`
 > **Classification:** Internal Engineering Reference
 > **Audience:** Engineers, Architects, Technical Leads, DevOps
 > **Owner:** Engineering Lead
@@ -84,6 +84,7 @@ Now — implementing the full document:
 | 1.4.0   | 2026-07-07 | Claw Code / Remediation | Active | Phase 0 complete; React Email v6 bundle warning added to §16.3 + ADR-010 context; React pin aligned to actual `^19.2.7`; documentation suite cross-checked against stillwater_SKILL.md v1.4.1 |
 | 1.5.0   | 2026-07-07 | Claw Code / Phase 1 | Active | Phase 1 complete — 14 tables, 8 enums, 5 critical indexes (§7.3) implemented via Drizzle ORM in `packages/db/src/schema/`; migration `0000_chemical_obadiah_stane.sql` generated; 91 unit tests + 7 integration tests; db client (`DrizzleDB` type) exported from `packages/db/src/index.ts` (resolves D11); `stripeCustomerId` column added to `members` table (resolves D6); 3 additional indexes beyond §7.3 (`idx_members_stripe_customer_id`, `idx_enrollments_session_member` unique, `idx_role_assignments_member_role` unique); idempotent seed script + local-only reset script |
 | 1.6.0   | 2026-07-07 | Claw Code / Phase 2 | Active | Phase 2 complete — Better Auth v1.6.23 fully configured (Google OAuth + Magic Link plugin + customSession plugin for memberId/roles enrichment); 3 Better Auth schema tables added (`session`, `account`, `verification` in `packages/db/src/schema/auth-tables.ts`); `users.emailVerified` changed from `timestamp` to `boolean` (Better Auth requirement); RBAC permission matrix (13 permissions × 6 roles) in `packages/auth/src/rbac.ts`; server-side auth helpers (`getSession`/`requireAuth`/`requireRole`) in `apps/web/src/lib/auth.ts`; 2-layer auth pattern verified (cookie-only `proxy.ts` + 4 layout guards); Better Auth route handler at `/api/auth/[...all]/route.ts`; sign-in page (Google + Magic Link) + sign-out route + error page; migration `0001_supreme_sabretooth.sql`; 220 tests (102 auth + 107 db + 11 web) |
+| 1.7.0   | 2026-07-07 | Claw Code / Phase 3 | Active | Phase 3 complete — 10 tRPC routers (~30 procedures) in `packages/api/src/routers/`; 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`; booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004; rate limiting on `bookings.book` (10/min via Upstash); root router merging all 10 routers in `packages/api/src/root.ts`; web tRPC integration (HTTP handler + RSC server caller + React client + query key factory); `pg` driver added to `packages/db` devDeps for local Postgres migrations (drizzle-kit driver selection fix); Phase 7 procedures stubbed with `PRECONDITION_FAILED`; 326 tests (104 api + 102 auth + 107 db + 13 web) |
 
 ### How to Maintain This Document
 
@@ -971,6 +972,8 @@ Rules:
 ---
 
 ## 8. API Architecture
+
+> **Implementation Status:** ✅ Phase 3 COMPLETE (2026-07-07). 10 tRPC routers (~30 procedures) implemented in `packages/api/src/routers/`. 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`. Booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004. Rate limiting on `bookings.book` (10/min via Upstash). Root router merging all 10 routers in `packages/api/src/root.ts`. Web tRPC integration: HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`). Phase 7 procedures (Stripe) stubbed with `PRECONDITION_FAILED`. 326 tests (104 api + 102 auth + 107 db + 13 web).
 
 ### 8.1 tRPC Design Principles
 

@@ -1,7 +1,7 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 1.6.0
+version: 1.7.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-07
 ---
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–2 Status**: ✅ COMPLETE (Phase 0: 2026-07-06, Phase 1: 2026-07-07, Phase 2: 2026-07-07). Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle; migration `0000_chemical_obadiah_stane.sql`. Phase 2: Better Auth v1.6.23 with Google OAuth + Magic Link + RBAC (13 permissions × 6 roles); 3 Better Auth schema tables (session, account, verification); `users.emailVerified` changed to boolean; 2-layer auth pattern (cookie-only `proxy.ts` + 4 layout guards); migration `0001_supreme_sabretooth.sql`. 220 tests (102 auth + 107 db + 11 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` all green. Phase 3–12 pending.
+**Phase 0–3 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle. Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration (HTTP handler + RSC server caller + React client + query keys). 326 tests (104 api + 102 auth + 107 db + 13 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` all green. Phase 4–12 pending.
 
 ---
 
@@ -917,6 +917,80 @@ vi.mock('server-only', () => ({}));
 ```
 This must come BEFORE the import of the module under test. The mock returns an empty module, allowing the test to proceed. The actual `server-only` guard works correctly in production (Next.js Server Component context).
 
+### Gotcha 25: tRPC middleware must use `t.middleware()` factory — not raw function (Phase 3)
+
+**Symptom:** `No result from middlewares - did you forget to return next()` when using custom rate-limit middleware.
+
+**Root cause:** The rateLimit middleware was written as a plain function `({ ctx, next }) => { ... }` instead of using tRPC's `t.middleware()` factory. tRPC v11's middleware pipeline requires the middleware to be created via the factory so it properly chains `next({ ctx })` — raw functions don't integrate with the procedure builder's type system.
+
+**Fix:** Import `middleware` from `trpc.ts` and use the factory:
+```typescript
+import { middleware } from '../trpc';
+export function rateLimit(opts) {
+  return middleware(async ({ ctx, next }) => {
+    // ... rate limit check
+    return next({ ctx });  // ← MUST pass ctx to next()
+  });
+}
+```
+
+### Gotcha 26: Zod v4 `z.string().uuid()` is strict — test UUIDs must use valid v4 format (Phase 3)
+
+**Symptom:** Zod validation fails on test UUIDs like `11111111-1111-1111-1111-111111111111` with `invalid_format` error.
+
+**Root cause:** Zod v4 enforces RFC 4122 v4 UUID format strictly — the variant digit (first character of the 4th group) must be `8`, `9`, `a`, or `b`. The UUID `11111111-1111-1111-1111-111111111111` has variant `1` which is invalid. The nil UUID (`00000000-0000-0000-0000-000000000000`) is also rejected.
+
+**Fix:** Use valid v4 UUIDs in test fixtures: `11111111-1111-4111-8111-111111111111` (version `4`, variant `8`).
+
+### Gotcha 27: Drizzle relational query types infer as `never` without `defineRelations()` (Phase 3)
+
+**Symptom:** TypeScript error `Property 'maxCapacity' does not exist on type 'never'` when accessing `session.class?.maxCapacity` after `findFirst({ with: { class: true } })`.
+
+**Root cause:** Drizzle ORM v0.45's relational query API v1 (`db.query.*`) uses `with` for eager loading, but TypeScript can't infer the nested relation types unless `defineRelations()` (v2 API, requires ≥1.0.0-beta) is called. In v0.45, the `with` clause types default to `never` for nested relations.
+
+**Fix:** Cast the result to access nested fields:
+```typescript
+const sessionData = session as {
+  overrideCapacity: number | null;
+  class: { maxCapacity: number | null } | null;
+  room: { capacity: number | null } | null;
+};
+```
+When upgrading to Drizzle ORM 1.0+, call `defineRelations()` to get proper type inference without casts.
+
+### Gotcha 28: Drizzle mock chains must include `.where()` between `.set()` and `.returning()` (Phase 3)
+
+**Symptom:** `ctx.db.update(...).set(...).where is not a function` in tests.
+
+**Root cause:** The mock chain for Drizzle's update builder was `update().set({ returning })` — missing the `.where()` step. The actual Drizzle API calls `update().set().where().returning()`, so the mock must mirror the full chain.
+
+**Fix:** Add `.where()` to the mock:
+```typescript
+const returning = vi.fn().mockResolvedValue([updated]);
+const where = vi.fn().mockReturnValue({ returning });
+const set = vi.fn().mockReturnValue({ where });
+const update = vi.fn().mockReturnValue({ set });
+```
+
+### Gotcha 29: `exactOptionalPropertyTypes` — optional `onError` needs spread-conditional (Phase 3)
+
+**Symptom:** `TS2379: Type 'undefined' is not assignable to type 'HTTPErrorHandler'` on `fetchRequestHandler({ onError: undefined })`.
+
+**Root cause:** TypeScript's `exactOptionalPropertyTypes: true` (enabled in Stillwater's tsconfig) forbids explicitly passing `undefined` to optional properties. The tRPC `fetchRequestHandler`'s `onError` is optional, but conditionally setting it to `undefined` triggers the error.
+
+**Fix:** Use a spread-conditional instead of ternary with `undefined`:
+```typescript
+fetchRequestHandler({
+  endpoint: '/api/trpc',
+  req,
+  router: appRouter,
+  createContext,
+  ...(process.env.NODE_ENV === 'development'
+    ? { onError: ({ path, error }) => { console.error(...); } }
+    : {}),
+});
+```
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -939,6 +1013,11 @@ This must come BEFORE the import of the module under test. The mock returns an e
 | `Type '"guest"' is not assignable to StudioRole` | `guest` not in `studio_role` DB enum | Use `Role` type (`StudioRole \| 'guest'`) from `rbac.ts` for permission checks. See Gotcha 23. |
 | `server-only` throws "cannot be imported from Client Component" in tests | `server-only` package throws outside Next.js server context | Mock at top of test: `vi.mock('server-only', () => ({}))`. See Gotcha 24. |
 | `z.string().email()` lint error: `email` is deprecated | Zod v4 deprecated `z.string().email()` | Use `z.email('message')` instead (Zod v4 native). |
+| `No result from middlewares - did you forget next()` (Phase 3) | Rate-limit middleware is a raw function, not tRPC middleware | Use `t.middleware()` factory from `trpc.ts`; call `next({ ctx })`. See Gotcha 25. |
+| Zod `invalid_format` on test UUIDs (Phase 3) | UUIDs like `11111111-1111-1111-1111-111111111111` are invalid v4 | Use valid v4: `11111111-1111-4111-8111-111111111111` (variant digit 8/9/a/b). See Gotcha 26. |
+| `Property 'maxCapacity' does not exist on type 'never'` (Phase 3) | Drizzle relational query types need `defineRelations()` | Cast result to access nested `with` fields. See Gotcha 27. |
+| `ctx.db.update(...).set(...).where is not a function` (Phase 3) | Mock chain missing `.where()` step | Add `where` between `set` and `returning` in mock. See Gotcha 28. |
+| `TS2379: Type 'undefined' not assignable to HTTPErrorHandler` (Phase 3) | `exactOptionalPropertyTypes` forbids `onError: undefined` | Use spread-conditional `...(cond ? { onError: fn } : {})`. See Gotcha 29. |
 | `Cannot find module '@stillwater/db'` | `.npmrc` missing `custom-conditions=@stillwater/source` | D15 fix — both `.npmrc` AND `pnpm-workspace.yaml` must declare the custom condition. |
 | `pnpm lint` crashes on `proxy.ts` with `getFilename is not a function` | ESLint v10 installed (should be v9) | Downgrade: `pnpm add -Dw eslint@^9.39.4` + `pnpm add -D -F @stillwater/eslint-config @eslint/js@^9.39.4`. See D45. |
 | `react-email` templates import from `@react-email/components` | React Email v6 unified all imports | Change to `import { Html, Button } from 'react-email'`. See D43. |
