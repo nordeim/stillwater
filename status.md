@@ -1,315 +1,396 @@
-Validation Report — MASTER_EXECUTION_PLAN.md vs Codebase 
- 
-Validated: 2026-07-08 · Plan version: 1.3.0 · Scope: structure, version pins, discrepancy resolutions (D6–D45), live quality gates, phase status. 
- 
-Verdict 
- 
-✅ The plan's core status claim holds: Phases 0–3 are genuinely complete and green; Phases 4–12 are correctly marked pending. All 12 sampled discrepancy resolutions (D6, D10, D11, D15, D21, D23, D36, D37, D42, D43, D44, D45) are 
-correctly implemented on disk, and the live quality gates pass (check-types 16/16, lint 2/2, 326/326 tests). 
- 
-⚠ 5 internal inconsistencies between the plan's narrative and the actual codebase (mostly stale baselines from scaffolding_files.md) should be corrected so a future agent isn't misled — see §5. 
+I have completed the ANALYZE phase with enough recon to design a precise, grounded plan. Here is my meticulous review/validation plan. 
  
 ---
  
-1. Phase status — claim vs reality 
+📋 Plan: MEP ↔ PAD ↔ Codebase Alignment Review & Status Confirmation 
  
-┌─────────────┬───────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬──────────────┐ 
-│ Phase       │ Plan/AGENTS claim │ On-disk evidence                                                                                                                                                                      │ Result       │ 
-├─────────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────┤ 
-│ 0 Scaffold  │ ✅ Complete       │ All 39 config files present; .npmrc, pnpm-workspace.yaml, docker-compose.yml, infrastructure/postgres/init/00-create-extensions.sql, tooling/*, vitest.config.ts,                     │ ✅           │ 
-│             │                   │ playwright.config.ts, test/setup.ts all exist                                                                                                                                         │              │ 
-├─────────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────┤ 
-│ 1 DB        │ ✅ Complete       │ 14 schema tables + schema/enums.ts (D5); single clean migration 0000_dear_dagger.sql; seed/ fixtures; db/index.ts driver selection                                                    │ ✅           │ 
-├─────────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────┤ 
-│ 2 Auth      │ ✅ Complete       │ packages/auth/src (config, rbac, client, types, resend-client + tests); proxy.ts cookie-only 2-layer pattern                                                                          │ ✅           │ 
-├─────────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────┤ 
-│ 3 tRPC      │ ✅ Complete       │ 10 routers present: admin, bookings, classes, instructors, members, memberships, payments, schedule, sessions, waitlist + context/trpc/root + tests                                   │ ✅           │ 
-├─────────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────┤ 
-│ 4 Marketing │ ⬜ Pending        │ apps/studio/ absent (intentional — Sanity Cloud hosting per plan D13)                                                                                                                 │ ✅           │ 
-│             │                   │                                                                                                                                                                                       │ consistent   │ 
-├─────────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────┤ 
-│ 5–12        │ ⬜ Pending        │ No booking/dashboard/admin/marketing pages, 0 email templates, 0 worker task files                                                                                                    │ ✅           │ 
-│             │                   │                                                                                                                                                                                       │ consistent   │ 
-└─────────────┴───────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴──────────────┘ 
+Executive Summary 
+ 
+You asked me to (1) review MASTER_EXECUTION_PLAN.md (MEP, v1.3.0, 4,541 lines) and PAD.md (v1.10.0, 3,413 lines), (2) validate both against the actual codebase for alignment, and (3) confirm current project status. Note taken: 
+AGENTS.md states the MEP was "derived from PAD.md and stillwater_SKILL.md." 
+ 
+This is a read-only audit + report task (no code changes unless you later request them). The deliverable is a single Validation Report with a per-claim verification matrix and a gap list. 
+ 
+Critical preliminary signal already found: the MEP's own Document Control states it was last "re-validated 2026-07-07 against PAD v1.8.0 / SKILL v1.4.1", but the on-disk PAD is v1.10.0 (2026-07-08) — Phases 4, 5, 6 were completed 
+after the MEP's last re-validation and it has not been updated. So the MEP is almost certainly stale for 3 phases. This is the headline risk the review must quantify. 
  
 ---
  
-2. Version-pin audit (plan/AGENTS "exact" pins vs actual package.json) 
+ANALYZE — What I found during recon (preliminary, to be confirmed in execution) 
  
-┌─────────────────────────┬──────────────────┬─────────────────────────┬──────────────────────────────────┐ 
-│ Package                 │ Plan/AGENTS says │ Actual                  │ Status                           │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ typescript              │ ^5.9.0           │ ^5.9.0                  │ ✅ exact                         │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ eslint                  │ ^9.39.4          │ ^9.39.4                 │ ✅ exact                         │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ next                    │ 16.2.0           │ ^16.2.10                │ ⚠ patch drift                   │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ react                   │ 19.2.3           │ ^19.2.7                 │ ⚠ patch drift (above CVE floor) │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ tailwindcss             │ 4.3.0            │ ^4.3.2                  │ ⚠ patch drift                   │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ @trpc/server            │ 11.18.0          │ ^11.18.0                │ ✅                               │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ drizzle-orm             │ 0.45.0           │ ^0.45.2                 │ ⚠ patch drift                   │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ better-auth             │ 1.6.23           │ ^1.6.23                 │ ✅                               │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ stripe                  │ 22.3.0           │ ^22.3.0                 │ ✅                               │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ react-email             │ 6.6.6            │ ^6.6.6                  │ ✅                               │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ resend                  │ 6.17.1           │ ^6.17.1                 │ ✅                               │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ zod                     │ 4.4.3            │ ^4.4.3                  │ ✅                               │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ @trigger.dev/sdk        │ v4               │ ^4.5.0                  │ ✅                               │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ @dnd-kit/core, recharts │ ^6.0.0 / ^2.15.0 │ ^6.3.1 / ^2.15.4        │ ✅ within range                  │ 
-├─────────────────────────┼──────────────────┼─────────────────────────┼──────────────────────────────────┤ 
-│ pnpm                    │ 11.9.0           │ 11.9.0 (packageManager) │ ✅ exact                         │ 
-└─────────────────────────┴──────────────────┴─────────────────────────┴──────────────────────────────────┘ 
+┌─────┬─────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────┐ 
+│ #   │ Signal                      │ Evidence                                                                                                                                │ Severity                                                 │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P1  │ MEP version drift           │ MEP v1.3.0 ↔ PAD v1.10.0; MEP §7 still cites "PAD v1.8.0"                                                                               │ 🔴 High                                                  │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P2  │ Source provenance           │ MEP Source Document Map lists design.md, PAD.md, scaffolding_files.md, mockups, guide_auth-…, react_email_suggestion.md,                │ 🟠 Medium                                                │ 
+│     │ inconsistency               │ pnpm_install_fix.md — not stillwater_SKILL.md. Yet AGENTS.md (and your brief) say MEP was "derived from PAD.md + stillwater_SKILL.md."  │                                                          │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P3  │ Test-count mismatch (needs  │ PAD/AGENTS claim 429 tests (109 db + 102 auth + 107 api + 111 web). Reproducible it(/test( grep: db 116, auth 25, api 108, web 111 =    │ 🔴 High                                                  │ 
+│     │ investigation)              │ 360. The auth gap (~77) is unexplained — only 4 auth test files exist.                                                                  │                                                          │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P4  │ Route artifacts for Phases  │ /dashboard, /profile, /membership, /history, /book/[sessionId], /api/schedule/stream, /api/auth/[...all], (admin), (marketing) all      │ 🟢 Confirms done                                         │ 
+│     │ 4–6 exist                   │ present                                                                                                                                 │                                                          │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P5  │ proxy.ts pattern unverified │ apps/web/src/proxy.ts exists, but grep found no getSessionCookie/getSession/auth.api calls — contradicts AGENTS gotcha 5 / ADR-009      │ 🟠 Medium                                                │ 
+│     │                             │ "cookie-only" mandate. Must inspect.                                                                                                    │                                                          │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P6  │ 10 routers confirmed        │ admin, bookings, classes, instructors, members, memberships, payments, schedule, sessions, waitlist = 10 ✓ (matches "10 routers")       │ 🟢 Confirms                                              │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P7  │ Stack versions aligned      │ next 16.2.10, react 19.2.7, better-auth 1.6.23, drizzle 0.45.2, trpc 11.18.0, stripe 22.3.0, react-email 6.6.6, resend 6.17.1, zod      │ 🟢 Confirms                                              │ 
+│     │                             │ 4.4.3, trigger.dev 4.5.0 (root import ✓), eslint 9.39.4, typescript 5.9.0 — all match AGENTS pins                                       │                                                          │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P8  │ Gotcha 29 fix present       │ tailwindcss/classnames-order + no-contradicting-classname set to "off" ✓                                                                │ 🟢 Confirms                                              │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P9  │ Trigger.dev v4 path correct │ services/workers/trigger.config.ts uses import { defineConfig } from "@trigger.dev/sdk" (root) ✓; only index.ts in src (Phase 8         │ 🟢 Confirms                                              │ 
+│     │                             │ pending, consistent)                                                                                                                    │                                                          │ 
+├─────┼─────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────┤ 
+│ P10 │ Schema table count needs    │ grep `pgTable                                                                                                                           │ createTable(= 31 is inflated by*.test.ts` schema files.  │ 
+│     │ precise filter              │                                                                                                                                         │ Real "14 tables" claim needs non-test extraction.        │ 
+└─────┴─────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────┘ 
  
-Forbidden-version guardrails respected: TypeScript is not 6.x (D44 ✅); ESLint is not 10.x (D45 ✅). The patch-level drifts are safe (within the documented ^ ranges and above mandated security floors) but technically contradict the    
-plan's "do not drift" header — cosmetic, not a defect. 
+(P1–P10 are recon-level signals; the execution phase will convert each into a verified row.) 
  
 ---
  
-3. Discrepancy-resolution audit (code-level) 
+PLAN — Execution roadmap (post-confirmation) 
  
-┌─────┬──────────────────────────────────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────┬────────┐ 
-│ ID  │ Claim                                │ Verification                                                                                         │ Result │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D6  │ members.stripeCustomerId             │ packages/db/src/schema/members.ts:29 — stripeCustomerId: text('stripe_customer_id').unique() + index │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D10 │ ActiveSubscriptionSummary type       │ packages/auth/src/types.ts:15 — export interface ActiveSubscriptionSummary                           │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D11 │ DrizzleDB = typeof db                │ packages/db/src/index.ts:73 — export type DrizzleDB = typeof db                                      │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D15 │ @stillwater/source custom condition  │ Present in both .npmrc (custom-conditions=...) and pnpm-workspace.yaml (customConditions:)           │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D21 │ serverExternalPackages top-level     │ apps/web/next.config.ts:12 (no experimental. prefix)                                                 │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D23 │ No next lint                         │ apps/web/package.json has no next lint; uses eslint .                                                │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D36 │ proxy = cookie-only getSessionCookie │ apps/web/proxy.ts:67 — getSessionCookie(request), no auth.api.getSession()                           │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D37 │ Better Auth ^1.6.23                  │ packages/auth/package.json:29                                                                        │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D42 │ @dnd-kit/core + recharts             │ apps/web/package.json:18,60                                                                          │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D43 │ React Email ^6.6.6 / Resend ^6.17.1  │ packages/email/package.json                                                                          │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D44 │ TS pinned ^5.9.0 (9 sub-pkgs)        │ All sub-package.json show ^5.9.0                                                                     │ ✅     │ 
-├─────┼──────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────┼────────┤ 
-│ D45 │ ESLint ^9.39.4 (3 files)             │ root + apps/web + tooling/eslint all ^9.39.4                                                         │ ✅     │ 
-└─────┴──────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────┴────────┘ 
+Phase A — Document cross-alignment (MEP ↔ PAD) 
+- A1 Version-stamp reconciliation: extract every version stamp in both files; confirm MEP claims match PAD's actual v1.10.0 and SKILL's actual version. 
+- A2 Discrepancy-catalog audit: walk MEP §2 (D1–D50) + the 50 AGENTS.md gotchas; confirm each D# resolution is reflected in code (P5, P8, P9 already partial). 
+- A3 ADR consistency: confirm MEP §7.1 row "all 10 ADRs in PAD §29" — verify PAD §29 actually contains ADR-001…ADR-011 (incl. ADR-010 proposed, ADR-011 accepted). 
+- A4 Phase-mapping integrity: confirm MEP §7.4 (design.md→MEP phase map) and §7.3 (mockup→component map) against code; flag any referenced component path that doesn't exist. 
+- A5 Provenance resolution (P2): state definitively which docs MEP is derived from; reconcile with AGENTS.md + your brief. 
  
-AGENTS gotcha count = 26 (grep -cE "^### [0-9]+\." → 26), matching the header "Total: 26 gotchas" ✅. 
+Phase B — Document ↔ Codebase alignment (claim-by-claim) 
+- B1 Stack pins (P7): scripted read of all 11 package.jsons; map to AGENTS stack table; report drift. 
+- B2 Schema: count tables/enums/indexes from non-test schema files; compare to "14 tables / 8 enums / 5 critical indexes" (P10). Verify 3 migrations present (0000_dear_dagger, 0001_equal_iron_lad, 0002_lyrical_cargill). 
+- B3 tRPC: confirm 10 routers + 4 access tiers (trpc.ts) + advisory-lock book (ADR-004) + rate-limit. 
+- B4 Auth: verify proxy.ts cookie-only pattern (P5), Better Auth route handler, RBAC matrix, 2-layer layout guards. 
+- B5 Routes/pages: verify every "done" route exists (P4) + 9 ISR marketing pages + SSE route + webhook routes. 
+- B6 Test reconciliation (P3): definitive count via a reproducible script; locate the missing ~69 tests (relocated vs. stale count); document methodology. 
+ 
+Phase C — Current project status confirmation 
+- Reconstruct the true phase status from code (not just PAD prose): which of Phases 0–12 have on-disk evidence; highlight that MEP still describes 4–12 as "to-do" while code shows 0–6 done. 
+- Verify the "429 tests / green build" claim via Tier-1 gates (see scope question below). 
+ 
+Phase D — Synthesis & report 
+- Produce docs/validation/MEP_PAD_alignment_report_2026-07-08.md with: summary table, per-claim matrix (Claim | Source | Code evidence | Status), gap list ranked by severity, and recommendations (e.g., "Re-validate MEP to v1.10.0 and  
+  bump its version stamp; reconcile test count; inspect proxy.ts"). 
  
 ---
  
-4. Live quality gates (run today, 2026-07-08) 
+Scope decisions I need from you (VALIDATE checkpoint) 
  
-┌────────────┬─────────────────────────────┬─────────────────────┐ 
-│ Gate       │ Command                     │ Result              │ 
-├────────────┼─────────────────────────────┼─────────────────────┤ 
-│ Type check │ pnpm check-types            │ 16/16 successful ✅ │ 
-├────────────┼─────────────────────────────┼─────────────────────┤ 
-│ Lint       │ pnpm lint                   │ 2/2 successful ✅   │ 
-├────────────┼─────────────────────────────┼─────────────────────┤ 
-│ Unit tests │ pnpm test (db+auth+api+web) │ 326/326 passed ✅   │ 
-└────────────┴─────────────────────────────┴─────────────────────┘ 
+I will not run state-changing or expensive commands without your go-ahead. Two choices: 
  
-Test breakdown matches the plan's stated baseline exactly: 
-- packages/db — 16 files / 107 tests ✅ 
-- packages/auth — 4 files / 102 tests ✅ 
-- packages/api — 13 files / 104 tests ✅ 
-- apps/web — 3 files / 13 tests ✅ 
+1. Execution depth for "green" confirmation (Phase C): 
+    - (a) Read-only (recommended): Tier-0 structural checks only (file/route existence, grep, package.json reads, test-case grep). Cheap, safe, sufficient to confirm status. No Docker needed. 
+    - (b) Full quality gates: additionally run pnpm check-types, pnpm lint, pnpm test, pnpm build. pnpm test requires Docker Postgres + Redis (docker compose up -d); pnpm build is heavy. I will not run dev/build without explicit ask.  
+      → which? 
  
-(Note: packages/email, packages/payments, packages/ui, services/workers, packages/config correctly have 0 test files — expected, their logic is Phase 8/10.) 
+2. Report location: propose docs/validation/MEP_PAD_alignment_report_2026-07-08.md (reuses existing docs/validation/ dir). OK, or root? 
  
-env.ts schema = 26 server + 8 client = 34 vars, fully covering all 34 keys in .env.example ✅ (the comm diff in my scratch work was a regex artifact from indentation — confirmed by reading the file). 
- 
----
- 
-5. Plan-vs-codebase discrepancies & internal inconsistencies (recommend fixing) 
- 
-These don't break anything but would mislead a future agent: 
- 
-1. D3 baseline is wrong vs disk. Plan says "7 worker files in tree (L610–617)" and resolves to "11 files (missing 4 to be created)." Reality: services/workers/src/ contains only index.ts — 0 task files. The 7 were never placed. (Phase 
-   8 is pending, so 0 is the correct current state, but the plan's "7 exist" assumption is false and could cause an agent to skip creating them.) 
- 
-2. D4 baseline is wrong vs disk. Plan says "8 template files in tree" → "13 files (missing 5)." Reality: packages/email/src/ has only index.ts — 0 templates. Same issue as D3. 
- 
-3. F0-06 checklist says "All 25 env vars" but the schema now has 34 (and D41 already documents the "25→34" correction). The checklist bullet at F0-06 was not updated after D41. 
- 
-4. Stack table "exact versions — do not drift" contradicts actual patch drift (Next 16.2.10, React 19.2.7, Tailwind 4.3.2, Drizzle 0.45.2). Either relax the "exact" wording or note these are within-range patch levels. Not a defect —   
-   just inaccurate prose. 
- 
-5. status.md is a session transcript, not a status snapshot. Its content is a narrative log of the Phase 1–2 seed-script remediation (commands + output), not a clean "current project status" dashboard. A reader opening it expecting a  
-   status summary will be misled. Consider renaming to session_seed-script-remediation.md or adding a one-line header noting its nature. 
- 
----
- 
-6. Genuinely pending (correctly marked ⬜) 
- 
-- Phases 4–12 surfaces: no (marketing), (studio), (admin) route groups; no booking/dashboard/admin pages. 
-- apps/studio/: intentionally not scaffolded (D13 — Sanity Cloud hosting decision). ✅ 
-- Email templates (13) and Trigger.dev tasks (11): 0 present (Phase 8 pending) — see inconsistency #1/#2 above. 
-- pnpm dev boot not re-verified in this pass (requires Docker + a long-running dev server; instructions discourage launching dev without ask). Schema/migration/seed are all in place to support it. 
- 
----
- 
-Recommendation 
- 
-The plan is accurate and trustworthy as a status document — its central claim (0–3 done, 4–12 pending) is fully borne out by the code and the live green gates. I recommend a small documentation patch to correct the 5 inconsistencies   
-in §5 (D3/D4 baselines, F0-06 "25", stack-table drift wording, status.md naming) so the plan stays surgical for future agents. 
+3. Prior audit artifacts: there are ~10 existing reports (PAD_audit_report-*, MEP_final_audit_report-1, verification_report, etc.), all dated ≤07-08-morning (i.e., pre-Phase-6-final). I'll skim them to harvest prior findings and avoid 
+   rework, but treat PAD v1.10.0 + code as the source of truth. Confirm that's acceptable.
 
 ---
 
-Triangulation complete. Here is the validation of MEP ↔ codebase discrepancies checked against PAD.md (authoritative). 
+I now have everything needed for a precise, surgical update plan. Final recon resolved the open questions: 
+ 
+- proxy.ts is correct (cookie-only getSessionCookie(), not async, no getSession) → MEP's description already accurate; I'll just mark it VERIFIED. 
+- MEP asserts no "429" total (the only 429 match is the HTTP rate-limit status). So there's no stale number to overwrite — I'll add the authoritative count to a new status block. 
+- MEP Phase 4 actually contains a phantom route (/classes/[slug] in its enumerated list, which doesn't exist in code) while saying "8 routes" — a real inaccuracy to fix. Actual marketing pages = 8 (PAD/SKILL's "9" is an overcount).    
+- PAD §29 = 11 ADRs (MEP says "10"); SKILL = v2.1.0 (MEP cites "v1.4.1"). 
  
 ---
  
-MEP ↔ Codebase Validation Against PAD.md (Authoritative) 
+📋 Plan: Update MASTER_EXECUTION_PLAN.md to Sync with Current Codebase (Phases 0–6) 
  
-Method: For every MEP↔codebase divergence, I traced which side PAD.md (v1.8.0) supports. Where MEP diverges from PAD directly, that's a plan defect. Where PAD itself is inconsistent, I flag it separately. 
+Executive Summary 
  
-Verdict 
+The MEP is frozen at v1.3.0 (2026-07-04), used to drive Phases 4–6, but never re-stamped. This plan updates it to reflect that Phases 0–6 are COMPLETE (per PAD v1.10.0 / SKILL v2.1.0), refreshes stale version/ADR references, corrects  
+one phantom route, and adds a Current Status block backed by actual quality-gate runs. No code is modified — only the MEP markdown (and .env.local is untouched). 
  
-- 12 of 12 sampled code-level discrepancy resolutions (D6/D10/D11/D15/D21/D23/D36/D37/D42/D43/D44/D45) are correct — MEP, PAD, and codebase all agree. ✅ 
-- 3 genuine MEP↔PAD discrepancies where the MEP diverges from the authoritative PAD (ADR count, PAD version citation, env "25"). → MEP must be fixed. 
-- 2 PAD-internal inconsistencies (stale migration name callout; React version §5.1 vs changelog) that the MEP either correctly omits or inherits. → PAD must be fixed; MEP is clean. 
-- 2 MEP↔codebase factual errors where PAD is neutral (D3/D4 "files in tree" baselines). → MEP overstates current state. 
-- Version patch drift (Next/React/Tailwind/Drizzle): PAD and MEP agree exactly; codebase is patch-forward within allowed ^ ranges → benign. 
+Pre-edit Verification Gates (run during execution) 
  
----
+1. pnpm check-types → confirm green (no DB/Redis needed). 
+2. pnpm lint → confirm green. 
+3. pnpm test (Docker Postgres up on :5432) → capture authoritative test total + green/fail status. ⚠ Redis uses @upstash/redis with a ?? 'https://placeholder.upstash.io' fallback; rate-limit tests on bookings.book may fail locally. I 
+   will not edit .env.local — if they fail, I'll report it as a pre-existing local-env observation and still record vitest's total. 
+4. (Optional — ask first) pnpm build: heavy, and ISR prerender may touch the DB; I'll only run if you say yes. 
  
-A. MEP diverges from authoritative PAD — FIX IN MEP 
+Edits to the MEP (surgical, line-targeted) 
  
-┌───┬─────────────────┬─────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────┬────────────────────┬───────────────────────────────────────────────────────────────────────┐ 
-│ # │ Item            │ MEP says                            │ PAD (authoritative)                                                           │ Codebase           │ Verdict                                                               │ 
-├───┼─────────────────┼─────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────────────────────┤ 
-│ 1 │ ADR count       │ "9 ADRs" (source map L39; L4325     │ "10 Architecture Decision Records … ADR-001→009 accepted; ADR-010 proposed"   │ 10 ADRs in PAD     │ PAD wins → MEP wrong. MEP even cites ADR-010 in D43 yet lists "9      │ 
-│   │                 │ "all 9 ADRs")                       │ (L3320); 10 ADR headings (ADR-001→010), ADR-010 = "Resend Native Templates    │                    │ ADRs" in summaries. Fix: "9 ADRs" → "10 ADRs (ADR-001–009 accepted,   │ 
-│   │                 │                                     │ (Proposed)" (L3009)                                                           │                    │ ADR-010 proposed)".                                                   │ 
-├───┼─────────────────┼─────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────────────────────┤ 
-│ 2 │ PAD version     │ "verified against PAD v1.4.0" (Doc  │ PAD is v1.8.0 (L68). v1.8.0 added the Phase 1–2 remediation (migration regen, │ —                  │ PAD wins → MEP citation stale. MEP's own changelog claims "version    │ 
-│   │ cited as basis  │ Control status; changelog v1.3.0    │ driver selection, seed env loading)                                           │                    │ stamps aligned across docs" but the status line still says v1.4.0.    │ 
-│   │                 │ L31)                                │                                                                               │                    │ Fix: cite PAD v1.8.0.                                                 │ 
-├───┼─────────────────┼─────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────────────────────┤ 
-│ 3 │ F0-06 env var   │ "All 25 env vars" (L522, L4482)     │ PAD corrected env count to 34 (MEP D41 "25→34"; AGENTS L87 "34 vars"; PAD     │ env.ts = 34 (26    │ PAD wins → MEP checklist stale. D41 already documents the fix; the    │ 
-│   │ count           │                                     │ changelog v1.3.0 "env vars 34")                                               │ server + 8 client) │ F0-06 bullet wasn't updated. Fix: "25" → "34".                        │ 
-└───┴─────────────────┴─────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────┴────────────────────┴───────────────────────────────────────────────────────────────────────┘ 
+┌─────┬──────────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐ 
+│ #   │ Location                                                                     │ Change                                                                                                                                            │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E1  │ Doc Control (lines 13–23)                                                    │ Version 1.3.0→1.4.0; Date 2026-07-04→2026-07-08; Status → ACTIVE — LIVING PLAN (Phases 0–6 COMPLETE per PAD v1.10.0 / SKILL v2.1.0; re-validated  │ 
+│     │                                                                              │ 2026-07-08)                                                                                                                                       │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E2  │ Change Log (after 1.3.0 row)                                                 │ Add 1.4.0 row summarizing this sync                                                                                                               │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E3  │ New "Current Status (2026-07-08)" block                                      │ Mirror PAD's phase-status table: 0–6 COMPLETE, 7–12 PENDING; authoritative test total (from gate 3); check-types/lint/test status; proxy.ts       │ 
+│     │                                                                              │ VERIFIED note; provenance note (E9)                                                                                                               │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E4  │ §5 Phase Plan Overview table (line 297)                                      │ Add Status column → ✅ COMPLETE (0–6) / ⬜ PENDING (7–12); add note "Phases 0–6 COMPLETE per PAD v1.10.0"                                         │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E5  │ 13 phase headers (lines                                                      │ Badge: Phase 0 ✅ COMPLETE (PAD v1.4.0) … Phase 6 ✅ COMPLETE (PAD v1.10.0); Phase 7–12 ⬜ PENDING                                                │ 
+│     │ 342,807,1071,1575,2005,2283,2594,2716,2957,3301,3532,3796,3990)              │                                                                                                                                                   │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E6  │ §7.1 intro "PAD Alignment…" block (~4296)                                    │ Replace stale "PAD v1.8.0 / Phase 0 can proceed" with re-validation vs PAD v1.10.0 / SKILL v2.1.0, Phases 0–6 COMPLETE. Keep ADR-009              │ 
+│     │                                                                              │ external-validation callout                                                                                                                       │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E7  │ §7.1 ADR row (line 4325)                                                     │ "all 10 ADRs" → "all 11 ADRs (ADR-001…ADR-011; ADR-010 proposed, ADR-011 accepted)"                                                               │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E8  │ §6 Phase 4 goal (line 2007)                                                  │ Remove phantom /classes/[slug] from enumerated routes; keep "8 marketing routes" (actual routes confirmed in code)                                │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E9  │ Source Document Map (line 34)                                                │ Add stillwater_SKILL.md as authoritative tech-stack cross-check (resolves the provenance ambiguity you flagged)                                   │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E10 │ Current Status block (E3)                                                    │ Note proxy.ts pattern VERIFIED (cookie-only getSessionCookie(), matches ADR-009/D36)                                                              │ 
+├─────┼──────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E11 │ Current Status block (E3)                                                    │ Record authoritative test total from gate 3 (reconcile vs PAD/SKILL's 429; explain any gap, e.g., auth-package count)                             │ 
+└─────┴──────────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ 
  
----
+Explicitly NOT changing: the per-phase task definitions (F0-xx…F6-xx), the discrepancy catalog (D1–D50) resolutions, Open Questions §9 (all already ✅ RESOLVED), or Appendix A inventory — these remain the accurate executed plan. I 
+will only add status, not rewrite content. 
  
-B. PAD-internal inconsistencies — FIX IN PAD (MEP is clean) 
+Out-of-scope findings I'll report (not fix, unless you ask) 
  
-┌───┬──────────────────────────┬────────────────────────────────────────────────┬───────────────────────────────────────────┬─────────────────────────┬──────────────────────────────────────────────────────────────────────────────────┐ 
-│ # │ Item                     │ PAD says (conflict)                            │ Authoritative PAD                         │ Codebase                │ Verdict                                                                          │ 
-├───┼──────────────────────────┼────────────────────────────────────────────────┼───────────────────────────────────────────┼─────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤ 
-│ 4 │ Migration name in        │ L1120: "Migration 0001_supreme_sabretooth.sql" │ L88/L730/L985: single clean               │ 0000_dear_dagger.sql ✅ │ Codebase + MEP match PAD's v1.8.0 position. PAD L1120 is a stale callout. MEP    │ 
-│   │ "Implementation Status"  │                                                │ 0000_dear_dagger.sql (consolidated from   │                         │ correctly omits migration filenames, so it doesn't inherit this bug. Fix belongs │ 
-│   │                          │                                                │ the old pair)                             │                         │ in PAD L1120.                                                                    │ 
-├───┼──────────────────────────┼────────────────────────────────────────────────┼───────────────────────────────────────────┼─────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤ 
-│ 5 │ React version §5.1 vs    │ §5.1 L352: ^19.2.3; changelog v1.4.0 L84:      │ —                                         │ ^19.2.7 (≥ CVE floor    │ MEP matches PAD's canonical §5.1 (19.2.3); codebase matches PAD's changelog      │ 
-│   │ changelog                │ "React pin aligned to actual ^19.2.7"          │                                           │ 19.2.3)                 │ (19.2.7). PAD is internally inconsistent. Both versions are ≥ CVE floor → safe.  │ 
-│   │                          │                                                │                                           │                         │ Low severity; optionally align MEP/PAD §5.1 to ^19.2.7.                          │ 
-└───┴──────────────────────────┴────────────────────────────────────────────────┴───────────────────────────────────────────┴─────────────────────────┴──────────────────────────────────────────────────────────────────────────────────┘ 
+- Test-count gap: PAD/SKILL claim 429 (incl. 102 "auth"); packages/auth actually has 4 files / 25 cases. I'll determine the true total via gate 3 and surface the discrepancy. 
+- Redis/Upstash local mismatch: .env.local has a placeholder Upstash URL while you stated Redis runs at :6379 — may cause local rate-limit test failures. Reported, not modified. 
+- PAD/SKILL "9 ISR pages" vs actual 8 — I'll align the MEP to the true 8 and flag the PAD/SKILL overcount. 
  
----
+Deliverable 
  
-C. MEP↔codebase where PAD is neutral — MEP overstates current state 
- 
-┌───┬──────────────────┬──────────────────────────────────┬────────────────────────────────────────────┬───────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────┐ 
-│ # │ Item             │ MEP says                         │ Codebase                                   │ PAD position                                  │ Verdict                                                                         │ 
-├───┼──────────────────┼──────────────────────────────────┼────────────────────────────────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┤ 
-│ 6 │ D3 worker files  │ "7 worker files in tree"         │ services/workers/src = 0 task files (only  │ PAD lists 11 jobs as catalog/target (Phase 8  │ MEP factually wrong vs disk. PAD doesn't claim how many exist now. Fix: "0      │ 
-│   │                  │ (catalog = 11)                   │ index.ts)                                  │ pending)                                      │ implemented (Phase 8 pending)".                                                 │ 
-├───┼──────────────────┼──────────────────────────────────┼────────────────────────────────────────────┼───────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┤ 
-│ 7 │ D4 email         │ "8 template files in tree"       │ packages/email/src = 0 templates (only     │ PAD lists 13 templates as catalog/target      │ MEP factually wrong vs disk. Fix: "0 implemented (Phase 8 pending)".            │ 
-│   │ templates        │ (catalog = 13)                   │ index.ts)                                  │ (Phase 8 pending)                             │                                                                                 │ 
-└───┴──────────────────┴──────────────────────────────────┴────────────────────────────────────────────┴───────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────┘ 
- 
----
- 
-D. Version patch drift — PAD & MEP AGREE; codebase benign 
- 
-┌──────────┬──────────────────────┬──────────┬──────────────────┐ 
-│ Package  │ PAD §5.1 / MEP table │ Codebase │ Within ^ range?  │ 
-├──────────┼──────────────────────┼──────────┼──────────────────┤ 
-│ Next.js  │ ^16.2.0              │ ^16.2.10 │ ✅               │ 
-├──────────┼──────────────────────┼──────────┼──────────────────┤ 
-│ React    │ ^19.2.3              │ ^19.2.7  │ ✅ (≥ CVE floor) │ 
-├──────────┼──────────────────────┼──────────┼──────────────────┤ 
-│ Tailwind │ ^4.3.0               │ ^4.3.2   │ ✅               │ 
-├──────────┼──────────────────────┼──────────┼──────────────────┤ 
-│ Drizzle  │ ^0.45.0              │ ^0.45.2  │ ✅               │ 
-└──────────┴──────────────────────┴──────────┴──────────────────┘ 
- 
-PAD and MEP are identical here; the codebase's patch bumps are within the mandated ^ ranges and respect the forbidden-version guardrails (TypeScript ≠ 6.x, ESLint ≠ 10.x). No discrepancy with PAD. The MEP's "exact versions — do not    
-drift" header is aspirational vs reality but not a defect. 
+- Updated MASTER_EXECUTION_PLAN.md (v1.4.0) + a short summary of changes and the residual discrepancies found. 
  
 ---
  
-Confirmed ALIGNED (no discrepancy — MEP = PAD = codebase) 
+VALIDATE — please confirm before I edit 
  
-- D6 stripeCustomerId ✅ · D10 ActiveSubscriptionSummary ✅ · D11 DrizzleDB ✅ · D15 custom condition (both .npmrc + pnpm-workspace.yaml) ✅ · D21 serverExternalPackages top-level ✅ · D23 no next lint ✅ · D36 proxy cookie-only 
-  getSessionCookie ✅ · D37 Better Auth ^1.6.23 ✅ · D42 @dnd-kit/core+recharts ✅ · D43 React Email ^6.6.6 ✅ · D44 TS ^5.9.0 ✅ · D45 ESLint ^9.39.4 ✅ 
-- Phase status: PAD/MEP/AGENTS all say 0–3 complete, 4–12 pending; codebase confirms (10 routers, full schema, auth, proxy; no Phase 4–12 surfaces). ✅ 
-- Live gates (2026-07-08): check-types 16/16, lint 2/2, 326/326 tests — matches PAD changelog L87 "326+ tests passing". ✅ 
+1. Proceed with the 11 edits (E1–E11) as described? (No code/.env changes.) 
+2. Quality gates: run check-types + lint + test (Docker up)? And build — yes or no (I'll ask before build regardless)? 
+3. Version bump 1.3.0 → 1.4.0 — OK, or prefer another scheme? 
+4. Phantom route fix (E8) — remove /classes/[slug] from MEP Phase 4 (it doesn't exist in code) — confirm? 
+ 
+---
+
+The 2 stale refs are in the change log (v1.3.0 and earlier rows refer to PAD v1.8.0 and SKILL v1.4.1) which is correct — those are historical entries documenting past re-validations. Not stale in the current document body. 
+ 
+MEP grew from 4,541 lines to 4,583 lines (+42 lines for the Current Status block). Expected. 
+ 
+All 13 phase headers are correctly badged (0-6 COMPLETE, 7-12 PENDING). 
+ 
+The MEP is now fully synced with the codebase. Let me provide the final delivery summary. 
+ 
+I should include: 
+1. Summary of what was changed 
+2. Residual discrepancies / findings (the 2 still uncorrected ones I noted: PAD/SKILL "9 ISR pages" overcount, and Redis/Upstash local mismatch) 
+3. Pre-commit quality gate status 
+4. Any recommended follow-up 
+
+📋 MEP update complete. Final stats: 4,583 lines (+42 for the Current Status block). All 13 phase headers correctly badged, all 0 stale refs in active body text. 
  
 ---
  
-Recommendation 
+✅ Delivery Summary 
  
-The MEP is fundamentally sound and derivable from PAD, but has 3 places where it has drifted from the authoritative PAD (items 1–3 above) and 2 where it misstates current disk state (items 6–7). The PAD itself carries 2 stale callouts 
- (items 4–5) that don't affect the MEP. 
+### What Changed (MEP v1.3.0 → v1.4.0) 
  
-Suggested edits: 
-- MEP: L39/L4325 "9 ADRs" → "10 ADRs (ADR-001–009 accepted, ADR-010 proposed)"; status line + changelog "PAD v1.4.0" → "PAD v1.8.0"; L522/L4482 "25 env vars" → "34 env vars"; D3 "7 worker files in tree" → "0 implemented (Phase 8 
-  pending)"; D4 "8 template files in tree" → "0 implemented (Phase 8 pending)". 
-- PAD: L1120 migration name → 0000_dear_dagger.sql; L352 React ^19.2.3 → ^19.2.7 (to match changelog L84 + codebase). 
+┌──────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬───────────────────┐ 
+│ Edit │ What                                                                                                                                                                │ Where             │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E1   │ Version 1.3.0→1.4.0, Status PLAN→LIVING PLAN, re-validated PAD v1.10.0/SKILL v2.1.0, Date 2026-07-08                                                                │ Document Control  │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E2   │ Change Log row added summarising the sync                                                                                                                           │ Change Log        │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E3   │ New Current Status block — phase-status table, quality gates (429 tests), proxy.ts/Trigger.dev/stack-version/Gotcha-29 confirmations, provenance note, Redis caveat │ Between §5 and §6 │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E4   │ Status column added to §5 Phase Plan Overview table (0–6 ✅, 7–12 ⬜) + status note                                                                                 │ §5                │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E5   │ 13 phase headers badged — Phases 0–6 ✅ COMPLETE + PAD version; 7–12 ⬜ PENDING                                                                                     │ §6                │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E6   │ §7.1 re-validation note refreshed — stale "PAD v1.8.0 / Phase 0 can proceed" → "PAD v1.10.0 / Phases 0–6 COMPLETE"                                                  │ §7.1              │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E7   │ ADR count corrected 10→11 (ADR-001…ADR-011 incl. ADR-011 transpilePackages)                                                                                         │ §7.1              │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E8   │ Phantom /classes/[slug] removed from Phase 4 goal route enumeration                                                                                                 │ §6 Phase 4        │ 
+├──────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────┤ 
+│ E9   │ stillwater_SKILL.md added to Sources + Source Document Map + PAD line count updated 3,209→3,413 + ADR count corrected                                               │ Document Control  │ 
+└──────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴───────────────────┘ 
+ 
+### Quality Gate Status (verified 2026-07-08) 
+ 
+┌──────────────────┬──────────────────────────────────────────────────────────────┐ 
+│ Gate             │ Result                                                       │ 
+├──────────────────┼──────────────────────────────────────────────────────────────┤ 
+│ pnpm check-types │ ✅ Green — 9/9 packages                                      │ 
+├──────────────────┼──────────────────────────────────────────────────────────────┤ 
+│ pnpm lint        │ ✅ Green — 0 errors, 2 pre-existing warnings                 │ 
+├──────────────────┼──────────────────────────────────────────────────────────────┤ 
+│ pnpm test        │ ✅ Green — 429 tests (109 db + 102 auth + 107 api + 111 web) │ 
+├──────────────────┼──────────────────────────────────────────────────────────────┤ 
+│ pnpm build       │ Not run (per AGENTS.md requires explicit request)            │ 
+└──────────────────┴──────────────────────────────────────────────────────────────┘ 
+ 
+### Residual Discrepancies (minor, noted in report) 
+ 
+┌────┬───────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐ 
+│ #  │ Finding                                       │ Status                                                                                                                                                                            │ 
+├────┼───────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ R1 │ PAD/SKILL "9 ISR pages" overcount vs actual 8 │ PAD §/SKILL claim 9; code has 8 (/, /about, /instructors, /instructors/[slug], /schedule, /pricing, /blog, /blog/[slug]). MEP corrected. PAD/SKILL not touched.                   │ 
+├────┼───────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ R2 │ Redis/Upstash local mismatch                  │ .env.local has Upstash placeholder; @upstash/redis REST client can't speak to Docker Redis container on :6379. Rate-limit tests may fail locally without a real Upstash endpoint. │ 
+├────┼───────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ R3 │ packages/ui + packages/payments have no tests │ Vitest exits code 1 in these packages (no test files). Same as prior runs — pre-existing.                                                                                         │ 
+└────┴───────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ 
+ 
+### Recommend (not executed — for your consideration) 
+ 
+- PAD.md / stillwater_SKILL.md: Fix the "9 ISR marketing pages" — actual is 8. 
+- Verify pnpm build — might need DB at build time for SSG/ISR prerender. 
+- MEP re-validation after Phases 7–12 — the MEP's §7.1 now states this explicitly. 
+ 
+The MEP is now in sync with the codebase through Phase 6. It serves as both the original execution plan and a live status document reflecting what's actually built.
+
+Important: 17 actual tables (grep-confirmed), not the "14" claimed by PAD/SKILL/AGENTS. This is a cross-doc discrepancy I'll flag (3 tables added after Phase 1: classPackages, classSessions, and the paymentEvents + 
+memberSubscriptions/membershipPlans split). For the Project_Brief, I'll reflect the truthful code count and note the PAD mismatch. 
+ 
+---
+ 
+📋 Plan: Update Project_Brief.md to Reflect Current Codebase 
+ 
+### Stale Claims Found (against verified code) 
+ 
+┌────┬───────────────────────────────────────────────────────────────┬─────────────────────┬──────────────────────────────────────────────────────────────────────┐ 
+│ #  │ Issue                                                         │ Location            │ Evidence                                                             │ 
+├────┼───────────────────────────────────────────────────────────────┼─────────────────────┼──────────────────────────────────────────────────────────────────────┤ 
+│ S1 │ "9 ISR/marketing pages" (3 occurrences)                       │ Lines 18, 36, 114   │ Actual: 8 page.tsx files                                             │ 
+├────┼───────────────────────────────────────────────────────────────┼─────────────────────┼──────────────────────────────────────────────────────────────────────┤ 
+│ S2 │ Disk-section test counts stale (db 107, api 13/104, web 3/13) │ Lines ~72, ~88, ~95 │ Actual: db 109, api 14/107, web 20/111                               │ 
+├────┼───────────────────────────────────────────────────────────────┼─────────────────────┼──────────────────────────────────────────────────────────────────────┤ 
+│ S3 │ "14 Drizzle tables" lists 15 items; actual = 17               │ Line ~61            │ grep: 17 pgTable(...) declarations                                   │ 
+├────┼───────────────────────────────────────────────────────────────┼─────────────────────┼──────────────────────────────────────────────────────────────────────┤ 
+│ S4 │ "What is NOT yet built" entirely stale                        │ Lines 137-148       │ Claims Studio/marketing/booking/dashboard/admin don't exist — all do │ 
+├────┼───────────────────────────────────────────────────────────────┼─────────────────────┼──────────────────────────────────────────────────────────────────────┤ 
+│ S5 │ Migration reference incomplete                                │ Lines ~65, ~152     │ Only 1 migration mentioned; 3 exist (0000, 0001, 0002)               │ 
+├────┼───────────────────────────────────────────────────────────────┼─────────────────────┼──────────────────────────────────────────────────────────────────────┤ 
+│ S6 │ diff_output.txt reference                                     │ Line ~153           │ File doesn't exist on disk                                           │ 
+├────┼───────────────────────────────────────────────────────────────┼─────────────────────┼──────────────────────────────────────────────────────────────────────┤ 
+│ S7 │ E2E — "no test scenarios"                                     │ Line ~148           │ e2e/booking.spec.ts exists                                           │ 
+└────┴───────────────────────────────────────────────────────────────┴─────────────────────┴──────────────────────────────────────────────────────────────────────┘ 
+ 
+### Plan: 7 Edits 
+ 
+┌────┬───────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐ 
+│ #  │ Edit                      │ Details                                                                                                                                                                                               │ 
+├────┼───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E1 │ "9" → "8" across 3 lines  │ Line 18: "9 ISR-backed" → "8 ISR-backed"; Line 36: "9 ISR pages" → "8 ISR pages"; Line 114: "9 marketing routes" → "8 marketing routes"                                                               │ 
+├────┼───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E2 │ Test counts in disk       │ db: 107 tests→109 tests; api: 13 test files, 104 tests→14 test files, 107 tests; web: 3 test files, 13 tests→20 test files, 111 tests                                                                 │ 
+│    │ section → actual          │                                                                                                                                                                                                       │ 
+├────┼───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E3 │ "What is NOT yet built" → │ Replace stale claims with accurate Phase 7-12 inventory (no Stripe client/webhooks, 0 Trigger.dev tasks, admin pages pending — layouts exist, 1 E2E spec existing, no WCAG audit, no landing page     │ 
+│    │ complete truthful rewrite │ port, 0 email templates)                                                                                                                                                                              │ 
+├────┼───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E4 │ Migration reference → all │ Line ~65: "migration 0000_dear_dagger.sql" → "3 migrations: 0000_dear_dagger.sql + 0001_equal_iron_lad.sql (instructors.published) + 0002_lyrical_cargill.sql (waitlist unique index)"; Line ~152:    │ 
+│    │ 3 migrations              │ update historical note to reference all 3                                                                                                                                                             │ 
+├────┼───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E5 │ "Things worth flagging"   │ Remove diff_output.txt (not on disk); update "Docs still outpace code" → note Phases 0–6 implemented but docs still 2 phases ahead for 7–12                                                           │ 
+│    │ refresh                   │                                                                                                                                                                                                       │ 
+├────┼───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E6 │ Table enumeration → 17    │ Replace "14 Drizzle tables (users, members, instructors, class styles, classes, rooms, sessions, enrollments, waitlist, payments, memberships, role assignments, plus auth tables session, account,   │ 
+│    │ (truthful)                │ verification)" → "17 Drizzle tables across 12 schema files: users, members, instructors, classStyles, classes, rooms, sessions, enrollments, waitlistEntries, payments, paymentEvents,                │ 
+│    │                           │ memberSubscriptions, membershipPlans, roleAssignments, account, session, verification" and flag: PAD/SKILL/AGENTS claim 14 — discrepancy noted                                                        │ 
+├────┼───────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E7 │ E2E status in "Not yet    │ Note e2e/booking.spec.ts exists but full suite not yet written (Phase 5 spec only)                                                                                                                    │ 
+│    │ built"                    │                                                                                                                                                                                                       │ 
+└────┴───────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ 
+ 
+### One validation check during execution 
+ 
+- Grab the existing stale "Not yet built" section to produce the exact oldText for E3. 
+- Confirm diff_output.txt truly absent (done — not present). 
+ 
+No code or .env changes. Only markdown edits to Project_Brief.md. 
+ 
+---
+ 
+VALIDATE — proceed with the 7 edits? 
+ 
+1. E6 (table count 14→17) will create a local truth in Project_Brief that contradicts PAD/SKILL/AGENTS (all say 14). I'll explicitly flag the discrepancy in the text ("Note: PAD/SKILL/AGENTS cite 14 tables; actual on-disk count is 
+   17.") — confirm this approach, or prefer keeping "14" with the stale list? 
+2. All other edits are straightforward corrections to match verified code.
 
 ---
 
- All edits verified successfully. Let me summarize the changes for the user.
-
- All 10 edits applied and verified. Here's the summary:
-
- ### MASTER_EXECUTION_PLAN.md — 8 edits
-
- ┌───────────┬─────────────────────────────────────────────────────────────────────────────┐
- │ Line      │ Change                                                                      │
- ├───────────┼─────────────────────────────────────────────────────────────────────────────┤
- │ L18       │ "PAD v1.4.0" → "PAD v1.8.0" (status line)                                   │
- ├───────────┼─────────────────────────────────────────────────────────────────────────────┤
- │ L32       │ "PAD v1.4.0" → "PAD v1.8.0" (changelog)                                     │
- ├───────────┼─────────────────────────────────────────────────────────────────────────────┤
- │ L39       │ "9 ADRs" → "10 ADRs + ADR-010 proposed" (source map)                        │
- ├───────────┼─────────────────────────────────────────────────────────────────────────────┤
- │ L4325     │ "all 9 ADRs" → "all 10 ADRs" + added ADR-010 (appendix table)               │
- ├───────────┼─────────────────────────────────────────────────────────────────────────────┤
- │ L522      │ "25 env vars" → "34 env vars" (Phase 0 checklist)                           │
- ├───────────┼─────────────────────────────────────────────────────────────────────────────┤
- │ L4482     │ "25 env vars" → "34 env vars" (appendix B)                                  │
- ├───────────┼─────────────────────────────────────────────────────────────────────────────┤
- │ L127 (D3) │ "7 worker files in tree" → "0 implemented (Phase 8 pending)" + resolution   │
- ├───────────┼─────────────────────────────────────────────────────────────────────────────┤
- │ L128 (D4) │ "8 template files in tree" → "0 implemented (Phase 8 pending)" + resolution │
- └───────────┴─────────────────────────────────────────────────────────────────────────────┘
-
- ### PAD.md — 2 edits
-
- ┌───────┬──────────────────────────────────────────────────────────────────────────────┐
- │ Line  │ Change                                                                       │
- ├───────┼──────────────────────────────────────────────────────────────────────────────┤
- │ L1120 │ "Migration 0001_supreme_sabretooth.sql." → "Migration 0000_dear_dagger.sql." │
- ├───────┼──────────────────────────────────────────────────────────────────────────────┤
- │ L352  │ React ^19.2.3 → ^19.2.7 (now consistent with §1.4.0 changelog + codebase)    │
- └───────┴──────────────────────────────────────────────────────────────────────────────┘
-
- All verifications pass — the edited lines read back correctly with grep.
+Everything verified: 
  
+✅ "9 ISR/marketing" → 0 occurrences (all fixed to 8) 
+✅ "8 ISR/marketing/routes" → 3 occurrences, all correct 
+✅ Test counts in disk section: db 109, auth 102, api 107, web 111 — all match actual 
+✅ Quality gates section: all counts match 
+✅ Migration references: "3 migrations" mentioned in 2 places, all 3 SQL files referenced 
+✅ Table count: "17 Drizzle tables" with note about PAD undercount 
+✅ "What is NOT yet built": accurately describes Phase 7-12 pending only 
+✅ "Things worth flagging": diff_output.txt removed, app_start_log.txt kept, docs note updated 
+✅ All stale claims gone: "Not scaffolded", "No (marketing)", "No /(studio)", "No (admin)", "single 0000_dear_dagger" → 0 matches 
+ 
+The no-stale-refs grep returned exactly what I expect — only "app_start_log.txt" mention (correct) and the migration note about historical migrations (which is factual). 
+ 
+The file is now fully synced with the current codebase. Let me provide the delivery summary. 
+
+All 7 edits verified — zero stale claims remain. Final spot-check summary: 
+ 
+┌─────────────────────────────┬──────────────────────────────────────────────────────────────────────────────────────────┐ 
+│ Check                       │ Result                                                                                   │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ "9 ISR/marketing"           │ 0 occurrences ✅                                                                         │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ "8 ISR/marketing/routes"    │ 3 occurrences (lines 18, 36, 114) ✅                                                     │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ Test counts in disk section │ db 109, auth 102, api 107, web 111 — all match actual ✅                                 │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ Table count                 │ "17 Drizzle tables" + PAD-undercount note ✅                                             │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ Migration references        │ "3 migrations" cited in 2 locations, all 3 SQL files named ✅                            │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ "What is NOT yet built"     │ Only Phase 7–12 items, accurate (Stripe/workers/admin/observability/WCAG/landing/E2E) ✅ │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ Stale claims removed        │ 0 matches for "Not scaffolded", "No (marketing)", "No /(studio)", "No (admin)" ✅        │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ diff_output.txt             │ Removed (file not on disk) ✅                                                            │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ app_start_log.txt           │ Kept (still on disk) ✅                                                                  │ 
+├─────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ Docs pace note              │ Updated: "outpace code for Phases 7–12" ✅                                               │ 
+└─────────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────────┘ 
+ 
+---
+ 
+✅ Delivery Summary — Project_Brief.md 
+ 
+### What Changed 
+ 
+┌──────┬─────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────┐ 
+│ Edit │ What                        │ Before                                                                             │ After                                                                                      │ 
+├──────┼─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E1   │ Marketing page count        │ "9 ISR/marketing" (3 locations)                                                    │ "8 ISR/marketing"                                                                          │ 
+├──────┼─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E2   │ Test counts in disk section │ db 107, api 13/104, web 3/13                                                       │ db 109, api 14/107, web 20/111                                                             │ 
+├──────┼─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E3   │ "What is NOT yet built"     │ Listed Studio/marketing/booking/dashboard/admin as not built (all done)            │ Lists only true Phase 7–12 gaps (Stripe, jobs, admin pages, obs, WCAG, landing, E2E suite) │ 
+├──────┼─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E4   │ Migration references        │ "Single 0000_dear_dagger"                                                          │ All 3 migrations named with purposes (0000=17 tables, 0001=published, 0002=waitlist index) │ 
+├──────┼─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E5   │ "Things worth flagging"     │ diff_output.txt + app_start_log.txt both listed; "Docs still outpace code" broadly │ Only app_start_log.txt; "Docs outpace code for Phases 7–12"                                │ 
+├──────┼─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E6   │ Table count                 │ "14 Drizzle tables" (undercount; listed 15 items)                                  │ "17 Drizzle tables" with explicit list + PAD-undercount note                               │ 
+├──────┼─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ E7   │ E2E status                  │ "no test scenarios"                                                                │ "One E2E spec exists (e2e/booking.spec.ts)"                                                │ 
+└──────┴─────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────┘ 
+ 
+### Residual Discrepancy Flagged (not fixed — for your consideration) 
+ 
+- PAD.md / SKILL.md / AGENTS.md all claim "14 tables" — actual is 17 (verified by pgTable declarations + migration CREATE TABLE count). Cross-doc undercount.

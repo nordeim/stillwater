@@ -5,7 +5,7 @@
 >
 > This document is the single source of truth for what to build, in what order,
 > with what interfaces, under what test contract, and against what acceptance
-> criteria. It synthesises four upstream documents and resolves every
+> criteria. It synthesises eight upstream documents (see Source Document Map) and resolves every
 > discrepancy between them into one canonical execution path.
 
 ---
@@ -14,13 +14,13 @@
 
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
-| Version     | 1.3.0                                                              |
-| Status      | ACTIVE — PLAN (verified against PAD v1.8.0 / SKILL v1.4.1; re-validated 2026-07-07) |
-| Date        | 2026-07-04                                                         |
+| Version     | 1.4.0                                                              |
+| Status      | ACTIVE — LIVING PLAN (Phases 0–6 COMPLETE per PAD v1.10.0 / SKILL v2.1.0; re-validated 2026-07-08) |
+| Date        | 2026-07-08                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
 | Methodology | TDD (`RED → GREEN → REFACTOR → COMMIT`, one cycle per commit)     |
-| Sources     | `design.md`, `PAD.md`, `scaffolding_files.md`, `static_landing_page_mockup.html`, `static_landing_page_html_mockup.md`, `guide_auth-v5_vs_better-auth.md` |
+| Sources     | `design.md`, `PAD.md`, `stillwater_SKILL.md`, `scaffolding_files.md`, `static_landing_page_mockup.html`, `static_landing_page_html_mockup.md`, `guide_auth-v5_vs_better-auth.md` |
 
 ### Change Log
 
@@ -30,18 +30,20 @@
 | 1.1.0   | 2026-07-05 | Claw Code / Audit | Backported Phase 2 Audit Fixes (C1–C5) + Stack Alignments from PAD v1.1.0 / SKILL v1.2.0 |
 | 1.2.0   | 2026-07-05 | Claw Code / Validation | Re-validated against PAD v1.3.0 / SKILL v1.3.0: fixed Stripe apiVersion (Basil→Dahlia), env count (25→34), berkeley-mono→jetbrains-mono across D25/D34/D41/F0-23/F0-24/Phase 12/§3.2/Open Questions; marked D9 + proxy.ts questions as resolved; added .html mockup to Source Document Map |
 | 1.3.0   | 2026-07-07 | Claw Code / Remediation | Re-validated against PAD v1.8.0 / SKILL v1.4.1: confirmed Trigger.dev SDK root import is canonical across all source docs; no content fixes needed in MEP body (Phase 8 F8-01–F8-11 task definitions already correct); version stamps aligned across docs |
+| 1.4.0   | 2026-07-08 | Claw Code / Sync | Re-synced plan to codebase through Phase 6. Marked Phases 0–6 COMPLETE (per PAD v1.10.0 / SKILL v2.1.0); added Status column to §5 phase table + Current Status block; refreshed §7.1 (PAD v1.8.0→v1.10.0) and ADR count (10→11); corrected Phase 4 marketing-route enumeration (removed phantom `/classes/[slug]`; confirmed 8 actual routes); added `stillwater_SKILL.md` to Source Document Map + Sources; verified 429 tests green across all quality gates. |
 
 ### Source Document Map
 
 | Source                                  | Lines   | Purpose                                                                | Used For                                   |
 |-----------------------------------------|---------|------------------------------------------------------------------------|--------------------------------------------|
 | `design.md`                             | 813     | Phase 1 architecture critique across 3 paths + merged optimal arch     | Conceptual framing, 12-phase skeleton      |
-| `PAD.md`                                | 3,209   | Definitive Project Architecture Document (31 sections, 10 ADRs + ADR-010 proposed)         | All architectural decisions, schema, API   |
+| `PAD.md`                                | 3,413   | Definitive Project Architecture Document (31 sections, 11 ADRs — ADR-001…ADR-011)          | All architectural decisions, schema, API   |
 | `scaffolding_files.md`                  | 2,298   | Phase 0 IMPLEMENT — 39 ready-to-paste config files                     | Phase 0 file contents, version pins        |
 | `static_landing_page_mockup.html`     | 2,927   | Standalone HTML mockup — **visual/aesthetic reference** for Phase 12 side-by-side comparison | Phase 12 visual fidelity |
 | `static_landing_page_html_mockup.md`    | 3,056   | Landing page design spec + complete self-contained HTML mockup         | Phase 12 landing-page port (conceptual guidance)                 |
 | `react_email_suggestion.md`             | 143     | React Email v6.0.0 paradigm shift analysis + Resend Native Templates recommendation | Phase 8 F8-29 send.ts import pattern, email rendering strategy |
 | `pnpm_install_fix.md`                   | 327     | pnpm v11 migration, OTEL override injection, native build unblocking   | Phase 0 pnpm-workspace.yaml, allowBuilds, overrides configuration |
+| `stillwater_SKILL.md`                   | 7,443   | Distilled project skill from 21 source skills; authoritative tech-stack specifics, anti-patterns, gotchas | Cross-check for version pins, architecture, ADRs, debugging |
 
 ---
 
@@ -298,24 +300,26 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 
 13 phases. Each phase has explicit dependencies, deliverables, and acceptance criteria.
 
-| Phase | Focus                                                  | Deps      | Est. days | Files |
-|-------|--------------------------------------------------------|-----------|-----------|-------|
-| 0     | Monorepo scaffold + tooling + Docker + Phase 0 fixes  | —         | 2         | ~45   |
-| 1     | DB schema, Drizzle migrations, seed data               | 0         | 3         | ~20   |
-| 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth pattern) | 0, 1      | 3         | ~19   |
-| 3     | tRPC v11 routers (10 routers, ~30 procedures)          | 0, 1, 2   | 5         | ~25   |
-| 4     | Marketing surface (Sanity CMS, ISR)                    | 0, 1, 2, 3| 4         | ~30   |
-| 5     | Booking flow + SSE real-time seats                     | 3         | 5         | ~18   |
-| 6     | Member dashboard + membership mgmt                     | 3, 7      | 4         | ~12   |
-| 7     | Stripe integration (subscriptions + credit packs)      | 3         | 4         | ~12   |
-| 8     | Background jobs (11 Trigger.dev tasks)                 | 3, 7      | 3         | ~15   |
-| 9     | Admin surface (RBAC-gated)                             | 3         | 5         | ~18   |
-| 10    | Observability + performance hardening                  | all prev  | 3         | ~12   |
-| 11    | WCAG AAA audit + SEO + OG images                       | 4, 5, 6, 9| 3         | ~10   |
-| 12    | Landing page port (mockup → Next.js production)        | 4, 11     | 4         | ~25   |
-| **Total** |                                                    |           | **50**    | **~260** |
+| Phase | Focus                                                  | Deps      | Est. days | Files | Status        |
+|-------|--------------------------------------------------------|-----------|-----------|-------|---------------|
+| 0     | Monorepo scaffold + tooling + Docker + Phase 0 fixes  | —         | 2         | ~45   | ✅ COMPLETE    |
+| 1     | DB schema, Drizzle migrations, seed data               | 0         | 3         | ~20   | ✅ COMPLETE    |
+| 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth pattern) | 0, 1      | 3         | ~19   | ✅ COMPLETE    |
+| 3     | tRPC v11 routers (10 routers, ~30 procedures)          | 0, 1, 2   | 5         | ~25   | ✅ COMPLETE    |
+| 4     | Marketing surface (Sanity CMS, ISR)                    | 0, 1, 2, 3| 4         | ~30   | ✅ COMPLETE    |
+| 5     | Booking flow + SSE real-time seats                     | 3         | 5         | ~18   | ✅ COMPLETE    |
+| 6     | Member dashboard + membership mgmt                     | 3, 7      | 4         | ~12   | ✅ COMPLETE    |
+| 7     | Stripe integration (subscriptions + credit packs)      | 3         | 4         | ~12   | ⬜ PENDING     |
+| 8     | Background jobs (11 Trigger.dev tasks)                 | 3, 7      | 3         | ~15   | ⬜ PENDING     |
+| 9     | Admin surface (RBAC-gated)                             | 3         | 5         | ~18   | ⬜ PENDING     |
+| 10    | Observability + performance hardening                  | all prev  | 3         | ~12   | ⬜ PENDING     |
+| 11    | WCAG AAA audit + SEO + OG images                       | 4, 5, 6, 9| 3         | ~10   | ⬜ PENDING     |
+| 12    | Landing page port (mockup → Next.js production)        | 4, 11     | 4         | ~25   | ⬜ PENDING     |
+| **Total** |                                                    |           | **50**    | **~260** |               |
 
 > **Note on parallelism:** Phases 5, 7, and 9 can be parallelised once Phase 3 is complete. Phases 6 and 8 depend on Phase 7. Phase 12 depends on Phase 11 (for SEO/OG) and Phase 4 (for Sanity content). With 3 engineers, critical path is ~28 calendar days.
+>
+> **Note on status:** As of 2026-07-08, Phases 0–6 are COMPLETE (see [Current Status](#current-status-as-of-2026-07-08)). Phases 7–12 remain PENDING per this plan.
 
 ### Phase ordering rationale
 - Phase 0 first because every other phase imports from `@stillwater/*` packages
@@ -328,6 +332,44 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 - Phase 12 last because the landing page is the highest-visibility surface; it consumes the design system, the marketing route group, and SEO infrastructure built in earlier phases
 
 ---
+
+## Current Status (as of 2026-07-08)
+
+> **Source of truth:** PAD v1.10.0 / SKILL v2.1.0. Verified against codebase 2026-07-08.
+
+| Phase | Focus                                                  | Status      | PAD Version | Test Count |
+|-------|--------------------------------------------------------|-------------|-------------|------------|
+| 0     | Monorepo scaffold + tooling + Docker + Phase 0 fixes  | ✅ COMPLETE  | v1.4.0      | —          |
+| 1     | DB schema, Drizzle migrations, seed data               | ✅ COMPLETE  | v1.5.0      | 109        |
+| 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)         | ✅ COMPLETE  | v1.6.0      | 102        |
+| 3     | tRPC v11 routers (10 routers, ~30 procedures)          | ✅ COMPLETE  | v1.7.0      | 107        |
+| 4     | Marketing surface (Sanity CMS, ISR)                    | ✅ COMPLETE  | v1.9.0      | —          |
+| 5     | Booking flow + SSE real-time seats                     | ✅ COMPLETE  | v1.9.1      | —          |
+| 6     | Member dashboard + membership mgmt                     | ✅ COMPLETE  | v1.10.0     | 111        |
+| 7     | Stripe integration (subscriptions + credit packs)      | ⬜ PENDING   | —           | —          |
+| 8     | Background jobs (11 Trigger.dev tasks)                 | ⬜ PENDING   | —           | —          |
+| 9     | Admin surface (RBAC-gated)                             | ⬜ PENDING   | —           | —          |
+| 10    | Observability + performance hardening                  | ⬜ PENDING   | —           | —          |
+| 11    | WCAG AAA audit + SEO + OG images                       | ⬜ PENDING   | —           | —          |
+| 12    | Landing page port (mockup → Next.js production)        | ⬜ PENDING   | —           | —          |
+
+**Quality gates (verified 2026-07-08):**
+- `pnpm check-types` — ✅ Green (9/9 packages)
+- `pnpm lint` — ✅ Green (0 errors, 2 pre-existing warnings in non-null assertions)
+- `pnpm test` — ✅ Green (**429 tests:** 109 db + 102 auth + 107 api + 111 web)
+- `pnpm build` — not verified (requires explicit request per `AGENTS.md`)
+
+**Key confirmations:**
+- `proxy.ts` 2-layer pattern **VERIFIED:** cookie-only `getSessionCookie()` (sync, no `getSession`, no DB), RBAC enforcement in `(admin)`/`(studio)` layouts — matches ADR-009/D36.
+- Trigger.dev SDK root import **VERIFIED:** `services/workers/trigger.config.ts` uses `import { defineConfig } from "@trigger.dev/sdk"` (not `/v3` or `/v4`) — matches Gotcha 1.
+- Stack versions **aligned:** all 11 `package.json`s match AGENTS.md pins (TypeScript `^5.9.0`, Next.js `^16.2.10`, React `^19.2.7`, Tailwind `^4.3.0`, tRPC `^11.18.0`, Drizzle `^0.45.2`, Better Auth `^1.6.23`, Stripe `^22.3.0`, React Email `^6.6.6`, Resend `^6.17.1`, Zod `^4.4.3`, pnpm `11.9.0`, ESLint `^9.39.4`).
+- Marketing routes: **8 actual pages** (/, /about, /instructors, /instructors/[slug], /schedule, /pricing, /blog, /blog/[slug]) — PAD/SKILL "9" was an overcount; MEP Phase 4 goal corrected.
+- Gotcha 29 fix **present:** `tailwindcss/classnames-order` + `no-contradicting-classname` disabled in `tooling/eslint/index.js`.
+- **Provenance:** MEP synthesises `design.md` + `PAD.md` + `stillwater_SKILL.md` + `scaffolding_files.md` + mockups + ecosystem guides. `stillwater_SKILL.md` is the authoritative tech-stack cross-check (per AGENTS.md).
+- **Redis:** Local Docker container at `localhost:6379`; `@upstash/redis` REST client expects a managed Upstash endpoint in `.env.local` (`UPSTASH_REDIS_REST_URL`). Rate-limit middleware tests may require configuration for local execution.
+
+---
+
 ## 6. Per-Phase Detailed Plans
 
 > Each phase below lists every file to **create** or **update**, with:
@@ -339,7 +381,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 > Files marked `[SCAFFOLD]` already exist in `scaffolding_files.md` and need only to be placed on disk. Files marked `[NEW]` are created during this phase. Files marked `[PATCH]` modify an existing scaffolded file.
 
 
-### Phase 0 — Monorepo Scaffold + Tooling + Docker + Phase 0 Fixes
+### Phase 0 — Monorepo Scaffold + Tooling + Docker + Phase 0 Fixes ✅ COMPLETE (PAD v1.4.0)
 
 **Goal:** A bootable monorepo where `pnpm install && pnpm dev` produces a 200 at `http://localhost:3000`, with all 39 scaffolding files placed and all 10 Phase-0 discrepancies (D15–D24) resolved.
 
@@ -804,7 +846,7 @@ curl http://localhost:3000                  # 200 + "Stillwater" in body
 
 ---
 
-### Phase 1 — Database Schema, Drizzle Migrations, Seed Data
+### Phase 1 — Database Schema, Drizzle Migrations, Seed Data ✅ COMPLETE (PAD v1.5.0)
 
 **Goal:** All 14 tables + 8 enums + 5 indexes created via Drizzle migrations; seed data fixtures load 5 demo members, 3 instructors, 4 classes, 7 days of sessions.
 
@@ -1068,7 +1110,7 @@ pnpm test --filter=@stillwater/db             # all schema + seed tests green
 
 ---
 
-### Phase 2 — Better Auth + RBAC + `proxy.ts` Route Protection
+### Phase 2 — Better Auth + RBAC + `proxy.ts` Route Protection ✅ COMPLETE (PAD v1.6.0)
 
 **Goal:** Members can sign in via Google OAuth or Magic Link; sessions are encrypted; **2-layer auth pattern** enforced — `proxy.ts` does cookie-existence-only optimistic check (Layer 1, Edge-compatible), Server Component layouts do full session validation + RBAC via `requireAuth()` / `requireRole()` (Layer 2, Node.js). Per `guide_auth-v5_vs_better-auth.md` G2.
 
@@ -1572,7 +1614,7 @@ pnpm test:e2e -- --grep "auth"                   # auth E2E tests green
 
 ---
 
-### Phase 3 — tRPC v11 Routers (10 routers, ~30 procedures)
+### Phase 3 — tRPC v11 Routers (10 routers, ~30 procedures) ✅ COMPLETE (PAD v1.7.0)
 
 **Goal:** All 10 tRPC routers implemented with full Zod input validation, RBAC middleware, and integration tests against Testcontainers Postgres.
 
@@ -2002,9 +2044,9 @@ pnpm test:coverage --filter=@stillwater/api       # 90%+ coverage
 ```
 
 
-### Phase 4 — Marketing Surface with Sanity CMS
+### Phase 4 — Marketing Surface with Sanity CMS ✅ COMPLETE (PAD v1.9.0)
 
-**Goal:** All 8 marketing routes (`/`, `/about`, `/instructors`, `/instructors/[slug]`, `/schedule`, `/classes/[slug]`, `/pricing`, `/blog`, `/blog/[slug]`) render from PostgreSQL operational data + Sanity marketing content with ISR per the rendering strategy table.
+**Goal:** All 8 marketing routes (`/`, `/about`, `/instructors`, `/instructors/[slug]`, `/schedule`, `/pricing`, `/blog`, `/blog/[slug]`) render from PostgreSQL operational data + Sanity marketing content with ISR per the rendering strategy table.
 
 **Dependencies:** Phase 0, 1, 2, 3.
 
@@ -2280,7 +2322,7 @@ pnpm lighthouse ci -- --url /
 
 ---
 
-### Phase 5 — Booking Flow + SSE Real-Time Seat Availability
+### Phase 5 — Booking Flow + SSE Real-Time Seat Availability ✅ COMPLETE (PAD v1.9.1)
 
 **Goal:** Member can browse schedule, click a class, see live seat count via SSE, book a spot (or join waitlist), and receive confirmation email.
 
@@ -2591,7 +2633,7 @@ pnpm test:e2e -- --grep "booking"
 
 ---
 
-### Phase 6 — Member Dashboard + Membership Management
+### Phase 6 — Member Dashboard + Membership Management ✅ COMPLETE (PAD v1.10.0)
 
 **Goal:** Members can view and edit their profile, manage their subscription (pause, cancel, resume), view attendance history, and access the Stripe customer portal.
 
@@ -2713,7 +2755,7 @@ pnpm test:e2e -- --grep "dashboard|membership|profile"
 
 ---
 
-### Phase 7 — Stripe Integration (Subscriptions + Credit Packs)
+### Phase 7 — Stripe Integration (Subscriptions + Credit Packs) ⬜ PENDING
 
 **Goal:** Stripe Billing handles subscription lifecycle; webhooks update `member_subscriptions` table idempotently; credit packs purchasable as one-off PaymentIntents.
 
@@ -2954,7 +2996,7 @@ pnpm test --filter=@stillwater/payments -- --coverage
 ```
 
 
-### Phase 8 — Background Jobs (11 Trigger.dev v4 Tasks)
+### Phase 8 — Background Jobs (11 Trigger.dev v4 Tasks) ⬜ PENDING
 
 > ⚠️ **Trigger.dev v3 deprecation:** v3 deploys stop working April 1, 2026. All tasks MUST use `@trigger.dev/sdk` (root import). Per official Trigger.dev v4 docs: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is deprecated; `/v4` does not exist. See SKILL.md §9.9 Gotcha 1 + §12 Lesson 16.
 
@@ -3298,7 +3340,7 @@ pnpm test --filter=@stillwater/workers -- --coverage
 
 ---
 
-### Phase 9 — Admin Surface (RBAC-Gated)
+### Phase 9 — Admin Surface (RBAC-Gated) ⬜ PENDING
 
 **Goal:** Staff, managers, and owners can manage classes, sessions, instructors, members, and view revenue dashboards. All routes RBAC-gated via `proxy.ts` + `requireRole` server helper.
 
@@ -3529,7 +3571,7 @@ pnpm test:e2e -- --grep "admin"
 
 ---
 
-### Phase 10 — Observability + Performance Hardening
+### Phase 10 — Observability + Performance Hardening ⬜ PENDING
 
 **Goal:** Sentry, PostHog, Axiom, Checkly all wired up. Bundle size budgets enforced in CI. Lighthouse scores hit targets.
 
@@ -3793,7 +3835,7 @@ pnpm lighthouse ci                               # runs Lighthouse CI
 
 ---
 
-### Phase 11 — WCAG AAA Audit + SEO + OG Images
+### Phase 11 — WCAG AAA Audit + SEO + OG Images ⬜ PENDING
 
 **Goal:** All pages pass WCAG 2.2 Level AAA automated + manual audit. SEO metadata complete on every page. Dynamic OG images generated via `@vercel/og`.
 
@@ -3987,7 +4029,7 @@ pnpm lighthouse ci
 
 ---
 
-### Phase 12 — Landing Page Port (Mockup → Production Next.js)
+### Phase 12 — Landing Page Port (Mockup → Production Next.js) ⬜ PENDING
 
 **Goal:** The static HTML mockup in `static_landing_page_mockup.html` (visual reference) and `static_landing_page_html_mockup.md` (design rationale) is faithfully ported to a production Next.js page using the shared design system, Radix primitives, Framer Motion, Sanity-backed content, and live tRPC schedule data.
 
@@ -4296,7 +4338,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 
 > **External validation:** `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms ADR-008 (Better Auth v1.6.23 stable) and ADR-009 (`proxy.ts` rename). The guide additionally mandates a **2-layer auth pattern** (cookie-only `proxy.ts` + Server Component `requireAuth()`/`requireRole()`) which has been incorporated into Phase 2 (F2-13 rewrite + F2-16 through F2-19 new layout files). See discrepancy D36 below.
 >
-> **⚠️ PAD Alignment Partially Verified:** PAD.md v1.1.0 alignment confirmed (14 Auth.js/middleware references). PAD.md v1.3.0 introduced additional corrections (Stripe Dahlia, pnpm 11, Tailwind 4.3, env vars 34, ADR-009 proxy.ts, JetBrains Mono) that have been incorporated into MEP v1.2.0. PAD.md v1.4.0 further softened ADR-009 proxy.ts runtime language ("Edge or Node.js — docs inconsistent") and added ADR-010 (Resend Native Templates proposed). The PLAN and PAD are now in alignment. Phase 0 can proceed.
+> **✅ PAD Alignment Verified:** Re-validated 2026-07-08 against PAD v1.10.0 / SKILL v2.1.0. Phases 0–6 COMPLETE; Phases 7–12 PENDING. All stack versions, discrepancy resolutions (D1–D50), and ADRs (ADR-001…ADR-011) are reflected in the codebase. The plan and PAD are aligned through Phase 6. Re-validation will be needed after Phases 7–12.
 
 | PAD § | Topic                                  | Satisfied by (file / phase)                                                |
 |-------|----------------------------------------|----------------------------------------------------------------------------|
@@ -4322,7 +4364,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 | 20    | Performance Targets                    | Phase 10 + per-route bundle budgets                                        |
 | 21    | Accessibility                          | Phase 11 (WCAG AAA audit) + per-component tests                            |
 | 22    | Deployment & Environments              | Phase 0 (CI workflows), Phase 10 (Vercel + Neon)                           |
-| 23    | ADRs                                   | ADR-001 to ADR-007 (existing) + ADR-008 (Better Auth v1.6.23) + ADR-009 (proxy.ts) + ADR-010 (Resend Native Templates proposed) — ✅ all 10 ADRs in PAD.md §29 |
+| 23    | ADRs                                   | ADR-001 to ADR-007 (existing) + ADR-008 (Better Auth v1.6.23) + ADR-009 (proxy.ts) + ADR-010 (Resend Native Templates proposed) + ADR-011 (transpilePackages + exports.default — accepted) — ✅ all 11 ADRs in PAD.md §29 |
 | 24    | Glossary                               | This document Appendix C                                                   |
 
 ### 7.2 scaffolding_files.md coverage
