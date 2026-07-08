@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "idx_waitlist_session_member" ON "waitlist_entries" USING btree ("session_id","member_id");

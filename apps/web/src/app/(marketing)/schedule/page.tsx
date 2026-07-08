@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { ScheduleGrid } from '@/components/marketing/ScheduleGrid';
 import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
@@ -69,32 +70,8 @@ export default async function SchedulePage() {
                   day: 'numeric',
                 })}
               </h2>
-              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {daySessions.map((session) => (
-                  <article
-                    key={session.id}
-                    className="border border-stone-200 bg-sand-50 p-6"
-                  >
-                    <time className="text-xs font-medium text-stone-500">
-                      {session.startsAt.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </time>
-                    <h3
-                      className="mt-2 text-xl font-medium text-stone-900"
-                      style={{ fontFamily: 'var(--font-display)' }}
-                    >
-                      {session.class.name}
-                    </h3>
-                    <p className="mt-1 text-sm text-stone-600">
-                      with {session.instructor.slug}
-                    </p>
-                    <p className="mt-2 text-xs text-stone-500">
-                      {session.room.name}
-                    </p>
-                  </article>
-                ))}
+              <div className="mt-4">
+                <ScheduleGrid sessions={daySessions} />
               </div>
             </section>
           ))}

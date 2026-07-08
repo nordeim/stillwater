@@ -7,7 +7,7 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 1.8.0
+version: 2.0.0
 project_type: nextjs-monorepo
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-08
@@ -17,7 +17,7 @@ last_updated: 2026-07-08
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v1.8.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phase 4 (Marketing Surface with Sanity CMS — 9 ISR pages, webhook→ISR, Cloudflare Images, 11 shadcn components, build fix via transpilePackages) ✅ COMPLETE (2026-07-08); Phases 5–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. ADR-011 added (source resolution via `transpilePackages`). 377 tests (108 db + 102 auth + 106 api + 61 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
+> **Status:** v2.0.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phase 4 (Marketing Surface with Sanity CMS — 9 ISR pages, webhook→ISR, Cloudflare Images, 11 shadcn components, build fix via transpilePackages) ✅ COMPLETE (2026-07-08); Phase 5 (Booking Flow + SSE — SSE endpoint with maxDuration=300 + 10s polling, useSessionAvailability hook with 3 reconnection attempts, 6 booking UI components, (studio)/book/[sessionId] page, ScheduleGrid with Book CTA, Toaster mounted, waitlist unique index, E2E specs BOOK-001 to BOOK-004) ✅ COMPLETE (2026-07-08); Phases 6–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. ADR-011 added (source resolution via `transpilePackages`). 422 tests (109 db + 102 auth + 106 api + 105 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
 ---
 
@@ -3538,6 +3538,150 @@ contactEmail: z.email().optional(),
 
 **Fix references:** `apps/web/src/lib/sanity/queries.ts`, `packages/api/src/routers/instructors.ts`, `packages/db/src/schema/instructors.ts` (added `published` column). See §7.5.1.
 
+### Lesson 50: SSE route must NOT set `force-dynamic` — build fails with `cacheComponents` (Phase 5)
+
+**Context:** The SSE endpoint at `/api/schedule/stream` was initially written with `export const dynamic = 'force-dynamic'` to ensure it's always dynamic. But `pnpm build` failed with: "Route used `force-dynamic` which is not allowed when `cacheComponents` is enabled."
+
+**Root cause:** SSE/streaming routes are dynamic by default — they read `req.url` or stream responses. Setting `force-dynamic` is redundant AND conflicts with `cacheComponents: true` (which is deferred but may be enabled in future phases). Per SKILL §9.1 Gotcha 7.
+
+**What to do differently:**
+- Do NOT add `export const dynamic = 'force-dynamic'` to SSE or streaming routes
+- Only set `export const maxDuration = 300` (for Vercel timeout)
+- SSE routes are automatically dynamic because they use `ReadableStream`
+
+**Fix references:** `apps/web/src/app/api/schedule/stream/route.ts`. See CLAUDE.md Gotcha 42.
+
+### Lesson 51: `useSessionAvailability` hook cleanup is non-negotiable (Phase 5)
+
+**Context:** The SSE hook creates an `EventSource` and sets up reconnection timers via `setTimeout`. If the component unmounts without cleaning up, the browser keeps the SSE connection open and timers keep firing — causing memory leaks and setState-on-unmounted-component warnings.
+
+**Root cause:** React's `useEffect` cleanup runs on unmount, but only if explicitly implemented. The hook uses refs (`eventSourceRef`, `reconnectTimerRef`, `isCancelledRef`) to track resources — all must be cleaned up.
+
+**What to do differently:**
+```typescript
+useEffect(() => {
+  isCancelledRef.current = false;
+  connect();
+  return () => {
+    // Cleanup — non-negotiable per SKILL §6.2
+    isCancelledRef.current = true;
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+  };
+}, [sessionId, connect]);
+```
+- `isCancelledRef` prevents reconnection after unmount
+- `clearTimeout` stops pending reconnection
+- `eventSource.close()` releases the SSE connection
+
+**Fix references:** `apps/web/src/hooks/useSessionAvailability.ts`. See CLAUDE.md Gotcha 43.
+
+### Lesson 52: `bookings.book` throws CONFLICT — UI catches and shows WaitlistButton (Phase 5)
+
+**Context:** The MEP description says "book a spot (or join waitlist)" which could be interpreted as the `book` mutation auto-waitlisting when full. But the actual implementation throws `TRPCError({ code: 'CONFLICT' })` — the UI must catch this and call `waitlist.join` separately.
+
+**Root cause:** The `book` mutation uses an advisory lock and checks capacity inside the transaction. If `enrolledCount >= capacity`, it throws CONFLICT. This is a cleaner API than auto-waitlisting because:
+- The caller explicitly decides whether to join the waitlist
+- The error code is semantically correct (409 Conflict)
+- The UI can show different messaging (e.g., "Session full, join waitlist?")
+
+**What to do differently:**
+- In `useBookingMutation` hook, check `error.data?.code === 'CONFLICT'` in `onError`
+- Set an `isConflict` flag that the UI uses to conditionally render `WaitlistButton`
+- Call `waitlist.join` mutation when the user clicks the WaitlistButton
+- Do NOT try to auto-waitlist inside `bookings.book` — separation of concerns
+
+**Fix references:** `apps/web/src/hooks/useBookingMutation.ts`, `apps/web/src/components/booking/BookingFlow.tsx`, `packages/api/src/routers/bookings.ts:122-127`. See CLAUDE.md Gotcha 44.
+
+### Lesson 53: `waitlist_entries` needs unique index — concurrent joins cause duplicates (Phase 5)
+
+**Context:** Unlike `enrollments` (which has `idx_enrollments_session_member` unique index), `waitlist_entries` originally had no unique constraint on `(sessionId, memberId)`. The `waitlist.join` procedure uses an app-layer `findFirst` check — under concurrent load, both calls pass the check and both insert.
+
+**Root cause:** No advisory lock in the waitlist router (unlike `bookings.book` which uses `pg_advisory_xact_lock`). The app-layer check is a TOCTOU race condition.
+
+**What to do differently:**
+- Add `uniqueIndex('idx_waitlist_session_member').on(table.sessionId, table.memberId)` to the waitlist schema
+- The unique index is the last line of defense — the app-layer check is still there for better error messages
+- Migration: `0002_lyrical_cargill.sql` → `CREATE UNIQUE INDEX "idx_waitlist_session_member" ON "waitlist_entries" USING btree ("session_id","member_id");`
+
+**Fix references:** `packages/db/src/schema/waitlist.ts`, `packages/db/drizzle/migrations/0002_lyrical_cargill.sql`. See CLAUDE.md Gotcha 45.
+
+### Lesson 54: `@testing-library/react` cleanup between test files — jsdom DOM leaks (Phase 5)
+
+**Context:** Tests failed with "Found multiple elements with role 'button'" — DOM from a previous test file was leaking into the next. `@testing-library/react` auto-cleans within a test file but NOT across files in the same vitest process.
+
+**Root cause:** `vitest` with `pool: 'forks'` doesn't auto-clean the jsdom DOM between test files. Each `render()` call appends to `document.body`, and without explicit cleanup, buttons from `BookingButton.test.tsx` leak into `WaitlistButton.test.tsx`.
+
+**What to do differently:**
+- Add `afterEach(() => cleanup())` to EVERY `.tsx` test file that uses `render()`:
+  ```tsx
+  import { render, screen, cleanup } from '@testing-library/react';
+  import { afterEach } from 'vitest';
+
+  describe('Component', () => {
+    afterEach(() => cleanup());
+    // ...
+  });
+  ```
+- This is a vitest-specific issue — Jest auto-cleans by default
+
+**Fix references:** All `apps/web/src/components/booking/*.test.tsx`, `apps/web/src/components/marketing/ScheduleGrid.test.tsx`. See CLAUDE.md Gotcha 46.
+
+### Lesson 55: Radix Dialog `onOpenChange` void expression — use block body (Phase 5)
+
+**Context:** ESLint error: `Returning a void expression from an arrow function shorthand is forbidden` on `<Dialog onOpenChange={(isOpen) => !isOpen && onClose()}>`.
+
+**Root cause:** `onClose()` returns `void`. The arrow function shorthand `(x) => expr && voidFn()` returns `void` (because `&&` returns the right operand if the left is truthy). `@typescript-eslint/no-confusing-void-expression` flags this because it looks like you're returning void from an expression that should return a value.
+
+**What to do differently:**
+```tsx
+// ❌ WRONG — void expression in arrow shorthand
+<Dialog onOpenChange={(isOpen) => !isOpen && onClose()}>
+
+// ✅ CORRECT — block body with if statement
+<Dialog onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+```
+
+**Fix references:** `apps/web/src/components/booking/BookingConfirmation.tsx`. See CLAUDE.md Gotcha 47.
+
+### Lesson 56: `MessageEvent.data` is typed as `any` — cast with `String()` (Phase 5)
+
+**Context:** ESLint error: `Unsafe argument of type 'any' assigned to a parameter of type 'string'` when calling `JSON.parse(event.data)` in the `useSessionAvailability` hook.
+
+**Root cause:** The DOM's `MessageEvent.data` property is typed as `any` (it can be a string, object, or ArrayBuffer depending on how the server sends data). `JSON.parse()` expects `string`, so passing `any` triggers `@typescript-eslint/no-unsafe-argument`.
+
+**What to do differently:**
+```typescript
+// ❌ WRONG — event.data is any, triggers no-unsafe-argument
+const parsed: SeatAvailabilityEvent = JSON.parse(event.data);
+
+// ✅ CORRECT — cast via String() first
+const rawData: unknown = JSON.parse(String(event.data));
+const parsed = rawData as SeatAvailabilityEvent;
+```
+
+**Fix references:** `apps/web/src/hooks/useSessionAvailability.ts:65`. See CLAUDE.md Gotcha 48.
+
+### Lesson 57: Template literals with `number` type — `restrict-template-expressions` (Phase 5)
+
+**Context:** ESLint error: `Invalid type "number" of template literal expression` on `` `${enrolled} of ${capacity} spots taken` `` in the `SeatAvailability` component's `aria-label`.
+
+**Root cause:** `@typescript-eslint/restrict-template-expressions` forbids `number` in template literals because `Number.prototype.toString()` can produce unexpected results for `NaN` (`"NaN"`), `Infinity` (`"Infinity"`), and very large numbers (exponential notation).
+
+**What to do differently:**
+```typescript
+// ❌ WRONG — number in template literal
+aria-label={`${enrolled} of ${capacity} spots taken`}
+
+// ✅ CORRECT — explicit String() cast
+aria-label={`${String(enrolled)} of ${String(capacity)} spots taken`}
+```
+
+**Fix references:** `apps/web/src/components/booking/SeatAvailability.tsx:21`. See CLAUDE.md Gotcha 49.
+
 ---
 
 ## §13. Pitfalls to Avoid
@@ -5419,6 +5563,174 @@ const nextConfig: NextConfig = {
 
 ---
 
+### 15.18 Pattern: SSE Endpoint + useSessionAvailability + BookingFlow (Phase 5)
+
+**Problem:** Phase 5 requires real-time seat availability for the booking flow. Members need to see live seat counts update as other members book/cancel — without polling the server manually. The solution must handle reconnection, cleanup, and the CONFLICT→waitlist flow.
+
+**Solution:** Three interconnected patterns:
+
+#### 15.18.1 SSE Endpoint with maxDuration + No force-dynamic
+
+```typescript
+// apps/web/src/app/api/schedule/stream/route.ts
+import { apiCaller } from '@/lib/trpc/server';
+
+// 5 min max duration (Vercel default for Hobby/Pro)
+export const maxDuration = 300;
+
+// Do NOT add: export const dynamic = 'force-dynamic' (SKILL §9.1 Gotcha 7)
+
+interface SeatAvailabilityEvent {
+  enrolled: number;
+  capacity: number;
+  available: number;
+  isFull: boolean;
+}
+
+async function getSeatAvailability(sessionId: string): Promise<SeatAvailabilityEvent | null> {
+  const caller = await apiCaller();
+  const session = await caller.schedule.getSession({ sessionId });
+  const sessionData = session as {
+    enrolledCount: number;
+    overrideCapacity: number | null;
+    class: { maxCapacity: number | null } | null;
+    room: { capacity: number | null } | null;
+  };
+  const capacity = sessionData.overrideCapacity ?? sessionData.class?.maxCapacity ?? sessionData.room?.capacity ?? 0;
+  const enrolled = sessionData.enrolledCount;
+  return { enrolled, capacity, available: Math.max(0, capacity - enrolled), isFull: enrolled >= capacity };
+}
+
+export async function POST(request: Request): Promise<Response> {
+  // ... validate sessionId ...
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(formatSSEEvent(initialData)));
+      const interval = setInterval(() => {
+        void getSeatAvailability(sessionId).then((data) => {
+          if (!data) { controller.close(); clearInterval(interval); return; }
+          controller.enqueue(encoder.encode(formatSSEEvent(data)));
+        });
+      }, 10_000);
+      request.signal.addEventListener('abort', () => {
+        clearInterval(interval);
+        controller.close();
+      });
+    },
+  });
+  return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', ... } });
+}
+```
+
+**Key points:**
+- `maxDuration = 300` (5 min) — per SKILL §9.9 Gotcha 8
+- NO `force-dynamic` — SSE routes are dynamic by default (Lesson 50)
+- Polls every 10s via `setInterval` (not true push — Postgres LISTEN/NOTIFY out of scope)
+- `ReadableStream` for streaming response
+- Abort signal for client disconnect cleanup
+
+#### 15.18.2 useSessionAvailability Hook with Reconnection
+
+```typescript
+// apps/web/src/hooks/useSessionAvailability.ts
+const MAX_RECONNECT_ATTEMPTS = 3;
+const BASE_RECONNECT_DELAY = 1000; // 1s
+
+export function useSessionAvailability(sessionId: string) {
+  const [data, setData] = useState<SeatAvailabilityEvent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+
+  const connect = useCallback(() => {
+    const eventSource = new EventSource(`/api/schedule/stream?sessionId=${encodeURIComponent(sessionId)}`);
+    eventSourceRef.current = eventSource;
+
+    eventSource.onmessage = (event: MessageEvent) => {
+      const rawData: unknown = JSON.parse(String(event.data)); // Lesson 56
+      setData(rawData as SeatAvailabilityEvent);
+      setIsLoading(false);
+      reconnectAttemptsRef.current = 0; // Reset on success
+    };
+
+    eventSource.onerror = () => {
+      eventSource.close();
+      const attempt = reconnectAttemptsRef.current;
+      if (attempt < MAX_RECONNECT_ATTEMPTS) {
+        const delay = BASE_RECONNECT_DELAY * Math.pow(2, attempt); // 1s → 2s → 4s
+        reconnectAttemptsRef.current++;
+        setTimeout(() => connect(), delay);
+      } else {
+        setError(new Error('SSE connection failed after 3 attempts'));
+        setIsLoading(false);
+      }
+    };
+  }, [sessionId]);
+
+  useEffect(() => {
+    isCancelledRef.current = false;
+    connect();
+    return () => {
+      isCancelledRef.current = true;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (eventSourceRef.current) eventSourceRef.current.close();
+    };
+  }, [sessionId, connect]); // Lesson 51: cleanup non-negotiable
+
+  return { data, isLoading, error };
+}
+```
+
+**Key points:**
+- 3 reconnection attempts with exponential backoff (1s → 2s → 4s) per SKILL §6.2
+- `isCancelledRef` prevents reconnection after unmount
+- Cleanup in `useEffect` return — non-negotiable (Lesson 51)
+- `String(event.data)` cast — `MessageEvent.data` is `any` (Lesson 56)
+
+#### 15.18.3 BookingFlow Orchestrator with CONFLICT→Waitlist
+
+```typescript
+// apps/web/src/components/booking/BookingFlow.tsx
+export function BookingFlow({ sessionId, sessionDetails }) {
+  const { data, isLoading, error } = useSessionAvailability(sessionId);
+  const { book, isLoading: isBooking, isConflict, result, reset } = useBookingMutation();
+
+  // useBookingMutation catches CONFLICT and sets isConflict flag
+  // bookings.book throws CONFLICT when session is full (Lesson 52)
+
+  if (data && !data.isFull && !isConflict) {
+    return <BookingButton onClick={() => book(sessionId)} disabled={false} isLoading={isBooking} />;
+  }
+
+  if (data && (data.isFull || isConflict)) {
+    return <WaitlistButton onClick={() => waitlistMutation.mutate({ sessionId })} />;
+  }
+
+  if (result) {
+    return <BookingConfirmation open={true} onClose={reset} sessionDetails={sessionDetails} />;
+  }
+}
+```
+
+**Key points:**
+- `bookings.book` throws CONFLICT — UI catches and shows WaitlistButton (Lesson 52)
+- Server Component fetches initial session data; Client Component handles SSE + mutations
+- `useBookingMutation` wraps tRPC mutation with CONFLICT detection
+- `BookingConfirmation` uses Radix Dialog (Lesson 55: `onOpenChange` block body)
+
+**TDD verification:**
+1. RED: SSE returns 200 + text/event-stream, maxDuration=300, no force-dynamic
+2. RED: Hook subscribes, returns data, reconnects 3x, cleans up on unmount
+3. RED: BookingButton calls book(), disabled during mutation, 44x44px target
+4. RED: BookingFlow shows WaitlistButton when isConflict, shows Confirmation on success
+5. GREEN: Implement each component
+6. REFACTOR: Extract `safeCompare`, `REVALIDATION_MAP`, `SeatAvailabilityEvent` shared type
+
+**Source:** Phase 5 implementation (Stages 1-5), `apps/web/src/app/api/schedule/stream/route.ts`, `apps/web/src/hooks/useSessionAvailability.ts`, `apps/web/src/hooks/useBookingMutation.ts`, `apps/web/src/components/booking/`. See Lessons 50-57. See ADR-004 (advisory locks), ADR-006 (SSE over WebSockets).
+
+---
+
 ## §16. Coding Anti-Patterns
 
 ### 16.1 TypeScript Anti-Patterns
@@ -5772,6 +6084,92 @@ const schema = z.object({ email: z.string().email() });
 
 // ✅ CORRECT: Zod v4 native email
 const schema = z.object({ email: z.email() });
+```
+
+### 16.8 Phase 5 Booking + SSE Anti-Patterns
+
+```typescript
+// ❌ WRONG: Setting force-dynamic on SSE route
+export const dynamic = 'force-dynamic';
+// Build error: incompatible with cacheComponents: true (Lesson 50)
+
+// ✅ CORRECT: Only set maxDuration — SSE routes are dynamic by default
+export const maxDuration = 300;
+```
+
+```typescript
+// ❌ WRONG: Not cleaning up EventSource on unmount
+useEffect(() => {
+  const es = new EventSource(url);
+  es.onmessage = (e) => setData(JSON.parse(e.data));
+  // Missing cleanup — memory leak!
+}, [sessionId]);
+
+// ✅ CORRECT: Full cleanup in useEffect return
+useEffect(() => {
+  isCancelledRef.current = false;
+  connect();
+  return () => {
+    isCancelledRef.current = true;
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+    if (eventSourceRef.current) eventSourceRef.current.close();
+  };
+}, [sessionId, connect]);
+```
+
+```typescript
+// ❌ WRONG: Auto-waitlisting inside bookings.book mutation
+if (enrolledCount >= capacity) {
+  await tx.insert(waitlistEntries).values({ sessionId, memberId, ... });
+  return { status: 'waitlisted' };
+}
+// Mixes concerns — book mutation should only book, not waitlist
+
+// ✅ CORRECT: Throw CONFLICT — UI catches and calls waitlist.join separately
+if (enrolledCount >= capacity) {
+  throw new TRPCError({ code: 'CONFLICT', message: 'Session is full' });
+}
+```
+
+```typescript
+// ❌ WRONG: JSON.parse(event.data) — event.data is typed as any
+const parsed = JSON.parse(event.data); // no-unsafe-argument error
+
+// ✅ CORRECT: Cast via String() first
+const rawData: unknown = JSON.parse(String(event.data));
+const parsed = rawData as SeatAvailabilityEvent;
+```
+
+```typescript
+// ❌ WRONG: Number in template literal
+aria-label={`${enrolled} of ${capacity} spots`} // restrict-template-expressions error
+
+// ✅ CORRECT: Explicit String() cast
+aria-label={`${String(enrolled)} of ${String(capacity)} spots`}
+```
+
+```typescript
+// ❌ WRONG: Radix Dialog onOpenChange arrow shorthand returning void
+<Dialog onOpenChange={(isOpen) => !isOpen && onClose()}> // no-confusing-void-expression
+
+// ✅ CORRECT: Block body with if statement
+<Dialog onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+```
+
+```typescript
+// ❌ WRONG: No afterEach cleanup in test files — DOM leaks between files
+describe('Component', () => {
+  it('renders', () => { render(<Component />); });
+  // Next test file sees this DOM!
+});
+
+// ✅ CORRECT: afterEach cleanup
+import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
+describe('Component', () => {
+  afterEach(() => cleanup());
+  it('renders', () => { render(<Component />); });
+});
 ```
 
 ---
@@ -6410,6 +6808,20 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 ## Appendix C: Audit History
 
+### v2.0.0 (2026-07-08) — Phase 5 Complete + SSE + Booking Flow
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| SSE route must NOT set `force-dynamic` — build fails with `cacheComponents` | Critical | ✅ Documented — Lesson 50, §15.18.1 pattern, §16.8 anti-pattern, CLAUDE.md Gotcha 42, AGENTS.md Gotcha 35. Fix: only set `maxDuration = 300` |
+| `useSessionAvailability` hook cleanup is non-negotiable — memory leaks if missing | High | ✅ Documented — Lesson 51, §15.18.2 pattern, §16.8 anti-pattern, CLAUDE.md Gotcha 43, AGENTS.md Gotcha 36. Fix: close EventSource + clear timers in useEffect return |
+| `bookings.book` throws CONFLICT — UI must catch and show WaitlistButton | High | ✅ Documented — Lesson 52, §15.18.3 pattern, §16.8 anti-pattern, CLAUDE.md Gotcha 44, AGENTS.md Gotcha 37. Fix: catch CONFLICT in useBookingMutation, set isConflict flag |
+| `waitlist_entries` needs unique index — concurrent joins cause duplicates | High | ✅ Documented — Lesson 53, CLAUDE.md Gotcha 45, AGENTS.md Gotcha 38. Fix: `idx_waitlist_session_member` unique index, migration `0002_lyrical_cargill.sql` |
+| `@testing-library/react` cleanup between test files — jsdom DOM leaks | Medium | ✅ Documented — Lesson 54, §16.8 anti-pattern, CLAUDE.md Gotcha 46, AGENTS.md Gotcha 39. Fix: `afterEach(() => cleanup())` in every .tsx test file |
+| Radix Dialog `onOpenChange` void expression — ESLint error | Low | ✅ Documented — Lesson 55, §16.8 anti-pattern, CLAUDE.md Gotcha 47, AGENTS.md Gotcha 40. Fix: use block body `(isOpen) => { if (!isOpen) onClose(); }` |
+| `MessageEvent.data` typed as `any` — `JSON.parse` triggers `no-unsafe-argument` | Low | ✅ Documented — Lesson 56, §16.8 anti-pattern, CLAUDE.md Gotcha 48, AGENTS.md Gotcha 41. Fix: `JSON.parse(String(event.data))` |
+| Template literals with `number` type — `restrict-template-expressions` error | Low | ✅ Documented — Lesson 57, §16.8 anti-pattern, CLAUDE.md Gotcha 49, AGENTS.md Gotcha 42. Fix: `String(number)` in template literals |
+| Phase 5 complete: SSE endpoint, booking UI, waitlist unique index, E2E specs | — | ✅ Phase 5 IMPLEMENT complete — 8 stages, ~20 new files, 45 new tests (422 total), `pnpm build` green (13/13 pages including `/api/schedule/stream` + `/book/[sessionId]`) |
+
 ### v1.8.0 (2026-07-08) — Phase 4 Complete + Build Fix
 
 | Finding | Severity | Status |
@@ -6621,4 +7033,4 @@ Alerts:
 
 ---
 
-*End of `stillwater_SKILL.md` v1.8.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 implementation lessons (Lessons 1-49) distilled from actual TDD cycles. ADR-011 added (source resolution via `transpilePackages`). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+*End of `stillwater_SKILL.md` v2.0.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 implementation lessons (Lessons 1-57) distilled from actual TDD cycles. ADR-011 added (source resolution via `transpilePackages`). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*

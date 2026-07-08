@@ -1,3 +1,5 @@
+import { Toaster } from 'sonner';
+
 import type { Metadata } from 'next';
 
 import './globals.css';
@@ -30,6 +32,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <TRPCProvider>{children}</TRPCProvider>
+        <Toaster position="bottom-right" richColors />
       </body>
     </html>
   );

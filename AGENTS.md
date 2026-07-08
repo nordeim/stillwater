@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-08 (v1.8.3) — Phase 4 complete + build fix (transpilePackages). 8 new gotchas (27–34). Total: 34 gotchas.
+> **Updated:** 2026-07-08 (v1.9.0) — Phase 5 complete: SSE endpoint, booking UI, waitlist unique index. 8 new gotchas (35–42). Total: 42 gotchas.
 
 ---
 
@@ -317,6 +317,38 @@ ESLint: `email` is deprecated. Fix: use `z.email()` instead of `z.string().email
 
 `import { createHmac } from 'crypto'` must come before `import { describe } from 'vitest'`. Fix: reorder imports — builtins first, empty line between groups. See `CLAUDE.md` Gotcha 41.
 
+### 35. SSE route must NOT set `force-dynamic` (Critical — Phase 5)
+
+`pnpm build` fails on SSE route: `force-dynamic` conflicts with `cacheComponents`. SSE routes are dynamic by default — only set `maxDuration = 300`. See `CLAUDE.md` Gotcha 42.
+
+### 36. `useSessionAvailability` hook cleanup is non-negotiable (High — Phase 5)
+
+EventSource + reconnection timers MUST be cleaned up on unmount. Close EventSource, clear timers in `useEffect` return. Memory leaks if missing. See `CLAUDE.md` Gotcha 43.
+
+### 37. `bookings.book` throws CONFLICT — UI catches and shows WaitlistButton (High — Phase 5)
+
+`book` mutation does NOT auto-waitlist. UI catches CONFLICT error code, sets `isConflict` flag, shows `WaitlistButton`. `waitlist.join` called separately. See `CLAUDE.md` Gotcha 44.
+
+### 38. `waitlist_entries` unique index on (sessionId, memberId) (High — Phase 5)
+
+Without `idx_waitlist_session_member`, concurrent `waitlist.join` calls can both insert. Added unique index in migration `0002_lyrical_cargill.sql`. See `CLAUDE.md` Gotcha 45.
+
+### 39. `@testing-library/react` cleanup between test files (Medium — Phase 5)
+
+jsdom DOM leaks between test files in same vitest process. Add `afterEach(() => cleanup())` to every `.tsx` test file using `render()`. See `CLAUDE.md` Gotcha 46.
+
+### 40. Radix Dialog `onOpenChange` void expression (Low — Phase 5)
+
+`(isOpen) => !isOpen && onClose()` violates `no-confusing-void-expression`. Use block body: `(isOpen) => { if (!isOpen) onClose(); }`. See `CLAUDE.md` Gotcha 47.
+
+### 41. `MessageEvent.data` is typed as `any` (Low — Phase 5)
+
+`JSON.parse(event.data)` triggers `no-unsafe-argument`. Cast: `JSON.parse(String(event.data))`. See `CLAUDE.md` Gotcha 48.
+
+### 42. Template literals with `number` type (Low — Phase 5)
+
+`restrict-template-expressions` forbids `number` in template literals. Cast: `String(number)` — e.g. `` `${String(enrolled)} of ${String(capacity)}` ``. See `CLAUDE.md` Gotcha 49.
+
 ---
 
 ## Phase status (as of 2026-07-08)
@@ -324,13 +356,14 @@ ESLint: `email` is deprecated. Fix: use `z.email()` instead of `z.string().email
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
-| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql`. 108 db tests. |
+| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` (waitlist unique). 109 db tests. |
 | 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth tests. |
 | 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 106 api tests. |
-| 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 9 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). 61 web tests. |
-| 5–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
+| 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 9 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). |
+| 5 — Booking | ✅ Complete | SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts), 6 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. 105 web tests. |
+| 6–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
 
-**Total: 377 tests** (108 db + 102 auth + 106 api + 61 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
+**Total: 422 tests** (109 db + 102 auth + 106 api + 105 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
 All 10 Open Questions in MEP §9 are ✅ RESOLVED. See `MASTER_EXECUTION_PLAN.md` §9 for decisions on Sanity hosting (Cloud), Stripe refunds (Dashboard for v1), mobile nav (Radix Dialog), test data (synthetic only), production cutover (feature-flag-gated).
 
@@ -357,8 +390,8 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ```bash
 pnpm check-types       # Must be green (9/9 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (377 tests: 106 api + 102 auth + 108 db + 61 web)
-pnpm build             # Must be green (12/12 static pages)
+pnpm test              # Must be green (422 tests: 106 api + 102 auth + 109 db + 105 web)
+pnpm build             # Must be green (13/13 static pages)
 ```
 
 Integration tests (require Docker Postgres): `pnpm test:integration --filter=@stillwater/db`
@@ -374,7 +407,7 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 3. `stillwater_SKILL.md` — distilled project skill (v1.7.2; 21 source skills condensed); authoritative tech-stack specifics
 4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.9.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.8.3 with gotchas 24–41)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.9.0 with gotchas 24–49)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 

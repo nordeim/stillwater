@@ -11,7 +11,7 @@
  * Source: PAD.md §7.2 WAITLIST_ENTRY entity + §7.3, MASTER_EXECUTION_PLAN.md F1-10.
  */
 
-import { pgTable, uuid, integer, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, integer, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { waitlistStatusEnum } from './enums';
 import { classSessions } from './sessions';
@@ -38,5 +38,9 @@ export const waitlistEntries = pgTable(
     index('idx_waitlist_session_position')
       .on(table.sessionId, table.position)
       .where(sql`${table.status} = 'waiting'`),
+    // Phase 5: unique constraint to prevent duplicate waitlist entries for the same session+member
+    // Without this, concurrent waitlist.join calls could both insert (no advisory lock in waitlist router)
+    uniqueIndex('idx_waitlist_session_member')
+      .on(table.sessionId, table.memberId),
   ],
 );

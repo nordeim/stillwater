@@ -10,7 +10,7 @@
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%204%20complete-success)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%205%20complete-success)](#project-status)
 
 > **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
@@ -269,9 +269,9 @@ docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dT'
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c 'SELECT count(*) FROM users;'
 # Expected: 5
 
-# Unit tests pass (91 tests, no DB needed)
+# Unit tests pass (422 tests, no DB needed for unit tests)
 pnpm test --filter=@stillwater/db
-# Expected: "Test Files  15 passed (15)" + "Tests  91 passed (91)"
+# Expected: "Test Files  16 passed (16)" + "Tests  109 passed (109)"
 
 # Adminer GUI available
 open http://localhost:8080
@@ -570,7 +570,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ✅ Complete   | 3         |
 | 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ✅ Complete   | 5         |
 | 4     | Marketing surface with Sanity CMS                  | ✅ Complete   | 4         |
-| 5     | Booking flow + SSE real-time seats                 | ⬜ Pending     | 5         |
+| 5     | Booking flow + SSE real-time seats                 | ✅ Complete   | 5         |
 | 6     | Member dashboard + membership management           | ⬜ Pending     | 4         |
 | 7     | Stripe integration (subscriptions + credit packs)  | ⬜ Pending     | 4         |
 | 8     | Background jobs (11 Trigger.dev v4 tasks)          | ⬜ Pending     | 3         |
@@ -578,7 +578,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~30% complete** | **~50 days** |
+| **Total** |                                                | **~44% complete** | **~50 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -680,6 +680,24 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 ---
 
 ## What's New
+
+### v1.7.0 (2026-07-08) — Phase 5 Complete: Booking Flow + SSE Real-Time Seat Availability
+
+| Change | Details |
+|---|---|
+| SSE endpoint | `apps/web/src/app/api/schedule/stream/route.ts` — `text/event-stream`, `maxDuration=300`, 10s polling, NO `force-dynamic` (SKILL §9.1 Gotcha 7) |
+| `useSessionAvailability` hook | `apps/web/src/hooks/useSessionAvailability.ts` — EventSource, 3 reconnection attempts (1s→2s→4s exponential backoff), cleanup on unmount |
+| `useBookingMutation` hook | `apps/web/src/hooks/useBookingMutation.ts` — wraps `bookings.book`, handles CONFLICT → `isConflict` flag, toast notifications |
+| 6 booking UI components | `SeatAvailability` (role=img + aria-label), `BookingButton` (44x44px target), `BookingConfirmation` (Radix Dialog), `WaitlistButton`, `BookingFlow` (orchestrator), all with TDD |
+| Booking page | `(studio)/book/[sessionId]/page.tsx` — Server Component fetches `schedule.getSession`, passes to `BookingFlow` client component |
+| ScheduleGrid extraction | `apps/web/src/components/marketing/ScheduleGrid.tsx` — extracted from inline `/schedule` page, each card has Book link → `/book/[sessionId]` |
+| Toaster mounted | `sonner` `<Toaster />` in root layout for booking confirmation/error feedback |
+| Waitlist unique index | `idx_waitlist_session_member` on `waitlist_entries (sessionId, memberId)` — migration `0002_lyrical_cargill.sql`, prevents duplicate waitlist joins |
+| E2E specs | `e2e/booking.spec.ts` — BOOK-001 to BOOK-004 (browse schedule, navigate to booking, seat availability, full session waitlist) |
+| Integration test placeholder | `packages/api/src/routers/bookings.integration.test.ts` — BOOK-006 concurrent booking (requires Testcontainers Postgres) |
+| Lint fixes | SSE route async/await, SeatAvailability template expressions, BookingConfirmation void expression, expanded test file eslint overrides |
+| 422 tests passing | 109 db + 102 auth + 106 api + 105 web (was 377 at Phase 4) |
+| `pnpm build` green | ✅ All routes compile including `/api/schedule/stream` + `/book/[sessionId]` |
 
 ### v1.6.0 (2026-07-08) — Phase 4 Complete: Marketing Surface with Sanity CMS
 
@@ -801,8 +819,8 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 | [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 11 ADRs; v1.9.0) |
 | [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.3.0) |
 | [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.7.2; 21 source skills condensed; 41 lessons) |
-| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.8.3; 41 gotchas) |
-| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (34 gotchas)  |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.9.0; 49 gotchas) |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (42 gotchas)  |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |
 | [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture (some sections superseded by ADRs) |
 | [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |

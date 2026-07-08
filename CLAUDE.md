@@ -1,7 +1,7 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 1.8.3
+version: 1.9.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-08
 ---
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–4 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS client + 8 content types + Studio app (`apps/studio/`), GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 9 ISR marketing pages, MarketingNav/Footer, 11 shadcn components (anti-generic patched), `transpilePackages` build fix (ADR-011). 377 tests (108 db + 102 auth + 106 api + 61 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green. Phase 5–12 pending.
+**Phase 0–5 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS client + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 9 ISR marketing pages, MarketingNav/Footer, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts, exponential backoff), 6 booking UI components (SeatAvailability, BookingButton, BookingConfirmation, WaitlistButton, BookingFlow, useBookingMutation), `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. 422 tests (109 db + 102 auth + 106 api + 105 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green. Phase 6–12 pending.
 
 ---
 
@@ -445,9 +445,10 @@ Atomic commits: one logical change per commit. Each TDD cycle = one commit.
 Before committing, verify locally:
 
 ```bash
-pnpm check-types       # TypeScript green
-pnpm lint              # ESLint green
-pnpm test              # Vitest green
+pnpm check-types       # TypeScript green (9/9 tasks)
+pnpm lint              # ESLint green (2/2 tasks)
+pnpm test              # Vitest green (422 tests)
+pnpm build             # Next.js production build (13/13 pages)
 ```
 
 ### PR Template
@@ -598,10 +599,11 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 - **8 enums** ✅ implemented in Phase 1: `class_level`, `session_status`, `enrollment_status`, `waitlist_status`, `subscription_status`, `billing_interval`, `studio_role`, `payment_status` — see `packages/db/src/schema/enums.ts`
 - **5 critical indexes** ✅ implemented in Phase 1 (4 partial + 1 unique): `idx_sessions_starts_at_status`, `idx_enrollments_session_status`, `idx_waitlist_session_position`, `idx_subscriptions_member_status`, `idx_payment_events_stripe_id` — see `PAD.md` §7.3
 - **3 additional indexes** (Phase 1): `idx_members_stripe_customer_id` (D6 webhook lookup), `idx_enrollments_session_member` (unique — double-booking prevention), `idx_role_assignments_member_role` (unique — duplicate grant prevention)
+- **1 Phase 5 index**: `idx_waitlist_session_member` (unique — prevents duplicate waitlist entries for same session+member; migration `0002_lyrical_cargill.sql`)
 - **15 FK constraints** with cascade rules: CASCADE (members→users, enrollments→sessions/members, waitlist→sessions/members, etc.), RESTRICT (class_sessions→instructors, member_subscriptions→membership_plans), SET NULL (class_sessions→rooms, payment_events→members)
 - **Two DB URLs**: `DATABASE_URL` (pooled, app queries) + `DATABASE_URL_UNPOOLED` (migrations only — PgBouncer breaks prepared statements)
 - **Drizzle ORM 0.45**: schema in TypeScript (`packages/db/src/schema/`); neon-http serverless driver; `db` client exported from `packages/db/src/index.ts` with `DrizzleDB` type
-- **Migration**: `drizzle-kit generate` → `0000_chemical_obadiah_stane.sql` (Phase 1); apply via `pnpm db:migrate`
+- **Migration**: `drizzle-kit generate` → migrations: `0000_dear_dagger.sql` (Phase 1), `0001_equal_iron_lad.sql` (Phase 4 — instructors.published), `0002_lyrical_cargill.sql` (Phase 5 — waitlist unique index); apply via `pnpm db:migrate`
 - **Seed**: `pnpm db:seed` loads 5 members, 3 instructors, 4 classes, 7 sessions, 3 membership plans — idempotent via `onConflictDoNothing`
 - **Reset**: `pnpm db:reset` (LOCAL ONLY — refuses in production) drops schema, re-migrates, re-seeds
 - **Read replica** for admin revenue reports (PAD §22.4 — Phase 9)
@@ -1137,6 +1139,108 @@ import { createHmac } from 'crypto';
 import { describe, it, expect } from 'vitest';
 ```
 
+### Gotcha 42: SSE route must NOT set `force-dynamic` (Critical — Phase 5)
+
+**Symptom:** `pnpm build` fails on the SSE route with: `Error: Route "/api/schedule/stream" used "export const dynamic = 'force-dynamic'" which is not allowed when "cacheComponents" is enabled.`
+
+**Root cause:** SSE/streaming routes are dynamic by default (they read `req.url` or stream). Setting `force-dynamic` is redundant and conflicts with `cacheComponents: true` (which is deferred but may be enabled in future phases). Per SKILL §9.1 Gotcha 7.
+
+**Fix:** Do NOT add `export const dynamic = 'force-dynamic'` to the SSE route. Only set `export const maxDuration = 300`.
+
+### Gotcha 43: `useSessionAvailability` hook cleanup is non-negotiable (High — Phase 5)
+
+**Symptom:** Memory leaks — EventSource connections accumulate, reconnection timers fire after unmount.
+
+**Root cause:** The SSE hook creates an `EventSource` and sets up reconnection timers. If the component unmounts without closing the EventSource and clearing timers, the browser keeps the connection open and timers keep firing.
+
+**Fix:** Always clean up in `useEffect` return:
+```typescript
+useEffect(() => {
+  isCancelledRef.current = false;
+  connect();
+  return () => {
+    isCancelledRef.current = true;
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+    if (eventSourceRef.current) eventSourceRef.current.close();
+  };
+}, [sessionId, connect]);
+```
+
+### Gotcha 44: `bookings.book` throws CONFLICT — UI must catch and show WaitlistButton (High — Phase 5)
+
+**Symptom:** Booking a full session returns CONFLICT error; user sees a generic error instead of a "Join Waitlist" option.
+
+**Root cause:** The `bookings.book` mutation throws `TRPCError({ code: 'CONFLICT' })` when the session is full. It does NOT auto-waitlist. The UI must catch CONFLICT and call `waitlist.join` separately.
+
+**Fix:** In `useBookingMutation` hook:
+```typescript
+onError: (error) => {
+  if (error.data?.code === 'CONFLICT') {
+    setIsConflict(true);
+    toast.error('Session is full. Join the waitlist?');
+  }
+}
+```
+Then in `BookingFlow`, show `<WaitlistButton>` when `isConflict` is true.
+
+### Gotcha 45: `waitlist_entries` needs unique index on (sessionId, memberId) (High — Phase 5)
+
+**Symptom:** Concurrent `waitlist.join` calls for the same member + session both insert rows, creating duplicate waitlist entries.
+
+**Root cause:** Unlike `enrollments` (which has `idx_enrollments_session_member` unique index), `waitlist_entries` originally had no unique constraint. The `waitlist.join` procedure uses an app-layer `findFirst` check — under concurrent load, both calls pass the check and both insert.
+
+**Fix:** Add `uniqueIndex('idx_waitlist_session_member').on(table.sessionId, table.memberId)` to the waitlist schema. Migration `0002_lyrical_cargill.sql`.
+
+### Gotcha 46: `@testing-library/react` cleanup between test files (Medium — Phase 5)
+
+**Symptom:** Tests fail with "Found multiple elements with role 'button'" — DOM from a previous test file is leaking into the next.
+
+**Root cause:** `vitest` with `pool: 'forks'` doesn't auto-clean the jsdom DOM between test files in the same process. `@testing-library/react` auto-cleans within a test file but NOT across files.
+
+**Fix:** Add `afterEach(() => cleanup())` to every `.tsx` test file that uses `render()`:
+```tsx
+import { render, screen, cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
+
+describe('Component', () => {
+  afterEach(() => cleanup());
+  // ...
+});
+```
+
+### Gotcha 47: Radix Dialog `onOpenChange` void expression (Low — Phase 5)
+
+**Symptom:** ESLint error: `Returning a void expression from an arrow function shorthand is forbidden` on `<Dialog onOpenChange={(isOpen) => !isOpen && onClose()}>`.
+
+**Root cause:** `onClose()` returns `void`. The arrow function shorthand `(x) => expr && voidFn()` returns `void`, which violates `@typescript-eslint/no-confusing-void-expression`.
+
+**Fix:** Use a block body with `if`:
+```tsx
+<Dialog onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+```
+
+### Gotcha 48: `event.data` in `MessageEvent` is typed as `any` (Low — Phase 5)
+
+**Symptom:** ESLint error: `Unsafe argument of type 'any' assigned to a parameter of type 'string'` when calling `JSON.parse(event.data)`.
+
+**Root cause:** The DOM's `MessageEvent.data` property is typed as `any` (it can be a string, object, or ArrayBuffer). `JSON.parse()` expects `string`, so passing `any` triggers `no-unsafe-argument`.
+
+**Fix:** Cast via `String()`:
+```typescript
+const rawData: unknown = JSON.parse(String(event.data));
+```
+
+### Gotcha 49: Template literal expressions with `number` type (Low — Phase 5)
+
+**Symptom:** ESLint error: `Invalid type "number" of template literal expression` on `` `${enrolled} of ${capacity}` ``.
+
+**Root cause:** `@typescript-eslint/restrict-template-expressions` forbids `number` in template literals because `Number.prototype.toString()` can produce unexpected results for `NaN`, `Infinity`, and very large numbers.
+
+**Fix:** Explicitly cast with `String()`:
+```typescript
+aria-label={`${String(enrolled)} of ${String(capacity)} spots taken`}
+```
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -1186,6 +1290,14 @@ import { describe, it, expect } from 'vitest';
 | Sanity GROQ `slug == $slug` returns no results (Phase 4) | Sanity slug is object, not string | Use `slug.current == $slug` in GROQ queries. See Gotcha 39. |
 | ESLint: `email` is deprecated (Phase 4) | Zod v4 deprecates `z.string().email()` | Use `z.email()` instead. See Gotcha 40. |
 | ESLint: `crypto import should occur before vitest` (Phase 4) | `import/order` rule sorts builtins first | Move `import { createHmac } from 'crypto'` above vitest imports. See Gotcha 41. |
+| `pnpm build` fails on SSE route: `force-dynamic` not allowed (Phase 5) | `cacheComponents` + `force-dynamic` conflict | Remove `export const dynamic = 'force-dynamic'` from SSE route. Only set `maxDuration = 300`. See Gotcha 42. |
+| Memory leaks: EventSource connections accumulate (Phase 5) | Missing cleanup in `useEffect` return | Close EventSource + clear reconnection timers on unmount. See Gotcha 43. |
+| Booking full session shows generic error instead of waitlist option (Phase 5) | `bookings.book` throws CONFLICT, doesn't auto-waitlist | Catch CONFLICT in `useBookingMutation`, set `isConflict` flag, show `WaitlistButton`. See Gotcha 44. |
+| Duplicate waitlist entries from concurrent joins (Phase 5) | No unique constraint on `waitlist_entries (sessionId, memberId)` | Added `idx_waitlist_session_member` unique index. Migration `0002_lyrical_cargill.sql`. See Gotcha 45. |
+| Tests fail: "Found multiple elements with role 'button'" (Phase 5) | jsdom DOM leaking between test files | Add `afterEach(() => cleanup())` to every `.tsx` test file. See Gotcha 46. |
+| ESLint: `void expression from arrow function shorthand` (Phase 5) | Radix Dialog `onOpenChange` returns void | Use block body: `(isOpen) => { if (!isOpen) onClose(); }`. See Gotcha 47. |
+| ESLint: `Unsafe argument of type 'any'` on `JSON.parse(event.data)` (Phase 5) | `MessageEvent.data` is typed as `any` | Cast: `JSON.parse(String(event.data))`. See Gotcha 48. |
+| ESLint: `Invalid type "number" of template literal expression` (Phase 5) | `restrict-template-expressions` forbids `number` | Cast: `String(number)` in template literals. See Gotcha 49. |
 
 ---
 
