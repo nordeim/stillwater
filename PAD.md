@@ -65,7 +65,7 @@ Now — implementing the full document:
 
 ---
 
-> **Document Status:** `ACTIVE — v1.9.1`
+> **Document Status:** `ACTIVE — v1.10.0`
 > **Classification:** Internal Engineering Reference
 > **Audience:** Engineers, Architects, Technical Leads, DevOps
 > **Owner:** Engineering Lead
@@ -88,6 +88,7 @@ Now — implementing the full document:
 | 1.8.0   | 2026-07-07 | Claw Code / Remediation | Active | Phase 1–2 remediation — migration regeneration fix: single clean migration `0000_dear_dagger.sql` (17 CREATE TABLE + 8 CREATE TYPE + 8 CREATE INDEX + 17 ALTER TABLE); `ALTER COLUMN ... SET DATA TYPE` failure documented; database driver auto-selection (`pg` for local, `neon-http` for Neon) in `packages/db/src/index.ts`; seed script env loading (`seed/env.ts`) to fix `DATABASE_URL` missing at import time; Zod v4 UUID fixture validation fix (variant `g` → `a` in 3 membership plan fixtures); `pg` moved from `devDependencies` to `dependencies` in `packages/db/package.json`; 326+ tests passing; `pnpm db:migrate` and `pnpm db:seed` both green |
 | 1.9.0   | 2026-07-08 | Claw Code / Phase 4 | Active | Phase 4 complete — Sanity CMS integration (client + GROQ queries + Zod schemas + 8 content types + Studio app at `apps/studio/`); webhook→ISR revalidation with HMAC-SHA256 at `/api/sanity/webhook/`; Cloudflare Images URL signer (`server-only`); 9 ISR marketing pages (`/`, `/schedule`, `/instructors` + `/[slug]`, `/pricing`, `/blog` + `/[slug]`, `/about`); MarketingNav + Footer with Editorial Calm design; 11 shadcn/ui components (anti-generic patched); `instructors.published` column added (migration `0001_equal_iron_lad.sql`) — `instructors.list` + `getBySlug` filter `published == true` (SKILL §7.5.1); GROQ queries in §14.3 updated with `published == true` filter; ADR-011 added (transpilePackages + source exports build fix); `turbo.json` optimized (removed `dist/**` outputs + `^build` deps from check-types/test); SPECIFICATIONS.md retired (was 7 PAD versions behind); 377 tests (108 db + 102 auth + 106 api + 61 web); `pnpm build` green (12/12 static pages) |
 | 1.9.1   | 2026-07-08 | Claw Code / Phase 5 | Active | Phase 5 complete — SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling, NO force-dynamic); `useSessionAvailability` hook (3 reconnection attempts, exponential backoff 1s→2s→4s); 6 booking UI components (SeatAvailability with role=img aria-label, BookingButton with 44x44px target, BookingConfirmation Radix Dialog, WaitlistButton, BookingFlow orchestrator, useBookingMutation hook); `(studio)/book/[sessionId]` page (Server Component + BookingFlow client); ScheduleGrid extracted from inline /schedule page with Book CTA; Toaster mounted in root layout; waitlist unique index `idx_waitlist_session_member` (migration `0002_lyrical_cargill.sql`); E2E specs (BOOK-001 to BOOK-004); integration test placeholder (BOOK-006 concurrent); 422 tests (109 db + 102 auth + 106 api + 105 web); `pnpm build` green (all routes including `/api/schedule/stream` + `/book/[sessionId]`) |
+| 1.10.0  | 2026-07-08 | Claw Code / Phase 6 | Active | Phase 6 complete — Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`); 7 dashboard components (MembershipStatusCard, CreditUsageWidget, UpcomingClassesWidget, ProfileSummaryCard, ProfileEditForm with react-hook-form+Zod, ManageMembershipPanel with disabled Phase 7 stubs, EnrollmentHistoryTable with CSV export); CSV export utility (`apps/web/src/lib/export/csv.ts`, RFC 4180 compliant, 6 tests); `memberships.getMySubscription` enhanced with `with: { plan: true }` join; `memberships.resume` stub added (Phase 7 dependency); `/dashboard` route unblocks 7 redirect callsites; 429 tests (109 db + 102 auth + 107 api + 111 web); `pnpm build` green (13/13 pages including /dashboard, /profile, /membership, /history) |
 
 ### How to Maintain This Document
 
@@ -425,7 +426,7 @@ stillwater/                              # Repository root
 │       │   │   ├── book/
 │       │   │   │   └── [sessionId]/
 │       │   │   │       └── page.tsx     # /book/:sessionId — booking flow
-│       │   │   ├── my-classes/
+│       │   │   ├── history/                # /history — enrollment history (Phase 6)
 │       │   │   │   └── page.tsx         # Upcoming + past bookings
 │       │   │   ├── membership/
 │       │   │   │   └── page.tsx         # Subscription management
@@ -491,7 +492,14 @@ stillwater/                              # Repository root
 │       │   │   ├── ScheduleGrid.tsx      # Phase 5 — extracted from inline /schedule, Book CTA
 │       │   │   ├── ClassCard.tsx
 │       │   │   └── ScheduleFilters.tsx
-│       │   ├── dashboard/
+│       │   ├── dashboard/              # Phase 6 — 7 dashboard components
+│       │   │   ├── MembershipStatusCard.tsx
+│       │   │   ├── CreditUsageWidget.tsx
+│       │   │   ├── UpcomingClassesWidget.tsx
+│       │   │   ├── ProfileSummaryCard.tsx
+│       │   │   ├── ProfileEditForm.tsx
+│       │   │   ├── ManageMembershipPanel.tsx
+│       │   │   └── EnrollmentHistoryTable.tsx
 │       │   ├── admin/
 │       │   └── marketing/
 │       │
@@ -503,6 +511,9 @@ stillwater/                              # Repository root
 │       │   ├── sanity/
 │       │   │   ├── client.ts
 │       │   │   └── queries.ts           # GROQ queries
+│       │   ├── export/                  # Phase 6 — CSV utility
+│       │   │   ├── csv.ts               # RFC 4180 compliant (escapeCSVField, arrayToCSV, exportToCSV)
+│       │   │   └── csv.test.ts          # 6 tests
 │       │   └── utils.ts
 │       │
 │       ├── proxy.ts                     # Next.js 16 proxy: auth cookie check + RBAC + i18n (replaces middleware.ts per ADR-009)
@@ -1040,7 +1051,7 @@ import { db } from '../index';
 
 ## 8. API Architecture
 
-> **Implementation Status:** ✅ Phase 3 COMPLETE (2026-07-07). 10 tRPC routers (~30 procedures) implemented in `packages/api/src/routers/`. 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`. Booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004. Rate limiting on `bookings.book` (10/min via Upstash). Root router merging all 10 routers in `packages/api/src/root.ts`. Web tRPC integration: HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`). Phase 7 procedures (Stripe) stubbed with `PRECONDITION_FAILED`. Phase 4 added `published == true` filter to `instructors.list` + `getBySlug` (SKILL §7.5.1). Phase 5 confirmed `bookings.book` throws CONFLICT on full session (UI catches and shows WaitlistButton). Current test count: 422 (106 api + 102 auth + 109 db + 105 web).
+> **Implementation Status:** ✅ Phase 3 COMPLETE (2026-07-07). 10 tRPC routers (~30 procedures) implemented in `packages/api/src/routers/`. 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`. Booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004. Rate limiting on `bookings.book` (10/min via Upstash). Root router merging all 10 routers in `packages/api/src/root.ts`. Web tRPC integration: HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`). Phase 7 procedures (Stripe) stubbed with `PRECONDITION_FAILED`. Phase 4 added `published == true` filter to `instructors.list` + `getBySlug` (SKILL §7.5.1). Phase 5 confirmed `bookings.book` throws CONFLICT on full session (UI catches and shows WaitlistButton). Phase 6 added `memberships.resume` stub (throws PRECONDITION_FAILED until Phase 7) and enhanced `memberships.getMySubscription` with `with: { plan: true }` join to return plan name, interval, and credits for the member dashboard. Current test count: 429 (107 api + 102 auth + 109 db + 111 web).
 
 ### 8.1 tRPC Design Principles
 
@@ -1101,9 +1112,11 @@ export const ownerProcedure     = t.procedure.use(enforceIsAuthed).use(enforceIs
 | members | `getProfile` | protected | query | Own member profile |
 | members | `getHistory` | protected | query | Attendance + booking history |
 | memberships | `getPlans` | public | query | Available membership plans |
-| memberships | `subscribe` | protected | mutation | Start subscription via Stripe |
+| memberships | `getMySubscription` | protected | query | Member's active subscription (Phase 6: enhanced with `with: { plan: true }` join) |
+| memberships | `subscribe` | protected | mutation | Start subscription via Stripe (Phase 7 stub) |
 | memberships | `cancel` | protected | mutation | Cancel subscription at period end |
 | memberships | `pause` | protected | mutation | Pause subscription |
+| memberships | `resume` | protected | mutation | Resume paused subscription (Phase 6 stub — throws PRECONDITION_FAILED until Phase 7) |
 | payments | `getPortalUrl` | protected | mutation | Stripe customer portal URL |
 | payments | `getInvoices` | protected | query | Invoice history |
 | admin | `getDashboard` | staff | query | KPI summary for admin home |
@@ -1485,7 +1498,7 @@ Route                         Strategy      Revalidation    Rationale
 /blog/[slug]                  SSG + ODR     On Sanity pub   Article page
 /dashboard                    SSR           No cache        Personalized; auth-gated
 /book/[sessionId]             CSR           n/a             Real-time seat data via SSE
-/my-classes                   SSR           No cache        Personal history
+/history                      SSR           No cache        Enrollment history (Phase 6)
 /membership                   SSR           No cache        Subscription state
 /profile                      SSR           No cache        Personal data
 /admin/*                      SSR           No cache        Operational; always fresh

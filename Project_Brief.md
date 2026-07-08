@@ -1,7 +1,7 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-08 (post-Phase 5)
-> Status: Phases 0–5 ✅ complete · Phases 6–12 ⬜ pending
+> **Updated:** 2026-07-08 (post-Phase 6)
+> Status: Phases 0–6 ✅ complete · Phases 7–12 ⬜ pending
 
 ## What it is
 
@@ -9,7 +9,7 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 
 ## Current build state (the honest picture)
 
-**Phases 0 through 5 are complete and green.** Phases 6 through 12 are not yet started.
+**Phases 0 through 6 are complete and green.** Phases 7 through 12 are not yet started.
 
 - **Phase 0 (Scaffold):** Complete. Turborepo + pnpm workspaces, 7 shared packages, 11 tooling configs, Docker Compose setup, and the full design system (self-hosted fonts, CSS tokens).
 - **Phase 1 (Database):** Complete. 14-table Drizzle schema, 8 enums, 5 critical indexes, migration `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` (instructors.published), idempotent seed, dynamic driver selection.
@@ -19,7 +19,9 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 
 - **Phase 5 (Booking):** Complete. SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts, exponential backoff), 6 booking UI components (SeatAvailability, BookingButton, BookingConfirmation, WaitlistButton, BookingFlow, useBookingMutation), `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index.
 
-**Phases 6–12:** Pending. No member dashboard, no Stripe client, no background jobs, no admin surface, no WCAG audit, no landing page port.
+- **Phase 6 (Dashboard):** Complete. Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components (MembershipStatusCard, CreditUsageWidget, UpcomingClassesWidget, ProfileSummaryCard, ProfileEditForm, ManageMembershipPanel, EnrollmentHistoryTable), CSV export utility, `memberships.getMySubscription` plan join, `memberships.resume` stub.
+
+**Phases 7–12:** Pending. No Stripe client, no background jobs, no admin surface, no WCAG audit, no landing page port.
 
 ---
 
@@ -33,7 +35,7 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 | 3 — tRPC API | ✅ Complete | 10 routers, ~30 procedures, advisory locks, rate limiting |
 | 4 — Marketing | ✅ Complete | Sanity CMS, 9 ISR pages, webhook, Cloudflare Images, shadcn/ui |
 | 5 — Booking | ✅ Complete | SSE endpoint, booking UI, useSessionAvailability hook, booking page |
-| 6 — Dashboard | ⬜ Pending | Member dashboard, membership management |
+| 6 — Dashboard | ✅ Complete | Member dashboard, profile editing, membership status, enrollment history, CSV export |
 | 7 — Payments | ⬜ Pending | Stripe subscriptions, credit packs |
 | 8 — Background Jobs | ⬜ Pending | 11 Trigger.dev tasks, 13 email templates |
 | 9 — Admin Surface | ⬜ Pending | RBAC-gated admin for schedules, members, revenue |
@@ -100,14 +102,14 @@ Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 |---|---|
 | `pnpm check-types` | **9/9 successful** ✅ |
 | `pnpm lint` | **2/2 successful** ✅ |
-| `pnpm test` | **422 tests passing** ✅ |
+| `pnpm test` | **429 tests passing** ✅ |
 | `pnpm build` | **✅ Compiled successfully** (all routes) ✅ |
 
 Test breakdown:
 - `packages/db` — 16 test files / **109 tests**
 - `packages/auth` — 4 test files / **102 tests**
-- `packages/api` — 14 test files / **106 tests**
-- `apps/web` — 19 test files / **105 tests**
+- `packages/api` — 14 test files / **107 tests**
+- `apps/web` — 20 test files / **111 tests**
 
 Build output: 9 marketing routes (home, schedule, instructors×2, pricing, blog×2, about) + 4 auth routes + 3 API routes. ISR revalidate times: `/about` = 1d, `/blog` = 1h, `/` = 5min.
 

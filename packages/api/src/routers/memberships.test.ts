@@ -84,15 +84,22 @@ describe('membershipsRouter.getPlans', () => {
   });
 });
 
+const subscriptionWithPlanFixture = {
+  ...subscriptionFixture,
+  plan: planFixture,
+};
+
 describe('membershipsRouter.getMySubscription', () => {
-  it('returns the linked subscription when present', async () => {
-    const findFirst = vi.fn().mockResolvedValue(subscriptionFixture);
+  it('returns the linked subscription with plan details when present', async () => {
+    const findFirst = vi.fn().mockResolvedValue(subscriptionWithPlanFixture);
     const ctx = makeCtx({
       query: { memberSubscriptions: { findFirst } } as never,
     });
     const caller = membershipsRouter.createCaller(ctx);
     const result = await caller.getMySubscription();
-    expect(result).toEqual(subscriptionFixture);
+    expect(result).toEqual(subscriptionWithPlanFixture);
+    expect(result?.plan).toBeDefined();
+    expect(result?.plan?.name).toBe('Unlimited');
   });
 
   it('returns null when no subscription found', async () => {
@@ -151,6 +158,13 @@ describe('membershipsRouter stubs (Phase 7)', () => {
   it('pause (no input) throws PRECONDITION_FAILED', async () => {
     const caller = membershipsRouter.createCaller(makeCtx());
     await expect(caller.pause()).rejects.toMatchObject({
+      code: 'PRECONDITION_FAILED',
+    });
+  });
+
+  it('resume throws PRECONDITION_FAILED (Phase 6 stub)', async () => {
+    const caller = membershipsRouter.createCaller(makeCtx());
+    await expect(caller.resume()).rejects.toMatchObject({
       code: 'PRECONDITION_FAILED',
     });
   });

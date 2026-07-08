@@ -1,7 +1,7 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 1.9.0
+version: 2.0.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
 last_updated: 2026-07-08
 ---
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–5 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS client + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 9 ISR marketing pages, MarketingNav/Footer, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts, exponential backoff), 6 booking UI components (SeatAvailability, BookingButton, BookingConfirmation, WaitlistButton, BookingFlow, useBookingMutation), `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. 422 tests (109 db + 102 auth + 106 api + 105 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green. Phase 6–12 pending.
+**Phase 0–6 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 9 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300), `useSessionAvailability` hook (3 reconnection attempts), 6 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components (MembershipStatusCard, CreditUsageWidget, UpcomingClassesWidget, ProfileSummaryCard, ProfileEditForm, ManageMembershipPanel, EnrollmentHistoryTable), CSV export utility, `memberships.getMySubscription` plan join, `memberships.resume` stub. 429 tests (109 db + 102 auth + 107 api + 111 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green. Phase 7–12 pending.
 
 ---
 
@@ -447,7 +447,7 @@ Before committing, verify locally:
 ```bash
 pnpm check-types       # TypeScript green (9/9 tasks)
 pnpm lint              # ESLint green (2/2 tasks)
-pnpm test              # Vitest green (422 tests)
+pnpm test              # Vitest green (429 tests)
 pnpm build             # Next.js production build (13/13 pages)
 ```
 
@@ -1241,6 +1241,121 @@ const rawData: unknown = JSON.parse(String(event.data));
 aria-label={`${String(enrolled)} of ${String(capacity)} spots taken`}
 ```
 
+### Gotcha 50: `/dashboard` redirect ghost — 7 files redirect to non-existent route (Critical — Phase 6)
+
+**Symptom:** After authentication, users are redirected to `/dashboard` but hit a 404. Seven source files redirect to `/dashboard` (post-login callback, sign-in default, `requireRole` fallback, MagicLinkForm, SignInForm, admin layout, auth test).
+
+**Root cause:** Phase 5 created the `(studio)` route group with `requireAuth()` but no `/dashboard` page existed. Every authenticated redirect landed on a 404.
+
+**Fix:** Create `(studio)/dashboard/page.tsx` — Phase 6 resolved this. If you add new auth-gated redirects, always verify the target route exists.
+
+### Gotcha 51: `react-hook-form` empty strings vs undefined in tRPC mutations (High — Phase 6)
+
+**Symptom:** `ProfileEditForm` submits successfully but empty form fields are saved as empty strings instead of being left unchanged.
+
+**Root cause:** `react-hook-form` returns empty strings `''` for empty inputs. `members.updateProfile` filters `undefined` (via `Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined))`) but NOT empty strings. So `''` passes through and overwrites the existing value.
+
+**Fix:** Strip empty strings → `undefined` before passing to the mutation:
+```typescript
+const patch = Object.fromEntries(
+  Object.entries(data)
+    .filter(([, v]) => v !== '' && v !== undefined)
+    .map(([k, v]) => [k, v === '' ? undefined : v]),
+);
+```
+
+### Gotcha 52: Disabled buttons with toast for Phase 7 stubs (Medium — Phase 6)
+
+**Symptom:** Clicking pause/cancel/resume on the membership management panel throws `PRECONDITION_FAILED` and shows an error toast.
+
+**Root cause:** `memberships.pause`, `cancel`, and `resume` are stubs that throw `PRECONDITION_FAILED` until Phase 7 (Stripe integration).
+
+**Fix:** Use `disabled` buttons with `onClick` that shows an informational toast:
+```tsx
+<button disabled onClick={() => toast.info('Coming Phase 7')}>
+  Pause Membership (Coming Phase 7)
+</button>
+```
+Do NOT call the mutation — the disabled state prevents the click, and the toast explains why.
+
+### Gotcha 53: CSV `no-base-to-string` — `String(unknown)` triggers ESLint (Low — Phase 6)
+
+**Symptom:** ESLint error: `'value' will use Object's default stringification format ('[object Object]') when stringified` on `String(value)` in the CSV utility.
+
+**Root cause:** `@typescript-eslint/no-base-to-string` flags `String(unknown)` because `unknown` could be an object, and `Object.prototype.toString()` returns `'[object Object]'`.
+
+**Fix:** Narrow with `typeof` checks before calling `String()`:
+```typescript
+if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+  str = String(value);
+} else {
+  str = JSON.stringify(value);
+}
+```
+
+### Gotcha 54: Dashboard components eslint override for Drizzle casts (Medium — Phase 6)
+
+**Symptom:** ESLint errors: `Unnecessary condition` and `Invalid type "number" of template literal expression` in dashboard components that receive Drizzle relational query results.
+
+**Root cause:** Dashboard pages cast Drizzle `with` results to expected shapes (`as unknown as SubscriptionWithPlan`). After the cast, TypeScript knows the types are non-null, so `??` is "unnecessary". Template literals with `number` trigger `restrict-template-expressions`.
+
+**Fix:** Add eslint override in `apps/web/eslint.config.mjs`:
+```js
+{
+  files: ['src/components/dashboard/**/*.tsx'],
+  rules: {
+    '@typescript-eslint/no-unnecessary-condition': 'off',
+    '@typescript-eslint/restrict-template-expressions': 'off',
+  },
+}
+```
+
+### Gotcha 55: `memberships.getMySubscription` plan join — Drizzle `never` types (Medium — Phase 6)
+
+**Symptom:** TypeScript errors like `Property 'name' does not exist on type 'never'` when accessing `subscription.plan.name` in the dashboard.
+
+**Root cause:** `memberships.getMySubscription` was enhanced with `with: { plan: true }` in Phase 6. Drizzle 0.45's relational query API infers nested `with` types as `never` without `defineRelations()` (same as SKILL §9.9 Gotcha 27 / Lesson 46).
+
+**Fix:** Cast the subscription to the expected shape in the dashboard page:
+```typescript
+type SubscriptionWithPlan = {
+  id: string; status: string; currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean; creditsRemaining: number | null;
+  plan: { name: string; interval: string; classCreditsPerCycle: number | null } | null;
+};
+const typedSubscription = subscription as unknown as SubscriptionWithPlan | null;
+```
+
+### Gotcha 56: Parallel data fetching with `Promise.all` — avoid waterfall (Medium — Phase 6)
+
+**Symptom:** Dashboard page loads slowly because profile, subscription, and history are fetched sequentially.
+
+**Root cause:** Each `await caller.X()` blocks the next. Three sequential queries = 3x latency.
+
+**Fix:** Use `Promise.all` for parallel fetching:
+```typescript
+const [profile, subscription, history] = await Promise.all([
+  caller.members.getProfile(),
+  caller.memberships.getMySubscription(),
+  caller.members.getHistory(),
+]);
+```
+This runs all three queries concurrently — total latency ≈ max(individual) instead of sum.
+
+### Gotcha 57: `ProfileEditForm` with `react-hook-form` + `zodResolver` (Low — Phase 6)
+
+**Symptom:** Form validation doesn't work, or mutation is called with invalid data.
+
+**Root cause:** `react-hook-form` requires `zodResolver` from `@hookform/resolvers/zod` to connect Zod schema validation to the form lifecycle. Without it, `handleSubmit` doesn't validate.
+
+**Fix:** Always pass `resolver: zodResolver(schema)` to `useForm`:
+```typescript
+const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  resolver: zodResolver(profileSchema),
+  defaultValues: initialValues,
+});
+```
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -1298,6 +1413,14 @@ aria-label={`${String(enrolled)} of ${String(capacity)} spots taken`}
 | ESLint: `void expression from arrow function shorthand` (Phase 5) | Radix Dialog `onOpenChange` returns void | Use block body: `(isOpen) => { if (!isOpen) onClose(); }`. See Gotcha 47. |
 | ESLint: `Unsafe argument of type 'any'` on `JSON.parse(event.data)` (Phase 5) | `MessageEvent.data` is typed as `any` | Cast: `JSON.parse(String(event.data))`. See Gotcha 48. |
 | ESLint: `Invalid type "number" of template literal expression` (Phase 5) | `restrict-template-expressions` forbids `number` | Cast: `String(number)` in template literals. See Gotcha 49. |
+| Authenticated user hits 404 on `/dashboard` (Phase 6) | No `(studio)/dashboard/page.tsx` existed | ✅ Fixed in Phase 6 — dashboard page created. Always verify redirect targets exist. See Gotcha 50. |
+| `ProfileEditForm` saves empty strings instead of leaving unchanged (Phase 6) | `react-hook-form` returns `''` for empty inputs | Strip empty strings → `undefined` before passing to tRPC mutation. See Gotcha 51. |
+| Pause/cancel/resume buttons throw `PRECONDITION_FAILED` (Phase 6) | `memberships` stubs throw until Phase 7 | Use `disabled` buttons with `toast.info('Coming Phase 7')`. See Gotcha 52. |
+| ESLint: `no-base-to-string` on `String(unknown)` in CSV utility (Phase 6) | `unknown` could be an object | Narrow with `typeof` checks before `String()`. See Gotcha 53. |
+| ESLint: `unnecessary-condition` + `restrict-template-expressions` in dashboard components (Phase 6) | Drizzle cast produces non-null types | Add eslint override for `src/components/dashboard/**/*.tsx`. See Gotcha 54. |
+| `subscription.plan.name` TypeScript error: `never` (Phase 6) | Drizzle 0.45 `with: { plan: true }` infers as `never` | Cast to `SubscriptionWithPlan` type. See Gotcha 55. |
+| Dashboard page loads slowly — sequential data fetching (Phase 6) | Three `await` calls in sequence | Use `Promise.all` for parallel fetching. See Gotcha 56. |
+| `react-hook-form` validation not working (Phase 6) | Missing `zodResolver` in `useForm` config | Pass `resolver: zodResolver(schema)` to `useForm`. See Gotcha 57. |
 
 ---
 

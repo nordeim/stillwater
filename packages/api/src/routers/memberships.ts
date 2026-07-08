@@ -37,7 +37,11 @@ export const membershipsRouter = router({
   }),
 
   /**
-   * Get the caller's active subscription. Returns null if none.
+   * Get the caller's active subscription with plan details.
+   * Returns null if none.
+   *
+   * Phase 6: Added `with: { plan: true }` so the dashboard can display
+   * plan name, billing interval, and credit info without a second query.
    */
   getMySubscription: protectedProcedure.query(async ({ ctx }) => {
     const memberId = ctx.session.user.memberId;
@@ -45,6 +49,7 @@ export const membershipsRouter = router({
 
     const subscription = await ctx.db.query.memberSubscriptions.findFirst({
       where: eq(memberSubscriptions.memberId, memberId),
+      with: { plan: true },
     });
 
     return subscription ?? null;
@@ -81,4 +86,12 @@ export const membershipsRouter = router({
     .mutation(async () => {
       throw new TRPCError({ code: 'PRECONDITION_FAILED', message: STUB_MESSAGE });
     }),
+
+  /**
+   * STUB — resume the caller's paused subscription.
+   * Phase 7 will replace this with a Stripe Subscription resume.
+   */
+  resume: protectedProcedure.mutation(async () => {
+    throw new TRPCError({ code: 'PRECONDITION_FAILED', message: STUB_MESSAGE });
+  }),
 });

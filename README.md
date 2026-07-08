@@ -10,7 +10,7 @@
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%205%20complete-success)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%206%20complete-success)](#project-status)
 
 > **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
@@ -269,7 +269,7 @@ docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dT'
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c 'SELECT count(*) FROM users;'
 # Expected: 5
 
-# Unit tests pass (422 tests, no DB needed for unit tests)
+# Unit tests pass (429 tests, no DB needed for unit tests)
 pnpm test --filter=@stillwater/db
 # Expected: "Test Files  16 passed (16)" + "Tests  109 passed (109)"
 
@@ -571,14 +571,14 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ✅ Complete   | 5         |
 | 4     | Marketing surface with Sanity CMS                  | ✅ Complete   | 4         |
 | 5     | Booking flow + SSE real-time seats                 | ✅ Complete   | 5         |
-| 6     | Member dashboard + membership management           | ⬜ Pending     | 4         |
+| 6     | Member dashboard + membership management           | ✅ Complete   | 4         |
 | 7     | Stripe integration (subscriptions + credit packs)  | ⬜ Pending     | 4         |
 | 8     | Background jobs (11 Trigger.dev v4 tasks)          | ⬜ Pending     | 3         |
 | 9     | Admin surface (RBAC-gated)                         | ⬜ Pending     | 5         |
 | 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~44% complete** | **~50 days** |
+| **Total** |                                                | **~48% complete** | **~50 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -680,6 +680,19 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 ---
 
 ## What's New
+
+### v1.8.0 (2026-07-08) — Phase 6 Complete: Member Dashboard + Membership Management
+
+| Change | Details |
+|---|---|
+| Dashboard routes | `(studio)/dashboard/page.tsx` (Server Component, parallel `Promise.all`), `/profile`, `/membership`, `/history` — all auth-gated via `(studio)/layout.tsx`; `error.tsx` + `loading.tsx` for `/dashboard` |
+| 7 dashboard components | MembershipStatusCard, CreditUsageWidget (`role="img"` aria-label), UpcomingClassesWidget (next 3 confirmed + empty state), ProfileSummaryCard, ProfileEditForm (react-hook-form + Zod), ManageMembershipPanel (disabled Phase 7 stubs with "Coming Phase 7" toasts), EnrollmentHistoryTable (status badges + CSV export) |
+| CSV export utility | `apps/web/src/lib/export/csv.ts` — RFC 4180 compliant (`escapeCSVField`, `arrayToCSV`, `exportToCSV`); 6 tests in `csv.test.ts` |
+| Router changes | `memberships.getMySubscription` enhanced with `with: { plan: true }` join; `memberships.resume` stub added (Phase 7 dependency) |
+| `/dashboard` 404 ghost resolved | 7 source files previously redirected to `/dashboard` but no route existed — every authenticated user hit a 404 |
+| 8 new gotchas documented | Gotchas 50–57 (CLAUDE.md) / 43–50 (AGENTS.md): dashboard 404 ghost, react-hook-form empty strings, Phase 7 stub UI, CSV no-base-to-string, dashboard eslint override, plan join never types, parallel Promise.all, ProfileEditForm + zodResolver |
+| 429 tests passing | 109 db + 102 auth + 107 api + 111 web (was 422 at Phase 5) |
+| `pnpm build` green | ✅ 13/13 pages including /dashboard, /profile, /membership, /history |
 
 ### v1.7.0 (2026-07-08) — Phase 5 Complete: Booking Flow + SSE Real-Time Seat Availability
 
@@ -816,11 +829,11 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 
 | Document                                  | Purpose                                                              |
 |-------------------------------------------|----------------------------------------------------------------------|
-| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 11 ADRs; v1.9.0) |
+| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 11 ADRs; v1.10.0) |
 | [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.3.0) |
 | [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.7.2; 21 source skills condensed; 41 lessons) |
-| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.9.0; 49 gotchas) |
-| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (42 gotchas)  |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v2.0.0; 57 gotchas) |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (50 gotchas)  |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |
 | [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture (some sections superseded by ADRs) |
 | [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |

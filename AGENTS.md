@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-08 (v1.9.0) — Phase 5 complete: SSE endpoint, booking UI, waitlist unique index. 8 new gotchas (35–42). Total: 42 gotchas.
+> **Updated:** 2026-07-08 (v2.0.0) — Phase 6 complete: member dashboard, membership management, CSV export. 8 new gotchas (43–50). Total: 50 gotchas.
 
 ---
 
@@ -349,6 +349,38 @@ jsdom DOM leaks between test files in same vitest process. Add `afterEach(() => 
 
 `restrict-template-expressions` forbids `number` in template literals. Cast: `String(number)` — e.g. `` `${String(enrolled)} of ${String(capacity)}` ``. See `CLAUDE.md` Gotcha 49.
 
+### 43. `/dashboard` redirect ghost — verify route exists before redirecting (Critical — Phase 6)
+
+7 source files redirected to `/dashboard` but no route existed until Phase 6. Every authenticated user hit a 404. Always verify redirect targets exist. See `CLAUDE.md` Gotcha 50.
+
+### 44. `react-hook-form` empty strings vs `undefined` in tRPC mutations (High — Phase 6)
+
+`react-hook-form` returns `''` for empty inputs. `members.updateProfile` filters `undefined` but NOT empty strings. Strip `''` → `undefined` before passing to mutation. See `CLAUDE.md` Gotcha 51.
+
+### 45. Disabled buttons with toast for Phase 7 stubs (Medium — Phase 6)
+
+`memberships.pause/cancel/resume` throw `PRECONDITION_FAILED`. Use `disabled` buttons with `toast.info('Coming Phase 7')` — don't call the mutation. See `CLAUDE.md` Gotcha 52.
+
+### 46. CSV `no-base-to-string` — `String(unknown)` triggers ESLint (Low — Phase 6)
+
+`String(unknown)` triggers `@typescript-eslint/no-base-to-string`. Narrow with `typeof` checks before `String()`, else use `JSON.stringify()`. See `CLAUDE.md` Gotcha 53.
+
+### 47. Dashboard components eslint override for Drizzle casts (Medium — Phase 6)
+
+Drizzle relational query casts produce `unnecessary-condition` + `restrict-template-expressions` warnings. Add eslint override for `src/components/dashboard/**/*.tsx`. See `CLAUDE.md` Gotcha 54.
+
+### 48. `memberships.getMySubscription` plan join — Drizzle `never` types (Medium — Phase 6)
+
+`with: { plan: true }` returns nested types that infer as `never` (Drizzle 0.45 limitation). Cast to `SubscriptionWithPlan` type in dashboard page. See `CLAUDE.md` Gotcha 55.
+
+### 49. Parallel data fetching with `Promise.all` — avoid waterfall (Medium — Phase 6)
+
+Dashboard fetches profile + subscription + history. Use `Promise.all` for parallel fetching — total latency ≈ max(individual) instead of sum. See `CLAUDE.md` Gotcha 56.
+
+### 50. `ProfileEditForm` with `react-hook-form` + `zodResolver` (Low — Phase 6)
+
+Always pass `resolver: zodResolver(schema)` to `useForm` — without it, `handleSubmit` doesn't validate. See `CLAUDE.md` Gotcha 57.
+
 ---
 
 ## Phase status (as of 2026-07-08)
@@ -358,14 +390,14 @@ jsdom DOM leaks between test files in same vitest process. Add `afterEach(() => 
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
 | 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` (waitlist unique). 109 db tests. |
 | 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth tests. |
-| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 106 api tests. |
+| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 107 api tests. |
 | 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 9 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). |
 | 5 — Booking | ✅ Complete | SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts), 6 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. 105 web tests. |
-| 6–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
+| 6 — Dashboard | ✅ Complete | Member dashboard (/dashboard, /profile, /membership, /history), 7 dashboard components, CSV export, memberships.resume stub, plan join. 111 web tests (+6 CSV; was 105 at Phase 5). |
 
-**Total: 422 tests** (109 db + 102 auth + 106 api + 105 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
+**Total: 429 tests** (109 db + 102 auth + 107 api + 111 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
-All 10 Open Questions in MEP §9 are ✅ RESOLVED. See `MASTER_EXECUTION_PLAN.md` §9 for decisions on Sanity hosting (Cloud), Stripe refunds (Dashboard for v1), mobile nav (Radix Dialog), test data (synthetic only), production cutover (feature-flag-gated).
+| 7–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
 
 ---
 
@@ -390,7 +422,7 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ```bash
 pnpm check-types       # Must be green (9/9 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (422 tests: 106 api + 102 auth + 109 db + 105 web)
+pnpm test              # Must be green (429 tests: 107 api + 102 auth + 109 db + 111 web)
 pnpm build             # Must be green (13/13 static pages)
 ```
 
@@ -405,9 +437,9 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
 3. `stillwater_SKILL.md` — distilled project skill (v1.7.2; 21 source skills condensed); authoritative tech-stack specifics
-4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.9.0); culmination of the above into codebase architecture
+4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.10.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.9.0 with gotchas 24–49)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.0.0 with gotchas 24–57)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 
