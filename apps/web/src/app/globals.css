@@ -97,3 +97,16 @@
   --duration-slow: var(--duration-slow);
   --duration-crawl: var(--duration-crawl);
 }
+
+/* ── Reduced Motion (WCAG AAA §2.3.3 + SKILL §4.6) ─────────── */
+/* Use 0.01ms (NOT 0ms — browsers treat 0ms as "use default") */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

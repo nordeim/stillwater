@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+
 import './globals.css';
+import { TRPCProvider } from '@/lib/trpc/client';
 
 export const metadata: Metadata = {
   title: {
@@ -26,7 +28,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <TRPCProvider>{children}</TRPCProvider>
+      </body>
     </html>
   );
 }

@@ -22,8 +22,7 @@
       ],
       "outputs": [
         ".next/**",
-        "!.next/cache/**",
-        "dist/**"
+        "!.next/cache/**"
       ]
     },
     "dev": {
@@ -39,11 +38,11 @@
       "outputs": []
     },
     "check-types": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "outputs": []
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "outputs": [
         "coverage/**"
       ],

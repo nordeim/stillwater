@@ -1,9 +1,9 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 1.8.0
+version: 1.8.3
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
-last_updated: 2026-07-07
+last_updated: 2026-07-08
 ---
 
 # Stillwater
@@ -15,13 +15,13 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 **Canonical Sources** (read in this order when in doubt — precedence: design specs → visual guidance → tech stack → architecture culmination → derived working copy):
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` + `static_landing_page_html_mockup.md` — visual + UI/UX aesthetics guidance only (token VALUES come from SKILL §4.1 / PAD §11.4)
-3. `stillwater_SKILL.md` — distilled project skill (v1.4.1; 21 source skills condensed); authoritative tech-stack specifics
-4. `PAD.md` — Project Architecture Document (31 sections, 10 ADRs; v1.4.0); culmination of the above into codebase architecture
+3. `stillwater_SKILL.md` — distilled project skill (v1.7.2; 21 source skills condensed); authoritative tech-stack specifics
+4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.9.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–3 Status**: ✅ COMPLETE (with Phase 1–2 remediation applied). Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle (single clean migration `0000_dear_dagger.sql` regenerated after fixing silent `ALTER COLUMN` failure). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration (HTTP handler + RSC server caller + React client + query keys). Database client now auto-selects `pg` (local) vs `neon-http` (production) driver. Seed script correctly loads `.env.local` before DB instantiation. 326+ tests (104 api + 102 auth + 107 db + 13 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` all green. Phase 4–12 pending.
+**Phase 0–4 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 14 tables + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS client + 8 content types + Studio app (`apps/studio/`), GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 9 ISR marketing pages, MarketingNav/Footer, 11 shadcn components (anti-generic patched), `transpilePackages` build fix (ADR-011). 377 tests (108 db + 102 auth + 106 api + 61 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green. Phase 5–12 pending.
 
 ---
 
@@ -160,7 +160,7 @@ Follow this six-phase workflow for all implementation tasks:
 
 - **Drizzle adapter**: `drizzleAdapter(db, { provider: 'pg' })`
 - **Providers**: Google OAuth + Magic Link via Resend
-- **Session enrichment**: Use `session.sessionData` callback to attach `memberId` + `roles` from `role_assignments` table
+- **Session enrichment**: Use the `customSession` plugin from `better-auth/plugins/custom-session` to attach `memberId` + `roles` from `role_assignments` table (NOT `session.sessionData` — that API doesn't exist in v1.6.23; see Gotcha 20)
 - **Server-side**: `auth.api.getSession({ headers: await headers() })`
 - **Client-side**: `authClient.useSession()` hook returns `{ data, error, refetch, isPending }` (NOT Auth.js `{ data, status, update }`)
 - **Route handler path**: `/api/auth/[...all]/route.ts` (NOT `[...nextauth]`) using `toNextJsHandler(auth)`
@@ -577,9 +577,9 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
 ### Architecture
 
-- **Turborepo monorepo**: `apps/web` (Next.js), `apps/studio` (Sanity Studio — **Phase 4 deliverable, not yet scaffolded**), `packages/*` (7 shared libs), `services/workers` (Trigger.dev), `tooling/*` (3 shared configs)
+- **Turborepo monorepo**: `apps/web` (Next.js), `apps/studio` (Sanity Studio — ✅ Phase 4 complete), `packages/*` (7 shared libs), `services/workers` (Trigger.dev), `tooling/*` (3 shared configs)
 - **Package dependency graph** (PAD §6.3): `web → api + ui + auth + config`; `api → db + payments + config`; `auth → db + config`; `workers → db + email + config`
-- **`@stillwater/source` custom condition**: Declared in `.npmrc` + `pnpm-workspace.yaml` — workspace packages resolve to source (`./src/index.ts`) instead of built `dist/`, enabling zero-rebuild dev iteration
+- **Workspace package resolution** (ADR-011): `exports.default` in all 7 `packages/*/package.json` points to `./src/*.ts` (source). `transpilePackages` in `next.config.ts` tells Turbopack to transpile them inline. The `@stillwater/source` custom condition is kept for tsc/vitest parity but is **redundant for Turbopack** (it ignores custom conditions — see Gotcha 34). No `dist/` directories needed; no `tsc --build` step required before `next build`.
 - **3 route groups**: `(marketing)` public ISR, `(studio)` auth-gated SSR, `(admin)` RBAC-gated SSR
 
 ### API Design
@@ -709,11 +709,11 @@ These are real issues encountered during Phase 0 implementation. Each has a veri
 
 **Fix:** Don't set `force-dynamic` on SSE or streaming route handlers — they're dynamic by default (they read `req.url` or stream). See SKILL.md §13.8. Note: `cacheComponents` is NOT yet enabled in Phase 0 (deferred to pre-Phase 4).
 
-### Gotcha 8: Vercel SSE timeout (10s Hobby / 15s Pro default)
+### Gotcha 8: Vercel SSE timeout (300s default — Hobby and Pro)
 
-**Symptom:** SSE endpoint silently terminates after 10–15 seconds on Vercel.
+**Symptom:** SSE endpoint silently terminates after 300 seconds on Vercel.
 
-**Root cause:** Vercel serverless functions have a default timeout (10s Hobby, 15s Pro) that terminates long-running streams. As of June 2026, Vercel allows up to 30 minutes (1800s) on Pro/Enterprise, but this requires BOTH `maxDuration` AND enabling Fluid Compute in project settings.
+**Root cause:** Vercel serverless functions have a default timeout of 300 seconds (applies to both Hobby and Pro plans) that terminates long-running streams. As of June 2026, Vercel allows up to 30 minutes (1800s) on Pro/Enterprise, but this requires BOTH `maxDuration` AND enabling Fluid Compute in project settings.
 
 **Fix:** Phase 5 F5-01 (`/api/schedule/stream/route.ts`) must set `export const maxDuration = 300` (5 min) AND the Vercel project must have Fluid Compute enabled. See PAD §13.2 + audit report A.
 
@@ -1029,6 +1029,114 @@ But drizzle-kit 0.31.10 **swallows this error** — it exits with code 1 without
 
 **Fix:** Use valid v4 variant in test fixtures: `00000000-0000-4000-a000-000000000001` (variant `a`).
 
+### Gotcha 34: Turbopack ignores custom `exports` conditions (Critical — Phase 4 build fix)
+
+**Symptom:** `pnpm build` fails with `Module not found: Can't resolve '@stillwater/auth'` (or `@stillwater/api`, `@stillwater/db`, etc.), even though `pnpm test` and `pnpm check-types` work fine.
+
+**Root cause:** Turbopack's Rust resolver only matches standard Node.js conditions (`default`, `import`, `require`, `browser`, `types`). It ignores custom-named conditions like `@stillwater/source`. When resolving `@stillwater/*` packages, Turbopack skips `@stillwater/source` (→ `./src/index.ts`) and falls through to `default` (→ `./dist/index.js`) — a file that doesn't exist because `tooling/typescript/library.json` sets `emitDeclarationOnly: true`.
+
+**Fix:** Two-part fix (ADR-011):
+1. Point `exports.default` to `./src/*.ts` (source) in all 7 `packages/*/package.json` files.
+2. Add `transpilePackages: ['@stillwater/auth', '@stillwater/api', ...]` to `apps/web/next.config.ts`.
+
+The `@stillwater/source` condition is kept for tsc/vitest parity but is redundant for Turbopack. No `dist/` directories needed; no `tsc --build` step required.
+
+### Gotcha 35: shadcn v4 + `exactOptionalPropertyTypes` — `checked` prop (High — Phase 4)
+
+**Symptom:** `pnpm check-types` fails: `Type 'CheckedState | undefined' is not assignable to type 'CheckedState'` in `dropdown-menu.tsx`.
+
+**Root cause:** shadcn v4's `DropdownMenuCheckboxItem` destructures `checked` from props (which is optional → `CheckedState | undefined`), then passes it to `DropdownMenuPrimitive.CheckboxItem` which expects `checked: CheckedState` (not undefined). With `exactOptionalPropertyTypes: true`, passing `checked={undefined}` is not allowed.
+
+**Fix:** Use spread-conditional to only pass `checked` when defined:
+```tsx
+{...(checked !== undefined ? { checked } : {})}
+```
+
+### Gotcha 36: `eslint-plugin-tailwindcss` v4.0.6 — `src/style.css` bug (Medium — Phase 4)
+
+**Symptom:** `pnpm lint` crashes: `Error: ENOENT: no such file or directory, open '.../apps/web/src/style.css'`.
+
+**Root cause:** `eslint-plugin-tailwindcss@4.0.6` has a bug where it defaults to `src/style.css` regardless of the `cssFiles` setting in ESLint config. The actual CSS file is `src/app/globals.css`.
+
+**Fix:** Disable the affected rules in `tooling/eslint/index.js`:
+```js
+rules: {
+  "tailwindcss/classnames-order": "off",
+  "tailwindcss/no-contradicting-classname": "off",
+}
+```
+Tailwind v4 class validation is handled at build time by the compiler.
+
+### Gotcha 37: `@vitest-environment jsdom` for React component tests (Medium — Phase 4)
+
+**Symptom:** `pnpm test` fails: `ReferenceError: document is not defined` when using `@testing-library/react`'s `render()`.
+
+**Root cause:** `apps/web/vitest.config.ts` sets `environment: 'node'` (for server-side tests). React component tests using `@testing-library/react` need a DOM environment.
+
+**Fix:** Add `// @vitest-environment jsdom` as the FIRST line of `.tsx` test files that use `render()`:
+```tsx
+// @vitest-environment jsdom
+import { render, screen } from '@testing-library/react';
+```
+This overrides the global `node` env per-file without slowing down non-component tests.
+
+### Gotcha 38: Drizzle 0.45 relational query types infer as `never` (Medium — Phase 4)
+
+**Symptom:** TypeScript errors like `Property 'name' does not exist on type 'never'` when accessing nested relations from `db.query.classSessions.findMany({ with: { class: true, instructor: true } })`.
+
+**Root cause:** Drizzle 0.45's relational query API v1 (`db.query.*`) infers nested `with` types as `never` without `defineRelations()` (which requires Drizzle ≥1.0.0-beta).
+
+**Fix:** Cast the result to the expected shape:
+```typescript
+type ScheduleSession = {
+  id: string;
+  startsAt: Date;
+  class: { name: string };
+  instructor: { slug: string };
+};
+const typedSessions = sessions as unknown as ScheduleSession[];
+```
+This is a known limitation documented in SKILL §9.9 Gotcha 27. Will be fixed when upgrading to Drizzle 1.0+.
+
+### Gotcha 39: Sanity slug is an object with `.current` property (Low — Phase 4)
+
+**Symptom:** GROQ query `slug == $slug` returns no results, even though the slug exists.
+
+**Root cause:** In Sanity, the `slug` field is an object `{ _type: 'slug', current: 'the-slug' }`, not a plain string. GROQ queries must use `slug.current == $slug`.
+
+**Fix:** Use `slug.current` in GROQ queries:
+```groq
+*[_type == "blogPost" && published == true && slug.current == $slug][0]
+```
+Zod schema: `z.object({ current: z.string().min(1) })`.
+
+### Gotcha 40: Zod v4 `z.string().email()` deprecated (Low — Phase 4)
+
+**Symptom:** ESLint warning: `email` is deprecated. Use `z.email()` instead.
+
+**Root cause:** Zod v4 introduced `z.email()` as a top-level method, deprecating `z.string().email()`.
+
+**Fix:** Replace `z.string().email()` with `z.email()`:
+```typescript
+// Before
+contactEmail: z.string().email().optional(),
+// After
+contactEmail: z.email().optional(),
+```
+
+### Gotcha 41: ESLint `import/order` — `crypto` before `vitest` (Low — Phase 4)
+
+**Symptom:** ESLint error: `crypto import should occur before import of vitest`.
+
+**Root cause:** The `import/order` rule sorts imports by group (builtin → external → internal). `crypto` is a Node.js builtin; `vitest` is an external package. Builtins must come first.
+
+**Fix:** Move `import { createHmac } from 'crypto'` above `import { describe, ... } from 'vitest'`, with an empty line between groups:
+```typescript
+import { createHmac } from 'crypto';
+
+import { describe, it, expect } from 'vitest';
+```
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -1070,6 +1178,14 @@ But drizzle-kit 0.31.10 **swallows this error** — it exits with code 1 without
 | `pnpm check-types` fails TS6059 in workers | `rootDir: "src"` excludes `trigger.config.ts` | Remove `rootDir` and `outDir` from workers tsconfig (irrelevant with `noEmit: true`). |
 | `pnpm dev --filter=web` fails "No package found" | Package name is `@stillwater/web`, not `web` | Use `--filter=@stillwater/web` or `--filter=./apps/web`. |
 | `turbopackFileSystemCaching` warning in dev | Stale property name | Use `turbopackFileSystemCacheForDev` (Next.js 16.2.10). |
+| `pnpm build` fails: `Can't resolve '@stillwater/auth'` (Phase 4) | Turbopack ignores `@stillwater/source` custom condition | Point `exports.default` to `./src/*.ts` + add `transpilePackages` to `next.config.ts`. See Gotcha 34. |
+| `pnpm check-types` fails: `CheckedState \| undefined` not assignable (Phase 4) | shadcn v4 + `exactOptionalPropertyTypes` conflict | Use spread-conditional `{...(checked !== undefined ? { checked } : {})}`. See Gotcha 35. |
+| `pnpm lint` crashes: `ENOENT: no such file: 'src/style.css'` (Phase 4) | `eslint-plugin-tailwindcss` v4.0.6 bug | Disable `tailwindcss/classnames-order` + `no-contradicting-classname` rules. See Gotcha 36. |
+| `pnpm test` fails: `ReferenceError: document is not defined` (Phase 4) | React component test needs DOM environment | Add `// @vitest-environment jsdom` as first line of `.tsx` test. See Gotcha 37. |
+| `Property 'name' does not exist on type 'never'` in RSC (Phase 4) | Drizzle 0.45 relational query type inference | Cast result: `sessions as unknown as ScheduleSession[]`. See Gotcha 38. |
+| Sanity GROQ `slug == $slug` returns no results (Phase 4) | Sanity slug is object, not string | Use `slug.current == $slug` in GROQ queries. See Gotcha 39. |
+| ESLint: `email` is deprecated (Phase 4) | Zod v4 deprecates `z.string().email()` | Use `z.email()` instead. See Gotcha 40. |
+| ESLint: `crypto import should occur before vitest` (Phase 4) | `import/order` rule sorts builtins first | Move `import { createHmac } from 'crypto'` above vitest imports. See Gotcha 41. |
 
 ---
 

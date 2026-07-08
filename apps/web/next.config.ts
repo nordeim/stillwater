@@ -7,12 +7,29 @@ const nextConfig: NextConfig = {
   // ── React Compiler (stable in Next.js 16) ──────────────────────
   reactCompiler: true,
 
+  // ── Transpile workspace packages (source resolution) ───────────
+  // Turbopack doesn't respect custom `exports` conditions like
+  // `@stillwater/source`. By pointing `exports.default` to `./src/*.ts`
+  // in each workspace package.json AND listing them here, Turbopack
+  // resolves to source and transpiles it inline. This eliminates the
+  // need for a separate `tsc --build` step before `next build`.
+  transpilePackages: [
+    '@stillwater/auth',
+    '@stillwater/api',
+    '@stillwater/db',
+    '@stillwater/config',
+    '@stillwater/ui',
+    '@stillwater/email',
+    '@stillwater/payments',
+  ],
+
   // ── Top-level config (Next.js 16 moved these from experimental) ──
   // D21: serverExternalPackages moved to top-level (was experimental.serverComponentsExternalPackages)
   serverExternalPackages: [
     "@neondatabase/serverless",
     "drizzle-orm",
     "better-auth",
+    "@sanity/client",
   ],
 
   // ── Experimental features ──────────────────────────────────────

@@ -1,7 +1,7 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-08 (post-Phase 3)
-> Status: Phases 0–3 ✅ complete · Phases 4–12 ⬜ pending
+> **Updated:** 2026-07-08 (post-Phase 4)
+> Status: Phases 0–4 ✅ complete · Phases 5–12 ⬜ pending
 
 ## What it is
 
@@ -9,14 +9,15 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 
 ## Current build state (the honest picture)
 
-**Phases 0 through 3 are complete and green.** Phases 4 through 12 are not yet started.
+**Phases 0 through 4 are complete and green.** Phases 5 through 12 are not yet started.
 
 - **Phase 0 (Scaffold):** Complete. Turborepo + pnpm workspaces, 7 shared packages, 11 tooling configs, Docker Compose setup, and the full design system (self-hosted fonts, CSS tokens).
-- **Phase 1 (Database):** Complete. 14-table Drizzle schema, 8 enums, 5 critical indexes, a single clean migration (`0000_dear_dagger.sql`), an idempotent seed script, and dynamic database driver selection (`pg` for local Docker, `neon-http` for production Neon).
-- **Phase 2 (Auth & RBAC):** Complete. Better Auth v1.6.23 with Google OAuth, Magic Link, and a `customSession` plugin for `memberId`/`roles` enrichment. RBAC permission matrix (13 permissions × 6 roles). 2-layer auth pattern: lightweight `proxy.ts` (cookie-only existence check) and full validation in Server Component layouts (`requireAuth` / `requireRole`).
-- **Phase 3 (API / tRPC):** Complete. 10 routers with ~30 procedures, 4 access tiers (public, protected, staff, owner), advisory lock booking concurrency, rate limiting (Upstash Redis), and full web integration (HTTP handler, RSC caller, React client, query keys).
+- **Phase 1 (Database):** Complete. 14-table Drizzle schema, 8 enums, 5 critical indexes, migration `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` (instructors.published), idempotent seed, dynamic driver selection.
+- **Phase 2 (Auth & RBAC):** Complete. Better Auth v1.6.23 with Google OAuth, Magic Link, `customSession` plugin. RBAC matrix (13×6). 2-layer auth (proxy.ts + layout guards).
+- **Phase 3 (API / tRPC):** Complete. 10 routers, ~30 procedures, 4 access tiers, advisory lock booking, rate limiting, full web integration.
+- **Phase 4 (Marketing):** Complete. Sanity CMS client + 8 content type schemas, Sanity Studio app (`apps/studio/`), GROQ query registry with `published == true` filter, Zod response validation, Cloudflare Images signer, webhook→ISR revalidation with HMAC verification, 9 ISR-backed marketing pages (home, schedule, instructors list + detail, pricing, blog list + detail, about), MarketingNav + Footer with Editorial Calm design, skip-to-content link, error/loading boundaries, 11 shadcn/ui components with anti-generic patches (no shadows, `--radius: 0`).
 
-**Phases 4–12:** Pending. No Sanity Studio, no marketing pages, no booking UI, no Stripe client, no background jobs, no admin surface.
+**Phases 5–12:** Pending. No booking UI, no SSE, no Stripe client, no background jobs, no admin surface, no WCAG audit, no landing page port.
 
 ---
 
@@ -25,10 +26,10 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 | Phase | Status | Quick Summary |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | Monorepo, tooling, Docker, design tokens |
-| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 indexes, migration, seed |
+| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 indexes, 2 migrations, seed |
 | 2 — Auth & RBAC | ✅ Complete | Better Auth, Google OAuth, Magic Link, RBAC matrix |
 | 3 — tRPC API | ✅ Complete | 10 routers, ~30 procedures, advisory locks, rate limiting |
-| 4 — Marketing | ⬜ Pending | Sanity CMS, ISR pages |
+| 4 — Marketing | ✅ Complete | Sanity CMS, 9 ISR pages, webhook, Cloudflare Images, shadcn/ui |
 | 5 — Booking | ⬜ Pending | Booking flow, SSE real-time seat availability |
 | 6 — Dashboard | ⬜ Pending | Member dashboard, membership management |
 | 7 — Payments | ⬜ Pending | Stripe subscriptions, credit packs |
@@ -91,19 +92,22 @@ These are the files you can actually `cat` and `test` today:
 
 ## Live quality gates (2026-07-08)
 
-Run `pnpm check-types`, `pnpm lint`, and `pnpm test`.
+Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 
 | Gate | Result |
 |---|---|
-| `pnpm check-types` | **16/16 successful** ✅ |
+| `pnpm check-types` | **9/9 successful** ✅ |
 | `pnpm lint` | **2/2 successful** ✅ |
-| `pnpm test` | **326 tests passing** ✅ |
+| `pnpm test` | **375 tests passing** ✅ |
+| `pnpm build` | **✅ Compiled successfully** (12/12 static pages) ✅ |
 
 Test breakdown:
-- `packages/db` — 16 test files / **107 tests**
+- `packages/db` — 16 test files / **108 tests**
 - `packages/auth` — 4 test files / **102 tests**
 - `packages/api` — 13 test files / **104 tests**
-- `apps/web` — 3 test files / **13 tests**
+- `apps/web` — 11 test files / **61 tests**
+
+Build output: 9 marketing routes (home, schedule, instructors×2, pricing, blog×2, about) + 4 auth routes + 3 API routes. ISR revalidate times: `/about` = 1d, `/blog` = 1h, `/` = 5min.
 
 ---
 

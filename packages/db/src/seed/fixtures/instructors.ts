@@ -26,6 +26,7 @@ export const demoInstructors: DemoInstructor[] = [
     specialties: ['Vinyasa', 'Ashtanga', 'Pranayama'],
     imageKey: 'instructors/mei-tanaka-portrait',
     isActive: true,
+    published: true,
     sortOrder: 1,
   },
   {
@@ -37,6 +38,7 @@ export const demoInstructors: DemoInstructor[] = [
     specialties: ['Ashtanga', 'Yin', 'Alignment'],
     imageKey: 'instructors/james-harlow-portrait',
     isActive: true,
+    published: true,
     sortOrder: 2,
   },
   {
@@ -48,6 +50,7 @@ export const demoInstructors: DemoInstructor[] = [
     specialties: ['Yin', 'Meditation', 'Restorative'],
     imageKey: 'instructors/aiko-mori-portrait',
     isActive: true,
+    published: true,
     sortOrder: 3,
   },
 ];

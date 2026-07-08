@@ -5,19 +5,19 @@
   "exports": {
     ".": {
       "@stillwater/source": "./src/index.ts",
-      "default": "./dist/index.js"
+      "default": "./src/index.ts"
     },
     "./trpc": {
       "@stillwater/source": "./src/trpc.ts",
-      "default": "./dist/trpc.js"
+      "default": "./src/trpc.ts"
     },
     "./root": {
       "@stillwater/source": "./src/root.ts",
-      "default": "./dist/root.js"
+      "default": "./src/root.ts"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --build --watch",

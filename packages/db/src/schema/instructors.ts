@@ -20,5 +20,9 @@ export const instructors = pgTable('instructors', {
   specialties: text('specialties').array(),
   imageKey: text('image_key'),
   isActive: boolean('is_active').default(true).notNull(),
+  // Phase 4: published controls marketing visibility (SKILL §7.5.1).
+  // Separate from isActive (which controls internal/staff visibility).
+  // GROQ queries and tRPC public procedures filter published == true.
+  published: boolean('published').default(true).notNull(),
   sortOrder: integer('sort_order').default(0),
 });

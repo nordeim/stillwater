@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-07 (v1.8.0) — Added Gotchas 24–26 (migration regeneration, db driver selection, seed env loading). Total: 26 gotchas.
+> **Updated:** 2026-07-08 (v1.8.3) — Phase 4 complete + build fix (transpilePackages). 8 new gotchas (27–34). Total: 34 gotchas.
 
 ---
 
@@ -16,8 +16,8 @@
 | pnpm | **11.9.0** (`^11.0.0`) | pnpm 9.x is EOL. Root `package.json` `packageManager` field pins this. |
 | TypeScript | **5.9.0** (`^5.9.0`) | Do NOT upgrade to 6.x. Required for `erasableSyntaxOnly` + `verbatimModuleSyntax`. |
 | ESLint | **9.39.4** (`^9.39.4`) | Do NOT upgrade to v10. `eslint-plugin-react` and `eslint-plugin-import` have no v10 versions. |
-| Next.js | 16.2.0 (`^16.2.0`) | App Router, Turbopack, React Compiler (`reactCompiler: true`) |
-| React | 19.2.3 (`^19.2.3`) | CVE-2025-55182 floor — never downgrade below 19.2.3 |
+| Next.js | 16.2.10 (`^16.2.10`) | App Router, Turbopack, React Compiler (`reactCompiler: true`) |
+| React | 19.2.7 (`^19.2.7`) | CVE-2025-55182 floor — never downgrade below 19.2.3 |
 | Tailwind CSS | 4.3.0 (`^4.3.0`) | CSS-first `@theme` in `globals.css`; no `tailwind.config.js` needed |
 | tRPC | v11 (`^11.18.0`) | Server caller for RSC, React Query for client |
 | Drizzle ORM | 0.45.0 (`^0.45.2`) | `neon-http` driver; `db.$count` requires ≥0.34 |
@@ -285,18 +285,52 @@ Don't pass `undefined` to optional properties (e.g., tRPC `onError`). Use `...(c
 
 **Fix:** `packages/db/src/seed/env.ts` loads `.env.local` via `dotenv` when `DATABASE_URL` is not set. Imported at the top of `seed/index.ts` before the `db` import. Works because ESM evaluates side-effect imports in order of appearance.
 
+### 27. Turbopack ignores custom `exports` conditions — use `transpilePackages` (Critical — Phase 4)
+
+`pnpm build` fails with `Can't resolve '@stillwater/auth'` even though `pnpm test` works. Turbopack's Rust resolver ignores `@stillwater/source` custom condition, falls through to `default: ./dist/index.js` (doesn't exist — `emitDeclarationOnly: true`). Fix: point `exports.default` to `./src/*.ts` in all 7 `packages/*/package.json` + add `transpilePackages` array to `next.config.ts`. See `CLAUDE.md` Gotcha 34.
+
+### 28. shadcn v4 + `exactOptionalPropertyTypes` — `checked` prop (High — Phase 4)
+
+`DropdownMenuCheckboxItem` fails typecheck: `CheckedState | undefined` not assignable to `CheckedState`. Fix: spread-conditional `{...(checked !== undefined ? { checked } : {})}`. See `CLAUDE.md` Gotcha 35.
+
+### 29. `eslint-plugin-tailwindcss` v4.0.6 — `src/style.css` bug (Medium — Phase 4)
+
+`pnpm lint` crashes: `ENOENT: no such file: 'src/style.css'`. Plugin ignores `cssFiles` setting. Fix: disable `tailwindcss/classnames-order` + `no-contradicting-classname` in `tooling/eslint/index.js`. See `CLAUDE.md` Gotcha 36.
+
+### 30. `@vitest-environment jsdom` for React component tests (Medium — Phase 4)
+
+`render()` from `@testing-library/react` fails: `ReferenceError: document is not defined`. Fix: add `// @vitest-environment jsdom` as FIRST line of `.tsx` test files. See `CLAUDE.md` Gotcha 37.
+
+### 31. Drizzle 0.45 relational query types infer as `never` (Medium — Phase 4)
+
+`db.query.X.findMany({ with: { ... } })` nested fields type as `never`. Fix: cast result `as unknown as ExpectedType[]`. Will be fixed in Drizzle 1.0+. See `CLAUDE.md` Gotcha 38.
+
+### 32. Sanity slug is object with `.current` property (Low — Phase 4)
+
+GROQ `slug == $slug` returns nothing. Sanity slug is `{ current: 'the-slug' }`, not a string. Fix: use `slug.current == $slug` in GROQ; `z.object({ current: z.string() })` in Zod. See `CLAUDE.md` Gotcha 39.
+
+### 33. Zod v4 `z.string().email()` deprecated (Low — Phase 4)
+
+ESLint: `email` is deprecated. Fix: use `z.email()` instead of `z.string().email()`. See `CLAUDE.md` Gotcha 40.
+
+### 34. ESLint `import/order` — builtins before externals (Low — Phase 4)
+
+`import { createHmac } from 'crypto'` must come before `import { describe } from 'vitest'`. Fix: reorder imports — builtins first, empty line between groups. See `CLAUDE.md` Gotcha 41.
+
 ---
 
-## Phase status (as of 2026-07-07)
+## Phase status (as of 2026-07-08)
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
-| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, single clean migration `0000_dear_dagger.sql`. 107 db tests. |
-| 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth + 11 web tests. |
-| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration (HTTP handler + RSC caller + React client + query keys). 104 api + 2 web tests. |
-| 4 — Marketing | ⬜ Next | Sanity CMS + ISR marketing pages. |
+| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql`. 108 db tests. |
+| 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth tests. |
+| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 106 api tests. |
+| 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 9 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). 61 web tests. |
 | 5–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
+
+**Total: 377 tests** (108 db + 102 auth + 106 api + 61 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
 All 10 Open Questions in MEP §9 are ✅ RESOLVED. See `MASTER_EXECUTION_PLAN.md` §9 for decisions on Sanity hosting (Cloud), Stripe refunds (Dashboard for v1), mobile nav (Radix Dialog), test data (synthetic only), production cutover (feature-flag-gated).
 
@@ -321,9 +355,10 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ## Pre-commit checklist
 
 ```bash
-pnpm check-types       # Must be green (16/16 tasks)
+pnpm check-types       # Must be green (9/9 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (326+ tests: 104 api + 102 auth + 107 db + 13 web)
+pnpm test              # Must be green (377 tests: 106 api + 102 auth + 108 db + 61 web)
+pnpm build             # Must be green (12/12 static pages)
 ```
 
 Integration tests (require Docker Postgres): `pnpm test:integration --filter=@stillwater/db`
@@ -336,10 +371,10 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
-3. `stillwater_SKILL.md` — distilled project skill (v1.4.1; 21 source skills condensed); authoritative tech-stack specifics
-4. `PAD.md` — Project Architecture Document (31 sections, 10 ADRs; v1.8.0); culmination of the above into codebase architecture
+3. `stillwater_SKILL.md` — distilled project skill (v1.7.2; 21 source skills condensed); authoritative tech-stack specifics
+4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.9.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.8.0 with gotchas 24–33)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v1.8.3 with gotchas 24–41)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 

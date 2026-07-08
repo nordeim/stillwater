@@ -7,17 +7,17 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 1.7.0
+version: 1.8.0
 project_type: nextjs-monorepo
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
-last_updated: 2026-07-07
+last_updated: 2026-07-08
 ---
 
 # Stillwater — Project Skill File
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v1.7.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phases 4–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. `pnpm install` / `pnpm check-types` / `pnpm lint` all green.
+> **Status:** v1.8.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phase 4 (Marketing Surface with Sanity CMS — 9 ISR pages, webhook→ISR, Cloudflare Images, 11 shadcn components, build fix via transpilePackages) ✅ COMPLETE (2026-07-08); Phases 5–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. ADR-011 added (source resolution via `transpilePackages`). 377 tests (108 db + 102 auth + 106 api + 61 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
 ---
 
@@ -193,6 +193,7 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | ADR-008 | Better Auth v1.6.23 supersedes Auth.js v5 | Accepted |
 | ADR-009 | `proxy.ts` replaces `middleware.ts` (Next.js 16) | Accepted |
 | ADR-010 | Resend Native Templates for Trigger.dev workers (protects CPU budgets from React Email v6 1.8MB bundle bloat) | **Proposed** (pending Phase 8 acceptance) |
+| ADR-011 | Source resolution via `transpilePackages` + `exports.default` → `./src/*.ts` (Turbopack ignores custom conditions) | Accepted (2026-07-08) |
 
 ---
 
@@ -1433,7 +1434,7 @@ Source: `avant-garde-design-v4/references/04-accessibility-checklist.md` §Level
 | — | Reduced motion | `0.01ms` durations globally | `@media (prefers-reduced-motion: reduce)` block (see §4.6) | Code review |
 | — | Time limits | None without warning + extension | No auto-logout, no countdown timers | Code review |
 
-**ADA Title II compliance:** As of April 24, 2026, ADA Title II requires WCAG 2.1 AA conformance for state and local government websites. Stillwater targets AAA (stricter), so AA compliance is implicit. Source: `avant-garde-design-v4/references/04-accessibility-checklist.md` lines 270–285. Non-compliance risk: legal action, financial penalties, reputation damage, loss of federal contracts.
+**ADA Title II compliance:** As of **April 26, 2027**, ADA Title II requires WCAG 2.1 AA conformance for state and local government websites (DOJ Interim Final Rule published April 20, 2026 extended the original April 24, 2026 deadline by one year). Stillwater targets AAA (stricter), so AA compliance is implicit. Sources: `avant-garde-design-v4/references/04-accessibility-checklist.md` lines 270–285; `ada.gov/resources/2024-03-08-web-rule`; `federalregister.gov/documents/2026/04/20/2026-07663`. Non-compliance risk: legal action, financial penalties, reputation damage, loss of federal contracts.
 
 ### 8.2 Color Contrast Verification
 
@@ -2135,9 +2136,9 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 **Fix:** Don't set `force-dynamic` on SSE or streaming route handlers — they're dynamic by default (they read `req.url` or stream). See §13.8. Note: `cacheComponents` is NOT yet enabled in Phase 0 (deferred to pre-Phase 4).
 **Cross-ref:** §13.8, `CLAUDE.md` Gotcha 7, `AGENTS.md` Gotcha 6.
 
-#### Gotcha 8: Vercel SSE timeout — 10s Hobby / 15s Pro default (Medium — Phase 5)
-**Symptom:** SSE endpoint silently terminates after 10–15 seconds on Vercel.
-**Root cause:** Vercel serverless functions have a default timeout (10s Hobby, 15s Pro) that terminates long-running streams. As of June 2026, Vercel allows up to 30 minutes (1800s) on Pro/Enterprise, but this requires BOTH `maxDuration` AND enabling Fluid Compute in project settings.
+#### Gotcha 8: Vercel SSE timeout — 300s default (Hobby and Pro) (Medium — Phase 5)
+**Symptom:** SSE endpoint silently terminates after 300 seconds on Vercel.
+**Root cause:** Vercel serverless functions have a default timeout of 300 seconds (applies to both Hobby and Pro plans) that terminates long-running streams. As of June 2026, Vercel allows up to 30 minutes (1800s) on Pro/Enterprise, but this requires BOTH setting `maxDuration` AND enabling Fluid Compute in project settings.
 **Fix:** Phase 5 F5-01 (`/api/schedule/stream/route.ts`) must set `export const maxDuration = 300` (5 min) AND the Vercel project must have Fluid Compute enabled.
 **Cross-ref:** PAD §13.2, audit report A, `CLAUDE.md` Gotcha 8.
 
@@ -3391,6 +3392,151 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - Tests for stubbed procedures should assert the error is thrown, not mock the integration
 
 **Fix references:** `packages/api/src/routers/memberships.ts`, `packages/api/src/routers/payments.ts`, `packages/api/src/context.ts`. See §15.16.
+
+### Lesson 42: Turbopack ignores custom `exports` conditions — use `transpilePackages` (Phase 4)
+
+**Context:** The monorepo used a `@stillwater/source` custom condition in `exports` fields to resolve workspace packages from source (`./src/index.ts`) instead of built (`./dist/index.js`). This worked for `tsc` (via `customConditions` in tsconfig) and `vitest` (via `resolve.alias`), but `pnpm build` failed with `Module not found: Can't resolve '@stillwater/auth'`.
+
+**Root cause:** Turbopack's Rust resolver only matches standard Node.js conditions (`default`, `import`, `require`, `browser`, `types`). It ignores custom-named conditions entirely — even if declared in `.npmrc`, `pnpm-workspace.yaml`, and `tsconfig.json`. It fell through to `default: ./dist/index.js` which didn't exist (`emitDeclarationOnly: true`).
+
+**What to do differently:**
+- Point `exports.default` to `./src/*.ts` (source) in all workspace `package.json` files
+- Add `transpilePackages: ['@stillwater/auth', ...]` to `next.config.ts`
+- Keep `@stillwater/source` condition for tsc/vitest parity (redundant for Turbopack but harmless)
+- Remove vestigial `dist/` directories — no longer needed
+- Remove `^build` dependency from `check-types` and `test` in `turbo.json` — no upstream build needed
+- This is now formalized as ADR-011
+
+**Fix references:** All 7 `packages/*/package.json`, `apps/web/next.config.ts`, `turbo.json`. See §15.17 + ADR-011.
+
+### Lesson 43: shadcn v4 + `exactOptionalPropertyTypes` — `checked` prop needs spread-conditional (Phase 4)
+
+**Context:** After running `npx shadcn add dropdown-menu`, `pnpm check-types` failed: `Type 'CheckedState | undefined' is not assignable to type 'CheckedState'` in `DropdownMenuCheckboxItem`.
+
+**Root cause:** shadcn v4 destructures `checked` from props (optional → `CheckedState | undefined`), then passes it to `DropdownMenuPrimitive.CheckboxItem` which expects `checked: CheckedState` (not undefined). With `exactOptionalPropertyTypes: true`, passing `checked={undefined}` is forbidden.
+
+**What to do differently:**
+```tsx
+// ❌ WRONG — passes undefined, violates exactOptionalPropertyTypes
+<DropdownMenuPrimitive.CheckboxItem checked={checked} {...props} />
+
+// ✅ CORRECT — spread-conditional only passes checked when defined
+<DropdownMenuPrimitive.CheckboxItem
+  {...(checked !== undefined ? { checked } : {})}
+  {...props}
+/>
+```
+
+**Fix references:** `apps/web/src/components/ui/dropdown-menu.tsx`. See CLAUDE.md Gotcha 35.
+
+### Lesson 44: `eslint-plugin-tailwindcss` v4.0.6 has a `src/style.css` bug (Phase 4)
+
+**Context:** `pnpm lint` crashed with `Error: ENOENT: no such file or directory, open '.../apps/web/src/style.css'` — even though the actual CSS file is `src/app/globals.css`.
+
+**Root cause:** `eslint-plugin-tailwindcss@4.0.6` has a bug where it defaults to `src/style.css` regardless of the `cssFiles` setting in ESLint config. The plugin's Tailwind v4 integration (`TailwindUtils.loadConfigV4`) hardcodes the path.
+
+**What to do differently:**
+- Disable the affected rules in `tooling/eslint/index.js`:
+  ```js
+  rules: {
+    "tailwindcss/classnames-order": "off",
+    "tailwindcss/no-contradicting-classname": "off",
+  }
+  ```
+- Tailwind v4 class validation is handled at build time by the compiler — ESLint plugin is cosmetic
+- Re-enable when the plugin is fixed (check eslint-plugin-tailwindcss >4.0.6)
+
+**Fix references:** `tooling/eslint/index.js`, `apps/web/eslint.config.mjs`.
+
+### Lesson 45: `@vitest-environment jsdom` pragma for React component tests (Phase 4)
+
+**Context:** `pnpm test` failed with `ReferenceError: document is not defined` when using `@testing-library/react`'s `render()` in `MarketingNav.test.tsx`.
+
+**Root cause:** `apps/web/vitest.config.ts` sets `environment: 'node'` (correct for server-side tests like tRPC routers). React component tests using `@testing-library/react` need a DOM environment. Changing the global config to `jsdom` would slow down all non-component tests.
+
+**What to do differently:**
+- Add `// @vitest-environment jsdom` as the FIRST line of `.tsx` test files that use `render()`
+  ```tsx
+  // @vitest-environment jsdom
+  import { render, screen } from '@testing-library/react';
+  ```
+- This overrides the global `node` env per-file
+- Keep the global config as `node` — jsdom is opt-in per file
+
+**Fix references:** `apps/web/src/components/marketing/MarketingNav.test.tsx`, `Footer.test.tsx`.
+
+### Lesson 46: Drizzle 0.45 relational query types infer as `never` — cast to expected shape (Phase 4)
+
+**Context:** TypeScript errors like `Property 'name' does not exist on type 'never'` when accessing nested relations from `db.query.classSessions.findMany({ with: { class: true, instructor: true } })` in the schedule page.
+
+**Root cause:** Drizzle 0.45's relational query API v1 (`db.query.*`) infers nested `with` types as `never` without `defineRelations()` (which requires Drizzle ≥1.0.0-beta). This is a known limitation.
+
+**What to do differently:**
+```typescript
+// Cast the result to the expected shape
+type ScheduleSession = {
+  id: string;
+  startsAt: Date;
+  class: { name: string };
+  instructor: { slug: string };
+};
+const typedSessions = sessions as unknown as ScheduleSession[];
+```
+- This is a stopgap — will be fixed when upgrading to Drizzle 1.0+ (which has `defineRelations()`)
+- The cast is safe because the GROQ/tRPC query shape is controlled by the developer
+
+**Fix references:** `apps/web/src/app/(marketing)/schedule/page.tsx`. See §9.9 Gotcha 27.
+
+### Lesson 47: Sanity slug is an object with `.current` property, not a string (Phase 4)
+
+**Context:** GROQ query `slug == $slug` returned no results, even though the slug existed in Sanity.
+
+**Root cause:** In Sanity, the `slug` field is an object `{ _type: 'slug', current: 'the-slug' }`, not a plain string. GROQ queries must access `slug.current`.
+
+**What to do differently:**
+```groq
+// ❌ WRONG — compares object to string, always false
+*[_type == "blogPost" && slug == $slug][0]
+
+// ✅ CORRECT — accesses slug.current
+*[_type == "blogPost" && published == true && slug.current == $slug][0]
+```
+- Zod schema for Sanity response: `z.object({ current: z.string().min(1) })`
+- Always combine with `published == true` filter (§7.5.1)
+
+**Fix references:** `apps/web/src/lib/sanity/queries.ts`, `apps/web/src/lib/sanity/schemas.ts`.
+
+### Lesson 48: Zod v4 `z.string().email()` is deprecated — use `z.email()` (Phase 4)
+
+**Context:** ESLint warning: `email` is deprecated. Use `z.email()` instead.
+
+**Root cause:** Zod v4 introduced `z.email()` as a top-level method (like `z.string()`, `z.number()`), deprecating the `z.string().email()` chain from Zod v3.
+
+**What to do differently:**
+```typescript
+// ❌ DEPRECATED (Zod v3 pattern)
+contactEmail: z.string().email().optional(),
+
+// ✅ CORRECT (Zod v4)
+contactEmail: z.email().optional(),
+```
+
+**Fix references:** `apps/web/src/lib/sanity/schemas.ts`.
+
+### Lesson 49: GROQ queries MUST filter `published == true` — defense-in-depth (Phase 4)
+
+**Context:** PAD §14.3 example GROQ queries did NOT filter `published == true`, but SKILL §7.5.1 mandates it as a critical rule. Phase 4 implementation caught this discrepancy.
+
+**Root cause:** The `published` field in Sanity content types is the primary defense against unpublished content appearing on the marketing site. Relying only on Zod schema validation (secondary defense) is insufficient — a malformed doc could slip through.
+
+**What to do differently:**
+- EVERY public-facing GROQ query MUST include `&& published == true` in the filter
+- The only exception is `siteSettings` (singleton — no `published` field)
+- Zod schema validation provides secondary defense (validate response shape)
+- tRPC public procedures that query PG must ALSO filter `published == true` (e.g., `instructors.list`)
+- This is now enforced in `apps/web/src/lib/sanity/queries.ts` and `packages/api/src/routers/instructors.ts`
+
+**Fix references:** `apps/web/src/lib/sanity/queries.ts`, `packages/api/src/routers/instructors.ts`, `packages/db/src/schema/instructors.ts` (added `published` column). See §7.5.1.
 
 ---
 
@@ -5084,6 +5230,195 @@ const update = vi.fn().mockReturnValue({ set });
 
 ---
 
+### 15.17 Pattern: Sanity CMS Client + Webhook→ISR + transpilePackages (Phase 4)
+
+**Problem:** Phase 4 requires a public marketing surface with Sanity CMS for content, ISR for performance, webhook-driven revalidation for freshness, and Cloudflare Images for optimized images — all while maintaining the Editorial Calm design identity and WCAG AAA compliance.
+
+**Solution:** Four interconnected patterns:
+
+#### 15.17.1 Sanity Client with Null Fallback (SKILL §15.6 pattern)
+
+```typescript
+// apps/web/src/lib/sanity/client.ts
+import 'server-only';
+import { createClient, type SanityClient, type ClientConfig } from '@sanity/client';
+
+let cachedClient: SanityClient | null | undefined;
+
+export function getSanityClient(): SanityClient | null {
+  if (cachedClient !== undefined) return cachedClient;
+
+  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
+  const apiToken = process.env.SANITY_API_TOKEN;
+
+  // Null fallback — prevents build crashes when env vars missing
+  if (!projectId || !dataset) {
+    cachedClient = null;
+    return null;
+  }
+
+  // exactOptionalPropertyTypes: only pass token when defined
+  const config: ClientConfig = {
+    projectId,
+    dataset,
+    apiVersion: '2024-01-01',
+    useCdn: true,
+  };
+  if (apiToken) {
+    config.token = apiToken;
+  }
+
+  cachedClient = createClient(config);
+  return cachedClient;
+}
+
+export function isSanityConfigured(): boolean {
+  return getSanityClient() !== null;
+}
+```
+
+**Key points:**
+- Uses `process.env` directly (NOT env module) per SKILL §15.6
+- Returns `null` when env vars missing — pages fall back to tRPC-only data
+- Singleton pattern (module-level cache)
+- `'server-only'` guard prevents client-side import
+
+#### 15.17.2 GROQ Query Registry with `published == true` (SKILL §7.5.1)
+
+```typescript
+// apps/web/src/lib/sanity/queries.ts
+
+// CRITICAL: Every query filters published == true (defense-in-depth)
+export const blogPostListQuery = `*[_type == "blogPost" && published == true] | order(publishedAt desc){
+  _id, title, slug, excerpt, publishedAt, author->{ name }, coverImage, tags
+}`;
+
+export const blogPostQuery = `*[_type == "blogPost" && published == true && slug.current == $slug][0]{
+  _id, title, slug, body, publishedAt, author->{ name, bio, photo }, coverImage, tags
+}`;
+```
+
+**Key points:**
+- EVERY query includes `&& published == true` (Lesson 49)
+- Only exception: `siteSettings` (singleton, no `published` field)
+- Sanity slug is `{ current: 'the-slug' }` — use `slug.current == $slug` (Lesson 47)
+- Zod schemas validate response shape (secondary defense)
+
+#### 15.17.3 Webhook → ISR with HMAC Verification
+
+```typescript
+// apps/web/src/app/api/sanity/webhook/route.ts
+import { createHmac, timingSafeEqual } from 'crypto';
+import { revalidatePath } from 'next/cache';
+
+const REVALIDATION_MAP: Record<string, string[]> = {
+  homePage: ['/'],
+  blogPost: ['/blog'],
+  instructorBio: ['/instructors'],
+  // ...
+};
+
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
+}
+
+export async function POST(request: Request): Promise<Response> {
+  const webhookSecret = process.env.SANITY_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return Response.json({ error: 'Webhook secret not configured' }, { status: 500 });
+  }
+
+  const rawBody = await request.text();
+  const signature = request.headers.get('sanity-webhook-signature');
+
+  if (!signature) {
+    return Response.json({ error: 'Missing signature header' }, { status: 401 });
+  }
+
+  const expectedSignature = createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+
+  if (!safeCompare(signature, expectedSignature)) {
+    return Response.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+
+  const payload = JSON.parse(rawBody) as SanityWebhookPayload;
+  const routes = REVALIDATION_MAP[payload._type] ?? ['/'];
+
+  for (const path of routes) {
+    revalidatePath(path);
+  }
+
+  return Response.json({ revalidated: routes });
+}
+```
+
+**Key points:**
+- HMAC-SHA256 over raw body (NOT parsed JSON) — signature must cover exact bytes
+- `timingSafeEqual` prevents timing attacks (Lesson: never short-circuit on length mismatch)
+- Returns 401 for missing/invalid signature (never reveals which)
+- `revalidatePath` triggers on-demand ISR revalidation
+- Route is `/api/sanity/webhook` (singular — NOT `/api/webhooks/sanity`)
+
+#### 15.17.4 transpilePackages + Source Exports (ADR-011)
+
+```json
+// packages/auth/package.json (all 7 packages follow this pattern)
+{
+  "exports": {
+    ".": {
+      "@stillwater/source": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "@stillwater/source": "./src/client.ts",
+      "default": "./src/client.ts"
+    }
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}
+```
+
+```typescript
+// apps/web/next.config.ts
+const nextConfig: NextConfig = {
+  transpilePackages: [
+    '@stillwater/auth',
+    '@stillwater/api',
+    '@stillwater/db',
+    '@stillwater/config',
+    '@stillwater/ui',
+    '@stillwater/email',
+    '@stillwater/payments',
+  ],
+  // ...
+};
+```
+
+**Key points:**
+- Turbopack ignores custom conditions — `exports.default` MUST point to source (Lesson 42)
+- `transpilePackages` tells Turbopack to transpile workspace packages inline
+- No `dist/` directories needed; no `tsc --build` step required before `next build`
+- `@stillwater/source` condition kept for tsc/vitest parity (redundant but harmless)
+- `turbo.json`: remove `^build` from `check-types` and `test` (no upstream build needed)
+
+**TDD verification:**
+1. RED: Test Sanity client returns `null` when env vars missing
+2. RED: Test every GROQ query string contains `published == true`
+3. RED: Test webhook rejects missing signature (401), invalid signature (401), valid signature (200 + revalidatePath called)
+4. GREEN: Implement each module
+5. REFACTOR: Extract `safeCompare` helper, `REVALIDATION_MAP` constant
+
+**Source:** Phase 4 implementation (Stages 1-2 + build fix), `apps/web/src/lib/sanity/`, `apps/web/src/app/api/sanity/webhook/`, `apps/web/next.config.ts`, all 7 `packages/*/package.json`. See Lessons 42, 47, 49. See ADR-011.
+
+---
+
 ## §16. Coding Anti-Patterns
 
 ### 16.1 TypeScript Anti-Patterns
@@ -5373,6 +5708,70 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 it('tests cached function', async () => {
   await getCachedData();
 });
+```
+
+### 16.7 Next.js 16 Build Anti-Patterns (Phase 4)
+
+```typescript
+// ❌ WRONG: Using custom exports condition as default for Turbopack
+// packages/auth/package.json
+{
+  "exports": {
+    ".": {
+      "@stillwater/source": "./src/index.ts",
+      "default": "./dist/index.js"  // Turbopack uses this — file doesn't exist!
+    }
+  }
+}
+// Result: pnpm build fails with "Module not found: Can't resolve '@stillwater/auth'"
+
+// ✅ CORRECT: Source as default + transpilePackages
+{
+  "exports": {
+    ".": {
+      "@stillwater/source": "./src/index.ts",
+      "default": "./src/index.ts"  // Turbopack resolves to source
+    }
+  },
+  "main": "./src/index.ts"
+}
+// + next.config.ts: transpilePackages: ['@stillwater/auth', ...]
+```
+
+```typescript
+// ❌ WRONG: GROQ query without published filter
+const query = `*[_type == "blogPost" && slug.current == $slug][0] { ... }`;
+// Unpublished content could appear on the live site
+
+// ✅ CORRECT: Every public query filters published == true
+const query = `*[_type == "blogPost" && published == true && slug.current == $slug][0] { ... }`;
+```
+
+```typescript
+// ❌ WRONG: Comparing Sanity slug directly to string
+const query = `*[_type == "blogPost" && slug == $slug][0]`;
+// Sanity slug is { current: 'the-slug' } — this always returns no results
+
+// ✅ CORRECT: Use slug.current
+const query = `*[_type == "blogPost" && published == true && slug.current == $slug][0]`;
+```
+
+```typescript
+// ❌ WRONG: Passing undefined to exactOptionalPropertyTypes prop
+<CheckboxItem checked={checked} {...props} />
+// Error: Type 'CheckedState | undefined' is not assignable to type 'CheckedState'
+
+// ✅ CORRECT: Spread-conditional
+<CheckboxItem {...(checked !== undefined ? { checked } : {})} {...props} />
+```
+
+```typescript
+// ❌ WRONG: Zod v3 email pattern (deprecated in v4)
+const schema = z.object({ email: z.string().email() });
+// ESLint: 'email' is deprecated
+
+// ✅ CORRECT: Zod v4 native email
+const schema = z.object({ email: z.email() });
 ```
 
 ---
@@ -6011,6 +6410,22 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 ## Appendix C: Audit History
 
+### v1.8.0 (2026-07-08) — Phase 4 Complete + Build Fix
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| Turbopack ignores custom `exports` conditions — `pnpm build` fails | Critical | ✅ Documented — Lesson 42, §15.17.4 pattern, ADR-011, CLAUDE.md Gotcha 34, AGENTS.md Gotcha 27. Fix: `exports.default` → `./src/*.ts` + `transpilePackages` |
+| shadcn v4 + `exactOptionalPropertyTypes` — `checked` prop conflict | High | ✅ Documented — Lesson 43, §16.7 anti-pattern, CLAUDE.md Gotcha 35, AGENTS.md Gotcha 28. Fix: spread-conditional |
+| `eslint-plugin-tailwindcss` v4.0.6 `src/style.css` bug | Medium | ✅ Documented — Lesson 44, CLAUDE.md Gotcha 36, AGENTS.md Gotcha 29. Fix: disable affected rules |
+| `@vitest-environment jsdom` pragma needed for React component tests | Medium | ✅ Documented — Lesson 45, CLAUDE.md Gotcha 37, AGENTS.md Gotcha 30. Fix: per-file pragma |
+| Drizzle 0.45 relational query types infer as `never` | Medium | ✅ Documented — Lesson 46, CLAUDE.md Gotcha 38, AGENTS.md Gotcha 31. Fix: cast to expected shape |
+| Sanity slug is object with `.current` property, not string | Low | ✅ Documented — Lesson 47, §16.7 anti-pattern, CLAUDE.md Gotcha 39, AGENTS.md Gotcha 32. Fix: use `slug.current == $slug` |
+| Zod v4 `z.string().email()` deprecated | Low | ✅ Documented — Lesson 48, §16.7 anti-pattern, CLAUDE.md Gotcha 40, AGENTS.md Gotcha 33. Fix: use `z.email()` |
+| GROQ queries MUST filter `published == true` — defense-in-depth | High | ✅ Documented — Lesson 49, §15.17.2 pattern, §16.7 anti-pattern. Fix: add `&& published == true` to every query |
+| Phase 4 complete: Sanity CMS, 9 ISR pages, webhook, Cloudflare Images, shadcn/ui | — | ✅ Phase 4 IMPLEMENT complete — 7 stages, ~40 files, 51 new tests (377 total), `pnpm build` green (12/12 static pages) |
+| Build fix (ADR-011): `transpilePackages` + source exports | — | ✅ Implemented — 10 files changed, `pnpm build` succeeds, `turbo.json` optimized (check-types 16→9 tasks) |
+| SPECIFICATIONS.md retired | — | ✅ Deleted — was 7 PAD versions behind, used deprecated Zod v4 patterns. PAD.md is sole canonical architecture doc |
+
 ### v1.4.0 (2026-07-06) — Phase 0 Complete + P0–P3 Remediation
 
 | Finding | Severity | Status |
@@ -6206,4 +6621,4 @@ Alerts:
 
 ---
 
-*End of `stillwater_SKILL.md` v1.7.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 implementation lessons (Lessons 1-41) distilled from actual TDD cycles. For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+*End of `stillwater_SKILL.md` v1.8.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 implementation lessons (Lessons 1-49) distilled from actual TDD cycles. ADR-011 added (source resolution via `transpilePackages`). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*

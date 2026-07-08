@@ -57,10 +57,19 @@ describe('F1-04: instructors table', () => {
       'imageKey',
       'isActive',
       'sortOrder',
+      'published', // Added in Phase 4 per SKILL §7.5.1
     ];
 
     for (const col of expectedColumns) {
       expect(instructors[col]).toBeDefined(`Column ${col} should exist on instructors table`);
     }
+  });
+
+  // Phase 4: published column for marketing visibility (SKILL §7.5.1)
+  it('has published boolean column defaulting to true (Phase 4 — SKILL §7.5.1)', () => {
+    expect(instructors.published).toBeDefined();
+    expect(instructors.published.getSQLType()).toBe('boolean');
+    expect(instructors.published.notNull).toBe(true);
+    expect(instructors.published.hasDefault).toBe(true);
   });
 });

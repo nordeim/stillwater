@@ -65,7 +65,7 @@ Now — implementing the full document:
 
 ---
 
-> **Document Status:** `ACTIVE — v1.8.0`
+> **Document Status:** `ACTIVE — v1.9.0`
 > **Classification:** Internal Engineering Reference
 > **Audience:** Engineers, Architects, Technical Leads, DevOps
 > **Owner:** Engineering Lead
@@ -86,6 +86,7 @@ Now — implementing the full document:
 | 1.6.0   | 2026-07-07 | Claw Code / Phase 2 | Active | Phase 2 complete — Better Auth v1.6.23 fully configured (Google OAuth + Magic Link plugin + customSession plugin for memberId/roles enrichment); 3 Better Auth schema tables added (`session`, `account`, `verification` in `packages/db/src/schema/auth-tables.ts`); `users.emailVerified` changed from `timestamp` to `boolean` (Better Auth requirement); RBAC permission matrix (13 permissions × 6 roles) in `packages/auth/src/rbac.ts`; server-side auth helpers (`getSession`/`requireAuth`/`requireRole`) in `apps/web/src/lib/auth.ts`; 2-layer auth pattern verified (cookie-only `proxy.ts` + 4 layout guards); Better Auth route handler at `/api/auth/[...all]/route.ts`; sign-in page (Google + Magic Link) + sign-out route + error page; migration `0001_supreme_sabretooth.sql`; 220 tests (102 auth + 107 db + 11 web) |
 | 1.7.0   | 2026-07-07 | Claw Code / Phase 3 | Active | Phase 3 complete — 10 tRPC routers (~30 procedures) in `packages/api/src/routers/`; 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`; booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004; rate limiting on `bookings.book` (10/min via Upstash); root router merging all 10 routers in `packages/api/src/root.ts`; web tRPC integration (HTTP handler + RSC server caller + React client + query key factory); `pg` driver added to `packages/db` devDeps for local Postgres migrations (drizzle-kit driver selection fix); Phase 7 procedures stubbed with `PRECONDITION_FAILED`; 326 tests (104 api + 102 auth + 107 db + 13 web) |
 | 1.8.0   | 2026-07-07 | Claw Code / Remediation | Active | Phase 1–2 remediation — migration regeneration fix: single clean migration `0000_dear_dagger.sql` (17 CREATE TABLE + 8 CREATE TYPE + 8 CREATE INDEX + 17 ALTER TABLE); `ALTER COLUMN ... SET DATA TYPE` failure documented; database driver auto-selection (`pg` for local, `neon-http` for Neon) in `packages/db/src/index.ts`; seed script env loading (`seed/env.ts`) to fix `DATABASE_URL` missing at import time; Zod v4 UUID fixture validation fix (variant `g` → `a` in 3 membership plan fixtures); `pg` moved from `devDependencies` to `dependencies` in `packages/db/package.json`; 326+ tests passing; `pnpm db:migrate` and `pnpm db:seed` both green |
+| 1.9.0   | 2026-07-08 | Claw Code / Phase 4 | Active | Phase 4 complete — Sanity CMS integration (client + GROQ queries + Zod schemas + 8 content types + Studio app at `apps/studio/`); webhook→ISR revalidation with HMAC-SHA256 at `/api/sanity/webhook/`; Cloudflare Images URL signer (`server-only`); 9 ISR marketing pages (`/`, `/schedule`, `/instructors` + `/[slug]`, `/pricing`, `/blog` + `/[slug]`, `/about`); MarketingNav + Footer with Editorial Calm design; 11 shadcn/ui components (anti-generic patched); `instructors.published` column added (migration `0001_equal_iron_lad.sql`) — `instructors.list` + `getBySlug` filter `published == true` (SKILL §7.5.1); GROQ queries in §14.3 updated with `published == true` filter; ADR-011 added (transpilePackages + source exports build fix); `turbo.json` optimized (removed `dist/**` outputs + `^build` deps from check-types/test); SPECIFICATIONS.md retired (was 7 PAD versions behind); 377 tests (108 db + 102 auth + 106 api + 61 web); `pnpm build` green (12/12 static pages) |
 
 ### How to Maintain This Document
 
@@ -659,27 +660,27 @@ stillwater/                              # Repository root
 ### 6.2 Turborepo Pipeline Configuration
 
 ```json
-// turbo.json
+// turbo.json (v1.9.0 — source resolution, no dist/ or ^build for check-types/test)
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": [".env"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", "!.next/cache/**"]
+      "outputs": [".next/**", "!.next/cache/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "check-types": {
-      "dependsOn": ["^build"]
+      "dependsOn": []
     },
     "lint": {
       "dependsOn": []
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "outputs": ["coverage/**"]
     },
     "test:e2e": {
@@ -761,6 +762,7 @@ erDiagram
     text[] specialties
     text imageKey
     boolean isActive
+    boolean published  // Phase 4 — controls marketing visibility (SKILL §7.5.1)
     integer sortOrder
   }
 
@@ -1029,7 +1031,7 @@ import { db } from '../index';
 
 ## 8. API Architecture
 
-> **Implementation Status:** ✅ Phase 3 COMPLETE (2026-07-07). 10 tRPC routers (~30 procedures) implemented in `packages/api/src/routers/`. 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`. Booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004. Rate limiting on `bookings.book` (10/min via Upstash). Root router merging all 10 routers in `packages/api/src/root.ts`. Web tRPC integration: HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`). Phase 7 procedures (Stripe) stubbed with `PRECONDITION_FAILED`. 326 tests (104 api + 102 auth + 107 db + 13 web).
+> **Implementation Status:** ✅ Phase 3 COMPLETE (2026-07-07). 10 tRPC routers (~30 procedures) implemented in `packages/api/src/routers/`. 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`. Booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004. Rate limiting on `bookings.book` (10/min via Upstash). Root router merging all 10 routers in `packages/api/src/root.ts`. Web tRPC integration: HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`). Phase 7 procedures (Stripe) stubbed with `PRECONDITION_FAILED`. Phase 4 added `published == true` filter to `instructors.list` + `getBySlug` (SKILL §7.5.1). Current test count: 377 (106 api + 102 auth + 108 db + 61 web).
 
 ### 8.1 tRPC Design Principles
 
@@ -1496,7 +1498,7 @@ SSG = Static Site Generation
 flowchart LR
   Editor["Content Editor\n(Sanity Studio)"]
   Sanity["Sanity CMS"]
-  Webhook["POST /api/webhooks/sanity"]
+  Webhook["POST /api/sanity/webhook"]
   Next["Next.js\nrevalidatePath()"]
   CDN["Cloudflare CDN"]
   User["User"]
@@ -1661,11 +1663,14 @@ Sanity Content Types:
 ### 14.3 GROQ Query Patterns
 
 ```typescript
-// packages/api (or apps/web/lib/sanity/queries.ts)
+// apps/web/src/lib/sanity/queries.ts
 
-// Blog post with author — fetched at build time (ODR)
+// CRITICAL: Every query MUST filter `published == true` (SKILL §7.5.1)
+// Zod schemas (schemas.ts) provide defense-in-depth validation.
+
+// Blog post with author — fetched at build time (ISR 1hr)
 export const blogPostQuery = groq`
-  *[_type == "blogPost" && slug.current == $slug][0] {
+  *[_type == "blogPost" && published == true && slug.current == $slug][0] {
     title,
     publishedAt,
     "slug": slug.current,
@@ -1675,9 +1680,9 @@ export const blogPostQuery = groq`
   }
 `;
 
-// Homepage content — ISR 1hr
+// Homepage content — ISR 5min
 export const homePageQuery = groq`
-  *[_type == "homePage"][0] {
+  *[_type == "homePage" && published == true][0] {
     hero { headline, subheadline, ctaLabel, ctaHref },
     "featuredClasses": featuredClasses[]->{ title, slug, description, level },
     testimonials[]{ quote, memberName, className, rating }
@@ -3037,6 +3042,57 @@ For Next.js Server Component email sending (rare — e.g., synchronous welcome e
 - **Isolated rendering microservice** — adds infrastructure complexity, violates §2.3 "no infra management".
 
 **Source:** `react_email_suggestion.md` §5 Alternative A; MEP D43; PAD §16.3 Email Rendering Strategy.
+
+---
+
+### ADR-011: Source Resolution via `transpilePackages` + `exports.default` (Accepted)
+
+**Date:** 2026-07-08
+**Status:** Accepted
+**Decider:** Claw Code
+
+**Context:**
+
+Turbopack (Next.js 16's default bundler) uses a Rust-based module resolver that only matches standard Node.js `exports` conditions (`default`, `import`, `require`, `browser`, `types`). It does **not** respect custom-named conditions like `@stillwater/source` — even if declared in `.npmrc`, `pnpm-workspace.yaml`, and `tsconfig.json`.
+
+The original monorepo setup (Phase 0, D15) used `@stillwater/source` to resolve workspace packages from `./src/index.ts` (source) instead of `./dist/index.js` (built). This worked for:
+- `tsc` (respects `customConditions` in tsconfig)
+- `vitest` (uses explicit `resolve.alias`)
+
+But `pnpm build` (Turbopack) failed with `Module not found: Can't resolve '@stillwater/auth'` because:
+1. Turbopack skipped `@stillwater/source` (ignored custom conditions)
+2. Fell through to `default: ./dist/index.js`
+3. `./dist/index.js` didn't exist because `tooling/typescript/library.json` sets `emitDeclarationOnly: true` (only `.d.ts` emitted, no `.js`)
+
+**Decision:**
+
+Adopt a **source-as-default** resolution strategy:
+1. Point `exports.default` to `./src/*.ts` (source) in all 7 `packages/*/package.json` files
+2. Point `main` + `types` to `./src/index.ts` in all 7 packages
+3. Add `transpilePackages: ['@stillwater/auth', ...]` to `apps/web/next.config.ts`
+4. Remove vestigial `dist/` directories (no longer needed)
+5. Remove `^build` dependency from `check-types` and `test` in `turbo.json` (no upstream build needed)
+
+The `@stillwater/source` custom condition is **kept** in all `exports` fields for tsc/vitest parity (now redundant — both `@stillwater/source` and `default` point to source — but harmless and preserves the existing dev workflow).
+
+**Consequences:**
+
+- ✅ `pnpm build` succeeds (was: 4 errors, exit 1)
+- ✅ `pnpm check-types` faster (9 tasks vs 16 — no upstream `^build` deps)
+- ✅ No `tsc --build` step required before `next build` (Turbopack transpiles source inline)
+- ✅ No `dist/` directories to maintain or clean
+- ✅ Dev workflow unchanged (tsc + vitest still use `@stillwater/source` condition)
+- ⚠️ `@stillwater/source` condition is now functionally redundant for Turbopack (but kept for tsc/vitest)
+- ⚠️ If a package ever needs a real build step (e.g., for external publication), `exports.default` must be changed back to `./dist/*.js` and `transpilePackages` removed for that package
+
+**Rejected Alternatives:**
+
+- **Option B: `experimental.turbopack.resolveAlias`** — No glob support for `@stillwater/email/templates/*`; high maintenance
+- **Option C: Pre-build packages (`emitDeclarationOnly: false` + turbo `^build` dep)** — Kills dev DX; `tsc` can't emit `.css`/`.woff2` from `@stillwater/ui`
+- **Option D: `next build --webpack`** — Loses Turbopack; webpack deprecated in Next.js 16
+- **Option E: Wait for Turbopack upstream support** — No ETA; GitHub issues #78912, #92465 still open
+
+**Source:** Stillwater worklog Task 14 (web-search verification); CLAUDE.md Gotcha 34; AGENTS.md Gotcha 27.
 
 ---
 

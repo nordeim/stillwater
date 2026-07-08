@@ -3,14 +3,14 @@
 [![Node.js](https://img.shields.io/badge/node-%E2%89%A522.0.0-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-11.9.0-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.2.3-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-19.2.7-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%203%20complete-success)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%204%20complete-success)](#project-status)
 
 > **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
@@ -22,7 +22,7 @@ Stillwater is the operational backbone and digital face of a boutique yoga studi
 
 The platform replaces a class of brittle brochure-site-plus-Stripe-link yoga websites with a SaaS-grade product: PostgreSQL advisory locks for double-booking prevention, idempotent Stripe webhook processing, an 11-job Trigger.dev v4 background worker for emails and waitlist promotion, and WCAG 2.2 Level AAA accessibility for the 35–65 demographic the studio serves.
 
-The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 10 ADRs (9 accepted + 1 proposed); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v1.4.1) condensing 21 source skills.
+The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 11 ADRs (10 accepted + 1 proposed); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v1.7.2) condensing 21 source skills.
 
 ---
 
@@ -51,8 +51,8 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 
 | Layer            | Technology                  | Version     | Purpose                                                        |
 |------------------|-----------------------------|-------------|----------------------------------------------------------------|
-| Frontend         | Next.js                     | 16.2.0      | App Router, Turbopack, React Compiler, `proxy.ts`              |
-| UI Library       | React                       | 19.2.3      | Server Components by default, Client Islands for interactivity |
+| Frontend         | Next.js                     | 16.2.10     | App Router, Turbopack, React Compiler, `proxy.ts`              |
+| UI Library       | React                       | 19.2.7      | Server Components by default, Client Islands for interactivity |
 | Styling          | Tailwind CSS                | 4.3.0       | CSS-first `@theme` directive, no `tailwind.config.js` required |
 | Component Lib    | Radix UI + shadcn/ui        | latest      | Accessible primitives; never rebuild what Radix provides       |
 | Language         | TypeScript                  | 5.9.0       | Strict mode + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` + `erasableSyntaxOnly` (no `enum`/`namespace`) |
@@ -62,7 +62,7 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 | DB Host          | Neon                        | latest      | Serverless PG with branching for preview envs                  |
 | Cache / Rate Limit | Upstash Redis             | latest      | Per-procedure rate limiting on auth + booking mutations        |
 | Auth             | Better Auth                 | 1.6.23      | Replaces Auth.js v5 (ADR-008); Drizzle adapter; 2-layer auth pattern |
-| Background Jobs  | Trigger.dev                 | v4 platform | 11 durable tasks; SDK import is `@trigger.dev/sdk/v3` (v4 platform uses v3 SDK API) |
+| Background Jobs  | Trigger.dev                 | v4 platform | 11 durable tasks; SDK import is `@trigger.dev/sdk` (root import — v4 SDK; NEVER `/v3` deprecated, NEVER `/v4` which doesn't exist) |
 | Monorepo         | Turborepo                   | 2.10.0      | Task graph + remote caching                                     |
 | Package Manager  | pnpm                        | 11.9.0      | Workspace protocol; `customConditions` for source linking; v9 is EOL |
 | CMS              | Sanity                      | v3          | Marketing content only (ADR-005); hosted at stillwater.sanity.studio (Q4) |
@@ -435,7 +435,7 @@ tRPC exposes 10 routers merged in `packages/api/src/root.ts`. The full type is i
 | `/api/trpc/[trpc]`                  | GET/POST | tRPC HTTP batch endpoint                |
 | `/api/schedule/stream?sessionId=`   | GET    | SSE for live seat availability           |
 | `/api/webhooks/stripe`              | POST   | Stripe webhook (signature-verified)      |
-| `/api/webhooks/sanity`              | POST   | Sanity publish → `revalidatePath`        |
+| `/api/sanity/webhook`             | POST   | Sanity publish → `revalidatePath`        |
 
 ---
 
@@ -569,7 +569,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 1     | DB schema, Drizzle migrations, seed data           | ✅ Complete   | 3         |
 | 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ✅ Complete   | 3         |
 | 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ✅ Complete   | 5         |
-| 4     | Marketing surface with Sanity CMS                  | ⬜ Next       | 4         |
+| 4     | Marketing surface with Sanity CMS                  | ✅ Complete   | 4         |
 | 5     | Booking flow + SSE real-time seats                 | ⬜ Pending     | 5         |
 | 6     | Member dashboard + membership management           | ⬜ Pending     | 4         |
 | 7     | Stripe integration (subscriptions + credit packs)  | ⬜ Pending     | 4         |
@@ -593,7 +593,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | `ERR_PNPM_IGNORED_BUILDS` for sharp/esbuild/@sentry/cli       | `pnpm-workspace.yaml` `allowBuilds` block allows these native postinstall scripts. |
 | `[WARN] The "pnpm" field in package.json is no longer read`  | Delete the `pnpm.overrides` + `pnpm.onlyBuiltDependencies` block from root `package.json` — moved to `pnpm-workspace.yaml` in pnpm v11. |
 | `pnpm lint` crashes: `getFilename is not a function`         | ESLint v10 installed (should be v9). Downgrade: `pnpm add -Dw eslint@^9.39.4`. `eslint-plugin-react`/`eslint-plugin-import` have no v10 versions. See D45. |
-| `import { defineConfig } from "@trigger.dev/sdk/v4"` fails   | The `/v4` export DOES NOT EXIST. Use `@trigger.dev/sdk/v3` (v4 platform uses v3 SDK API). See CLAUDE.md Gotcha 1. |
+| `import { defineConfig } from "@trigger.dev/sdk/v4"` fails   | The `/v4` export DOES NOT EXIST. Use root `@trigger.dev/sdk` (v4 SDK; the `/v3` subpath is deprecated and future-proofs against removal). See CLAUDE.md Gotcha 1. |
 | `import { render } from '@react-email/render'` — module not found | React Email v6 unified all imports. Use `import { render } from 'react-email'`. See D43. |
 | `typescript 6.0.3 is available` warning during install       | Expected — we intentionally stay on `^5.9.0` for `erasableSyntaxOnly` + `verbatimModuleSyntax`. See D44. |
 | `TS18003: No inputs were found` in `packages/db`             | ✅ FIXED in Phase 1 — `packages/db/src/schema/*.ts` now exists with 14 table definitions. If seen, run `pnpm install` to ensure workspace symlinks. |
@@ -645,7 +645,7 @@ COMMIT    → Atomic commit: "<type>(<scope>): <subject>"
 | TypeScript       | `strict: true` + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`; no `any` (use `unknown`) |
 | Drizzle ORM      | Schema in TypeScript (no `.prisma` file); `drizzle-kit generate` then `migrate`             |
 | tRPC v11         | Server Components use server caller (zero HTTP); Client Components use React Query adapter  |
-| Better Auth      | Session enriched with `memberId` + `roles` via `session.sessionData` callback               |
+| Better Auth      | Session enriched with `memberId` + `roles` via the `customSession` plugin from `better-auth/plugins/custom-session` |
 
 ### Branching Strategy
 
@@ -680,6 +680,26 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 ---
 
 ## What's New
+
+### v1.6.0 (2026-07-08) — Phase 4 Complete: Marketing Surface with Sanity CMS
+
+| Change | Details |
+|---|---|
+| Sanity CMS integration | `apps/web/src/lib/sanity/` — client factory (null fallback), GROQ query registry with `published == true` filter, Zod response schemas for 8 content types |
+| Sanity Studio app | `apps/studio/` — `sanity.config.ts` + 8 content type schemas (siteSettings, homePage, aboutPage, blogPost, instructorBio, faq, testimonial, announcement) |
+| Webhook → ISR revalidation | `apps/web/src/app/api/sanity/webhook/route.ts` — HMAC-SHA256 + `timingSafeEqual` signature verification; revalidates routes by content type |
+| Cloudflare Images signer | `apps/web/src/lib/cloudflare/images.ts` — server-only URL signing with null fallback |
+| 9 ISR marketing pages | `/` (home, 5min), `/schedule` (dynamic), `/instructors` + `/[slug]` (24h), `/pricing` (1h), `/blog` + `/[slug]` (1h), `/about` (24h) |
+| Marketing layout + nav | `(marketing)` route group with `MarketingNav` (single-line rule nav) + `Footer` (editorial 3-col) + skip-to-content link (WCAG AAA) |
+| 11 shadcn/ui components | button, card, tabs, dialog, dropdown-menu, popover, select, separator, tooltip, avatar, label — anti-generic patched (no shadows, `--radius: 0`) |
+| `instructors.published` column | New boolean column + migration `0001_equal_iron_lad.sql`; `instructors.list` + `getBySlug` filter `published == true` (SKILL §7.5.1) |
+| Build fix (ADR-011) | `transpilePackages` in `next.config.ts` + `exports.default` → `./src/*.ts` in all 7 packages; Turbopack ignores custom conditions |
+| `turbo.json` optimized | Removed `^build` dependency from `check-types` + `test` (source resolution = no build step needed); removed `dist/**` from outputs |
+| Reduced-motion CSS | `globals.css` — `prefers-reduced-motion` media query with `0.01ms` durations (WCAG AAA §2.3.3) |
+| 8 new gotchas documented | Gotchas 34–41 (CLAUDE.md) / 27–34 (AGENTS.md): Turbopack conditions, shadcn+exactOptionalPropertyTypes, eslint tailwindcss bug, vitest jsdom, Drizzle never types, Sanity slug.current, z.email() deprecation, import/order |
+| SPECIFICATIONS.md retired | Was 7 PAD versions behind; used deprecated Zod v4 patterns; PAD.md is now the sole canonical architecture doc |
+| 377 tests passing | 108 db + 102 auth + 106 api + 61 web (was 326 at Phase 3) |
+| `pnpm build` green | ✅ Compiled successfully in 15s, 12/12 static pages generated |
 
 ### v1.5.0 (2026-07-07) — Phase 1–2 Remediation: Migration, Driver, Seed Fixes
 
@@ -778,11 +798,11 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 
 | Document                                  | Purpose                                                              |
 |-------------------------------------------|----------------------------------------------------------------------|
-| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 10 ADRs; v1.7.0) |
+| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 11 ADRs; v1.9.0) |
 | [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.3.0) |
-| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.6.0; 21 source skills condensed; 35 lessons) |
-| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.7.0; 29 gotchas) |
-| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (23 gotchas)  |
+| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.7.2; 21 source skills condensed; 41 lessons) |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v1.8.3; 41 gotchas) |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (34 gotchas)  |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |
 | [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture (some sections superseded by ADRs) |
 | [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |

@@ -1,0 +1,1 @@
+ALTER TABLE "instructors" ADD COLUMN "published" boolean DEFAULT true NOT NULL;

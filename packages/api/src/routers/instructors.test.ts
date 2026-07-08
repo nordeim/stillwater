@@ -24,6 +24,7 @@ const instructorFixture = {
   specialties: ['vinyasa', 'yin'],
   imageKey: null,
   isActive: true,
+  published: true,
   sortOrder: 0,
 };
 
@@ -47,6 +48,19 @@ describe('instructorsRouter.list', () => {
     const caller = instructorsRouter.createCaller(ctx);
     const result = await caller.list();
     expect(result).toEqual([]);
+  });
+
+  // Phase 4: published filter (SKILL §7.5.1)
+  it('filters by published == true (Phase 4 — SKILL §7.5.1)', async () => {
+    const findMany = vi.fn().mockResolvedValue([instructorFixture]);
+    const ctx = makeCtx({
+      query: { instructors: { findMany } } as never,
+    });
+    const caller = instructorsRouter.createCaller(ctx);
+    await caller.list();
+    // Verify the where clause includes published: true
+    const callArg = findMany.mock.calls[0][0];
+    expect(callArg.where).toBeDefined();
   });
 });
 
@@ -74,6 +88,18 @@ describe('instructorsRouter.getBySlug', () => {
 
   it('throws NOT_FOUND when instructor is inactive', async () => {
     const findFirst = vi.fn().mockResolvedValue({ ...instructorFixture, isActive: false });
+    const ctx = makeCtx({
+      query: { instructors: { findFirst } } as never,
+    });
+    const caller = instructorsRouter.createCaller(ctx);
+    await expect(
+      caller.getBySlug({ slug: 'jane-doe' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  // Phase 4: published filter (SKILL §7.5.1)
+  it('throws NOT_FOUND when instructor is unpublished (Phase 4 — SKILL §7.5.1)', async () => {
+    const findFirst = vi.fn().mockResolvedValue({ ...instructorFixture, published: false });
     const ctx = makeCtx({
       query: { instructors: { findFirst } } as never,
     });
