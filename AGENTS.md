@@ -18,7 +18,7 @@
 | ESLint | **9.39.4** (`^9.39.4`) | Do NOT upgrade to v10. `eslint-plugin-react` and `eslint-plugin-import` have no v10 versions. |
 | Next.js | 16.2.10 (`^16.2.10`) | App Router, Turbopack, React Compiler (`reactCompiler: true`) |
 | React | 19.2.7 (`^19.2.7`) | CVE-2025-55182 floor — never downgrade below 19.2.3 |
-| Tailwind CSS | 4.3.0 (`^4.3.0`) | CSS-first `@theme` in `globals.css`; no `tailwind.config.js` needed |
+| Tailwind CSS | 4.3.2 (`^4.3.2`) | CSS-first `@theme` in `globals.css`; no `tailwind.config.js` needed |
 | tRPC | v11 (`^11.18.0`) | Server caller for RSC, React Query for client |
 | Drizzle ORM | 0.45.0 (`^0.45.2`) | `neon-http` driver; `db.$count` requires ≥0.34 |
 | PostgreSQL | 17 (Neon) | Two URLs: `DATABASE_URL` (pooled) + `DATABASE_URL_UNPOOLED` (migrations only) |

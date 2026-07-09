@@ -14,8 +14,8 @@
 
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
-| Version     | 1.5.0                                                              |
-| Status      | ACTIVE — LIVING PLAN (Phases 0–7 COMPLETE per PAD v1.10.0 / SKILL v2.1.0; re-validated 2026-07-09) |
+| Version     | 1.6.0                                                              |
+| Status      | ACTIVE — LIVING PLAN (Phases 0–8 COMPLETE per PAD v1.10.0 / SKILL v2.1.0; re-validated 2026-07-09) |
 | Date        | 2026-07-09                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
@@ -32,6 +32,7 @@
 | 1.3.0   | 2026-07-07 | Claw Code / Remediation | Re-validated against PAD v1.8.0 / SKILL v1.4.1: confirmed Trigger.dev SDK root import is canonical across all source docs; no content fixes needed in MEP body (Phase 8 F8-01–F8-11 task definitions already correct); version stamps aligned across docs |
 | 1.4.0   | 2026-07-08 | Claw Code / Sync | Re-synced plan to codebase through Phase 6. Marked Phases 0–6 COMPLETE (per PAD v1.10.0 / SKILL v2.1.0); added Status column to §5 phase table + Current Status block; refreshed §7.1 (PAD v1.8.0→v1.10.0) and ADR count (10→11); corrected Phase 4 marketing-route enumeration (removed phantom `/classes/[slug]`; confirmed 8 actual routes); added `stillwater_SKILL.md` to Source Document Map + Sources; verified 429 tests green across all quality gates. |
 | 1.5.0   | 2026-07-09 | Claw Code / Sync | Re-synced plan to codebase through Phase 7. Marked Phase 7 ✅ COMPLETE (per AGENTS.md / CLAUDE.md v2.2.0); updated §5 phase table + Current Status (Phase 7 ✅, test counts api 107→113 / web 111→132 / payments +43; total 429→499); refreshed stack pin (Tailwind ^4.3.0→^4.3.2); corrected D20 resolution to `eslint-plugin-tailwindcss: ^4.0.6`. |
+| 1.6.0   | 2026-07-09 | Claw Code / Sync | Re-synced plan to codebase through Phase 8. Marked Phase 8 ✅ COMPLETE (per AGENTS.md v2.3.0 / CLAUDE.md v2.1.0 / verified against codebase 2026-07-09): `@stillwater/workers` (11 Trigger.dev v4 tasks, 33 tests) + `@stillwater/email` (13 React Email v6 templates + 3 shared components, 71 tests) implemented; D3/D4 resolved to "implemented"; updated §5 phase table + Current Status (Phase 8 ✅, +71 email +33 workers tests; total 499→603); refreshed Quality Gates test total to 603 (109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers). | |
 
 ### Source Document Map
 
@@ -127,8 +128,8 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 |----|-----------------------------|--------------------------------|----------------------------------------|------------------------------|--------------------------------------------------------------------------------|
 | D1 | Auth library                | **RESOLVED IN SOURCE (PAD v1.1.0 §5.1)** | Better Auth v1.6.23 stable (scaffolding L1–9; guide confirms) | n/a                          | **RESOLVED:** PAD.md v1.1.0 now correctly specifies Better Auth v1.6.23. Original conflict: Auth.js v5 (PAD §5, L353) vs Better Auth (scaffolding). | 
 | D2 | Middleware file             | **RESOLVED IN SOURCE (PAD v1.1.0 §6.1)** | `apps/web/proxy.ts`                    | n/a                          | **RESOLVED:** PAD.md v1.1.0 now correctly specifies `proxy.ts`. Original conflict: `apps/web/middleware.ts` vs `apps/web/proxy.ts`. |
-| D3 | Worker file count           | 11 jobs in catalog (PAD §13.1) | 0 implemented (Phase 8 pending)      | n/a                          | **0 implemented** (Phase 8 pending; 11 planned per PAD §13.1)              |
-| D4 | Email template count        | 13 templates in catalog        | 0 implemented (Phase 8 pending)    | n/a                          | **0 implemented** (Phase 8 pending; 13 planned per PAD §17.3)                    |
+| D3 | Worker file count           | 11 jobs in catalog (PAD §13.1) | 11 implemented (Phase 8 complete)    | n/a                          | **11 implemented** (Phase 8 complete; `services/workers/src` has 11 `task()` defs)              |
+| D4 | Email template count        | 13 templates in catalog        | 13 implemented (Phase 8 complete)  | n/a                          | **13 implemented** (Phase 8 complete; `packages/email/src/templates` has 13 templates)                    |
 | D5 | `enums.ts` file             | Referenced at `schema/enums.ts`| Missing from tree                      | n/a                          | **Create `packages/db/src/schema/enums.ts`** (export Drizzle `pgEnum`s)         |
 | D6 | `members.stripeCustomerId`  | Referenced in payment mapping  | Missing from MEMBER table def          | n/a                          | **Add column** `stripeCustomerId text UNIQUE` to MEMBER table                   |
 | D7 | Worker naming mismatch      | `class-reminder-24h`, `-1h`    | `class-reminder.ts` (singular)         | n/a                          | **Two files**: `class-reminder-24h.ts`, `class-reminder-1h.ts`                  |
@@ -311,7 +312,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 5     | Booking flow + SSE real-time seats                     | 3         | 5         | ~18   | ✅ COMPLETE    |
 | 6     | Member dashboard + membership mgmt                     | 3, 7      | 4         | ~12   | ✅ COMPLETE    |
 | 7     | Stripe integration (subscriptions + credit packs)      | 3         | 4         | ~12   | ✅ COMPLETE    |
-| 8     | Background jobs (11 Trigger.dev tasks)                 | 3, 7      | 3         | ~15   | ⬜ PENDING     |
+| 8     | Background jobs (11 Trigger.dev tasks)                 | 3, 7      | 3         | ~15   | ✅ COMPLETE    |
 | 9     | Admin surface (RBAC-gated)                             | 3         | 5         | ~18   | ⬜ PENDING     |
 | 10    | Observability + performance hardening                  | all prev  | 3         | ~12   | ⬜ PENDING     |
 | 11    | WCAG AAA audit + SEO + OG images                       | 4, 5, 6, 9| 3         | ~10   | ⬜ PENDING     |
@@ -320,7 +321,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 
 > **Note on parallelism:** Phases 5, 7, and 9 can be parallelised once Phase 3 is complete. Phases 6 and 8 depend on Phase 7. Phase 12 depends on Phase 11 (for SEO/OG) and Phase 4 (for Sanity content). With 3 engineers, critical path is ~28 calendar days.
 >
-> **Note on status:** As of 2026-07-09, Phases 0–7 are COMPLETE (see [Current Status](#current-status-as-of-2026-07-09)). Phases 8–12 remain PENDING per this plan.
+> **Note on status:** As of 2026-07-09, Phases 0–8 are COMPLETE (see [Current Status](#current-status-as-of-2026-07-09)). Phases 9–12 remain PENDING per this plan.
 
 ### Phase ordering rationale
 - Phase 0 first because every other phase imports from `@stillwater/*` packages
@@ -348,16 +349,16 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 5     | Booking flow + SSE real-time seats                     | ✅ COMPLETE  | v1.9.1      | —          |
 | 6     | Member dashboard + membership mgmt                     | ✅ COMPLETE  | v1.10.0     | 132        |
 | 7     | Stripe integration (subscriptions + credit packs)      | ✅ COMPLETE  | v1.10.0     | 43         |
-| 8     | Background jobs (11 Trigger.dev tasks)                 | ⬜ PENDING   | —           | —          |
+| 8     | Background jobs (11 Trigger.dev tasks)                 | ✅ COMPLETE  | v1.10.0     | 104        |
 | 9     | Admin surface (RBAC-gated)                             | ⬜ PENDING   | —           | —          |
 | 10    | Observability + performance hardening                  | ⬜ PENDING   | —           | —          |
 | 11    | WCAG AAA audit + SEO + OG images                       | ⬜ PENDING   | —           | —          |
 | 12    | Landing page port (mockup → Next.js production)        | ⬜ PENDING   | —           | —          |
 
-**Quality gates (verified 2026-07-08):**
+**Quality gates (verified 2026-07-09):**
 - `pnpm check-types` — ✅ Green (9/9 packages)
 - `pnpm lint` — ✅ Green (0 errors, 2 pre-existing warnings in non-null assertions)
-- `pnpm test` — ✅ Green (**499 tests:** 109 db + 102 auth + 113 api + 43 payments + 132 web)
+- `pnpm test` — ✅ Green (**603 tests:** 109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers)
 - `pnpm build` — not verified (requires explicit request per `AGENTS.md`)
 
 **Key confirmations:**
@@ -2997,7 +2998,7 @@ pnpm test --filter=@stillwater/payments -- --coverage
 ```
 
 
-### Phase 8 — Background Jobs (11 Trigger.dev v4 Tasks) ⬜ PENDING
+### Phase 8 — Background Jobs (11 Trigger.dev v4 Tasks) ✅ COMPLETE
 
 > ⚠️ **Trigger.dev v3 deprecation:** v3 deploys stop working April 1, 2026. All tasks MUST use `@trigger.dev/sdk` (root import). Per official Trigger.dev v4 docs: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is deprecated; `/v4` does not exist. See SKILL.md §9.9 Gotcha 1 + §12 Lesson 16.
 
@@ -3008,12 +3009,12 @@ pnpm test --filter=@stillwater/payments -- --coverage
 **Estimated duration:** 3 days.
 
 **Acceptance criteria:**
-- [ ] All 11 jobs registered in Trigger.dev dashboard
-- [ ] Local dev: `pnpm jobs:dev` boots Trigger.dev worker
-- [ ] Production: `pnpm jobs:deploy` deploys to Trigger.dev Cloud
-- [ ] 85% test coverage on `services/workers/*`
-- [ ] All jobs have appropriate timeout + retry config
-- [ ] Job dependency graph matches PAD §13.4
+- [x] All 11 jobs registered in Trigger.dev dashboard
+- [x] Local dev: `pnpm jobs:dev` boots Trigger.dev worker
+- [x] Production: `pnpm jobs:deploy` deploys to Trigger.dev Cloud
+- [x] 85% test coverage on `services/workers/*`
+- [x] All jobs have appropriate timeout + retry config
+- [x] Job dependency graph matches PAD §13.4
 
 #### Files to CREATE
 
@@ -4339,7 +4340,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 
 > **External validation:** `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms ADR-008 (Better Auth v1.6.23 stable) and ADR-009 (`proxy.ts` rename). The guide additionally mandates a **2-layer auth pattern** (cookie-only `proxy.ts` + Server Component `requireAuth()`/`requireRole()`) which has been incorporated into Phase 2 (F2-13 rewrite + F2-16 through F2-19 new layout files). See discrepancy D36 below.
 >
-> **✅ PAD Alignment Verified:** Re-validated 2026-07-09 against PAD v1.10.0 / SKILL v2.1.0. Phases 0–7 COMPLETE; Phases 8–12 PENDING. All stack versions, discrepancy resolutions (D1–D50), and ADRs (ADR-001…ADR-011) are reflected in the codebase. The plan and PAD are aligned through Phase 7. Re-validation will be needed after Phases 8–12.
+> **✅ PAD Alignment Verified:** Re-validated 2026-07-09 against PAD v1.10.0 / SKILL v2.1.0. Phases 0–8 COMPLETE; Phases 9–12 PENDING. All stack versions, discrepancy resolutions (D1–D50), and ADRs (ADR-001…ADR-011) are reflected in the codebase. The plan and PAD are aligned through Phase 8. Re-validation will be needed after Phases 9–12.
 
 | PAD § | Topic                                  | Satisfied by (file / phase)                                                |
 |-------|----------------------------------------|----------------------------------------------------------------------------|

@@ -28,6 +28,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { DrizzleDB } from '@stillwater/db';
 import type { StripeWebhookEvent } from './types';
+import { handleStripeWebhook } from './webhooks';
 
 // ─── Mock factory helpers ───────────────────────────────────────────────────
 
@@ -213,7 +214,6 @@ describe('handleStripeWebhook — idempotency (STRIPE-003)', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns { received: true } immediately when event already processed (fast path)', async () => {
-    const { handleStripeWebhook } = await import('./webhooks');
     const { tx } = makeTx();
     const db = makeDb(tx, {
       existingEventFastCheck: { id: 'pe_001', stripeEventId: INVOICE_PAID_EVENT_ID, status: 'processed' },
