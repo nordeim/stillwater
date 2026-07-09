@@ -10,6 +10,10 @@
     "./env": {
       "@stillwater/source": "./src/env.ts",
       "default": "./src/env.ts"
+    },
+    "./jobs-client": {
+      "@stillwater/source": "./src/jobs-client.ts",
+      "default": "./src/jobs-client.ts"
     }
   },
   "main": "./src/index.ts",
@@ -22,6 +26,7 @@
   },
   "dependencies": {
     "@t3-oss/env-core": "^0.13.11",
+    "@trigger.dev/sdk": "^4.5.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

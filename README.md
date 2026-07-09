@@ -270,7 +270,7 @@ docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dT'
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c 'SELECT count(*) FROM users;'
 # Expected: 5
 
-# Unit tests pass (499 tests, no DB needed for unit tests)
+# Unit tests pass (603 tests, no DB needed for unit tests)
 pnpm test --filter=@stillwater/db
 # Expected: "Test Files  16 passed (16)" + "Tests  109 passed (109)"
 
@@ -574,12 +574,12 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 5     | Booking flow + SSE real-time seats                 | ✅ Complete   | 5         |
 | 6     | Member dashboard + membership management           | ✅ Complete   | 4         |
 | 7     | Stripe integration (subscriptions + credit packs)  | ✅ Complete   | 4         |
-| 8     | Background jobs (11 Trigger.dev v4 tasks)          | ⬜ Pending     | 3         |
+| 8     | Background jobs + email (11 tasks + 13 templates)  | ✅ Complete   | 3         |
 | 9     | Admin surface (RBAC-gated)                         | ⬜ Pending     | 5         |
 | 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~56% complete** | **~46 days** |
+| **Total** |                                                | **~64% complete** | **~43 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -682,6 +682,17 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 
 ## What's New
 
+### v1.10.0 (2026-07-09) — Phase 8 Complete: Background Jobs + Email Templates
+
+| Change | Details |
+|---|---|
+| `@stillwater/email` package built | 19 source files, 71 tests: 3 shared components (`EmailLayout` 600px + CAN-SPAM, `EmailButton` primary/ghost sharp corners, `EmailFooter`), 13 React Email v6 templates (all with safe hex colors NOT CSS vars), dual-path `send.ts` (`sendEmail` for Server Components, `sendEmailNative` for workers per ADR-010), 13 send-helpers, `template-ids.ts` (13 `TEMPLATE_IDS` constants) |
+| `@stillwater/workers` package built | 12 source files, 33 tests: 11 Trigger.dev v4 tasks with per-task `maxDuration` (30s/60s/120s) + retry config (3/5/2 retries), all use `sendEmailNative()` via send-helpers (zero React Email 1.8MB bundle bloat) |
+| Integration wiring | `getJobsClient` in `@stillwater/config` (stub fallback), `bookings.book` triggers `booking-confirmation` + `class-reminder-24h` + `class-reminder-1h` (fire-and-forget), `bookings.cancel` job ID fixed `waitlist.promote` → `waitlist-promotion`, `memberships.cancel/pause` send emails via `sendEmailNative`, Stripe webhook `invoice.payment_failed` triggers `payment-failed-notify` (post-commit pattern) |
+| 5 new gotchas documented | Gotchas 63–67 (CLAUDE.md): workers `tsconfig` `verbatimModuleSyntax`, Drizzle `never` types in workers, Trigger.dev `tasks.trigger()` API, Turbopack dynamic `import()` resolution, post-commit job trigger pattern |
+| 603 tests passing | 109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers (was 499 at Phase 7) |
+| `pnpm build` green | ✅ All routes including `/api/webhooks/stripe` |
+
 ### v1.9.0 (2026-07-09) — Phase 7 Complete: Stripe Payment Integration
 
 | Change | Details |
@@ -692,7 +703,7 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 | `payments.refund` retained as D12 stub | v1 uses Stripe Dashboard only; in-app refund UI deferred to v2. `createRefund` helper exists in `@stillwater/payments` but not wired to tRPC until v2 |
 | 5 STRIPE acceptance tests | STRIPE-001 (invoice.paid grants credits), STRIPE-002 (invoice.payment_failed marks past_due), STRIPE-003 (idempotent — same event twice is a no-op), STRIPE-004 (invalid signature returns 400), STRIPE-005 (subscription.deleted cancels) |
 | Web app components | `CheckoutButton` component (calls `memberships.subscribe`, redirects to Stripe Checkout, Editorial Calm design tokens), `lib/stripe/utils.ts` (`formatStripeAmount`, `stripeEventToWebhookLog`) |
-| ADR-010 accepted | Resend Native Templates for Trigger.dev workers — protects 30s CPU budgets from React Email v6 1.8MB bundle bloat. Unblocks Phase 8 implementation |
+| ADR-010 accepted + fully implemented | Resend Native Templates for Trigger.dev workers — protects 30s CPU budgets from React Email v6 1.8MB bundle bloat. Unblocks Phase 8 implementation. Phase 8 workers now use `sendEmailNative()` exclusively (see v1.10.0) |
 | 5 new gotchas documented | Gotchas 58–62 (CLAUDE.md) / 51–55 (AGENTS.md): Stripe `current_period_end` moved to `items.data[0]`, `pg_advisory_xact_lock` BigInt constructor, webhook body as TEXT, Drizzle `with: { plan: true }` infers `never`, `exactOptionalPropertyTypes` conditional spread |
 | 499 tests passing | 109 db + 102 auth + 113 api + 43 payments + 132 web (was 429 at Phase 6) |
 | `pnpm build` green | ✅ All routes including `/api/webhooks/stripe` |
@@ -769,7 +780,7 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 | Rate limiting on bookings.book | Upstash sliding window (10/min per user) via `packages/api/src/middleware/rateLimit.ts` |
 | RBAC enforced at tRPC middleware layer | `protectedProcedure` → `staffProcedure` → `ownerProcedure` chain; throws UNAUTHORIZED/FORBIDDEN |
 | Phase 7 Stripe wired | All Stripe procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices` call `@stillwater/payments` helpers. `payments.refund` retained as D12 stub (v1 uses Stripe Dashboard). |
-| Jobs client stub | `ctx.jobs.trigger()` is a console.warn stub until Phase 8 (Trigger.dev tasks) |
+| Jobs client (Phase 8 unstubbed) | `ctx.jobs.trigger()` was a `console.warn` stub until Phase 8 — now real via `getJobsClient` in `@stillwater/config` (stub fallback in test/build envs when `TRIGGER_SECRET_KEY` not set) |
 | Root router + barrel export | `packages/api/src/root.ts` merges all 10 routers; `AppRouter` type exported for client inference |
 | Web tRPC integration | HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`) |
 | 5 Phase 3 gotchas documented (25–29) | tRPC middleware factory, Zod v4 UUID strictness, Drizzle relational types, mock chain `.where()`, `exactOptionalPropertyTypes` spread-conditional |

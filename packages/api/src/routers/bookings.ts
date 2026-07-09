@@ -143,6 +143,23 @@ export const bookingsRouter = router({
           });
         }
 
+        // Phase 8: Trigger booking-confirmation + reminder jobs
+        // (fire-and-forget — don't block the booking response)
+        ctx.jobs.trigger('booking-confirmation', {
+          enrollmentId: created.id,
+          memberId,
+        }).catch(() => {
+          // Job trigger failure shouldn't fail the booking — Trigger.dev retries
+        });
+        ctx.jobs.trigger('class-reminder-24h', {
+          sessionId: input.sessionId,
+          memberId,
+        }).catch(() => {});
+        ctx.jobs.trigger('class-reminder-1h', {
+          sessionId: input.sessionId,
+          memberId,
+        }).catch(() => {});
+
         return created;
       });
     }),
@@ -186,8 +203,11 @@ export const bookingsRouter = router({
         });
       }
 
-      // Fire waitlist promotion (Phase 6 will consume this Trigger.dev task)
-      await ctx.jobs.trigger('waitlist.promote', { sessionId: updated.sessionId });
+      // Phase 8: Trigger waitlist-promotion job (hyphenated ID per PAD §17.1)
+      await ctx.jobs.trigger('waitlist-promotion', {
+        sessionId: updated.sessionId,
+        cancelledEnrollmentId: updated.id,
+      });
 
       return updated;
     }),

@@ -30,6 +30,7 @@
     "@stillwater/auth": "workspace:*",
     "@stillwater/config": "workspace:*",
     "@stillwater/db": "workspace:*",
+    "@stillwater/email": "workspace:*",
     "@stillwater/payments": "workspace:*",
     "@trigger.dev/sdk": "^4.5.0",
     "@trpc/server": "^11.18.0",

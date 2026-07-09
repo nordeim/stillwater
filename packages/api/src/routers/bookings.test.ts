@@ -11,7 +11,7 @@
  *   - CONFLICT when member already enrolled (double-book)
  *   - CONFLICT when session is full
  *   - FORBIDDEN when caller has no memberId
- *   - cancel enforces ownership + triggers waitlist.promote job
+ *   - cancel enforces ownership + triggers waitlist-promotion job
  *   - checkIn (staff) marks enrollment as attended
  *   - access tier enforcement (UNAUTHORIZED / FORBIDDEN)
  */
@@ -267,7 +267,7 @@ describe('bookingsRouter.cancel', () => {
     vi.clearAllMocks();
   });
 
-  it('cancels the caller own enrollment and triggers waitlist.promote', async () => {
+  it('cancels the caller own enrollment and triggers waitlist-promotion', async () => {
     const updated = { ...enrollmentFixture, status: 'cancelled', cancelledAt: new Date() };
     const returning = vi.fn().mockResolvedValue([updated]);
     const where = vi.fn().mockReturnValue({ returning });
@@ -285,8 +285,9 @@ describe('bookingsRouter.cancel', () => {
     expect(set.mock.calls[0][0]).toHaveProperty('cancelledAt');
     // Waitlist promotion job triggered
     expect(ctx.jobs.trigger).toHaveBeenCalledTimes(1);
-    expect(ctx.jobs.trigger).toHaveBeenCalledWith('waitlist.promote', {
+    expect(ctx.jobs.trigger).toHaveBeenCalledWith('waitlist-promotion', {
       sessionId: SESSION_ID,
+      cancelledEnrollmentId: ENROLLMENT_ID,
     });
   });
 

@@ -1,8 +1,8 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 2.2.0
-framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia)"
+version: 2.3.0
+framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia), Trigger.dev v4"
 last_updated: 2026-07-09
 ---
 
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–7 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 17 tables (14 domain + 3 Better Auth) + 8 enums + 9 indexes (5 critical) via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (8 source files incl. `index.ts` barrel, 43 tests: `client.ts` singleton with Dahlia API, `types.ts` 7-event discriminated union, `subscriptions.ts` 5 lifecycle helpers, `webhooks.ts` idempotent handler with `pg_advisory_xact_lock` + 7 event handlers, `invoices.ts` cursor pagination, `credit-packs.ts` one-off checkout, `refunds.ts` D12 thin wrapper), Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT, signature verification, 400/500/200), `CheckoutButton` component, `lib/stripe/utils.ts`, all tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`), `payments.refund` retained as D12 stub, ADR-010 accepted (Resend Native Templates), 5 STRIPE acceptance tests passing. 499 tests (109 db + 102 auth + 113 api + 43 payments + 132 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green. Phase 8–12 pending.
+**Phase 0–8 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 17 tables (14 domain + 3 Better Auth) + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (7 source files, 43 tests: `client.ts` singleton with Dahlia API, `types.ts` 7-event discriminated union, `subscriptions.ts` 5 lifecycle helpers, `webhooks.ts` idempotent handler with `pg_advisory_xact_lock` + 7 event handlers, `invoices.ts` cursor pagination, `credit-packs.ts` one-off checkout, `refunds.ts` D12 thin wrapper), Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT, signature verification, 400/500/200), `CheckoutButton` component, `lib/stripe/utils.ts`, all tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`), `payments.refund` retained as D12 stub, ADR-010 accepted (Resend Native Templates), 5 STRIPE acceptance tests passing. Phase 8: Background jobs + email — `@stillwater/email` package (19 source files, 71 tests: 3 shared components, 13 React Email v6 templates, dual-path send.ts with sendEmail for Server Components + sendEmailNative for workers per ADR-010, 13 send-helpers, template-ids.ts), `@stillwater/workers` package (12 source files, 33 tests: 11 Trigger.dev v4 tasks with per-task maxDuration + retry, all use sendEmailNative via send-helpers), integration wiring (getJobsClient in @stillwater/config with stub fallback, bookings.book triggers booking-confirmation + reminders fire-and-forget, bookings.cancel job ID fixed to waitlist-promotion, memberships.cancel/pause send emails, Stripe webhook invoice.payment_failed triggers payment-failed-notify post-commit). 603 tests (109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green. Phase 9-12 pending.
 
 ---
 
@@ -447,7 +447,7 @@ Before committing, verify locally:
 ```bash
 pnpm check-types       # TypeScript green (9/9 tasks)
 pnpm lint              # ESLint green (2/2 tasks)
-pnpm test              # Vitest green (499 tests: 109 db + 102 auth + 113 api + 43 payments + 132 web)
+pnpm test              # Vitest green (603 tests: 109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers)
 pnpm build             # Next.js production build (13/13 pages)
 ```
 
@@ -687,7 +687,7 @@ These are real issues encountered during Phase 0 implementation. Each has a veri
 
 **Root cause:** TS 6.0.3 (October 2025) exists but PAD §5.1 + `pnpm_install_fix.md` explicitly mandate `^5.9.0` for compatibility with `erasableSyntaxOnly` (forbids `enum`, `namespace`, parameter properties — TS 5.8+) and `verbatimModuleSyntax` (requires `import type`). During initial package version bumping, 9 sub-package.json files were accidentally set to `^6.0.3`.
 
-**Fix:** All workspace packages reverted to `typescript: "^5.9.0"` (D44). The `pnpm install` output saying "6.0.3 is available" is expected — we intentionally ignore it.
+**Fix:** All 9 sub-packages reverted to `typescript: "^5.9.0"` (D44). The `pnpm install` output saying "6.0.3 is available" is expected — we intentionally ignore it.
 
 ### Gotcha 5: `pg_advisory_lock` vs `pg_advisory_xact_lock`
 
@@ -1443,6 +1443,56 @@ listInvoices({
 ```
 See `packages/api/src/routers/payments.ts` `getInvoices` procedure for the full pattern.
 
+### Gotcha 63: Workers tsconfig `verbatimModuleSyntax` conflicts with `@stillwater/db` CommonJS (Critical — Phase 8)
+
+**Symptom:** `TS1295: ECMAScript imports and exports cannot be written in a CommonJS file under 'verbatimModuleSyntax'` when importing from @stillwater/db in workers
+
+**Root cause:** Workers tsconfig uses `moduleResolution: NodeNext` (required by @trigger.dev/sdk v4) but @stillwater/db package.json doesn't have `"type": "module"`. The `verbatimModuleSyntax: true` from base config conflicts.
+
+**Fix:** Set `verbatimModuleSyntax: false` in `services/workers/tsconfig.json`. Also exclude test files from tsc: `"exclude": ["node_modules", "dist", ".turbo", "src/**/*.test.ts"]`
+
+### Gotcha 64: Drizzle relational query `with` types infer as `never` in workers (Medium — Phase 8)
+
+**Symptom:** `Property 'instructor' does not exist on type 'never'` in worker task files
+
+**Root cause:** Same as Lesson 69 (Phase 7) — Drizzle 0.45's relational query API needs `defineRelations()`. Workers can't import schema tables directly (NodeNext issue), so the callback `where` syntax also fails type checking.
+
+**Fix:** Cast `(db.query.enrollments as any).findFirst({...})` and cast result to typed interface
+
+### Gotcha 65: Trigger.dev SDK v4 uses `tasks.trigger()` not `TriggerClient.sendEvent()` (Critical — Phase 8)
+
+**Symptom:** `Property 'sendEvent' does not exist on type 'TriggerClient'` or `Property 'id' does not exist in type 'TriggerClientConfig'`
+
+**Root cause:** Trigger.dev SDK v4 API changed from v3. `TriggerClient` constructor takes `TriggerClientConfig` (which extends `ApiClientConfiguration`, not a custom `id` field). Triggering is done via `tasks.trigger(taskId, payload)` imported from `@trigger.dev/sdk`, not `client.sendEvent()`.
+
+**Fix:** Use `import { tasks } from '@trigger.dev/sdk'` then `tasks.trigger(task, payload)`. Don't instantiate `TriggerClient` directly for triggering.
+
+### Gotcha 66: Turbopack resolves dynamic `import()` with string concatenation (Critical — Phase 8)
+
+**Symptom:** `Module not found: Can't resolve '@trigger.dev/sdk'` during `pnpm build` even with dynamic `import()`
+
+**Root cause:** Turbopack (Next.js 16's bundler) statically analyzes `import()` calls. Even `const m = '@trigger.dev/' + 'sdk'; await import(m)` gets resolved at build time. If the module isn't a dependency of the package doing the import, the build fails.
+
+**Fix:** Add `@trigger.dev/sdk` as a real dependency of the package that needs it (`@stillwater/config` in this case). The stub fallback (checking `TRIGGER_SECRET_KEY`) prevents runtime usage in test/build envs.
+
+### Gotcha 67: Post-commit job triggers must use post-transaction pattern (Medium — Phase 8)
+
+**Symptom:** Job triggered inside a transaction that later rolls back → job processes non-existent data
+
+**Root cause:** Calling `jobs.trigger()` inside `db.transaction(async (tx) => {...})` fires immediately. If the transaction rolls back, the job runs against data that was never committed.
+
+**Fix:** Collect post-commit actions in an array during the transaction, then execute them after `db.transaction()` returns successfully:
+```typescript
+const postCommitActions: Array<() => Promise<void>> = [];
+await db.transaction(async (tx) => {
+  // ... handler pushes to postCommitActions
+});
+// Only runs if transaction committed
+for (const action of postCommitActions) {
+  action().catch(() => {});
+}
+```
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -1502,7 +1552,7 @@ See `packages/api/src/routers/payments.ts` `getInvoices` procedure for the full 
 | ESLint: `Invalid type "number" of template literal expression` (Phase 5) | `restrict-template-expressions` forbids `number` | Cast: `String(number)` in template literals. See Gotcha 49. |
 | Authenticated user hits 404 on `/dashboard` (Phase 6) | No `(studio)/dashboard/page.tsx` existed | ✅ Fixed in Phase 6 — dashboard page created. Always verify redirect targets exist. See Gotcha 50. |
 | `ProfileEditForm` saves empty strings instead of leaving unchanged (Phase 6) | `react-hook-form` returns `''` for empty inputs | Strip empty strings → `undefined` before passing to tRPC mutation. See Gotcha 51. |
-| Pause/cancel/resume buttons throw `PRECONDITION_FAILED` (Phase 6) | `memberships` stubs threw until Phase 7 | ✅ Fixed in Phase 7 — all procedures now call real Stripe helpers. See Gotcha 52. |
+| Pause/cancel/resume buttons throw `PRECONDITION_FAILED` (Phase 6) | `memberships` stubs threw until Phase 7 | ✅ Fixed in Phase 7 — all procedures now call real Stripe helpers. Phase 8 added email integration: `memberships.cancel` + `memberships.pause` now also trigger `payment-failed-notify`-style background jobs via `getJobsClient()`. See Gotcha 52. |
 | ESLint: `no-base-to-string` on `String(unknown)` in CSV utility (Phase 6) | `unknown` could be an object | Narrow with `typeof` checks before `String()`. See Gotcha 53. |
 | ESLint: `unnecessary-condition` + `restrict-template-expressions` in dashboard components (Phase 6) | Drizzle cast produces non-null types | Add eslint override for `src/components/dashboard/**/*.tsx`. See Gotcha 54. |
 | `subscription.plan.name` TypeScript error: `never` (Phase 6) | Drizzle 0.45 `with: { plan: true }` infers as `never` | Cast to `SubscriptionWithPlan` type. See Gotcha 55. |
@@ -1516,6 +1566,13 @@ See `packages/api/src/routers/payments.ts` `getInvoices` procedure for the full 
 | `Cannot find module '@stillwater/payments'` in web app (Phase 7) | `@stillwater/payments` not added as workspace dependency | `pnpm --filter @stillwater/web add @stillwater/payments@workspace:*`. |
 | `Cannot find module 'drizzle-orm'` in payments package (Phase 7) | `drizzle-orm` not a dependency of `@stillwater/payments` | `pnpm --filter @stillwater/payments add drizzle-orm`. Needed for `eq`, `sql`, query types. |
 | `pnpm test` fails: "No test files found" in `@stillwater/payments` or `@stillwater/ui` | Vitest exits code 1 with zero test files | ✅ Fixed via Phase A.1 — `passWithNoTests: true` in vitest.config.ts. |
+| `TS1295: verbatimModuleSyntax error in workers` (Phase 8) | Workers tsconfig `verbatimModuleSyntax: true` conflicts with CJS `@stillwater/db` | Set `verbatimModuleSyntax: false` in workers tsconfig. See Gotcha 63. |
+| `Property 'instructor' does not exist on type 'never' in worker` (Phase 8) | Drizzle 0.45 `with` types infer as `never` (NodeNext issue) | Cast `(db.query.X as any).findFirst({...})` — see Gotcha 64. |
+| `Property 'sendEvent' does not exist on TriggerClient` (Phase 8) | Trigger.dev SDK v4 API changed from v3 | Use `tasks.trigger()` from `@trigger.dev/sdk` — see Gotcha 65. |
+| `Module not found: Can't resolve '@trigger.dev/sdk' in build` (Phase 8) | Turbopack statically analyzes dynamic `import()` calls | Add as real dependency — see Gotcha 66. |
+| `Job triggered but data doesn't exist` (Phase 8) | Job triggered inside a transaction that rolled back | Use post-commit pattern — see Gotcha 67. |
+| `Cannot find module '@stillwater/email'` in api (Phase 8) | `@stillwater/email` not added as workspace dependency | `pnpm --filter @stillwater/api add @stillwater/email@workspace:*`. |
+| `vitest test files fail with TS2835 (explicit file extensions)` in workers (Phase 8) | NodeNext requires `.js` extensions in `import` paths; test files type-checked by tsc | Exclude test files from workers tsconfig: `"exclude": [..., "src/**/*.test.ts"]`. |
 
 ---
 

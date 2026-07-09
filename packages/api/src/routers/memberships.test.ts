@@ -32,6 +32,17 @@ vi.mock('@stillwater/payments', () => ({
     mockResumeSubscription(...args),
 }));
 
+// Mock @stillwater/email send helpers (Phase 8 — Resend Native Templates)
+const mockSendMembershipCancellation = vi.fn();
+const mockSendMembershipPaused = vi.fn();
+
+vi.mock('@stillwater/email', () => ({
+  sendMembershipCancellation: (...args: unknown[]) =>
+    mockSendMembershipCancellation(...args),
+  sendMembershipPaused: (...args: unknown[]) =>
+    mockSendMembershipPaused(...args),
+}));
+
 import { membershipsRouter } from './memberships';
 import type { TRPCContext } from '../trpc';
 
@@ -241,10 +252,15 @@ describe('membershipsRouter.cancel (Phase 7 — Stripe wired)', () => {
     const subFindFirst = vi
       .fn()
       .mockResolvedValue(subscriptionWithPlanFixture);
+    const memberFindFirst = vi.fn().mockResolvedValue(memberFixture);
     mockCancelAtPeriodEnd.mockResolvedValue({ id: 'sub_xyz' });
+    mockSendMembershipCancellation.mockResolvedValue(undefined);
 
     const ctx = makeCtx({
-      query: { memberSubscriptions: { findFirst: subFindFirst } } as never,
+      query: {
+        memberSubscriptions: { findFirst: subFindFirst },
+        members: { findFirst: memberFindFirst },
+      } as never,
     });
     const caller = membershipsRouter.createCaller(ctx);
 
@@ -272,7 +288,9 @@ describe('membershipsRouter.pause (Phase 7 — Stripe wired)', () => {
     const subFindFirst = vi
       .fn()
       .mockResolvedValue(subscriptionWithPlanFixture);
+    const memberFindFirst = vi.fn().mockResolvedValue(memberFixture);
     mockPauseSubscription.mockResolvedValue({ id: 'sub_xyz' });
+    mockSendMembershipPaused.mockResolvedValue(undefined);
     const update = vi.fn().mockReturnValue({
       set: vi.fn().mockReturnValue({
         where: vi.fn().mockResolvedValue(undefined),
@@ -280,7 +298,10 @@ describe('membershipsRouter.pause (Phase 7 — Stripe wired)', () => {
     });
 
     const ctx = makeCtx({
-      query: { memberSubscriptions: { findFirst: subFindFirst } } as never,
+      query: {
+        memberSubscriptions: { findFirst: subFindFirst },
+        members: { findFirst: memberFindFirst },
+      } as never,
       update,
     } as never);
     const caller = membershipsRouter.createCaller(ctx);

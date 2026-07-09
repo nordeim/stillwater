@@ -29,6 +29,10 @@ import {
   pauseSubscription,
   resumeSubscription,
 } from '@stillwater/payments';
+import {
+  sendMembershipCancellation,
+  sendMembershipPaused,
+} from '@stillwater/email';
 
 export const membershipsRouter = router({
   /**
@@ -154,6 +158,29 @@ export const membershipsRouter = router({
     }
 
     await cancelAtPeriodEnd(sub.stripeSubscriptionId);
+
+    // Phase 8: Send membership cancellation email via Resend Native Templates
+    // (sendMembershipCancellation wraps sendEmailNative — no React Email bundle)
+    const member = await ctx.db.query.members.findFirst({
+      where: eq(members.id, memberId),
+    });
+    if (member) {
+      const accessUntil = sub.currentPeriodEnd
+        ? sub.currentPeriodEnd.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          })
+        : 'the end of your current billing period';
+      sendMembershipCancellation({
+        to: ctx.session.user.email,
+        memberName: member.displayName,
+        accessUntilDate: accessUntil,
+      }).catch(() => {
+        // Email failure shouldn't fail the cancellation — Trigger.dev retries
+      });
+    }
+
     return { success: true };
   }),
 
@@ -198,6 +225,27 @@ export const membershipsRouter = router({
           pauseResumesAt: input?.resumeAt ?? null,
         })
         .where(eq(memberSubscriptions.id, sub.id));
+
+      // Phase 8: Send membership paused email via Resend Native Templates
+      const pausedMember = await ctx.db.query.members.findFirst({
+        where: eq(members.id, memberId),
+      });
+      if (pausedMember) {
+        const resumeDate = input?.resumeAt
+          ? input.resumeAt.toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : 'you resume your membership';
+        sendMembershipPaused({
+          to: ctx.session.user.email,
+          memberName: pausedMember.displayName,
+          resumeDate,
+        }).catch(() => {
+          // Email failure shouldn't fail the pause — fire-and-forget
+        });
+      }
 
       return { success: true };
     }),

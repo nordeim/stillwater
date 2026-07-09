@@ -5,8 +5,9 @@
     "moduleResolution": "NodeNext",
     "target": "ES2022",
     "noEmit": true,
-    "tsBuildInfoFile": ".turbo/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": ".turbo/tsconfig.tsbuildinfo",
+    "verbatimModuleSyntax": false
   },
   "include": ["src/**/*.ts", "trigger.config.ts"],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "exclude": ["node_modules", "dist", ".turbo", "src/**/*.test.ts"]
 }

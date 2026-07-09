@@ -9,7 +9,9 @@
     "clean": "rm -rf .turbo",
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@stillwater/config": "workspace:*",
@@ -22,6 +24,8 @@
     "@stillwater/eslint-config": "workspace:*",
     "@stillwater/typescript-config": "workspace:*",
     "@types/node": "^26.1.0",
-    "typescript": "^5.9.0"
+    "@vitest/coverage-v8": "^4.1.9",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.9"
   }
 }

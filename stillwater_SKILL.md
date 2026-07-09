@@ -7,9 +7,9 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 2.2.0
+version: 2.3.0
 project_type: nextjs-monorepo
-framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia)"
+framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia), Trigger.dev v4, React Email 6.6, Resend 6.17"
 last_updated: 2026-07-09
 ---
 
@@ -17,7 +17,7 @@ last_updated: 2026-07-09
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v2.2.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phase 4 (Marketing Surface with Sanity CMS — 8 ISR pages, webhook→ISR, Cloudflare Images, 11 shadcn components, build fix via transpilePackages) ✅ COMPLETE (2026-07-08); Phase 5 (Booking Flow + SSE — SSE endpoint with maxDuration=300 + 10s polling, useSessionAvailability hook with 3 reconnection attempts, 5 booking UI components, (studio)/book/[sessionId] page, ScheduleGrid with Book CTA, Toaster mounted, waitlist unique index, E2E specs BOOK-001 to BOOK-004) ✅ COMPLETE (2026-07-08); Phase 6 (Member Dashboard — /dashboard, /profile, /membership, /history pages, 7 dashboard components, CSV export utility, memberships.getMySubscription plan join, /dashboard 404 ghost resolved) ✅ COMPLETE (2026-07-08); Phase 7 (Stripe Payment Integration — @stillwater/payments package with 7 source files + 43 tests: client singleton with Dahlia API, 7-event types, 5 subscription helpers, idempotent webhook handler with pg_advisory_xact_lock + 7 event handlers, invoice pagination, credit-pack checkout, D12 refund wrapper; Stripe webhook route at /api/webhooks/stripe with body-as-TEXT signature verification; all tRPC procedures unstubbed: memberships.subscribe/cancel/pause/resume + payments.getPortalUrl/getInvoices; payments.refund retained as D12 stub; CheckoutButton component + lib/stripe/utils.ts; ADR-010 accepted; 5 STRIPE acceptance tests passing) ✅ COMPLETE (2026-07-09); Phases 8–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. ADR-011 added (source resolution via `transpilePackages`). 499 tests (109 db + 102 auth + 113 api + 43 payments + 132 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
+> **Status:** v2.3.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phase 4 (Marketing Surface with Sanity CMS — 8 ISR pages, webhook→ISR, Cloudflare Images, 11 shadcn components, build fix via transpilePackages) ✅ COMPLETE (2026-07-08); Phase 5 (Booking Flow + SSE — SSE endpoint with maxDuration=300 + 10s polling, useSessionAvailability hook with 3 reconnection attempts, 5 booking UI components, (studio)/book/[sessionId] page, ScheduleGrid with Book CTA, Toaster mounted, waitlist unique index, E2E specs BOOK-001 to BOOK-004) ✅ COMPLETE (2026-07-08); Phase 6 (Member Dashboard — /dashboard, /profile, /membership, /history pages, 7 dashboard components, CSV export utility, memberships.getMySubscription plan join, /dashboard 404 ghost resolved) ✅ COMPLETE (2026-07-08); Phase 7 (Stripe Payment Integration — @stillwater/payments package with 7 source files + 43 tests: client singleton with Dahlia API, 7-event types, 5 subscription helpers, idempotent webhook handler with pg_advisory_xact_lock + 7 event handlers, invoice pagination, credit-pack checkout, D12 refund wrapper; Stripe webhook route at /api/webhooks/stripe with body-as-TEXT signature verification; all tRPC procedures unstubbed: memberships.subscribe/cancel/pause/resume + payments.getPortalUrl/getInvoices; payments.refund retained as D12 stub; CheckoutButton component + lib/stripe/utils.ts; ADR-010 accepted; 5 STRIPE acceptance tests passing) ✅ COMPLETE (2026-07-09); Phase 8 (Background Jobs + Email — @stillwater/email package with 19 source files + 71 tests: 3 shared components EmailLayout/EmailButton/EmailFooter, 13 React Email v6 templates with safe hex colors, dual-path send.ts with sendEmail for Server Components + sendEmailNative for workers per ADR-010, 13 send-helpers with type-safe wrappers, template-ids.ts with 13 TEMPLATE_IDS constants; @stillwater/workers package with 12 source files + 33 tests: 11 Trigger.dev v4 tasks with per-task maxDuration 30s/60s/120s + retry 3/5/2, all use sendEmailNative via send-helpers for zero React Email 1.8MB bundle bloat; integration wiring: getJobsClient in @stillwater/config with stub fallback, bookings.book triggers booking-confirmation + class-reminder-24h + class-reminder-1h fire-and-forget, bookings.cancel job ID fixed waitlist.promote → waitlist-promotion, memberships.cancel/pause send emails via sendEmailNative, Stripe webhook invoice.payment_failed triggers payment-failed-notify post-commit) ✅ COMPLETE (2026-07-09); Phases 9–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. ADR-011 added (source resolution via `transpilePackages`). ADR-010 accepted + fully implemented (Resend Native Templates for Trigger.dev workers). 603 tests (109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
 ---
 
@@ -2865,7 +2865,7 @@ CI should never have production secrets. Use separate secrets for CI testing.
 
 ## §12. Lessons Learnt & How to Avoid Them
 
-> **Note:** The lessons below are distilled from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and the 45 reconciled discrepancies in `MASTER_EXECUTION_PLAN.md` (D1–D45). Lessons 1–15 are from the initial distillation; Lessons 16–22 are from actual Phase 0 implementation and the P0–P3 remediation pass (2026-07-06); Lessons 23–27 are from Phase 1 (DB schema); Lessons 28–35 are from Phase 2 (Better Auth); Lessons 36–41 are from Phase 3 (tRPC); Lessons 42–49 are from Phase 4 (Sanity CMS); Lessons 50–57 are from Phase 5 (SSE + booking); Lessons 58–65 are from Phase 6 (member dashboard); Lessons 66–70 are from Phase 7 (Stripe payment integration). The 21 cited source skills are: `nextjs16-tailwind4`, `nextjs16-react19-tailwind4-full-stack`, `nextjs16-react19-next-auth5-drizzle-orm`, `nextjs16-react19-postgres17`, `nextjs16-react19-tailwind4-auth5-video-gen`, `nextjs-react-expert`, `tailwind-patterns`, `avant-garde-design-v4`, `aesthetic`, `visual-design-foundations`, `frontend-design`, `tdd-workflow`, `test-driven-development`, `code-quality-standards`, `verification-and-review-protocol`, `debugging-and-error-recovery`, `ci-cd-and-automation`, `security-and-hardening`, `vulnerability-scanner`, `webapp-testing-journey`, `to-distill-project-into-skill`.
+> **Note:** The lessons below are distilled from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and the 45 reconciled discrepancies in `MASTER_EXECUTION_PLAN.md` (D1–D45). Lessons 1–15 are from the initial distillation; Lessons 16–22 are from actual Phase 0 implementation and the P0–P3 remediation pass (2026-07-06); Lessons 23–27 are from Phase 1 (DB schema); Lessons 28–35 are from Phase 2 (Better Auth); Lessons 36–41 are from Phase 3 (tRPC); Lessons 42–49 are from Phase 4 (Sanity CMS); Lessons 50–57 are from Phase 5 (SSE + booking); Lessons 58–65 are from Phase 6 (member dashboard); Lessons 66–70 are from Phase 7 (Stripe payment integration); Lessons 71–75 are from Phase 8 (background jobs + email). The 21 cited source skills are: `nextjs16-tailwind4`, `nextjs16-react19-tailwind4-full-stack`, `nextjs16-react19-next-auth5-drizzle-orm`, `nextjs16-react19-postgres17`, `nextjs16-react19-tailwind4-auth5-video-gen`, `nextjs-react-expert`, `tailwind-patterns`, `avant-garde-design-v4`, `aesthetic`, `visual-design-foundations`, `frontend-design`, `tdd-workflow`, `test-driven-development`, `code-quality-standards`, `verification-and-review-protocol`, `debugging-and-error-recovery`, `ci-cd-and-automation`, `security-and-hardening`, `vulnerability-scanner`, `webapp-testing-journey`, `to-distill-project-into-skill`.
 
 ### Lesson 1: Source documents disagree — always reconcile before implementing
 
@@ -3952,6 +3952,105 @@ listInvoices({
 ```
 
 **Fix references:** `packages/api/src/routers/payments.ts` `getInvoices` procedure. See CLAUDE.md Gotcha 62, AGENTS.md Gotcha 55. Also see Lesson 41 (Phase 3 `exactOptionalPropertyTypes` for tRPC middleware).
+
+### Lesson 71: Workers tsconfig `verbatimModuleSyntax` conflicts with `@stillwater/db` CommonJS (Phase 8)
+
+**Context:** The workers package uses `moduleResolution: NodeNext` (required by `@trigger.dev/sdk` v4 which has `"type": "module"`). However, `@stillwater/db` doesn't have `"type": "module"` in its package.json. The base tsconfig's `verbatimModuleSyntax: true` then fails with `TS1295: ECMAScript imports and exports cannot be written in a CommonJS file` when importing from `@stillwater/db`.
+
+**What to do differently:** When a package uses `NodeNext` module resolution and imports from a CommonJS workspace package, override `verbatimModuleSyntax` to `false` in the consuming package's tsconfig. Also exclude test files from tsc (vitest runs them, not tsc — and test files use `.js` extension imports which NodeNext requires).
+
+**Fix:**
+```json
+// services/workers/tsconfig.json
+{
+  "compilerOptions": {
+    "verbatimModuleSyntax": false
+  },
+  "exclude": ["node_modules", "dist", ".turbo", "src/**/*.test.ts"]
+}
+```
+
+**Fix references:** `services/workers/tsconfig.json`. See CLAUDE.md Gotcha 63, AGENTS.md Gotcha 56.
+
+### Lesson 72: Trigger.dev SDK v4 uses `tasks.trigger()` not `TriggerClient.sendEvent()` (Phase 8)
+
+**Context:** The Trigger.dev SDK v4 API differs from v3. The `TriggerClient` class constructor takes `TriggerClientConfig` (which extends `ApiClientConfiguration` — NOT a custom `id` field). Triggering is done via `tasks.trigger(taskId, payload)` imported from `@trigger.dev/sdk`, NOT via `client.sendEvent()`. The `sendEvent` method does not exist on `TriggerClient` in v4.
+
+**What to do differently:** Use `import { tasks } from '@trigger.dev/sdk'` then `tasks.trigger(task, payload)`. Do NOT instantiate `TriggerClient` directly for triggering — it's for the worker runtime, not for external callers. The `tasks.trigger()` function reads the `TRIGGER_SECRET_KEY` env var automatically.
+
+**Fix:**
+```typescript
+// WRONG (v3 pattern — sendEvent doesn't exist in v4):
+const client = new TriggerClient({ id: 'stillwater', apiKey: key });
+await client.sendEvent({ name: task, payload });
+
+// CORRECT (v4 pattern):
+import { tasks } from '@trigger.dev/sdk';
+const result = await tasks.trigger(task, payload);
+return { id: result.id };
+```
+
+**Fix references:** `packages/config/src/jobs-client.ts`. See CLAUDE.md Gotcha 65, AGENTS.md Gotcha 58.
+
+### Lesson 73: Turbopack statically resolves dynamic `import()` with string concatenation (Phase 8)
+
+**Context:** When trying to lazy-load `@trigger.dev/sdk` in `@stillwater/config` (which doesn't have it as a dependency), using dynamic `import()` with a variable module path (`const m = '@trigger.dev/' + 'sdk'; await import(m)`) still fails. Turbopack (Next.js 16's bundler) statically analyzes `import()` calls and resolves them at build time — even with string concatenation. If the module isn't a dependency of the package doing the import, the build fails with `Module not found: Can't resolve '@trigger.dev/sdk'`.
+
+**What to do differently:** Don't try to hide dynamic imports from Turbopack. If a package needs to import a module at runtime, add it as a real dependency. The stub fallback pattern (checking `TRIGGER_SECRET_KEY` before using the real client) prevents runtime usage in test/build environments — the dependency exists for type checking and build resolution, but the code path that imports it only executes when the env var is set.
+
+**Fix:** Add `@trigger.dev/sdk` as a real dependency of `@stillwater/config`:
+```bash
+pnpm --filter @stillwater/config add @trigger.dev/sdk@^4.5.0
+```
+Then use a static import in `jobs-client.ts`:
+```typescript
+import { tasks } from '@trigger.dev/sdk';
+// The stub fallback (TRIGGER_SECRET_KEY check) prevents runtime usage in test/build
+```
+
+**Fix references:** `packages/config/src/jobs-client.ts`, `packages/config/package.json`. See CLAUDE.md Gotcha 66, AGENTS.md Gotcha 59.
+
+### Lesson 74: Post-commit job triggers must use post-transaction pattern (Phase 8)
+
+**Context:** The Stripe webhook handler processes events inside a `db.transaction()` with `pg_advisory_xact_lock`. If a job is triggered inside the transaction and the transaction later rolls back, the job runs against data that was never committed — causing "enrollment not found" or "member not found" errors in the worker.
+
+**What to do differently:** Collect post-commit actions in an array during the transaction, then execute them after `db.transaction()` returns successfully. This ensures jobs only fire for committed data. The pattern is: push closures to `postCommitActions[]` inside the transaction, iterate + execute after commit.
+
+**Fix:**
+```typescript
+const postCommitActions: Array<() => Promise<void>> = [];
+try {
+  await db.transaction(async (tx) => {
+    await dispatchEvent(event, tx, postCommitActions);
+    await tx.insert(paymentEvents).values({ ... });
+  });
+  // Only runs if transaction committed
+  for (const action of postCommitActions) {
+    action().catch(() => {}); // fire-and-forget
+  }
+  return { received: true };
+} catch (err) { ... }
+```
+
+**Fix references:** `packages/payments/src/webhooks.ts` `handleStripeWebhook` + `handleInvoicePaymentFailed`. See CLAUDE.md Gotcha 67, AGENTS.md Gotcha 60.
+
+### Lesson 75: Email templates must use safe hex colors, not CSS variables (Phase 8)
+
+**Context:** The Stillwater design system uses CSS custom properties (`--color-clay-400: #C4856A`) for the web app. However, email clients (Outlook, Gmail, Apple Mail) have inconsistent support for CSS variables — many strip them entirely, causing emails to render with default (black on white) colors instead of the Editorial Calm palette.
+
+**What to do differently:** Hardcode hex values from the Stillwater token set directly in email templates. Never use `var(--color-clay-400)` — always use `#C4856A`. The `COLORS` constant object in each email component file maps the token names to their hex values for readability.
+
+**Fix:**
+```typescript
+// WRONG (email clients strip CSS variables):
+<div style={{ backgroundColor: 'var(--color-clay-400)' }}>
+
+// CORRECT (safe hex values):
+const COLORS = { clay400: '#C4856A' };
+<div style={{ backgroundColor: COLORS.clay400 }}>
+```
+
+**Fix references:** `packages/email/src/components/EmailLayout.tsx`, `packages/email/src/components/EmailButton.tsx`, all 13 template files. See PAD §16.2.
 
 ---
 
@@ -6436,6 +6535,123 @@ describe('listInvoices', () => {
 
 ---
 
+#### 15.21.1 Dual-Path Email Sending (ADR-010 — sendEmail vs sendEmailNative)
+
+```typescript
+// packages/email/src/send.ts
+import { render } from 'react-email'; // v6 root import
+
+// Path 1: Server Components (local JSX render — 1.8MB bundle OK, no CPU budget)
+export async function sendEmail<T>(template: FC<T>, props: T, opts: { to, subject }) {
+  const html = (await render(template(props))) as string;
+  await resend.emails.send({ from, to, subject, html });
+}
+
+// Path 2: Trigger.dev workers (Resend Native Templates — zero bundle bloat)
+export async function sendEmailNative(templateId: string, variables: Record<string, unknown>, opts: { to, subject }) {
+  await resend.emails.send({
+    from, to, subject,
+    template: { id: templateId, variables: variables as Record<string, string | number> },
+  });
+}
+```
+
+**Key points:**
+- Workers MUST use `sendEmailNative()` — zero React Email 1.8MB bundle in cold starts (ADR-010)
+- Server Components MAY use `sendEmail()` — no strict CPU budget
+- 13 `TEMPLATE_IDS` constants in `template-ids.ts` provide type safety for `sendEmailNative()` calls
+- 13 send-helpers in `send-helpers.ts` wrap `sendEmailNative()` with correct template ID + subject formatting
+- Both paths: null fallback when `RESEND_API_KEY` not set (SKILL §15.20)
+
+**Source:** Phase 8 implementation, `packages/email/src/send.ts`. ADR-010. Lessons 72-75.
+
+---
+
+#### 15.21.2 Trigger.dev v4 Task with Per-Task maxDuration + Retry
+
+```typescript
+// services/workers/src/booking-confirmation.ts
+import { task } from '@trigger.dev/sdk'; // ROOT import (NOT /v3)
+
+export const bookingConfirmation = task({
+  id: 'booking-confirmation',
+  retry: {
+    maxAttempts: 3,       // 3 retries (default for most jobs)
+    minTimeoutInMs: 1000, // 1s initial backoff
+    factor: 2,             // exponential
+    randomize: true,       // jitter
+  },
+  maxDuration: 30,         // 30s CPU budget (NOT wall-clock)
+  run: async (payload: { enrollmentId: string; memberId: string }) => {
+    // Cast db.query as any (SKILL Lesson 69 + 72: Drizzle never types)
+    const enrollment = (await (db.query.enrollments as any).findFirst({
+      where: (e: any, { eq }: any) => eq(e.id, payload.enrollmentId),
+      with: { session: { with: { class: true, instructor: true } }, member: { with: { user: true } } },
+    })) as EnrollmentWithEmailData | undefined;
+
+    if (!enrollment) throw new Error('Enrollment not found');
+    if (enrollment.status !== 'confirmed') return { sent: false, reason: 'Cancelled' };
+
+    await sendBookingConfirmation({ /* typed props */ });
+    return { sent: true };
+  },
+});
+```
+
+**Key points:**
+- `task()` from `@trigger.dev/sdk` (root import — NEVER `/v3` deprecated, NEVER `/v4` nonexistent)
+- `maxDuration` measures CPU time, NOT wall-clock (Lesson 67 from Phase 7)
+- Per-task retry: 3 for most jobs, 5 for money-critical (`membership-credit-grant`), 2 for cron (`weekly-digest`, `attendance-summary`)
+- Workers use `sendEmailNative()` via send-helpers — NOT `sendEmail()` (ADR-010)
+- Cast `(db.query.X as any).findFirst({...})` for Drizzle type compatibility (Lesson 69 + 72)
+- Test files mock `@trigger.dev/sdk` (task returns config), `@stillwater/email`, `@stillwater/db`
+
+**Source:** Phase 8 implementation, all 11 worker files in `services/workers/src/`. PAD §17.1-17.2. Lessons 71-74.
+
+---
+
+#### 15.21.3 Post-Commit Job Trigger Pattern (Stripe Webhook)
+
+```typescript
+// packages/payments/src/webhooks.ts
+export async function handleStripeWebhook(event, db) {
+  // Fast-path idempotency check
+  const existing = await db.query.paymentEvents.findFirst({ where: eq(paymentEvents.stripeEventId, event.id) });
+  if (existing) return { received: true };
+
+  // Post-commit actions collected during transaction
+  const postCommitActions: Array<() => Promise<void>> = [];
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
+      await dispatchEvent(event, tx, postCommitActions);
+      await tx.insert(paymentEvents).values({ ... });
+    });
+
+    // Execute post-commit actions ONLY if transaction committed
+    for (const action of postCommitActions) {
+      action().catch(() => {}); // fire-and-forget
+    }
+    return { received: true };
+  } catch (err) {
+    if (isUniqueViolation(err)) return { received: true };
+    throw err;
+  }
+}
+```
+
+**Key points:**
+- Jobs triggered inside a transaction fire immediately — if the transaction rolls back, the job processes non-existent data
+- Post-commit pattern: push closures to array during transaction, execute after commit
+- Each closure calls `getJobsClient().trigger(taskName, payload)` (dynamic import from `@stillwater/config/jobs-client`)
+- Fire-and-forget: `.catch(() => {})` — job trigger failure shouldn't fail the webhook
+- Only the `invoice.payment_failed` handler currently uses this pattern (triggers `payment-failed-notify`)
+
+**Source:** Phase 8 implementation, `packages/payments/src/webhooks.ts`. Lesson 74. See CLAUDE.md Gotcha 67.
+
+---
+
 ## §16. Coding Anti-Patterns
 
 ### 16.1 TypeScript Anti-Patterns
@@ -7062,6 +7278,38 @@ try {
   return Response.json({ error: 'Webhook handler failed' }, { status: 500 });
 }
 ```
+
+### 16.11 Phase 8 Background Jobs + Email Anti-Patterns
+
+#### Bug: Using `TriggerClient.sendEvent()` instead of `tasks.trigger()` (Critical — Lesson 72)
+**Symptom:** `Property 'sendEvent' does not exist on type 'TriggerClient'` or `Property 'id' does not exist in type 'TriggerClientConfig'`.
+**Root cause:** Trigger.dev SDK v4 changed the API. `TriggerClient` is for the worker runtime, not for external callers. Triggering is done via `tasks.trigger()` from `@trigger.dev/sdk`.
+**Fix:** Use `import { tasks } from '@trigger.dev/sdk'` then `tasks.trigger(task, payload)`.
+
+#### Bug: Using `sendEmail()` (local JSX render) in Trigger.dev workers (Critical — ADR-010)
+**Symptom:** Worker cold start times exceed 30s CPU budget; `maxDuration` timeout errors.
+**Root cause:** `sendEmail()` imports `render()` from `react-email` which pulls the 1.8MB bundle (514KB gzipped) + `prismjs` + `marked` + `tailwindcss` compiler. This eats into the CPU budget on every cold start.
+**Fix:** Workers MUST use `sendEmailNative()` (Resend Native Templates — zero bundle). Only Server Components use `sendEmail()`.
+
+#### Bug: Triggering jobs inside `db.transaction()` (Medium — Lesson 74)
+**Symptom:** Worker processes "enrollment not found" or "member not found" for data that was never committed.
+**Root cause:** `jobs.trigger()` fires immediately. If the transaction rolls back, the job runs against non-existent data.
+**Fix:** Use post-commit pattern — collect actions in array during transaction, execute after commit.
+
+#### Bug: Using CSS variables in email templates (Medium — Lesson 75)
+**Symptom:** Emails render with default black-on-white colors instead of Editorial Calm palette in Outlook/Gmail.
+**Root cause:** Email clients strip CSS custom properties (`var(--color-clay-400)`).
+**Fix:** Hardcode hex values (`#C4856A`) from the Stillwater token set. Never use `var()` in email templates.
+
+#### Bug: `verbatimModuleSyntax: true` in workers tsconfig (Critical — Lesson 71)
+**Symptom:** `TS1295: ECMAScript imports and exports cannot be written in a CommonJS file` when importing from `@stillwater/db`.
+**Root cause:** Workers use `NodeNext` module resolution (required by `@trigger.dev/sdk`) but `@stillwater/db` is CommonJS. `verbatimModuleSyntax: true` from base config conflicts.
+**Fix:** Set `verbatimModuleSyntax: false` in `services/workers/tsconfig.json`.
+
+#### Bug: Dynamic `import()` to hide dependency from Turbopack (Critical — Lesson 73)
+**Symptom:** `Module not found: Can't resolve '@trigger.dev/sdk'` during `pnpm build`.
+**Root cause:** Turbopack statically resolves `import()` calls — even with string concatenation. If the module isn't a dependency, build fails.
+**Fix:** Add the module as a real dependency. Use stub fallback (env var check) to prevent runtime usage in test/build envs.
 
 ---
 
@@ -7700,6 +7948,18 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 ## Appendix C: Audit History
 
+### v2.3.0 (2026-07-09) — Phase 8 Complete + Background Jobs + Email
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| Workers tsconfig `verbatimModuleSyntax` conflicts with @stillwater/db CommonJS | Critical | ✅ Documented — Lesson 71, §16.11 anti-pattern, CLAUDE.md Gotcha 63, AGENTS.md Gotcha 56. Fix: `verbatimModuleSyntax: false` + exclude test files from tsc |
+| Trigger.dev SDK v4 uses `tasks.trigger()` not `TriggerClient.sendEvent()` | Critical | ✅ Documented — Lesson 72, §15.21.2 pattern, §16.11 anti-pattern, CLAUDE.md Gotcha 65, AGENTS.md Gotcha 58. Fix: `import { tasks } from '@trigger.dev/sdk'` |
+| Turbopack statically resolves dynamic `import()` with string concatenation | Critical | ✅ Documented — Lesson 73, §16.11 anti-pattern, CLAUDE.md Gotcha 66, AGENTS.md Gotcha 59. Fix: Add as real dependency + stub fallback |
+| Post-commit job triggers must use post-transaction pattern | Medium | ✅ Documented — Lesson 74, §15.21.3 pattern, §16.11 anti-pattern, CLAUDE.md Gotcha 67, AGENTS.md Gotcha 60. Fix: collect actions in array, execute after commit |
+| Email templates must use safe hex colors, not CSS variables | Medium | ✅ Documented — Lesson 75, §16.11 anti-pattern. Fix: hardcode hex values from Stillwater token set |
+| Drizzle `with` types infer as `never` in workers (resurfaced from Phase 7) | Medium | ✅ Documented — Lesson 69 (Phase 7) + Lesson 71 (Phase 8). Fix: cast `(db.query.X as any).findFirst({...})` |
+| Phase 8 complete: @stillwater/email (19 files, 71 tests) + @stillwater/workers (12 files, 33 tests) + integration wiring | — | ✅ Phase 8 IMPLEMENT complete — 3 shared components, 13 templates, dual-path send.ts, 13 send-helpers, 11 Trigger.dev tasks, getJobsClient with stub fallback, bookings/memberships/webhooks wired, 603 total tests, `pnpm build` green |
+
 ### v2.2.0 (2026-07-09) — Phase 7 Complete + Stripe Payment Integration
 
 | Finding | Severity | Status |
@@ -7954,4 +8214,4 @@ Alerts:
 
 ---
 
-*End of `stillwater_SKILL.md` v2.2.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 implementation lessons (Lessons 1-70) distilled from actual TDD cycles. ADR-011 added (source resolution via `transpilePackages`). ADR-010 accepted (Resend Native Templates for Trigger.dev workers). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+*End of `stillwater_SKILL.md` v2.3.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 + Phase 8 implementation lessons (Lessons 1-75) distilled from actual TDD cycles. ADR-011 added (source resolution via `transpilePackages`). ADR-010 accepted + fully implemented (Resend Native Templates for Trigger.dev workers). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*

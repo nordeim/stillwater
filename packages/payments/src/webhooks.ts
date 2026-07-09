@@ -85,17 +85,19 @@ export async function handleStripeWebhook(
     return { received: true };
   }
 
+  // Post-commit actions (collected during transaction, executed after commit)
+  const postCommitActions: Array<() => Promise<void>> = [];
+
   // 2. Open transaction with advisory lock + process + insert idempotency record
   try {
     await db.transaction(async (tx) => {
       // Acquire transaction-scoped advisory lock keyed by event ID hash.
-      // This serializes concurrent processing of the same event.
-      // Auto-releases at COMMIT/ROLLBACK — cannot leak under Neon PgBouncer.
       const lockKey = eventIdToLockKey(event.id);
       await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
 
       // Dispatch to the appropriate handler based on event type
-      await dispatchEvent(event, tx);
+      // Handlers can push post-commit actions (e.g., trigger jobs)
+      await dispatchEvent(event, tx, postCommitActions);
 
       // Record the event as processed (idempotency guarantee)
       await tx.insert(paymentEvents).values({
@@ -106,6 +108,14 @@ export async function handleStripeWebhook(
         processedAt: new Date(),
       });
     });
+
+    // 3. Execute post-commit actions (fire-and-forget job triggers)
+    // Only runs if the transaction committed successfully
+    for (const action of postCommitActions) {
+      action().catch(() => {
+        // Job trigger failure shouldn't fail the webhook — Trigger.dev retries
+      });
+    }
 
     return { received: true };
   } catch (err) {
@@ -122,10 +132,13 @@ export async function handleStripeWebhook(
 
 /**
  * Dispatch a Stripe event to the appropriate handler.
+ * Handlers can push post-commit actions (e.g., trigger jobs) that execute
+ * only after the transaction commits successfully.
  */
 async function dispatchEvent(
   event: StripeWebhookEvent,
   tx: DrizzleDB | Parameters<Parameters<DrizzleDB['transaction']>[0]>[0],
+  postCommitActions: Array<() => Promise<void>>,
 ): Promise<void> {
   switch (event.type) {
     case 'customer.subscription.created':
@@ -144,7 +157,7 @@ async function dispatchEvent(
       await handleInvoicePaid(event, tx);
       break;
     case 'invoice.payment_failed':
-      await handleInvoicePaymentFailed(event, tx);
+      await handleInvoicePaymentFailed(event, tx, postCommitActions);
       break;
     case 'invoice.payment_action_required':
       // No-op — email sent in Phase 8 (payment-failed-notify job)
@@ -288,20 +301,39 @@ async function handleInvoicePaid(
 /**
  * Handler: invoice.payment_failed
  * Mark the subscription as past_due.
+ * Pushes a post-commit action to trigger the payment-failed-notify job
+ * (Phase 8: sends PaymentFailed email via Trigger.dev worker).
  */
 async function handleInvoicePaymentFailed(
   event: StripeInvoiceEvent,
   tx: DrizzleDB | Parameters<Parameters<DrizzleDB['transaction']>[0]>[0],
+  postCommitActions: Array<() => Promise<void>>,
 ): Promise<void> {
   const invoice = event.data.object;
   if (!invoice.subscription) return;
 
+  // Mark subscription as past_due
   await tx
     .update(memberSubscriptions)
     .set({
       status: 'past_due',
     })
     .where(eq(memberSubscriptions.stripeSubscriptionId, invoice.subscription));
+
+  // Phase 8: Push post-commit action to trigger payment-failed-notify job
+  // This only fires after the transaction commits successfully.
+  // The job will query the member's email + send PaymentFailed email.
+  // Note: the job needs a portal URL — constructed from the app URL.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://stillwater.studio';
+  postCommitActions.push(async () => {
+    // Dynamic import to avoid circular dependency
+    const { getJobsClient } = await import('@stillwater/config/jobs-client');
+    const jobs = getJobsClient();
+    await jobs.trigger('payment-failed-notify', {
+      customerId: invoice.customer,
+      portalUrl: `${appUrl}/membership`,
+    });
+  });
 }
 
 /**
