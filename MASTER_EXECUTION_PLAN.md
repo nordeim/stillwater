@@ -14,9 +14,9 @@
 
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
-| Version     | 1.4.0                                                              |
-| Status      | ACTIVE — LIVING PLAN (Phases 0–6 COMPLETE per PAD v1.10.0 / SKILL v2.1.0; re-validated 2026-07-08) |
-| Date        | 2026-07-08                                                         |
+| Version     | 1.5.0                                                              |
+| Status      | ACTIVE — LIVING PLAN (Phases 0–7 COMPLETE per PAD v1.10.0 / SKILL v2.1.0; re-validated 2026-07-09) |
+| Date        | 2026-07-09                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
 | Methodology | TDD (`RED → GREEN → REFACTOR → COMMIT`, one cycle per commit)     |
@@ -31,6 +31,7 @@
 | 1.2.0   | 2026-07-05 | Claw Code / Validation | Re-validated against PAD v1.3.0 / SKILL v1.3.0: fixed Stripe apiVersion (Basil→Dahlia), env count (25→34), berkeley-mono→jetbrains-mono across D25/D34/D41/F0-23/F0-24/Phase 12/§3.2/Open Questions; marked D9 + proxy.ts questions as resolved; added .html mockup to Source Document Map |
 | 1.3.0   | 2026-07-07 | Claw Code / Remediation | Re-validated against PAD v1.8.0 / SKILL v1.4.1: confirmed Trigger.dev SDK root import is canonical across all source docs; no content fixes needed in MEP body (Phase 8 F8-01–F8-11 task definitions already correct); version stamps aligned across docs |
 | 1.4.0   | 2026-07-08 | Claw Code / Sync | Re-synced plan to codebase through Phase 6. Marked Phases 0–6 COMPLETE (per PAD v1.10.0 / SKILL v2.1.0); added Status column to §5 phase table + Current Status block; refreshed §7.1 (PAD v1.8.0→v1.10.0) and ADR count (10→11); corrected Phase 4 marketing-route enumeration (removed phantom `/classes/[slug]`; confirmed 8 actual routes); added `stillwater_SKILL.md` to Source Document Map + Sources; verified 429 tests green across all quality gates. |
+| 1.5.0   | 2026-07-09 | Claw Code / Sync | Re-synced plan to codebase through Phase 7. Marked Phase 7 ✅ COMPLETE (per AGENTS.md / CLAUDE.md v2.2.0); updated §5 phase table + Current Status (Phase 7 ✅, test counts api 107→113 / web 111→132 / payments +43; total 429→499); refreshed stack pin (Tailwind ^4.3.0→^4.3.2); corrected D20 resolution to `eslint-plugin-tailwindcss: ^4.0.6`. |
 
 ### Source Document Map
 
@@ -148,7 +149,7 @@ The four source documents disagree in 25+ places. Below is the canonical resolut
 | D17| `.env.example` ↔ docker-compose password mismatch | `.env` uses `password@`, docker uses `stillwater_local_dev`           | **Update `.env.example`** to use `stillwater_local_dev` to match docker-compose.yml   |
 | D18| `infrastructure/postgres/init/` directory missing | docker-compose volume mount references non-existent dir               | **Create** `infrastructure/postgres/init/00-create-extensions.sql` with `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS "pgcrypto";` |
 | D19| `eslint-plugin-next` imported but unused       | `nextPlugin` declared at L681 of `tooling/eslint/index.js`            | **Either remove** the import OR **add** a Next.js config block using `nextPlugin.configs.recommended.rules` |
-| D20| `eslint-plugin-tailwindcss` v3 vs Tailwind v4  | v3 may not support Tailwind v4 class detection                        | **Pin** `eslint-plugin-tailwindcss: ^3.17.5` for now; verify in Phase 0 smoke test; consider removing in Phase 11 |
+| D20| `eslint-plugin-tailwindcss` v3 vs Tailwind v4  | v3 may not support Tailwind v4 class detection                        | **RESOLVED:** `eslint-plugin-tailwindcss: ^4.0.6` pinned (v4 supports Tailwind v4 class detection; `src/style.css` bug mitigated via Gotcha 29/36 by disabling `tailwindcss/classnames-order` + `no-contradicting-classname`) |
 | D21| `next.config.ts` `experimental.serverComponentsExternalPackages` | Renamed to top-level `serverExternalPackages` in Next.js 16           | **Move** to top-level: `serverExternalPackages: [...]` (no `experimental.` prefix)   |
 | D22| `apps/web` has no `test` / `test:e2e` scripts  | Root `turbo test` will warn (not fail)                                | **Add** `test`, `test:watch`, `test:e2e` scripts to `apps/web/package.json`          |
 | D23| `next lint` deprecated in Next.js 16           | `apps/web` uses `next lint`                                            | **Replace** with direct `eslint .` invocation using shared flat config               |
@@ -309,7 +310,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 4     | Marketing surface (Sanity CMS, ISR)                    | 0, 1, 2, 3| 4         | ~30   | ✅ COMPLETE    |
 | 5     | Booking flow + SSE real-time seats                     | 3         | 5         | ~18   | ✅ COMPLETE    |
 | 6     | Member dashboard + membership mgmt                     | 3, 7      | 4         | ~12   | ✅ COMPLETE    |
-| 7     | Stripe integration (subscriptions + credit packs)      | 3         | 4         | ~12   | ⬜ PENDING     |
+| 7     | Stripe integration (subscriptions + credit packs)      | 3         | 4         | ~12   | ✅ COMPLETE    |
 | 8     | Background jobs (11 Trigger.dev tasks)                 | 3, 7      | 3         | ~15   | ⬜ PENDING     |
 | 9     | Admin surface (RBAC-gated)                             | 3         | 5         | ~18   | ⬜ PENDING     |
 | 10    | Observability + performance hardening                  | all prev  | 3         | ~12   | ⬜ PENDING     |
@@ -319,7 +320,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 
 > **Note on parallelism:** Phases 5, 7, and 9 can be parallelised once Phase 3 is complete. Phases 6 and 8 depend on Phase 7. Phase 12 depends on Phase 11 (for SEO/OG) and Phase 4 (for Sanity content). With 3 engineers, critical path is ~28 calendar days.
 >
-> **Note on status:** As of 2026-07-08, Phases 0–6 are COMPLETE (see [Current Status](#current-status-as-of-2026-07-08)). Phases 7–12 remain PENDING per this plan.
+> **Note on status:** As of 2026-07-09, Phases 0–7 are COMPLETE (see [Current Status](#current-status-as-of-2026-07-09)). Phases 8–12 remain PENDING per this plan.
 
 ### Phase ordering rationale
 - Phase 0 first because every other phase imports from `@stillwater/*` packages
@@ -333,20 +334,20 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 
 ---
 
-## Current Status (as of 2026-07-08)
+## Current Status (as of 2026-07-09)
 
-> **Source of truth:** PAD v1.10.0 / SKILL v2.1.0. Verified against codebase 2026-07-08.
+> **Source of truth:** PAD v1.10.0 / SKILL v2.1.0. Verified against codebase 2026-07-09.
 
 | Phase | Focus                                                  | Status      | PAD Version | Test Count |
 |-------|--------------------------------------------------------|-------------|-------------|------------|
 | 0     | Monorepo scaffold + tooling + Docker + Phase 0 fixes  | ✅ COMPLETE  | v1.4.0      | —          |
 | 1     | DB schema, Drizzle migrations, seed data               | ✅ COMPLETE  | v1.5.0      | 109        |
 | 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)         | ✅ COMPLETE  | v1.6.0      | 102        |
-| 3     | tRPC v11 routers (10 routers, ~30 procedures)          | ✅ COMPLETE  | v1.7.0      | 107        |
+| 3     | tRPC v11 routers (10 routers, ~30 procedures)          | ✅ COMPLETE  | v1.7.0      | 113        |
 | 4     | Marketing surface (Sanity CMS, ISR)                    | ✅ COMPLETE  | v1.9.0      | —          |
 | 5     | Booking flow + SSE real-time seats                     | ✅ COMPLETE  | v1.9.1      | —          |
-| 6     | Member dashboard + membership mgmt                     | ✅ COMPLETE  | v1.10.0     | 111        |
-| 7     | Stripe integration (subscriptions + credit packs)      | ⬜ PENDING   | —           | —          |
+| 6     | Member dashboard + membership mgmt                     | ✅ COMPLETE  | v1.10.0     | 132        |
+| 7     | Stripe integration (subscriptions + credit packs)      | ✅ COMPLETE  | v1.10.0     | 43         |
 | 8     | Background jobs (11 Trigger.dev tasks)                 | ⬜ PENDING   | —           | —          |
 | 9     | Admin surface (RBAC-gated)                             | ⬜ PENDING   | —           | —          |
 | 10    | Observability + performance hardening                  | ⬜ PENDING   | —           | —          |
@@ -356,13 +357,13 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 **Quality gates (verified 2026-07-08):**
 - `pnpm check-types` — ✅ Green (9/9 packages)
 - `pnpm lint` — ✅ Green (0 errors, 2 pre-existing warnings in non-null assertions)
-- `pnpm test` — ✅ Green (**429 tests:** 109 db + 102 auth + 107 api + 111 web)
+- `pnpm test` — ✅ Green (**499 tests:** 109 db + 102 auth + 113 api + 43 payments + 132 web)
 - `pnpm build` — not verified (requires explicit request per `AGENTS.md`)
 
 **Key confirmations:**
 - `proxy.ts` 2-layer pattern **VERIFIED:** cookie-only `getSessionCookie()` (sync, no `getSession`, no DB), RBAC enforcement in `(admin)`/`(studio)` layouts — matches ADR-009/D36.
 - Trigger.dev SDK root import **VERIFIED:** `services/workers/trigger.config.ts` uses `import { defineConfig } from "@trigger.dev/sdk"` (not `/v3` or `/v4`) — matches Gotcha 1.
-- Stack versions **aligned:** all 11 `package.json`s match AGENTS.md pins (TypeScript `^5.9.0`, Next.js `^16.2.10`, React `^19.2.7`, Tailwind `^4.3.0`, tRPC `^11.18.0`, Drizzle `^0.45.2`, Better Auth `^1.6.23`, Stripe `^22.3.0`, React Email `^6.6.6`, Resend `^6.17.1`, Zod `^4.4.3`, pnpm `11.9.0`, ESLint `^9.39.4`).
+- Stack versions **aligned:** all 11 `package.json`s match AGENTS.md pins (TypeScript `^5.9.0`, Next.js `^16.2.10`, React `^19.2.7`, Tailwind `^4.3.2`, tRPC `^11.18.0`, Drizzle `^0.45.2`, Better Auth `^1.6.23`, Stripe `^22.3.0`, React Email `^6.6.6`, Resend `^6.17.1`, Zod `^4.4.3`, pnpm `11.9.0`, ESLint `^9.39.4`).
 - Marketing routes: **8 actual pages** (/, /about, /instructors, /instructors/[slug], /schedule, /pricing, /blog, /blog/[slug]) — PAD/SKILL "9" was an overcount; MEP Phase 4 goal corrected.
 - Gotcha 29 fix **present:** `tailwindcss/classnames-order` + `no-contradicting-classname` disabled in `tooling/eslint/index.js`.
 - **Provenance:** MEP synthesises `design.md` + `PAD.md` + `stillwater_SKILL.md` + `scaffolding_files.md` + mockups + ecosystem guides. `stillwater_SKILL.md` is the authoritative tech-stack cross-check (per AGENTS.md).
@@ -2755,7 +2756,7 @@ pnpm test:e2e -- --grep "dashboard|membership|profile"
 
 ---
 
-### Phase 7 — Stripe Integration (Subscriptions + Credit Packs) ⬜ PENDING
+### Phase 7 — Stripe Integration (Subscriptions + Credit Packs) ✅ COMPLETE
 
 **Goal:** Stripe Billing handles subscription lifecycle; webhooks update `member_subscriptions` table idempotently; credit packs purchasable as one-off PaymentIntents.
 
@@ -4338,7 +4339,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 
 > **External validation:** `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms ADR-008 (Better Auth v1.6.23 stable) and ADR-009 (`proxy.ts` rename). The guide additionally mandates a **2-layer auth pattern** (cookie-only `proxy.ts` + Server Component `requireAuth()`/`requireRole()`) which has been incorporated into Phase 2 (F2-13 rewrite + F2-16 through F2-19 new layout files). See discrepancy D36 below.
 >
-> **✅ PAD Alignment Verified:** Re-validated 2026-07-08 against PAD v1.10.0 / SKILL v2.1.0. Phases 0–6 COMPLETE; Phases 7–12 PENDING. All stack versions, discrepancy resolutions (D1–D50), and ADRs (ADR-001…ADR-011) are reflected in the codebase. The plan and PAD are aligned through Phase 6. Re-validation will be needed after Phases 7–12.
+> **✅ PAD Alignment Verified:** Re-validated 2026-07-09 against PAD v1.10.0 / SKILL v2.1.0. Phases 0–7 COMPLETE; Phases 8–12 PENDING. All stack versions, discrepancy resolutions (D1–D50), and ADRs (ADR-001…ADR-011) are reflected in the codebase. The plan and PAD are aligned through Phase 7. Re-validation will be needed after Phases 8–12.
 
 | PAD § | Topic                                  | Satisfied by (file / phase)                                                |
 |-------|----------------------------------------|----------------------------------------------------------------------------|

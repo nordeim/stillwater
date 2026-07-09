@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-09 (v2.2.0) — Phase 0–7 complete (499 tests). Phase 7 (Stripe) built: `@stillwater/payments` package (7 files, 43 tests), webhook route, all tRPC procedures unstubbed, ADR-010 accepted, 5 STRIPE tests passing. 5 new gotchas (58–62). Total: 62 gotchas.
+> **Updated:** 2026-07-09 (v2.2.0) — Phase 0–7 complete (499 tests). Phase 7 (Stripe) built: `@stillwater/payments` package (8 files incl. `index.ts` barrel, 43 tests), webhook route, all tRPC procedures unstubbed, ADR-010 accepted, 5 STRIPE tests passing. 5 new gotchas (58–62). Total: 62 gotchas.
 
 ---
 
@@ -18,7 +18,7 @@
 | ESLint | **9.39.4** (`^9.39.4`) | Do NOT upgrade to v10. `eslint-plugin-react` and `eslint-plugin-import` have no v10 versions. |
 | Next.js | 16.2.10 (`^16.2.10`) | App Router, Turbopack, React Compiler (`reactCompiler: true`) |
 | React | 19.2.7 (`^19.2.7`) | CVE-2025-55182 floor — never downgrade below 19.2.3 |
-| Tailwind CSS | 4.3.0 (`^4.3.0`) | CSS-first `@theme` in `globals.css`; no `tailwind.config.js` needed |
+| Tailwind CSS | 4.3.2 (`^4.3.2`) | CSS-first `@theme` in `globals.css`; no `tailwind.config.js` needed |
 | tRPC | v11 (`^11.18.0`) | Server caller for RSC, React Query for client |
 | Drizzle ORM | 0.45.0 (`^0.45.2`) | `neon-http` driver; `db.$count` requires ≥0.34 |
 | PostgreSQL | 17 (Neon) | Two URLs: `DATABASE_URL` (pooled) + `DATABASE_URL_UNPOOLED` (migrations only) |
@@ -79,11 +79,11 @@ docker compose ps              # Verify healthy
 apps/web/          → Next.js 16 (marketing + studio + admin route groups)
 apps/studio/       → Sanity Studio config (✅ Phase 4 complete — 8 schemas + sanity.config.ts; runtime hosted at stillwater.sanity.studio per Q4 decision)
 packages/api/      → tRPC routers (10 routers, 4 procedure tiers)
-packages/db/       → Drizzle schema (17 tables: 14 domain + 3 Better Auth, 8 enums, 5 critical indexes)
+packages/db/       → Drizzle schema (17 tables: 14 domain + 3 Better Auth, 8 enums, 9 indexes (5 critical))
 packages/auth/     → Better Auth config (Google OAuth + Magic Link + customSession + 13×6 RBAC)
 packages/email/    → React Email v6 + Resend (Phase 8 — currently placeholder; 13 templates + send.ts planned)
-packages/payments/ → Stripe client + idempotent webhooks (✅ Phase 7 complete — 7 source files, 43 tests: client, types, subscriptions, webhooks, invoices, credit-packs, refunds)
-packages/ui/       → Design tokens (CSS) + fonts (self-hosted Cormorant + DM Sans + JetBrains Mono) + Radix components
+packages/payments/ → Stripe client + idempotent webhooks (✅ Phase 7 complete — 8 source files incl. `index.ts` barrel, 43 tests: client, types, subscriptions, webhooks, invoices, credit-packs, refunds)
+packages/ui/       → Design tokens (CSS) + self-hosted fonts (Cormorant + DM Sans + JetBrains Mono); shadcn/Radix UI components composed in `apps/web/src/components/ui`
 packages/config/   → t3-env Zod-validated env schema (34 vars)
 services/workers/  → Trigger.dev v4 tasks (Phase 8 — currently placeholder; 11 jobs planned)
 tooling/{eslint,typescript,tailwind}/  → Shared configs
@@ -145,7 +145,7 @@ v6 bundle is 1.8MB (514KB gzipped) — use Resend Native Templates for Trigger.d
 
 ### 4. TypeScript — stay on 5.9.0
 
-`pnpm install` will say "6.0.3 is available". **Ignore it.** PAD §5.1 mandates `^5.9.0` for `erasableSyntaxOnly` (forbids `enum`, `namespace`, parameter properties) + `verbatimModuleSyntax` (requires `import type`). All 9 sub-packages must pin `^5.9.0`, not `^6.0.3`.
+`pnpm install` will say "6.0.3 is available". **Ignore it.** PAD §5.1 mandates `^5.9.0` for `erasableSyntaxOnly` (forbids `enum`, `namespace`, parameter properties) + `verbatimModuleSyntax` (requires `import type`). All workspace packages must pin `^5.9.0`, not `^6.0.3`.
 
 ### 5. `proxy.ts` — don't call `auth.api.getSession()` regardless of runtime
 
@@ -181,7 +181,7 @@ The static mockup uses `--sp-1` through `--sp-11`. PAD uses `--space-1` through 
 ```typescript
 // ✅ CORRECT — Next.js 16 top-level
 const nextConfig = {
-  serverExternalPackages: ['@neondatabase/serverless', 'drizzle-orm', 'better-auth'],
+  serverExternalPackages: ['@neondatabase/serverless', 'drizzle-orm', 'better-auth', '@sanity/client'],
 };
 
 // ❌ WRONG — renamed in Next.js 16
@@ -408,13 +408,13 @@ Same as Gotcha 31/Lesson 46 — Drizzle 0.45 relational query types need `define
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
-| 1 — DB Schema | ✅ Complete | 17 tables (14 domain + 3 Better Auth: session, account, verification), 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` (waitlist unique). 109 db tests. |
+| 1 — DB Schema | ✅ Complete | 17 tables (14 domain + 3 Better Auth: session, account, verification), 8 enums, 9 indexes (5 critical), migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` (waitlist unique). 109 db tests. |
 | 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth tests. |
 | 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 113 api tests (was 107; +6 from Phase 7 unstubbing). |
 | 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 8 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). |
 | 5 — Booking | ✅ Complete | SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components (BookingButton, BookingConfirmation, BookingFlow, SeatAvailability, WaitlistButton), `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. |
 | 6 — Dashboard | ✅ Complete | Member dashboard (/dashboard, /profile, /membership, /history), 7 dashboard components, CSV export, memberships.resume stub (now unstubbed in Phase 7), plan join. |
-| 7 — Stripe | ✅ Complete | `@stillwater/payments` package (7 files, 43 tests): client singleton (Dahlia API), 7-event types, 5 subscription helpers, idempotent webhook handler with `pg_advisory_xact_lock` (ADR-004), invoice pagination, credit-pack checkout, D12 refund wrapper. Stripe webhook route at `/api/webhooks/stripe` (body as TEXT, sig verify, 400/500/200). All tRPC procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`. `payments.refund` retained as D12 stub. `CheckoutButton` component + `lib/stripe/utils.ts`. ADR-010 accepted. 5 STRIPE tests passing (STRIPE-001 through STRIPE-005). 43 payments tests + 14 new web tests (stripe utils + CheckoutButton). |
+| 7 — Stripe | ✅ Complete | `@stillwater/payments` package (8 files incl. `index.ts` barrel, 43 tests): client singleton (Dahlia API), 7-event types, 5 subscription helpers, idempotent webhook handler with `pg_advisory_xact_lock` (ADR-004), invoice pagination, credit-pack checkout, D12 refund wrapper. Stripe webhook route at `/api/webhooks/stripe` (body as TEXT, sig verify, 400/500/200). All tRPC procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`. `payments.refund` retained as D12 stub. `CheckoutButton` component + `lib/stripe/utils.ts`. ADR-010 accepted. 5 STRIPE tests passing (STRIPE-001 through STRIPE-005). 43 payments tests + 14 new web tests (stripe utils + CheckoutButton). |
 
 **Total: 499 tests** (109 db + 102 auth + 113 api + 43 payments + 132 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
@@ -460,7 +460,7 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 3. `stillwater_SKILL.md` — distilled project skill (v2.1.0; 21 source skills condensed; 65 lessons); authoritative tech-stack specifics
 4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.10.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.4.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.1.0 with 57 gotchas)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.2.0 with 62 gotchas)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 
