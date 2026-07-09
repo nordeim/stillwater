@@ -22,7 +22,7 @@ Stillwater is the operational backbone and digital face of a boutique yoga studi
 
 The platform replaces a class of brittle brochure-site-plus-Stripe-link yoga websites with a SaaS-grade product: PostgreSQL advisory locks for double-booking prevention, idempotent Stripe webhook processing, an 11-job Trigger.dev v4 background worker for emails and waitlist promotion, and WCAG 2.2 Level AAA accessibility for the 35–65 demographic the studio serves.
 
-The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 11 ADRs (10 accepted + 1 proposed); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v1.7.2) condensing 21 source skills.
+The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 11 ADRs (all Accepted as of 2026-07-09 — ADR-010 was the last to be accepted); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v2.1.0) condensing 21 source skills.
 
 ---
 
@@ -40,7 +40,7 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 | 📝 | **Sanity marketing CMS**             | Webhook-triggered ISR; editors publish without deploys                                                 |
 | ♿ | **WCAG 2.2 Level AAA**               | 7:1 contrast, full keyboard nav, screen-reader semantics, reduced-motion respect                       |
 | 🎨 | **"Editorial Calm" design system**   | Warm Mineral palette (stone/clay/water/sand), Cormorant Garamond + DM Sans + JetBrains Mono, sharp edges |
-| 📊 | **Observability stack**              | Sentry errors, PostHog analytics (17 events), Axiom logs, Checkly synthetics                           |
+| 📊 | **Observability stack**              | Sentry errors, PostHog analytics (18 events), Axiom logs, Checkly synthetics                           |
 | ⚡ | **Edge ISR + Turbopack**             | Marketing pages < 80kb gzipped; LCP < 1.5s; Lighthouse A11y = 100                                       |
 
 ---
@@ -58,7 +58,7 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 | Language         | TypeScript                  | 5.9.0       | Strict mode + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` + `erasableSyntaxOnly` (no `enum`/`namespace`) |
 | API Layer        | tRPC                        | v11         | End-to-end type safety; server caller for RSC, React Query for client |
 | ORM              | Drizzle ORM                 | 0.45.0      | Schema in TypeScript, no codegen, advisory lock support        |
-| Database         | PostgreSQL                  | 17          | 14 tables, 8 enums, 5 critical indexes (incl. partial + unique)|
+| Database         | PostgreSQL                  | 17          | 17 tables (14 domain + 3 Better Auth), 8 enums, 5 critical indexes (incl. partial + unique)|
 | DB Host          | Neon                        | latest      | Serverless PG with branching for preview envs                  |
 | Cache / Rate Limit | Upstash Redis             | latest      | Per-procedure rate limiting on auth + booking mutations        |
 | Auth             | Better Auth                 | 1.6.23      | Replaces Auth.js v5 (ADR-008); Drizzle adapter; 2-layer auth pattern |
@@ -254,11 +254,12 @@ curl http://localhost:3000
 docker compose ps postgres
 # Expected: "healthy" status
 
-# All 14 tables created (Phase 1)
+# All 17 tables created (Phase 1: 14 domain + Phase 2: 3 Better Auth)
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dt'
-# Expected: 14 tables listed (users, members, instructors, class_styles, classes, rooms,
+# Expected: 17 tables listed (users, members, instructors, class_styles, classes, rooms,
 #           class_sessions, enrollments, waitlist_entries, membership_plans,
-#           member_subscriptions, class_packages, payment_events, role_assignments)
+#           member_subscriptions, class_packages, payment_events, role_assignments,
+#           session, account, verification)
 
 # All 8 enums created (Phase 1)
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dT'
@@ -269,7 +270,7 @@ docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dT'
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c 'SELECT count(*) FROM users;'
 # Expected: 5
 
-# Unit tests pass (429 tests, no DB needed for unit tests)
+# Unit tests pass (499 tests, no DB needed for unit tests)
 pnpm test --filter=@stillwater/db
 # Expected: "Test Files  16 passed (16)" + "Tests  109 passed (109)"
 
@@ -572,13 +573,13 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 4     | Marketing surface with Sanity CMS                  | ✅ Complete   | 4         |
 | 5     | Booking flow + SSE real-time seats                 | ✅ Complete   | 5         |
 | 6     | Member dashboard + membership management           | ✅ Complete   | 4         |
-| 7     | Stripe integration (subscriptions + credit packs)  | ⬜ Pending     | 4         |
+| 7     | Stripe integration (subscriptions + credit packs)  | ✅ Complete   | 4         |
 | 8     | Background jobs (11 Trigger.dev v4 tasks)          | ⬜ Pending     | 3         |
 | 9     | Admin surface (RBAC-gated)                         | ⬜ Pending     | 5         |
 | 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~48% complete** | **~50 days** |
+| **Total** |                                                | **~56% complete** | **~46 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -681,12 +682,27 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 
 ## What's New
 
+### v1.9.0 (2026-07-09) — Phase 7 Complete: Stripe Payment Integration
+
+| Change | Details |
+|---|---|
+| `@stillwater/payments` package built | 7 source files, 43 tests: `client.ts` (Stripe SDK singleton, Dahlia API `2026-06-24.dahlia`, null fallback), `types.ts` (7-event discriminated union), `subscriptions.ts` (5 lifecycle helpers: checkout, portal, pause, resume, cancel), `webhooks.ts` (⭐ idempotent handler with `pg_advisory_xact_lock` per ADR-004 + 7 event handlers), `invoices.ts` (cursor-based pagination + DTO), `credit-packs.ts` (one-off `mode: 'payment'` checkout), `refunds.ts` (D12 reduced scope — thin wrapper) |
+| Stripe webhook route | `apps/web/src/app/api/webhooks/stripe/route.ts` — body as TEXT for signature verification, `stripe.webhooks.constructEvent()`, 400 on bad sig, 500 on handler error (Stripe retries), 200 on success. `runtime: 'nodejs'`, `dynamic: 'force-dynamic'` |
+| tRPC procedures unstubbed | `memberships.subscribe` (creates Checkout Session → returns `checkoutUrl`), `memberships.cancel` (calls `cancelAtPeriodEnd`), `memberships.pause` (calls `pauseSubscription` + updates DB), `memberships.resume` (calls `resumeSubscription` + updates DB), `payments.getPortalUrl` (creates Billing Portal session), `payments.getInvoices` (lists invoices with cursor pagination). All previously threw `PRECONDITION_FAILED` |
+| `payments.refund` retained as D12 stub | v1 uses Stripe Dashboard only; in-app refund UI deferred to v2. `createRefund` helper exists in `@stillwater/payments` but not wired to tRPC until v2 |
+| 5 STRIPE acceptance tests | STRIPE-001 (invoice.paid grants credits), STRIPE-002 (invoice.payment_failed marks past_due), STRIPE-003 (idempotent — same event twice is a no-op), STRIPE-004 (invalid signature returns 400), STRIPE-005 (subscription.deleted cancels) |
+| Web app components | `CheckoutButton` component (calls `memberships.subscribe`, redirects to Stripe Checkout, Editorial Calm design tokens), `lib/stripe/utils.ts` (`formatStripeAmount`, `stripeEventToWebhookLog`) |
+| ADR-010 accepted | Resend Native Templates for Trigger.dev workers — protects 30s CPU budgets from React Email v6 1.8MB bundle bloat. Unblocks Phase 8 implementation |
+| 5 new gotchas documented | Gotchas 58–62 (CLAUDE.md) / 51–55 (AGENTS.md): Stripe `current_period_end` moved to `items.data[0]`, `pg_advisory_xact_lock` BigInt constructor, webhook body as TEXT, Drizzle `with: { plan: true }` infers `never`, `exactOptionalPropertyTypes` conditional spread |
+| 499 tests passing | 109 db + 102 auth + 113 api + 43 payments + 132 web (was 429 at Phase 6) |
+| `pnpm build` green | ✅ All routes including `/api/webhooks/stripe` |
+
 ### v1.8.0 (2026-07-08) — Phase 6 Complete: Member Dashboard + Membership Management
 
 | Change | Details |
 |---|---|
 | Dashboard routes | `(studio)/dashboard/page.tsx` (Server Component, parallel `Promise.all`), `/profile`, `/membership`, `/history` — all auth-gated via `(studio)/layout.tsx`; `error.tsx` + `loading.tsx` for `/dashboard` |
-| 7 dashboard components | MembershipStatusCard, CreditUsageWidget (`role="img"` aria-label), UpcomingClassesWidget (next 3 confirmed + empty state), ProfileSummaryCard, ProfileEditForm (react-hook-form + Zod), ManageMembershipPanel (disabled Phase 7 stubs with "Coming Phase 7" toasts), EnrollmentHistoryTable (status badges + CSV export) |
+| 7 dashboard components | MembershipStatusCard, CreditUsageWidget (`role="img"` aria-label), UpcomingClassesWidget (next 3 confirmed + empty state), ProfileSummaryCard, ProfileEditForm (react-hook-form + Zod), ManageMembershipPanel (Phase 7 stubs now unstubbed — buttons call real Stripe helpers), EnrollmentHistoryTable (status badges + CSV export) |
 | CSV export utility | `apps/web/src/lib/export/csv.ts` — RFC 4180 compliant (`escapeCSVField`, `arrayToCSV`, `exportToCSV`); 6 tests in `csv.test.ts` |
 | Router changes | `memberships.getMySubscription` enhanced with `with: { plan: true }` join; `memberships.resume` stub added (Phase 7 dependency) |
 | `/dashboard` 404 ghost resolved | 7 source files previously redirected to `/dashboard` but no route existed — every authenticated user hit a 404 |
@@ -701,7 +717,7 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 | SSE endpoint | `apps/web/src/app/api/schedule/stream/route.ts` — `text/event-stream`, `maxDuration=300`, 10s polling, NO `force-dynamic` (SKILL §9.1 Gotcha 7) |
 | `useSessionAvailability` hook | `apps/web/src/hooks/useSessionAvailability.ts` — EventSource, 3 reconnection attempts (1s→2s→4s exponential backoff), cleanup on unmount |
 | `useBookingMutation` hook | `apps/web/src/hooks/useBookingMutation.ts` — wraps `bookings.book`, handles CONFLICT → `isConflict` flag, toast notifications |
-| 6 booking UI components | `SeatAvailability` (role=img + aria-label), `BookingButton` (44x44px target), `BookingConfirmation` (Radix Dialog), `WaitlistButton`, `BookingFlow` (orchestrator), all with TDD |
+| 5 booking UI components | `SeatAvailability` (role=img + aria-label), `BookingButton` (44x44px target), `BookingConfirmation` (Radix Dialog), `WaitlistButton`, `BookingFlow` (orchestrator), all with TDD |
 | Booking page | `(studio)/book/[sessionId]/page.tsx` — Server Component fetches `schedule.getSession`, passes to `BookingFlow` client component |
 | ScheduleGrid extraction | `apps/web/src/components/marketing/ScheduleGrid.tsx` — extracted from inline `/schedule` page, each card has Book link → `/book/[sessionId]` |
 | Toaster mounted | `sonner` `<Toaster />` in root layout for booking confirmation/error feedback |
@@ -720,7 +736,7 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 | Sanity Studio app | `apps/studio/` — `sanity.config.ts` + 8 content type schemas (siteSettings, homePage, aboutPage, blogPost, instructorBio, faq, testimonial, announcement) |
 | Webhook → ISR revalidation | `apps/web/src/app/api/sanity/webhook/route.ts` — HMAC-SHA256 + `timingSafeEqual` signature verification; revalidates routes by content type |
 | Cloudflare Images signer | `apps/web/src/lib/cloudflare/images.ts` — server-only URL signing with null fallback |
-| 9 ISR marketing pages | `/` (home, 5min), `/schedule` (dynamic), `/instructors` + `/[slug]` (24h), `/pricing` (1h), `/blog` + `/[slug]` (1h), `/about` (24h) |
+| 8 ISR marketing pages | `/` (home, 5min), `/schedule` (dynamic), `/instructors` + `/[slug]` (24h), `/pricing` (1h), `/blog` + `/[slug]` (1h), `/about` (24h) |
 | Marketing layout + nav | `(marketing)` route group with `MarketingNav` (single-line rule nav) + `Footer` (editorial 3-col) + skip-to-content link (WCAG AAA) |
 | 11 shadcn/ui components | button, card, tabs, dialog, dropdown-menu, popover, select, separator, tooltip, avatar, label — anti-generic patched (no shadows, `--radius: 0`) |
 | `instructors.published` column | New boolean column + migration `0001_equal_iron_lad.sql`; `instructors.list` + `getBySlug` filter `published == true` (SKILL §7.5.1) |
@@ -752,7 +768,7 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 | Booking router with advisory lock (ADR-004) | `pg_advisory_xact_lock` inside transaction; capacity check + waitlist auto-join; discriminated union return |
 | Rate limiting on bookings.book | Upstash sliding window (10/min per user) via `packages/api/src/middleware/rateLimit.ts` |
 | RBAC enforced at tRPC middleware layer | `protectedProcedure` → `staffProcedure` → `ownerProcedure` chain; throws UNAUTHORIZED/FORBIDDEN |
-| Phase 7 stubs | Stripe-dependent procedures (memberships.subscribe, payments.*) throw `PRECONDITION_FAILED` until Phase 7 |
+| Phase 7 Stripe wired | All Stripe procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices` call `@stillwater/payments` helpers. `payments.refund` retained as D12 stub (v1 uses Stripe Dashboard). |
 | Jobs client stub | `ctx.jobs.trigger()` is a console.warn stub until Phase 8 (Trigger.dev tasks) |
 | Root router + barrel export | `packages/api/src/root.ts` merges all 10 routers; `AppRouter` type exported for client inference |
 | Web tRPC integration | HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`) |
@@ -760,12 +776,12 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 | 326 tests passing | 104 api + 102 auth + 107 db + 13 web (was 220 in Phase 2) |
 | `pg` driver fix for local migrations | Added `pg` (^8.13.1) to `packages/db` devDeps — drizzle-kit now uses TCP driver instead of neon WebSocket |
 
-### v1.3.0 (2026-07-07) — Phase 2 Complete: Better Auth + RBAC + 2-Layer Auth
+### v1.4.0 (2026-07-08) — Phase 2 Complete: Better Auth + RBAC + 2-Layer Auth
 
 | Change | Details |
 |---|---|
 | Better Auth v1.6.23 fully configured | `packages/auth/src/config.ts` — drizzleAdapter (maps `user` → `users`), Google OAuth, Magic Link plugin (10 min expiry), customSession plugin (memberId + roles enrichment) |
-| 3 Better Auth schema tables added | `session`, `account`, `verification` in `packages/db/src/schema/auth-tables.ts` — migration `0001_supreme_sabretooth.sql` |
+| 3 Better Auth schema tables added | `session`, `account`, `verification` in `packages/db/src/schema/auth-tables.ts` — originally migration `0001_supreme_sabretooth.sql` (later deleted + consolidated into `0000_dear_dagger.sql` during v1.8.0 remediation) |
 | `users.emailVerified` changed to boolean | Was `timestamp` (Phase 1 per PAD §7.2); Better Auth requires `boolean` — migration applies destructive column type change |
 | RBAC permission matrix (13 × 6) | `packages/auth/src/rbac.ts` — 13 permissions × 6 roles matching PAD §9.2 verbatim; `can(roles, permission)` function; 85 tests covering all 78 cases |
 | Server-side auth helpers | `apps/web/src/lib/auth.ts` — `getSession()`, `requireAuth()`, `requireRole()` with `import 'server-only'`; 5 tests with mocked `auth.api.getSession` + `next/navigation` redirect |
@@ -803,7 +819,7 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 | ESLint v10→v9 downgrade (plugin compatibility)   | D45 — `eslint-plugin-react`/`import` have no v10 versions |
 | All 10 Open Questions resolved (§9)              | Sanity Cloud, Stripe Dashboard refunds, Radix Dialog, synthetic data, feature-flag rollout |
 | 45 discrepancies reconciled (D1–D45)             | `MASTER_EXECUTION_PLAN.md` §2 |
-| 10 ADRs documented (ADR-008 Better Auth, ADR-009 proxy.ts, ADR-010 Resend Native Templates proposed) | `PAD.md` §29          |
+| 11 ADRs documented (ADR-008 Better Auth, ADR-009 proxy.ts, ADR-010 Resend Native Templates accepted 2026-07-09, ADR-011 transpilePackages accepted) | `PAD.md` §29          |
 | `AGENTS.md` created for AI agent onboarding     | Compact high-signal instructions |
 | `CLAUDE.md` updated with gotchas + troubleshooting | 10 Phase 0 gotchas documented |
 
@@ -830,8 +846,8 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 | Document                                  | Purpose                                                              |
 |-------------------------------------------|----------------------------------------------------------------------|
 | [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 11 ADRs; v1.10.0) |
-| [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.3.0) |
-| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v1.7.2; 21 source skills condensed; 41 lessons) |
+| [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.4.0) |
+| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v2.1.0; 21 source skills condensed; 65 lessons) |
 | [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v2.0.0; 57 gotchas) |
 | [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (50 gotchas)  |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |

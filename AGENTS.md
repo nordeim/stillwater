@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-08 (v2.0.0) — Phase 6 complete: member dashboard, membership management, CSV export. 8 new gotchas (43–50). Total: 50 gotchas.
+> **Updated:** 2026-07-09 (v2.2.0) — Phase 0–7 complete (499 tests). Phase 7 (Stripe) built: `@stillwater/payments` package (7 files, 43 tests), webhook route, all tRPC procedures unstubbed, ADR-010 accepted, 5 STRIPE tests passing. 5 new gotchas (58–62). Total: 62 gotchas.
 
 ---
 
@@ -77,15 +77,15 @@ docker compose ps              # Verify healthy
 
 ```
 apps/web/          → Next.js 16 (marketing + studio + admin route groups)
-apps/studio/       → Sanity Studio config (Phase 4 deliverable — not yet scaffolded; runtime will be hosted at stillwater.sanity.studio per Q4 decision)
+apps/studio/       → Sanity Studio config (✅ Phase 4 complete — 8 schemas + sanity.config.ts; runtime hosted at stillwater.sanity.studio per Q4 decision)
 packages/api/      → tRPC routers (10 routers, 4 procedure tiers)
-packages/db/       → Drizzle schema (14 tables, 8 enums, 5 critical indexes)
-packages/auth/     → Better Auth config
-packages/email/    → React Email v6 templates (13 templates) + send.ts
-packages/payments/ → Stripe client + idempotent webhooks
-packages/ui/       → Design tokens (CSS) + fonts (self-hosted) + Radix components
+packages/db/       → Drizzle schema (17 tables: 14 domain + 3 Better Auth, 8 enums, 5 critical indexes)
+packages/auth/     → Better Auth config (Google OAuth + Magic Link + customSession + 13×6 RBAC)
+packages/email/    → React Email v6 + Resend (Phase 8 — currently placeholder; 13 templates + send.ts planned)
+packages/payments/ → Stripe client + idempotent webhooks (✅ Phase 7 complete — 7 source files, 43 tests: client, types, subscriptions, webhooks, invoices, credit-packs, refunds)
+packages/ui/       → Design tokens (CSS) + fonts (self-hosted Cormorant + DM Sans + JetBrains Mono) + Radix components
 packages/config/   → t3-env Zod-validated env schema (34 vars)
-services/workers/  → Trigger.dev v4 tasks (11 jobs)
+services/workers/  → Trigger.dev v4 tasks (Phase 8 — currently placeholder; 11 jobs planned)
 tooling/{eslint,typescript,tailwind}/  → Shared configs
 infrastructure/postgres/init/  → Docker-entrypoint SQL (uuid-ossp + pgcrypto)
 ```
@@ -141,7 +141,7 @@ import { render } from '@react-email/render';
 import { Html } from '@react-email/components';
 ```
 
-v6 bundle is 1.8MB (514KB gzipped) — consider Resend Native Templates for Trigger.dev workers (pending ADR-010).
+v6 bundle is 1.8MB (514KB gzipped) — use Resend Native Templates for Trigger.dev workers (ADR-010 Accepted 2026-07-09).
 
 ### 4. TypeScript — stay on 5.9.0
 
@@ -381,23 +381,44 @@ Dashboard fetches profile + subscription + history. Use `Promise.all` for parall
 
 Always pass `resolver: zodResolver(schema)` to `useForm` — without it, `handleSubmit` doesn't validate. See `CLAUDE.md` Gotcha 57.
 
+### 51. Stripe `current_period_end` moved to `items.data[0]` (Critical — Phase 7)
+
+Stripe Basil (2025-03-31) deprecated top-level `subscription.current_period_end`. In Dahlia (2026-06-24, SDK v22), access via `subscription.items.data[0].current_period_end`. See `CLAUDE.md` Gotcha 58.
+
+### 52. `pg_advisory_xact_lock` key must be `BigInt()` not literal (Critical — Phase 7)
+
+BigInt literals (`5381n`) require ES2020 target — web app tsconfig is below ES2020. Use `BigInt(5381)` constructor. Mask to 32 bits for single-argument variant. See `CLAUDE.md` Gotcha 59.
+
+### 53. Stripe webhook body must be read as TEXT (Critical — Phase 7)
+
+`stripe.webhooks.constructEvent()` computes HMAC over raw body. Using `await request.json()` re-serializes the body → signature mismatch. Use `await request.text()`. See `CLAUDE.md` Gotcha 60.
+
+### 54. Drizzle `with: { plan: true }` infers as `never` in webhook handler (Medium — Phase 7)
+
+Same as Gotcha 31/Lesson 46 — Drizzle 0.45 relational query types need `defineRelations()`. Cast query result to expected shape. See `CLAUDE.md` Gotcha 61.
+
+### 55. `exactOptionalPropertyTypes` requires conditional spread (Medium — Phase 7)
+
+`{ limit: input?.limit }` fails TS2379 when `limit` is `number | undefined`. Use `...(input?.limit !== undefined ? { limit: input.limit } : {})`. See `CLAUDE.md` Gotcha 62.
+
 ---
 
-## Phase status (as of 2026-07-08)
+## Phase status (as of 2026-07-09)
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
-| 1 — DB Schema | ✅ Complete | 14 tables, 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` (waitlist unique). 109 db tests. |
+| 1 — DB Schema | ✅ Complete | 17 tables (14 domain + 3 Better Auth: session, account, verification), 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` (waitlist unique). 109 db tests. |
 | 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth tests. |
-| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 107 api tests. |
-| 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 9 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). |
-| 5 — Booking | ✅ Complete | SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts), 6 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. 105 web tests. |
-| 6 — Dashboard | ✅ Complete | Member dashboard (/dashboard, /profile, /membership, /history), 7 dashboard components, CSV export, memberships.resume stub, plan join. 111 web tests (+6 CSV; was 105 at Phase 5). |
+| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 113 api tests (was 107; +6 from Phase 7 unstubbing). |
+| 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 8 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). |
+| 5 — Booking | ✅ Complete | SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components (BookingButton, BookingConfirmation, BookingFlow, SeatAvailability, WaitlistButton), `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. |
+| 6 — Dashboard | ✅ Complete | Member dashboard (/dashboard, /profile, /membership, /history), 7 dashboard components, CSV export, memberships.resume stub (now unstubbed in Phase 7), plan join. |
+| 7 — Stripe | ✅ Complete | `@stillwater/payments` package (7 files, 43 tests): client singleton (Dahlia API), 7-event types, 5 subscription helpers, idempotent webhook handler with `pg_advisory_xact_lock` (ADR-004), invoice pagination, credit-pack checkout, D12 refund wrapper. Stripe webhook route at `/api/webhooks/stripe` (body as TEXT, sig verify, 400/500/200). All tRPC procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`. `payments.refund` retained as D12 stub. `CheckoutButton` component + `lib/stripe/utils.ts`. ADR-010 accepted. 5 STRIPE tests passing (STRIPE-001 through STRIPE-005). 43 payments tests + 14 new web tests (stripe utils + CheckoutButton). |
 
-**Total: 429 tests** (109 db + 102 auth + 107 api + 111 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
+**Total: 499 tests** (109 db + 102 auth + 113 api + 43 payments + 132 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
-| 7–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
+| 8–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
 
 ---
 
@@ -422,7 +443,7 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ```bash
 pnpm check-types       # Must be green (9/9 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (429 tests: 107 api + 102 auth + 109 db + 111 web)
+pnpm test              # Must be green (499 tests: 113 api + 102 auth + 109 db + 43 payments + 132 web).
 pnpm build             # Must be green (13/13 static pages)
 ```
 
@@ -436,10 +457,10 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
-3. `stillwater_SKILL.md` — distilled project skill (v1.7.2; 21 source skills condensed); authoritative tech-stack specifics
+3. `stillwater_SKILL.md` — distilled project skill (v2.1.0; 21 source skills condensed; 65 lessons); authoritative tech-stack specifics
 4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.10.0); culmination of the above into codebase architecture
-5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.3.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.0.0 with gotchas 24–57)
+5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.4.0)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.1.0 with 57 gotchas)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 

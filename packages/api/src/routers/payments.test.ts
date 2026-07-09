@@ -1,11 +1,28 @@
 /**
  * F3-04 — paymentsRouter test suite
  *
- * All procedures are stubs that throw PRECONDITION_FAILED until Phase 7.
- * Tests verify the stub contract + access tiers.
+ * Phase 7: getPortalUrl + getInvoices are wired to Stripe.
+ * refund remains a stub (D12 — v1 uses Stripe Dashboard only).
+ *
+ * Tests:
+ *   - getPortalUrl: creates Billing Portal session, returns URL
+ *   - getInvoices: lists invoices via Stripe, returns DTOs
+ *   - refund: stays stubbed (D12), throws PRECONDITION_FAILED for staff
+ *   - Access tier enforcement (UNAUTHORIZED / FORBIDDEN)
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock @stillwater/payments so Stripe calls are intercepted
+const mockCreateCustomerPortalSession = vi.fn();
+const mockListInvoices = vi.fn();
+
+vi.mock('@stillwater/payments', () => ({
+  createCustomerPortalSession: (...args: unknown[]) =>
+    mockCreateCustomerPortalSession(...args),
+  listInvoices: (...args: unknown[]) => mockListInvoices(...args),
+}));
+
 import { paymentsRouter } from './payments';
 import type { TRPCContext } from '../trpc';
 
@@ -34,16 +51,60 @@ function makeCtx(
   };
 }
 
-describe('paymentsRouter.getPortalUrl', () => {
-  it('throws PRECONDITION_FAILED (Phase 7 stub)', async () => {
-    const caller = paymentsRouter.createCaller(makeCtx());
-    await expect(
-      caller.getPortalUrl({ returnUrl: 'https://stillwater.test/account' }),
-    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
+const memberFixture = {
+  id: 'member-1',
+  userId: 'test-user',
+  displayName: 'Test Member',
+  stripeCustomerId: 'cus_test_123',
+};
+
+describe('paymentsRouter.getPortalUrl (Phase 7 — Stripe wired)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('creates a Billing Portal session and returns the URL', async () => {
+    const memberFindFirst = vi.fn().mockResolvedValue(memberFixture);
+    mockCreateCustomerPortalSession.mockResolvedValue(
+      'https://billing.stripe.com/p/session_123',
+    );
+
+    const ctx = makeCtx(['member'], {
+      query: { members: { findFirst: memberFindFirst } } as never,
+    });
+    const caller = paymentsRouter.createCaller(ctx);
+
+    const result = await caller.getPortalUrl({
+      returnUrl: 'https://stillwater.studio/dashboard',
+    });
+
+    expect(result).toEqual({
+      portalUrl: 'https://billing.stripe.com/p/session_123',
+    });
+    expect(mockCreateCustomerPortalSession).toHaveBeenCalledWith({
+      customerId: 'cus_test_123',
+      returnUrl: 'https://stillwater.studio/dashboard',
+    });
   });
 
-  it('throws PRECONDITION_FAILED with no input', async () => {
-    const caller = paymentsRouter.createCaller(makeCtx());
+  it('throws NOT_FOUND when member does not exist', async () => {
+    const memberFindFirst = vi.fn().mockResolvedValue(undefined);
+    const ctx = makeCtx(['member'], {
+      query: { members: { findFirst: memberFindFirst } } as never,
+    });
+    const caller = paymentsRouter.createCaller(ctx);
+    await expect(caller.getPortalUrl()).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('throws PRECONDITION_FAILED when member has no stripeCustomerId', async () => {
+    const memberFindFirst = vi.fn().mockResolvedValue({
+      ...memberFixture,
+      stripeCustomerId: null,
+    });
+    const ctx = makeCtx(['member'], {
+      query: { members: { findFirst: memberFindFirst } } as never,
+    });
+    const caller = paymentsRouter.createCaller(ctx);
     await expect(caller.getPortalUrl()).rejects.toMatchObject({
       code: 'PRECONDITION_FAILED',
     });
@@ -57,24 +118,71 @@ describe('paymentsRouter.getPortalUrl', () => {
   });
 });
 
-describe('paymentsRouter.getInvoices', () => {
-  it('throws PRECONDITION_FAILED (Phase 7 stub)', async () => {
-    const caller = paymentsRouter.createCaller(makeCtx());
-    await expect(caller.getInvoices({ limit: 10 })).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
+describe('paymentsRouter.getInvoices (Phase 7 — Stripe wired)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('lists invoices and returns DTOs', async () => {
+    const memberFindFirst = vi.fn().mockResolvedValue(memberFixture);
+    mockListInvoices.mockResolvedValue({
+      invoices: [
+        {
+          id: 'in_001',
+          customerId: 'cus_test_123',
+          subscriptionId: 'sub_123',
+          amountTotal: 9900,
+          currency: 'usd',
+          status: 'paid',
+          createdAt: new Date('2026-07-01'),
+          invoicePdfUrl: 'https://example.com/invoice.pdf',
+        },
+      ],
+      hasMore: false,
+      nextCursor: null,
+    });
+
+    const ctx = makeCtx(['member'], {
+      query: { members: { findFirst: memberFindFirst } } as never,
+    });
+    const caller = paymentsRouter.createCaller(ctx);
+
+    const result = await caller.getInvoices({ limit: 10 });
+
+    expect(result.invoices).toHaveLength(1);
+    expect(result.invoices[0]!.id).toBe('in_001');
+    expect(mockListInvoices).toHaveBeenCalledWith({
+      customerId: 'cus_test_123',
+      limit: 10,
     });
   });
 
-  it('throws PRECONDITION_FAILED with no input', async () => {
-    const caller = paymentsRouter.createCaller(makeCtx());
+  it('throws NOT_FOUND when member does not exist', async () => {
+    const memberFindFirst = vi.fn().mockResolvedValue(undefined);
+    const ctx = makeCtx(['member'], {
+      query: { members: { findFirst: memberFindFirst } } as never,
+    });
+    const caller = paymentsRouter.createCaller(ctx);
+    await expect(caller.getInvoices()).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('throws PRECONDITION_FAILED when member has no stripeCustomerId', async () => {
+    const memberFindFirst = vi.fn().mockResolvedValue({
+      ...memberFixture,
+      stripeCustomerId: null,
+    });
+    const ctx = makeCtx(['member'], {
+      query: { members: { findFirst: memberFindFirst } } as never,
+    });
+    const caller = paymentsRouter.createCaller(ctx);
     await expect(caller.getInvoices()).rejects.toMatchObject({
       code: 'PRECONDITION_FAILED',
     });
   });
 });
 
-describe('paymentsRouter.refund', () => {
-  it('throws PRECONDITION_FAILED when caller is staff (Phase 7 stub)', async () => {
+describe('paymentsRouter.refund (D12 — stub retained for v1)', () => {
+  it('throws PRECONDITION_FAILED when caller is staff (D12 stub)', async () => {
     const caller = paymentsRouter.createCaller(makeCtx(['staff']));
     await expect(
       caller.refund({
@@ -101,8 +209,6 @@ describe('paymentsRouter.refund', () => {
 
   it('rejects invalid input (missing paymentIntentId)', async () => {
     const caller = paymentsRouter.createCaller(makeCtx(['staff']));
-    // Zod parsing happens before the mutation body — bad input throws a
-    // parse error rather than reaching the stub.
     await expect(
       caller.refund({ paymentIntentId: '' } as never),
     ).rejects.toBeDefined();

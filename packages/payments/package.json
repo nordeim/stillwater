@@ -7,6 +7,10 @@
       "@stillwater/source": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./client": {
+      "@stillwater/source": "./src/client.ts",
+      "default": "./src/client.ts"
+    },
     "./webhooks": {
       "@stillwater/source": "./src/webhooks.ts",
       "default": "./src/webhooks.ts"
@@ -24,6 +28,7 @@
   "dependencies": {
     "@stillwater/config": "workspace:*",
     "@stillwater/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
     "stripe": "^22.3.0",
     "zod": "^4.4.3"
   },

@@ -21,6 +21,9 @@ build/
 # ─── Turbo ─────────────────────────────────────────────────
 .turbo/
 
+# ─── Sanity Studio runtime cache ───────────────────────────
+apps/studio/.sanity/
+
 # ─── Testing ───────────────────────────────────────────────
 coverage/
 playwright-report/
@@ -76,3 +79,4 @@ lerna-debug.log*
 # ─── Misc ──────────────────────────────────────────────────
 *.pem
 .cache/
+a.out

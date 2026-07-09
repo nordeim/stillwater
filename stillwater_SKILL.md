@@ -7,17 +7,17 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 2.1.0
+version: 2.2.0
 project_type: nextjs-monorepo
-framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23"
-last_updated: 2026-07-08
+framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia)"
+last_updated: 2026-07-09
 ---
 
 # Stillwater — Project Skill File
 
 > **How to use this document:** Read §1 (Project Identity) and §2 (Tech Stack) before touching any file. Read §9 (Anti-Patterns) and §13 (Pitfalls) before writing any new code. Read §11 (Pre-Ship Checklist) before claiming any work is done. Every claim in this document traces to a file path, a test scenario ID, or an executable command.
 >
-> **Status:** v2.1.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phase 4 (Marketing Surface with Sanity CMS — 9 ISR pages, webhook→ISR, Cloudflare Images, 11 shadcn components, build fix via transpilePackages) ✅ COMPLETE (2026-07-08); Phase 5 (Booking Flow + SSE — SSE endpoint with maxDuration=300 + 10s polling, useSessionAvailability hook with 3 reconnection attempts, 6 booking UI components, (studio)/book/[sessionId] page, ScheduleGrid with Book CTA, Toaster mounted, waitlist unique index, E2E specs BOOK-001 to BOOK-004) ✅ COMPLETE (2026-07-08); Phase 6 (Member Dashboard — /dashboard, /profile, /membership, /history pages, 7 dashboard components, CSV export utility, memberships.getMySubscription plan join, memberships.resume stub, /dashboard 404 ghost resolved) ✅ COMPLETE (2026-07-08); Phases 7–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. ADR-011 added (source resolution via `transpilePackages`). 429 tests (109 db + 102 auth + 107 api + 111 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
+> **Status:** v2.2.0 — Phase 0 (scaffold) ✅ COMPLETE (2026-07-06); Phase 1 (Database Schema, Drizzle Migrations, Seed Data) ✅ COMPLETE (2026-07-07); Phase 2 (Better Auth + RBAC + proxy.ts Route Protection) ✅ COMPLETE (2026-07-07); Phase 3 (tRPC v11 Routers — 10 routers, ~30 procedures) ✅ COMPLETE (2026-07-07); Phase 4 (Marketing Surface with Sanity CMS — 8 ISR pages, webhook→ISR, Cloudflare Images, 11 shadcn components, build fix via transpilePackages) ✅ COMPLETE (2026-07-08); Phase 5 (Booking Flow + SSE — SSE endpoint with maxDuration=300 + 10s polling, useSessionAvailability hook with 3 reconnection attempts, 5 booking UI components, (studio)/book/[sessionId] page, ScheduleGrid with Book CTA, Toaster mounted, waitlist unique index, E2E specs BOOK-001 to BOOK-004) ✅ COMPLETE (2026-07-08); Phase 6 (Member Dashboard — /dashboard, /profile, /membership, /history pages, 7 dashboard components, CSV export utility, memberships.getMySubscription plan join, /dashboard 404 ghost resolved) ✅ COMPLETE (2026-07-08); Phase 7 (Stripe Payment Integration — @stillwater/payments package with 7 source files + 43 tests: client singleton with Dahlia API, 7-event types, 5 subscription helpers, idempotent webhook handler with pg_advisory_xact_lock + 7 event handlers, invoice pagination, credit-pack checkout, D12 refund wrapper; Stripe webhook route at /api/webhooks/stripe with body-as-TEXT signature verification; all tRPC procedures unstubbed: memberships.subscribe/cancel/pause/resume + payments.getPortalUrl/getInvoices; payments.refund retained as D12 stub; CheckoutButton component + lib/stripe/utils.ts; ADR-010 accepted; 5 STRIPE acceptance tests passing) ✅ COMPLETE (2026-07-09); Phases 8–12 pending per `MASTER_EXECUTION_PLAN.md`. All version pins, tsconfig flags, and env vars in this document are aligned with the source skills in `skills/` and verified against current ecosystem state via web research (July 2026). The `package.json` files in the repo match §2.1. 45 discrepancies (D1–D45) reconciled; all 10 Open Questions resolved. ADR-011 added (source resolution via `transpilePackages`). 499 tests (109 db + 102 auth + 113 api + 43 payments + 132 web). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
 ---
 
@@ -152,18 +152,18 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | Component Lib | Radix UI + shadcn/ui | latest | Initialize with `style: "default"`, `baseColor: "stone"`; `--radius: 0` overrides all defaults |
 | API Layer | tRPC | `^11.0.0` | 10 routers, 4 procedure tiers (public/protected/staff/owner); server caller for RSC, React Query for client |
 | ORM | Drizzle ORM | `^0.45.0` | Schema in TypeScript, no codegen; `neon-http` driver for serverless; `db.$count` requires ≥0.34; relational query API v1 (`db.query.*`) since 0.28; v2 (`defineRelations()`) requires ≥1.0.0-beta |
-| Database | PostgreSQL | 17 (Neon) | 14 tables, 8 enums, 5 critical indexes; advisory locks for booking (ADR-004) |
+| Database | PostgreSQL | 17 (Neon) | 17 tables (14 domain + 3 Better Auth), 8 enums, 5 critical indexes; advisory locks for booking (ADR-004) |
 | Cache / Rate Limit | Upstash Redis | latest | Per-procedure rate limiting on `bookings.book` (10/min) and auth mutations |
 | Auth | Better Auth | `^1.6.23` | Replaces Auth.js v5 (ADR-008); stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31 as of July 2026); Drizzle adapter; Google + Magic Link; session enriched with `memberId` + `roles` |
 | Background Jobs | Trigger.dev | **v4** | 11 durable tasks with retries + cron schedules. ⚠️ v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025. `maxDuration` in `trigger.config.ts` measures CPU time (not wall-clock); set explicitly. See §17 of `PAD.md`. **⚠️ SDK import (validated July 2026):** Per official Trigger.dev v4 docs: "ALWAYS import from `@trigger.dev/sdk`. NEVER import from `@trigger.dev/sdk/v3`." The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file in `@trigger.dev/sdk@4.5.0`, but root import is the official v4 path and future-proofs against `/v3` removal). See §9.9 Gotcha 1 + §12 Lesson 16. |
 | Monorepo | Turborepo | `^2.10.0` | Task graph + remote caching; `@stillwater/source` custom condition; graceful shutdown + deferred input hashing (2.10+) |
 | Package Manager | pnpm | `^11.0.0` | `custom-conditions=@stillwater/source` in `.npmrc`; `pnpm-workspace.yaml` with `packages: ['.']`; pnpm 9.x is EOL — use 11.x+ |
-| CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005). Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed — MEP §9 Q4 resolved); config in `apps/studio/sanity.config.ts` (**Phase 4 deliverable — not yet scaffolded** as of 2026-07-07) |
+| CMS | Sanity | v3 | Marketing content only; operational data stays in PostgreSQL (ADR-005). Studio hosted at `stillwater.sanity.studio` (Sanity Cloud managed — MEP §9 Q4 resolved); config in `apps/studio/sanity.config.ts` (✅ Phase 4 complete — 8 schemas + sanity.config.ts on disk) |
 | Payments | Stripe | `^22.3.0` | "Dahlia" API (2026-06-24) pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward); SDK exposes snake_case to match API wire format (NOT camelCase); Subscriptions + credit packs + customer portal; idempotent webhooks (UNIQUE INDEX + `pg_advisory_xact_lock`). **v1 refund scope:** Stripe Dashboard only — in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved; D12 updated). |
-| Email Templates | React Email | `^6.6.6` | 13 templates, single-column 600px, CAN-SPAM compliant. ⚠️ v6.0.0 paradigm shift (April 16, 2026): all imports from `react-email` root (NOT `@react-email/components` or `@react-email/render` which are deprecated). v6 bundle is 1.8MB (514KB gzipped) — see `react_email_suggestion.md` Alternative A (Resend Native Templates) for Trigger.dev workers. Pending ADR-010 will formalize the Resend Native Templates decision. See §9.9 Gotcha 3 + §12 Lesson 18. |
-| Email Delivery | Resend | `^6.17.1` | 2,400 emails/day free tier. Supports Resend Native Templates (template ID + variables API) as zero-runtime-rendering alternative to local JSX rendering. Recommended for Trigger.dev workers to avoid 1.8MB React Email v6 bundle bloat (pending ADR-010). |
+| Email Templates | React Email | `^6.6.6` | 13 templates, single-column 600px, CAN-SPAM compliant. ⚠️ v6.0.0 paradigm shift (April 16, 2026): all imports from `react-email` root (NOT `@react-email/components` or `@react-email/render` which are deprecated). v6 bundle is 1.8MB (514KB gzipped) — see `react_email_suggestion.md` Alternative A (Resend Native Templates) for Trigger.dev workers. ADR-010 (Accepted 2026-07-09) formalizes the Resend Native Templates decision. See §9.9 Gotcha 3 + §12 Lesson 18. |
+| Email Delivery | Resend | `^6.17.1` | 2,400 emails/day free tier. Supports Resend Native Templates (template ID + variables API) as zero-runtime-rendering alternative to local JSX rendering. Recommended for Trigger.dev workers to avoid 1.8MB React Email v6 bundle bloat (ADR-010 Accepted 2026-07-09). |
 | Linting | ESLint | `^9.39.4` | v9 flat config (`tooling/eslint/index.js`). ⚠️ Do NOT upgrade to v10 — `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` have no v10-compatible versions (latest npm versions support `^9` only). v9.39.4 is the `maintenance` dist-tag (actively receiving security/bug fixes). See §9.9 Gotcha 2 + §12 Lesson 17 + MEP D45. |
-| Observability | Sentry + PostHog + Axiom + Checkly | latest | Errors, 17 product analytics events, structured logs, uptime synthetics |
+| Observability | Sentry + PostHog + Axiom + Checkly | latest | Errors, 18 product analytics events, structured logs, uptime synthetics |
 | Deployment | Vercel + Neon | latest | Preview deploys per PR; production on `main` merge |
 | Testing | Vitest + Playwright | latest | TDD mandatory; 90% coverage on `packages/api/routers/*` |
 | Validation | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs; Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https:$/ })` (v4 native) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()` |
@@ -179,7 +179,7 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 
 ### 2.3 Architecture Decision Records (ADRs)
 
-10 ADRs total (7 from PAD + 2 added in `MASTER_EXECUTION_PLAN.md` + 1 proposed in PAD §29). See Appendix A for full text.
+11 ADRs total (all Accepted as of 2026-07-09 when ADR-010 was accepted). See Appendix A for full text.
 
 | ADR | Decision | Status |
 |-----|----------|--------|
@@ -192,7 +192,7 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | ADR-007 | Trigger.dev v4 for background jobs over BullMQ | Accepted |
 | ADR-008 | Better Auth v1.6.23 supersedes Auth.js v5 | Accepted |
 | ADR-009 | `proxy.ts` replaces `middleware.ts` (Next.js 16) | Accepted |
-| ADR-010 | Resend Native Templates for Trigger.dev workers (protects CPU budgets from React Email v6 1.8MB bundle bloat) | **Proposed** (pending Phase 8 acceptance) |
+| ADR-010 | Resend Native Templates for Trigger.dev workers (protects CPU budgets from React Email v6 1.8MB bundle bloat) | Accepted (2026-07-09) |
 | ADR-011 | Source resolution via `transpilePackages` + `exports.default` → `./src/*.ts` (Turbopack ignores custom conditions) | Accepted (2026-07-08) |
 
 ---
@@ -2105,7 +2105,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cache: vi.fn() }));
 #### Gotcha 3: React Email v6 paradigm shift — `@react-email/render` deprecated (Critical — D43)
 **Symptom:** `import { render } from '@react-email/render'` — module not found or deprecated warning.
 **Root cause:** React Email v6.0.0 (released April 16, 2026) unified all component packages (`@react-email/components`, `@react-email/render`, `@react-email/button`, etc.) into a single `react-email` package. The v0.x sub-packages are deprecated. v6 bundle is 1.8MB (514KB gzipped) — pulls `prismjs`, `marked`, `tailwindcss` compiler at runtime, threatening Trigger.dev 30s CPU budgets.
-**Fix:** Import from `react-email` root: `import { render, Html, Button, Tailwind } from 'react-email'`. For Trigger.dev workers, consider Resend Native Templates (`resend.emails.send({ to, subject, templateId, variables })`) to avoid the 1.8MB bundle bloat — see `react_email_suggestion.md` Alternative A. Pending ADR-010 will formalize this decision.
+**Fix:** Import from `react-email` root: `import { render, Html, Button, Tailwind } from 'react-email'`. For Trigger.dev workers, use Resend Native Templates (`resend.emails.send({ to, subject, templateId, variables })`) per ADR-010 (Accepted 2026-07-09) to avoid the 1.8MB bundle bloat — see `react_email_suggestion.md` Alternative A.
 **Verification:** `packages/email/package.json` has `"react-email": "^6.6.6"` (not `^0.0.36`).
 **Cross-ref:** §12 Lesson 18, `CLAUDE.md` Gotcha 3, `AGENTS.md` Gotcha 3, MEP D43, PAD §16.3.
 
@@ -2865,7 +2865,7 @@ CI should never have production secrets. Use separate secrets for CI testing.
 
 ## §12. Lessons Learnt & How to Avoid Them
 
-> **Note:** The lessons below are distilled from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and the 45 reconciled discrepancies in `MASTER_EXECUTION_PLAN.md` (D1–D45). Lessons 1–15 are from the initial distillation; Lessons 16–22 are from actual Phase 0 implementation and the P0–P3 remediation pass (2026-07-06). The 21 cited source skills are: `nextjs16-tailwind4`, `nextjs16-react19-tailwind4-full-stack`, `nextjs16-react19-next-auth5-drizzle-orm`, `nextjs16-react19-postgres17`, `nextjs16-react19-tailwind4-auth5-video-gen`, `nextjs-react-expert`, `tailwind-patterns`, `avant-garde-design-v4`, `aesthetic`, `visual-design-foundations`, `frontend-design`, `tdd-workflow`, `test-driven-development`, `code-quality-standards`, `verification-and-review-protocol`, `debugging-and-error-recovery`, `ci-cd-and-automation`, `security-and-hardening`, `vulnerability-scanner`, `webapp-testing-journey`, `to-distill-project-into-skill`.
+> **Note:** The lessons below are distilled from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and the 45 reconciled discrepancies in `MASTER_EXECUTION_PLAN.md` (D1–D45). Lessons 1–15 are from the initial distillation; Lessons 16–22 are from actual Phase 0 implementation and the P0–P3 remediation pass (2026-07-06); Lessons 23–27 are from Phase 1 (DB schema); Lessons 28–35 are from Phase 2 (Better Auth); Lessons 36–41 are from Phase 3 (tRPC); Lessons 42–49 are from Phase 4 (Sanity CMS); Lessons 50–57 are from Phase 5 (SSE + booking); Lessons 58–65 are from Phase 6 (member dashboard); Lessons 66–70 are from Phase 7 (Stripe payment integration). The 21 cited source skills are: `nextjs16-tailwind4`, `nextjs16-react19-tailwind4-full-stack`, `nextjs16-react19-next-auth5-drizzle-orm`, `nextjs16-react19-postgres17`, `nextjs16-react19-tailwind4-auth5-video-gen`, `nextjs-react-expert`, `tailwind-patterns`, `avant-garde-design-v4`, `aesthetic`, `visual-design-foundations`, `frontend-design`, `tdd-workflow`, `test-driven-development`, `code-quality-standards`, `verification-and-review-protocol`, `debugging-and-error-recovery`, `ci-cd-and-automation`, `security-and-hardening`, `vulnerability-scanner`, `webapp-testing-journey`, `to-distill-project-into-skill`.
 
 ### Lesson 1: Source documents disagree — always reconcile before implementing
 
@@ -3078,7 +3078,7 @@ Additionally, v6 bundle is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (
 
 The user had already bumped `packages/email/package.json` to `react-email: ^6.6.6`, but PAD.md and SKILL.md still pinned `^0.0.36`. The `react_email_suggestion.md` document (which none of the 3 core specs cited) documented this paradigm shift and recommended Alternative A (Resend Native Templates) to avoid the bundle bloat.
 
-**What to do differently:** When a library undergoes a major version unification (like React Email v6), update ALL documentation immediately — not just the package.json. Check for ecosystem discovery docs (`react_email_suggestion.md`) that may have been written post-hoc. For Trigger.dev workers, prefer Resend Native Templates (`resend.emails.send({ to, subject, templateId, variables })`) over local JSX rendering to protect CPU budgets. Pending ADR-010 will formalize this.
+**What to do differently:** When a library undergoes a major version unification (like React Email v6), update ALL documentation immediately — not just the package.json. Check for ecosystem discovery docs (`react_email_suggestion.md`) that may have been written post-hoc. For Trigger.dev workers, use Resend Native Templates (`resend.emails.send({ to, subject, templateId, variables })`) per ADR-010 (Accepted 2026-07-09) instead of local JSX rendering to protect CPU budgets.
 
 **Fix references:** §9.9 Gotcha 3, `CLAUDE.md` Gotcha 3, `AGENTS.md` Gotcha 3, MEP D43, PAD §16.3, `react_email_suggestion.md`.
 
@@ -3259,7 +3259,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 - The fix required a destructive migration (drop timestamp column, add boolean column) — acceptable because Phase 1 had no production data
 - Seed fixtures also needed updating: `emailVerified: new Date()` → `emailVerified: true`
 
-**Fix references:** `packages/db/src/schema/users.ts`, `packages/db/src/seed/fixtures/members.ts`, migration `0001_supreme_sabretooth.sql`, `CLAUDE.md` Gotcha 21. See §13.4.
+**Fix references:** `packages/db/src/schema/users.ts`, `packages/db/src/seed/fixtures/members.ts`, migration `0000_dear_dagger.sql` (consolidated in v1.8.0 from the deleted `0001_supreme_sabretooth.sql`), `CLAUDE.md` Gotcha 21. See §13.4.
 
 ### Lesson 33: `drizzleAdapter` schema mapping for plural table names (Phase 2)
 
@@ -3860,6 +3860,99 @@ const { register, handleSubmit, formState: { errors } } = useForm({
 
 **Fix references:** `apps/web/src/components/dashboard/ProfileEditForm.tsx:14-19`. See CLAUDE.md Gotcha 57.
 
+### Lesson 66: Stripe SDK v22 `current_period_end` moved to `items.data[0]` (Phase 7)
+
+**Context:** Stripe's Basil API (2025-03-31) deprecated the top-level `subscription.current_period_start` and `subscription.current_period_end` fields. In the Dahlia API (2026-06-24, SDK v22+), these fields are accessed at `subscription.items.data[0].current_period_end`. The SDK exposes snake_case throughout to match the API wire format.
+
+**What to do differently:** When accessing subscription period dates, always use the `items.data[0]` path. The top-level fields will be `undefined` in Dahlia. This affects webhook handlers that sync subscription state to the database.
+
+**Fix:**
+```typescript
+// WRONG (deprecated in Basil, removed in Dahlia):
+const periodEnd = subscription.current_period_end;
+
+// CORRECT (Dahlia):
+const periodEnd = subscription.items.data[0].current_period_end;
+```
+
+**Fix references:** `packages/payments/src/webhooks.ts` `handleSubscriptionCreated` + `handleSubscriptionUpdated`. See CLAUDE.md Gotcha 58, AGENTS.md Gotcha 51.
+
+### Lesson 67: `pg_advisory_xact_lock` key must use `BigInt()` constructor, not literals (Phase 7)
+
+**Context:** PostgreSQL's `pg_advisory_xact_lock(bigint)` expects a 64-bit integer argument. BigInt literals (`5381n`) require ES2020 target — the web app's tsconfig targets below ES2020, causing `error TS2737: BigInt literals are not available when targeting lower than ES2020`. This error surfaced when the `@stillwater/payments` package was imported by the web app for the first time.
+
+**What to do differently:** Use `BigInt()` constructor calls instead of BigInt literals. Also mask to 32 bits for the single-argument variant of `pg_advisory_xact_lock` to stay safely within range.
+
+**Fix:**
+```typescript
+// WRONG (BigInt literal — fails on ES2019 targets):
+let hash = 5381n;
+hash = ((hash << 5n) + hash + BigInt(charCode)) & 0xffffffffn;
+
+// CORRECT (BigInt constructor — works on all targets):
+let hash = BigInt(5381);
+const five = BigInt(5);
+const mask = BigInt(0xffffffff);
+hash = ((hash << five) + hash + BigInt(charCode)) & mask;
+```
+
+**Fix references:** `packages/payments/src/webhooks.ts` `eventIdToLockKey()`. See CLAUDE.md Gotcha 59, AGENTS.md Gotcha 52.
+
+### Lesson 68: Stripe webhook body must be read as TEXT, not JSON (Phase 7)
+
+**Context:** Stripe's signature verification computes HMAC over the **raw request body**. If you use `await request.json()` first, the body is parsed and re-serialized, changing the byte representation. The signature no longer matches, causing `400 Invalid signature` even with the correct `STRIPE_WEBHOOK_SECRET`.
+
+**What to do differently:** Always read the webhook body as text and pass the raw string to `stripe.webhooks.constructEvent()`. Never parse the body as JSON before signature verification. This is the same pattern used by the Sanity webhook handler (HMAC over raw body).
+
+**Fix:**
+```typescript
+// WRONG:
+const body = await request.json();
+const event = stripe.webhooks.constructEvent(JSON.stringify(body), sig, secret);
+
+// CORRECT:
+const body = await request.text();
+const event = stripe.webhooks.constructEvent(body, sig, secret);
+```
+
+**Fix references:** `apps/web/src/app/api/webhooks/stripe/route.ts`. See CLAUDE.md Gotcha 60, AGENTS.md Gotcha 53. Same pattern as Sanity webhook (`apps/web/src/app/api/sanity/webhook/route.ts`).
+
+### Lesson 69: Drizzle relational query `with: { plan: true }` infers as `never` — resurfaced in webhook handler (Phase 7)
+
+**Context:** This is the same issue documented in Lesson 46 (Phase 3) and Lesson 63 (Phase 6) — Drizzle 0.45's relational query API (v1, `db.query.*`) infers nested `with` types as `never` without `defineRelations()` (v2, requires ≥1.0.0-beta). It resurfaced in the Phase 7 webhook handler when joining `memberSubscriptions` with `plan` to access `classCreditsPerCycle` for the `invoice.paid` credit grant.
+
+**What to do differently:** When using `with: { relation: true }` in Drizzle 0.45, always cast the query result to the expected shape. The type inference will not work until Drizzle 1.0.0 stable ships the v2 relational query API with `defineRelations()`.
+
+**Fix:**
+```typescript
+const sub = (await tx.query.memberSubscriptions.findFirst({
+  where: eq(memberSubscriptions.stripeSubscriptionId, invoice.subscription),
+  with: { plan: true },
+})) as { planId: string; plan?: { classCreditsPerCycle: number | null } | null } | undefined;
+```
+
+**Fix references:** `packages/payments/src/webhooks.ts` `handleInvoicePaid()`. See CLAUDE.md Gotcha 61, AGENTS.md Gotcha 54. Also see Lesson 46 (Phase 3) + Lesson 63 (Phase 6).
+
+### Lesson 70: `exactOptionalPropertyTypes` requires conditional spread for optional params (Phase 7)
+
+**Context:** With `exactOptionalPropertyTypes: true` in `tsconfig.json`, passing `{ limit: undefined }` is NOT the same as omitting the property. When a tRPC procedure accepts optional input (`limit?: number`) and passes it to a helper function that also accepts an optional param, `input?.limit` is `number | undefined`, but the target type expects `limit?: number` (property absent or `number`, never `undefined`). This causes `TS2379: Argument of type '{ limit: number | undefined; }' is not assignable to parameter of type '{ limit?: number; }'`.
+
+**What to do differently:** Use conditional spread to include the property only when it's defined. This is the same pattern used for `exactOptionalPropertyTypes` in Phase 3 (Lesson 41) and Phase 4 (shadcn `checked` prop), but now applied to infrastructure helper calls.
+
+**Fix:**
+```typescript
+// WRONG:
+listInvoices({ customerId, limit: input?.limit });
+
+// CORRECT:
+listInvoices({
+  customerId,
+  ...(input?.limit !== undefined ? { limit: input.limit } : {}),
+});
+```
+
+**Fix references:** `packages/api/src/routers/payments.ts` `getInvoices` procedure. See CLAUDE.md Gotcha 62, AGENTS.md Gotcha 55. Also see Lesson 41 (Phase 3 `exactOptionalPropertyTypes` for tRPC middleware).
+
 ---
 
 ## §13. Pitfalls to Avoid
@@ -3919,12 +4012,15 @@ const { register, handleSubmit, formState: { errors } } = useForm({
 
 ### 13.5 Stripe Pitfalls
 
-- **Don't parse webhook body as JSON** — read as `req.text()` for signature verification.
-- **Don't process webhooks without idempotency check** — Stripe retries on any non-2xx.
-- **Don't use Stripe SDK pre-v22 camelCase** — `currentPeriodEnd` not `current_period_end`.
-- **Don't return 500 on handler error** — Stripe retries. Return 200 after idempotency check.
+- **Don't parse webhook body as JSON** — read as `await request.text()` for signature verification (Lesson 68).
+- **Don't process webhooks without idempotency check** — Stripe retries on any non-2xx. Use `payment_events.stripe_event_id` UNIQUE INDEX + `pg_advisory_xact_lock` (Lesson 66, ADR-004).
+- **Don't use Stripe SDK pre-v22 camelCase** — SDK v22 exposes snake_case (`current_period_end`, NOT `currentPeriodEnd`).
+- **Don't access `subscription.current_period_end`** — deprecated in Basil, removed in Dahlia. Use `subscription.items.data[0].current_period_end` (Lesson 66).
+- **Don't use BigInt literals** (`5381n`) in advisory lock hash — requires ES2020 target. Use `BigInt(5381)` constructor (Lesson 67).
+- **Don't use `pg_advisory_lock`** (session-scoped) — leaks under Neon PgBouncer. Use `pg_advisory_xact_lock` (transaction-scoped, ADR-004).
+- **Don't return 200 on handler error** — return 500 so Stripe retries. Return 200 only on success or idempotent already-processed.
 - **Don't log raw webhook payload** — may contain PII (cardholder name, email).
-- **Don't use `STRIPE_WEBHOOK_SECRET` from `process.env` directly** — use Zod-validated `env`.
+- **Don't use Zod `env` module for `STRIPE_SECRET_KEY`** — infrastructure clients use `process.env` directly with null fallback (SKILL §15.20). The Zod `env` module throws in browser context.
 
 ### 13.6 Tailwind v4 Pitfalls
 
@@ -4078,7 +4174,7 @@ const { register, handleSubmit, formState: { errors } } = useForm({
 
 ### 14.1 Code Organization
 
-- **Turborepo monorepo**: `apps/web`, `apps/studio` (**Phase 4 deliverable — not yet scaffolded**), `packages/*` (7 shared libs), `services/workers`, `tooling/*`
+- **Turborepo monorepo**: `apps/web`, `apps/studio` (✅ Phase 4 complete), `packages/*` (7 shared libs), `services/workers`, `tooling/*`
 - **Package dependency graph**: `web → api + ui + auth + config`; `api → db + payments + config`; `auth → db + config`; `workers → db + email + config`
 - **`@stillwater/source` custom condition**: workspace packages resolve to source (`./src/index.ts`) instead of built `dist/`
 - **3 route groups**: `(marketing)` public ISR, `(studio)` auth-gated SSR, `(admin)` RBAC-gated SSR
@@ -6054,6 +6150,292 @@ export function exportToCSV(data: Record<string, unknown>[], filename: string): 
 
 ---
 
+#### 15.20.1 Idempotent Stripe Webhook Handler with pg_advisory_xact_lock (ADR-004)
+
+```typescript
+// packages/payments/src/webhooks.ts
+import { eq, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '@stillwater/db';
+import { paymentEvents, memberSubscriptions } from '@stillwater/db';
+import type { StripeWebhookEvent, StripeWebhookResult } from './types';
+
+// Lesson 67: Use BigInt() constructor, NOT literals (ES2020 target issue)
+function eventIdToLockKey(eventId: string): bigint {
+  let hash = BigInt(5381);
+  const five = BigInt(5);
+  const mask = BigInt(0xffffffff);
+  for (let i = 0; i < eventId.length; i++) {
+    hash = ((hash << five) + hash + BigInt(eventId.charCodeAt(i))) & mask;
+  }
+  return hash;
+}
+
+export async function handleStripeWebhook(
+  event: StripeWebhookEvent,
+  db: DrizzleDB,
+): Promise<StripeWebhookResult> {
+  // 1. Fast-path idempotency check (outside transaction)
+  const existing = await db.query.paymentEvents.findFirst({
+    where: eq(paymentEvents.stripeEventId, event.id),
+  });
+  if (existing) return { received: true };
+
+  // 2. Open transaction with advisory lock
+  try {
+    await db.transaction(async (tx) => {
+      // ADR-004: pg_advisory_xact_lock (transaction-scoped, NOT session-scoped)
+      const lockKey = eventIdToLockKey(event.id);
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
+
+      // 3. Dispatch to event handler
+      await dispatchEvent(event, tx);
+
+      // 4. Insert idempotency record
+      await tx.insert(paymentEvents).values({
+        stripeEventId: event.id,
+        type: event.type,
+        payload: event.data.object as unknown as Record<string, unknown>,
+        status: 'processed',
+        processedAt: new Date(),
+      });
+    });
+    return { received: true };
+  } catch (err) {
+    // Race condition: unique index on stripe_event_id catches concurrent duplicates
+    if (isUniqueViolation(err)) return { received: true };
+    throw err;
+  }
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  if (err && typeof err === 'object' && 'code' in err) {
+    return (err as { code: string }).code === '23505';
+  }
+  return false;
+}
+```
+
+**Key points:**
+- Fast-path idempotency check OUTSIDE transaction (avoids opening transaction for duplicate deliveries)
+- `pg_advisory_xact_lock` (transaction-scoped) — auto-releases at COMMIT/ROLLBACK, cannot leak under Neon PgBouncer
+- `BigInt()` constructor (not literals) for ES2019 compatibility (Lesson 67)
+- Unique index on `payment_events.stripe_event_id` is the ultimate idempotency guarantee
+- `isUniqueViolation()` detects PG code 23505 for concurrent race handling
+- 7 event handlers: `subscription.created/updated/deleted/trial_will_end` + `invoice.paid/payment_failed/payment_action_required`
+
+**TDD verification (STRIPE-001 through STRIPE-005):**
+1. STRIPE-001: `invoice.paid` resets `creditsRemaining` to `plan.classCreditsPerCycle`
+2. STRIPE-002: `invoice.payment_failed` sets subscription status to `past_due`
+3. STRIPE-003: Same event twice → second call returns `{ received: true }` without opening transaction
+4. STRIPE-004: Invalid signature → route handler returns 400 (tested at route level)
+5. STRIPE-005: `customer.subscription.deleted` sets subscription status to `cancelled`
+
+**Source:** Phase 7 implementation, `packages/payments/src/webhooks.ts`. ADR-004 (advisory locks). Lessons 66-70. See CLAUDE.md Gotchas 58-62.
+
+---
+
+#### 15.20.2 Stripe Client Singleton with Null Fallback (SKILL §15.20)
+
+```typescript
+// packages/payments/src/client.ts
+import Stripe from 'stripe';
+
+let cachedClient: Stripe | null = null;
+let cachedKey: string | null = null;
+
+export function getStripeClient(): Stripe | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+
+  // Null fallback per SKILL §15.20 — infrastructure clients use process.env
+  // directly (NOT Zod env module which throws in browser context)
+  if (!key) return null;
+
+  // Reuse cached instance if key hasn't changed
+  if (cachedClient && cachedKey === key) return cachedClient;
+
+  cachedClient = new Stripe(key, {
+    apiVersion: '2026-06-24.dahlia',  // SDK v22 default; snake_case throughout
+    typescript: true,
+    appInfo: { name: 'stillwater', version: '0.0.0' },
+  });
+  cachedKey = key;
+  return cachedClient;
+}
+```
+
+**Key points:**
+- Infrastructure clients (Stripe, Resend, Trigger.dev, Sanity, Upstash, DB) use `process.env` directly — NOT the Zod `env` module (which throws in browser context)
+- Null fallback when env var absent (build, preview envs without Stripe, tests) — callers MUST null-check
+- Singleton pattern: same instance reused across process lifetime; re-keyed if env var changes
+- `apiVersion: '2026-06-24.dahlia'` — SDK v22 pins to Dahlia API; snake_case fields throughout
+- `appInfo` identifies Stillwater in Stripe dashboard request log
+
+**Source:** Phase 7 implementation, `packages/payments/src/client.ts`. SKILL §15.20 (infrastructure client pattern). Same pattern as `apps/web/src/lib/cloudflare/images.ts`.
+
+---
+
+#### 15.20.3 Stripe Webhook Route — Body as TEXT, Signature Verification
+
+```typescript
+// apps/web/src/app/api/webhooks/stripe/route.ts
+import { handleStripeWebhook } from '@stillwater/payments';
+import { getStripeClient } from '@stillwater/payments/client';
+import { db } from '@stillwater/db';
+
+export const dynamic = 'force-dynamic';  // webhook must always be fresh
+export const runtime = 'nodejs';          // needs pg for advisory lock (NOT Edge)
+
+export async function POST(request: Request): Promise<Response> {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return Response.json({ error: 'Webhook secret not configured' }, { status: 500 });
+  }
+
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return Response.json({ error: 'Stripe not configured' }, { status: 500 });
+  }
+
+  // Lesson 68: Read body as TEXT (not JSON) for signature verification
+  const body = await request.text();
+  const signature = request.headers.get('stripe-signature');
+  if (!signature) {
+    return Response.json({ error: 'Missing stripe-signature header' }, { status: 400 });
+  }
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+  } catch {
+    // STRIPE-004: Invalid signature — 400 (Stripe won't retry)
+    return Response.json({ error: 'Invalid signature' }, { status: 400 });
+  }
+
+  try {
+    const result = await handleStripeWebhook(event, db);
+    if (result.received) return Response.json({ received: true });
+    return Response.json({ error: result.reason }, { status: 400 });
+  } catch (err) {
+    // Handler error — 500 so Stripe retries
+    console.error('Stripe webhook handler error:', err);
+    return Response.json({ error: 'Webhook handler failed' }, { status: 500 });
+  }
+}
+```
+
+**Key points:**
+- `await request.text()` — NOT `request.json()` (Lesson 68: signature verification needs raw body)
+- 400 on bad signature (Stripe won't retry) vs 500 on handler error (Stripe retries)
+- `runtime: 'nodejs'` — needs `pg` for advisory lock, NOT Edge runtime
+- `dynamic: 'force-dynamic'` — webhook must always be fresh, never cached
+- Same pattern as Sanity webhook (`apps/web/src/app/api/sanity/webhook/route.ts`)
+
+**Source:** Phase 7 implementation, `apps/web/src/app/api/webhooks/stripe/route.ts`. Lesson 68. See CLAUDE.md Gotcha 60.
+
+---
+
+#### 15.20.4 tRPC Procedure Unstubbing — Stripe Checkout Flow
+
+```typescript
+// packages/api/src/routers/memberships.ts
+import { createCheckoutSession, cancelAtPeriodEnd, pauseSubscription, resumeSubscription } from '@stillwater/payments';
+
+export const membershipsRouter = router({
+  subscribe: protectedProcedure
+    .input(z.object({ planId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // 1. Find the plan to get stripePriceId
+      const plan = await ctx.db.query.membershipPlans.findFirst({
+        where: eq(membershipPlans.id, input.planId),
+      });
+      if (!plan) throw new TRPCError({ code: 'NOT_FOUND', message: 'Plan not found' });
+
+      // 2. Find the member to get stripeCustomerId
+      const member = await ctx.db.query.members.findFirst({
+        where: eq(members.id, ctx.session.user.memberId!),
+      });
+      if (!member) throw new TRPCError({ code: 'NOT_FOUND', message: 'Member not found' });
+
+      // 3. Validate stripeCustomerId exists
+      if (!member.stripeCustomerId) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'No Stripe customer ID — member must be provisioned via Stripe first',
+        });
+      }
+
+      // 4. Create Checkout Session
+      const session = await createCheckoutSession({
+        customerId: member.stripeCustomerId,
+        priceId: plan.stripePriceId,
+        successUrl: `${appUrl}/membership/success`,
+        cancelUrl: `${appUrl}/membership`,
+      });
+      if (!session) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Checkout failed' });
+
+      // 5. Return checkout URL for browser redirect
+      return { checkoutUrl: session.url };
+    }),
+});
+```
+
+**Key points:**
+- tRPC procedure validates domain constraints (plan exists, member exists, stripeCustomerId exists) before calling infrastructure helper
+- `PRECONDITION_FAILED` (HTTP 412) for missing prerequisites — semantically correct
+- Infrastructure helper (`createCheckoutSession`) returns null when Stripe unavailable — procedure throws `INTERNAL_SERVER_ERROR`
+- Procedure returns `{ checkoutUrl }` — client component (`CheckoutButton`) redirects browser via `window.location.href`
+- Same pattern for `cancel` (calls `cancelAtPeriodEnd`), `pause` (calls `pauseSubscription` + updates DB), `resume` (calls `resumeSubscription` + updates DB)
+
+**Source:** Phase 7 implementation, `packages/api/src/routers/memberships.ts`. See also `payments.ts` for `getPortalUrl` + `getInvoices` (same pattern with `exactOptionalPropertyTypes` conditional spread — Lesson 70).
+
+---
+
+#### 15.20.5 Infrastructure Client Mocking with vi.hoisted() + Toggleable Return
+
+```typescript
+// packages/payments/src/invoices.test.ts
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// SKILL §15.21: Use vi.hoisted() for mock objects so they're defined
+// BEFORE the hoisted vi.mock factory runs. Use a toggleable holder
+// for the client return value so null-client tests don't pollute
+// the module cache between tests.
+const { mockInvoicesList, mockStripeClient, getClientReturn } = vi.hoisted(() => {
+  const mockInvoicesList = vi.fn();
+  const mockStripeClient = { invoices: { list: mockInvoicesList } };
+  const getClientReturn: { value: unknown } = { value: mockStripeClient };
+  return { mockInvoicesList, mockStripeClient, getClientReturn };
+});
+
+vi.mock('./client', () => ({
+  getStripeClient: () => getClientReturn.value,
+}));
+
+describe('listInvoices', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getClientReturn.value = mockStripeClient;  // Reset to default
+  });
+
+  it('returns null when Stripe client is unavailable', async () => {
+    getClientReturn.value = null;  // Toggle for this test only
+    const { listInvoices } = await import('./invoices');
+    const result = await listInvoices({ customerId: 'cus_123', limit: 10 });
+    expect(result).toBeNull();
+  });
+});
+```
+
+**Key points:**
+- `vi.hoisted()` ensures mock objects exist when the hoisted `vi.mock()` factory runs (Lesson from Phase 3: `vi.fn()` in factory sees `undefined`)
+- Toggleable `getClientReturn` holder lets individual tests flip the client to `null` without `vi.doMock` + `vi.resetModules` (which pollutes the module cache)
+- `beforeEach()` resets to default (client available) so test order doesn't matter
+- Same pattern works for any infrastructure client with null fallback
+
+**Source:** Phase 7 implementation, `packages/payments/src/invoices.test.ts` + `subscriptions.test.ts` + `refunds.test.ts`. SKILL §15.21 (vi.hoisted pattern).
+
+---
+
 ## §16. Coding Anti-Patterns
 
 ### 16.1 TypeScript Anti-Patterns
@@ -6565,6 +6947,122 @@ const { register, handleSubmit, formState: { errors } } = useForm({
 });
 ```
 
+### 16.10 Phase 7 Stripe Anti-Patterns
+
+#### Bug: Using BigInt literals in advisory lock hash function (Critical — Lesson 67)
+**Symptom:** `error TS2737: BigInt literals are not available when targeting lower than ES2020` when `@stillwater/payments` is imported by the web app.
+**Root cause:** BigInt literals (`5381n`) require ES2020 target. The web app's tsconfig targets below ES2020. The payments package compiles fine standalone, but fails when consumed by the web app.
+**Fix:** Use `BigInt()` constructor calls, not literals:
+```typescript
+// ❌ WRONG (fails on ES2019 targets):
+let hash = 5381n;
+
+// ✅ CORRECT (works on all targets):
+let hash = BigInt(5381);
+```
+
+#### Bug: Reading webhook body as JSON before signature verification (Critical — Lesson 68)
+**Symptom:** `stripe.webhooks.constructEvent()` throws `SignatureVerificationError` even with correct `STRIPE_WEBHOOK_SECRET`.
+**Root cause:** `await request.json()` parses and re-serializes the body, changing the byte representation. Stripe's HMAC no longer matches.
+**Fix:** Read body as text, pass raw string to `constructEvent`:
+```typescript
+// ❌ WRONG:
+const body = await request.json();
+const event = stripe.webhooks.constructEvent(JSON.stringify(body), sig, secret);
+
+// ✅ CORRECT:
+const body = await request.text();
+const event = stripe.webhooks.constructEvent(body, sig, secret);
+```
+
+#### Bug: Accessing `subscription.current_period_end` (Critical — Lesson 66)
+**Symptom:** `undefined` for period dates in webhook handler.
+**Root cause:** Stripe Basil (2025-03-31) deprecated top-level `subscription.current_period_end`. Dahlia (2026-06-24, SDK v22) requires accessing via `items.data[0]`.
+**Fix:** Use the items array path:
+```typescript
+// ❌ WRONG (deprecated in Basil, removed in Dahlia):
+const periodEnd = subscription.current_period_end;
+
+// ✅ CORRECT (Dahlia):
+const periodEnd = subscription.items.data[0].current_period_end;
+```
+
+#### Bug: Passing `undefined` to optional param with `exactOptionalPropertyTypes` (Medium — Lesson 70)
+**Symptom:** `TS2379: Argument of type '{ limit: number | undefined; }' is not assignable to parameter of type '{ limit?: number; }'`.
+**Root cause:** `exactOptionalPropertyTypes: true` forbids `{ limit: undefined }` — the property must be absent or `number`, never `undefined`.
+**Fix:** Use conditional spread:
+```typescript
+// ❌ WRONG:
+listInvoices({ customerId, limit: input?.limit });
+
+// ✅ CORRECT:
+listInvoices({
+  customerId,
+  ...(input?.limit !== undefined ? { limit: input.limit } : {}),
+});
+```
+
+#### Bug: Using `pg_advisory_lock` (session-scoped) instead of `pg_advisory_xact_lock` (transaction-scoped) (Critical — ADR-004)
+**Symptom:** Advisory locks leak under Neon PgBouncer transaction pooling; connections exhaust.
+**Root cause:** `pg_advisory_lock()` is session-scoped — it requires explicit `pg_advisory_unlock()` and breaks under connection poolers that reset session state between transactions.
+**Fix:** Always use `pg_advisory_xact_lock()` — auto-releases at COMMIT/ROLLBACK:
+```typescript
+// ❌ WRONG (session-scoped — leaks under PgBouncer):
+await tx.execute(sql`SELECT pg_advisory_lock(${key})`);
+// ... must manually unlock
+await tx.execute(sql`SELECT pg_advisory_unlock(${key})`);
+
+// ✅ CORRECT (transaction-scoped — auto-releases):
+await tx.execute(sql`SELECT pg_advisory_xact_lock(${key})`);
+// ... auto-releases at COMMIT/ROLLBACK
+```
+
+#### Bug: Not handling unique violation for idempotent webhook (Medium)
+**Symptom:** Concurrent webhook deliveries for the same event cause 500 errors.
+**Root cause:** The fast-path idempotency check (`findFirst`) can pass for two concurrent requests before either inserts. The unique index on `payment_events.stripe_event_id` catches the duplicate, but the error propagates as 500.
+**Fix:** Detect PG code 23505 and return success:
+```typescript
+// ❌ WRONG (500 on concurrent duplicate):
+await tx.insert(paymentEvents).values({ stripeEventId: event.id, ... });
+
+// ✅ CORRECT (catch unique violation, return success):
+try {
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${key})`);
+    await dispatchEvent(event, tx);
+    await tx.insert(paymentEvents).values({ stripeEventId: event.id, ... });
+  });
+  return { received: true };
+} catch (err) {
+  if (isUniqueViolation(err)) return { received: true }; // already processed
+  throw err;
+}
+```
+
+#### Bug: Returning 200 on handler error instead of 500 (Medium)
+**Symptom:** Stripe doesn't retry failed webhook processing; data inconsistency.
+**Root cause:** Returning 200 tells Stripe the webhook was processed successfully. If the handler threw an error (DB connection failure, etc.), Stripe should retry.
+**Fix:** Return 500 on handler errors so Stripe retries; return 200 only on success or idempotent already-processed:
+```typescript
+// ❌ WRONG (Stripe won't retry):
+try {
+  await handleStripeWebhook(event, db);
+  return Response.json({ received: true });
+} catch (err) {
+  return Response.json({ received: true }); // hides the error!
+}
+
+// ✅ CORRECT (500 on handler error — Stripe retries):
+try {
+  const result = await handleStripeWebhook(event, db);
+  if (result.received) return Response.json({ received: true }, { status: 200 });
+  return Response.json({ error: result.reason }, { status: 400 });
+} catch (err) {
+  console.error('Stripe webhook handler error:', err);
+  return Response.json({ error: 'Webhook handler failed' }, { status: 500 });
+}
+```
+
 ---
 
 ## §17. Responsive Breakpoint Reference
@@ -7025,7 +7523,7 @@ export type EmailTemplateId =
   | 'WeeklyDigest';
 ```
 
-### 20.10 PostHog Event Taxonomy (17 events)
+### 20.10 PostHog Event Taxonomy (18 events)
 
 ```typescript
 // apps/web/src/lib/analytics/posthog.ts
@@ -7138,10 +7636,11 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 - **Trade-offs:** All documentation referencing `middleware.ts` has been updated (PAD.md, SKILL.md, MEP.md all now reference `proxy.ts`). The 2-layer auth pattern requires RBAC enforcement at layout boundaries — more files but better separation of concerns.
 - **Source:** `scaffolding_files.md` preamble; Next.js 16 blog post (`https://nextjs.org/blog/next-16#proxy`); `guide_auth-v5_vs_better-auth.md` §Route Protection Pattern Changes
 
-### ADR-010: Resend Native Templates for Trigger.dev Workers (Proposed)
-- **Status:** Proposed (NEW — 2026-07-06; pending formal acceptance before Phase 8 implementation)
+### ADR-010: Resend Native Templates for Trigger.dev Workers (Accepted)
+- **Status:** Accepted (Proposed 2026-07-06; Accepted 2026-07-09 per user confirmation)
 - **Context:** React Email v6.0.0 (released April 16, 2026) unified all component packages into a single `react-email` package. The v6 bundle is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (markdown parser), and the full `tailwindcss` compiler into runtime bundles. Trigger.dev workers (ADR-007, PAD §17.1) have strict CPU budgets: 30s for `booking-confirmation`, 30s for `waitlist-promotion`, 120s for `weekly-digest`. Importing the 1.8MB package on every serverless cold start risks exhausting the CPU budget.
-- **Decision (Proposed):** Adopt Resend Native Templates (Alternative A from `react_email_suggestion.md`) for all Trigger.dev worker email sending. Workers send a JSON payload (`templateId` + `variables`) to Resend's API; Resend's infrastructure handles HTML rendering and delivery. For Next.js Server Component email sending (rare), local JSX rendering via `import { render } from 'react-email'` (v6 unified import) is acceptable.
+- **Decision:** Adopt Resend Native Templates (Alternative A from `react_email_suggestion.md`) for all Trigger.dev worker email sending. Workers send a JSON payload (`templateId` + `variables`) to Resend's API; Resend's infrastructure handles HTML rendering and delivery. For Next.js Server Component email sending (rare), local JSX rendering via `import { render } from 'react-email'` (v6 unified import) is acceptable.
+- **Acceptance Rationale (2026-07-09):** Bundle size verified via bundlephobia.com (1.8MB / 514KB gzipped); Trigger.dev v4 `maxDuration` measures CPU time (confirmed via trigger.dev/docs); Resend `^6.17.1` (NPM latest 2026-07-09) supports the `templateId` + `variables` API. The 30s CPU budgets on `booking-confirmation` and `waitlist-promotion` are too tight to safely absorb a 1.8MB bundle initialization on every cold start. Acceptance unblocks Phase 8 implementation.
 - **Rationale:** Protects Trigger.dev CPU budgets from 1.8MB bundle bloat; leverages Resend's global edge network for HTML rendering; maintains React Email JSX templates in the monorepo for type safety and preview server; aligns with PAD §2.3 "no infrastructure management".
 - **Trade-offs:** Requires managing template deployment to Resend (CI/CD script); template changes require a Resend deploy in addition to code deploy; loses some runtime flexibility.
 - **Rejected:** Local JSX rendering in workers (risks CPU budget exhaustion); MJML (loses React composition; unnecessary migration cost); Isolated rendering microservice (adds infra complexity).
@@ -7201,6 +7700,21 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 ## Appendix C: Audit History
 
+### v2.2.0 (2026-07-09) — Phase 7 Complete + Stripe Payment Integration
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| Stripe SDK v22 `current_period_end` moved to `items.data[0]` | Critical | ✅ Documented — Lesson 66, §15.20.1 pattern, §16.10 anti-pattern, CLAUDE.md Gotcha 58, AGENTS.md Gotcha 51. Fix: access via `subscription.items.data[0].current_period_end` |
+| `pg_advisory_xact_lock` key must use `BigInt()` not literals | Critical | ✅ Documented — Lesson 67, §15.20.1 pattern, §16.10 anti-pattern, CLAUDE.md Gotcha 59, AGENTS.md Gotcha 52. Fix: `BigInt(5381)` constructor (ES2020 target issue) |
+| Stripe webhook body must be read as TEXT, not JSON | Critical | ✅ Documented — Lesson 68, §15.20.3 pattern, §16.10 anti-pattern, CLAUDE.md Gotcha 60, AGENTS.md Gotcha 53. Fix: `await request.text()` for signature verification |
+| Drizzle `with: { plan: true }` infers as `never` in webhook handler | Medium | ✅ Documented — Lesson 69, §15.20.1 pattern, §16.10 anti-pattern, CLAUDE.md Gotcha 61, AGENTS.md Gotcha 54. Fix: cast query result to expected shape (same as Lesson 46 + 63) |
+| `exactOptionalPropertyTypes` requires conditional spread for optional params | Medium | ✅ Documented — Lesson 70, §15.20.4 pattern, §16.10 anti-pattern, CLAUDE.md Gotcha 62, AGENTS.md Gotcha 55. Fix: `...(val !== undefined ? { limit: val } : {})` |
+| `pg_advisory_lock` (session-scoped) leaks under Neon PgBouncer | Critical | ✅ Documented — §16.10 anti-pattern, ADR-004, §13.5 pitfalls. Fix: use `pg_advisory_xact_lock` (transaction-scoped) |
+| Unique violation on concurrent webhook delivery | Medium | ✅ Documented — §15.20.1 pattern, §16.10 anti-pattern. Fix: detect PG code 23505, return `{ received: true }` |
+| 200 vs 500 on handler error — Stripe retry semantics | Medium | ✅ Documented — §15.20.3 pattern, §16.10 anti-pattern, §13.5 pitfalls. Fix: 500 on handler error (Stripe retries), 200 only on success/idempotent |
+| §13.5 contradiction: "use Zod env for STRIPE_SECRET_KEY" vs §15.20 "use process.env" | Medium | ✅ Fixed — §13.5 now correctly says "use `process.env` directly with null fallback" per §15.20 (infrastructure clients bypass Zod env module) |
+| Phase 7 complete: @stillwater/payments package + webhook route + unstubbed procedures + ADR-010 accepted | — | ✅ Phase 7 IMPLEMENT complete — 7 source files + 43 tests in @stillwater/payments, webhook route at /api/webhooks/stripe, all tRPC procedures unstubbed (memberships.subscribe/cancel/pause/resume + payments.getPortalUrl/getInvoices), payments.refund retained as D12 stub, CheckoutButton component + lib/stripe/utils.ts, 5 STRIPE acceptance tests passing, 499 total tests, `pnpm build` green |
+
 ### v2.1.0 (2026-07-08) — Phase 6 Complete + Member Dashboard
 
 | Finding | Severity | Status |
@@ -7241,7 +7755,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 | Sanity slug is object with `.current` property, not string | Low | ✅ Documented — Lesson 47, §16.7 anti-pattern, CLAUDE.md Gotcha 39, AGENTS.md Gotcha 32. Fix: use `slug.current == $slug` |
 | Zod v4 `z.string().email()` deprecated | Low | ✅ Documented — Lesson 48, §16.7 anti-pattern, CLAUDE.md Gotcha 40, AGENTS.md Gotcha 33. Fix: use `z.email()` |
 | GROQ queries MUST filter `published == true` — defense-in-depth | High | ✅ Documented — Lesson 49, §15.17.2 pattern, §16.7 anti-pattern. Fix: add `&& published == true` to every query |
-| Phase 4 complete: Sanity CMS, 9 ISR pages, webhook, Cloudflare Images, shadcn/ui | — | ✅ Phase 4 IMPLEMENT complete — 7 stages, ~40 files, 51 new tests (377 total), `pnpm build` green (12/12 static pages) |
+| Phase 4 complete: Sanity CMS, 8 ISR pages, webhook, Cloudflare Images, shadcn/ui | — | ✅ Phase 4 IMPLEMENT complete — 7 stages, ~40 files, 51 new tests (377 total), `pnpm build` green (12/12 static pages) |
 | Build fix (ADR-011): `transpilePackages` + source exports | — | ✅ Implemented — 10 files changed, `pnpm build` succeeds, `turbo.json` optimized (check-types 16→9 tasks) |
 | SPECIFICATIONS.md retired | — | ✅ Deleted — was 7 PAD versions behind, used deprecated Zod v4 patterns. PAD.md is sole canonical architecture doc |
 
@@ -7259,7 +7773,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 | Stripe API version: `acacia` → `dahlia` in §15.6 code example | High | Resolved — updated to `apiVersion: '2026-06-24.dahlia'`. See §9.9 Gotcha 10. |
 | All 10 MEP §9 Open Questions unresolved | High | ✅ All 10 resolved — Sanity Cloud, Stripe Dashboard refunds, Radix Dialog, synthetic data, feature-flag rollout. See §12 Lesson 21. |
 | Phase 0 smoke test not yet run | High | ✅ PASS — `pnpm install` / `pnpm check-types` / `pnpm lint` all green. See §12 Lesson 22. |
-| ADR-010 (Resend Native Templates) not yet documented | Medium | ✅ Added as Proposed in PAD §29 + SKILL.md Appendix A. Pending Phase 8 acceptance. |
+| ADR-010 (Resend Native Templates) not yet documented | Medium | ✅ Added as Proposed in PAD §29 + SKILL.md Appendix A. Accepted 2026-07-09 (see PAD §29 for full rationale). |
 | Discrepancy count: 35 → 45 (D43, D44, D45 added) | Medium | ✅ All 45 discrepancies reconciled in MEP §2. |
 | Documentation suite not aligned | High | ✅ CLAUDE.md, AGENTS.md, README.md, PAD.md, SKILL.md, MEP.md all updated and cross-checked. |
 
@@ -7285,7 +7799,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 | Finding | Severity | Status |
 |---------|----------|--------|
-| Phase 2 complete: Better Auth v1.6.23, RBAC 13×6 matrix, 2-layer auth, 4 layout guards | — | ✅ Phase 2 IMPLEMENT complete — 10 TDD cycles, 26 files (F2-01 to F2-19 + 3 Better Auth schema tables), 220 tests (102 auth + 107 db + 11 web), migration `0001_supreme_sabretooth.sql` |
+| Phase 2 complete: Better Auth v1.6.23, RBAC 13×6 matrix, 2-layer auth, 4 layout guards | — | ✅ Phase 2 IMPLEMENT complete — 10 TDD cycles, 26 files (F2-01 to F2-19 + 3 Better Auth schema tables), 220 tests (102 auth + 107 db + 11 web), migration `0001_supreme_sabretooth.sql` (later deleted + consolidated into `0000_dear_dagger.sql` during v1.8.0 remediation) |
 | Better Auth `magicLink` is a plugin, NOT a social provider — needs `magicLinkClient` on client | High | ✅ Documented — Lesson 30, §9.10 anti-pattern, `CLAUDE.md` Gotcha 19, `AGENTS.md` Gotcha 18 |
 | `session.sessionData` API doesn't exist in v1.6.23 — use `customSession` plugin | High | ✅ Documented — Lesson 31, §9.10 anti-pattern, `CLAUDE.md` Gotcha 20, `AGENTS.md` Gotcha 19 |
 | `users.emailVerified` must be boolean (not timestamp) for Better Auth | High | ✅ Documented — Lesson 32, §13.4 pitfall, §9.10 anti-pattern, `CLAUDE.md` Gotcha 21 |
@@ -7301,7 +7815,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 
 | Finding | Severity | Status |
 |---------|----------|--------|
-| Phase 1 complete: 14 tables, 8 enums, 5 critical indexes, migration generated | — | ✅ Phase 1 IMPLEMENT complete — 9 TDD cycles, 21 files (F1-01 to F1-21), 91 unit tests + 7 integration tests, migration `0000_chemical_obadiah_stane.sql` |
+| Phase 1 complete: 14 tables (later 17 with Phase 2 Better Auth tables), 8 enums, 5 critical indexes, migration generated | — | ✅ Phase 1 IMPLEMENT complete — 9 TDD cycles, 21 files (F1-01 to F1-21), 91 unit tests + 7 integration tests, migration `0000_chemical_obadiah_stane.sql` (later regenerated as `0000_dear_dagger.sql` during v1.8.0 remediation) |
 | Drizzle 0.45 column API: `.unique` is undefined; `.isUnique` is the boolean property | High | ✅ Documented — Lesson 25, §13.4 pitfall, §9.3 anti-pattern, `CLAUDE.md` Gotcha 14 |
 | Drizzle partial index `.where()` requires `sql` template, not object (TS2353) | High | ✅ Documented — Lesson 26, §13.4 pitfall, §9.3 anti-pattern, `CLAUDE.md` Gotcha 15, §15.14 pattern |
 | `neon()` validates connection string — db client needs try/catch fallback | High | ✅ Documented — Lesson 27, §13.4 pitfall, §9.3 anti-pattern, `CLAUDE.md` Gotcha 16, §15.14 pattern |
@@ -7319,8 +7833,8 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 |---------|----------|--------|
 | §3.2 line 251 said trigger.config.ts uses `@trigger.dev/sdk/v4` (doesn't exist) | Critical | ✅ Fixed — changed to `@trigger.dev/sdk` root import per §9.9 Gotcha 1 + §12 Lesson 16 |
 | Appendix C line 5179 said "reverted to `/v3`" (stale — final fix was root import) | High | ✅ Fixed — updated to "final fix is root `@trigger.dev/sdk` import per §12 Lesson 16 step 4" |
-| §2.1 line 161 referenced `apps/studio/sanity.config.ts` as existing (Phase 4 deliverable) | High | ✅ Fixed — appended "(**Phase 4 deliverable — not yet scaffolded** as of 2026-07-07)" |
-| §14.1 line 3268 listed `apps/studio` without Phase 4 caveat | High | ✅ Fixed — appended "(**Phase 4 deliverable — not yet scaffolded**)" |
+| §2.1 line 161 referenced `apps/studio/sanity.config.ts` as existing (Phase 4 deliverable) | High | ✅ Fixed — appended Phase 4 caveat (later removed in v2.1.0 after Phase 4 completed) |
+| §14.1 line 3268 listed `apps/studio` without Phase 4 caveat | High | ✅ Fixed — appended Phase 4 caveat (later removed in v2.1.0 after Phase 4 completed) |
 | §2.1 line 149 said React `^19.2.3` (actual repo pin is `^19.2.7`) | Low | ✅ Fixed — changed to `^19.2.7` with CVE floor note preserved |
 | Footer line 5307 said v1.3.0 (stale) | Medium | ✅ Fixed — bumped to v1.4.1 |
 | Frontmatter line 10 said v1.4.0 (stale) | Medium | ✅ Fixed — bumped to v1.4.1 |
@@ -7440,4 +7954,4 @@ Alerts:
 
 ---
 
-*End of `stillwater_SKILL.md` v2.1.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 implementation lessons (Lessons 1-65) distilled from actual TDD cycles. ADR-011 added (source resolution via `transpilePackages`). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*
+*End of `stillwater_SKILL.md` v2.2.0. This document was produced by following the Six-Phase Distillation Process from the `to-distill-project-into-skill` meta-skill, distilling knowledge from 21 source skills (5 Next.js 16 stack + 4 frontend design + 4 TDD/code quality + 4 review/verification + 4 cross-referenced) and cross-referencing 5 Stillwater source documents (PAD.md, MASTER_EXECUTION_PLAN.md, scaffolding_files.md, static_landing_page_html_mockup.md, design.md). All version pins, tsconfig flags, and API claims were verified against current ecosystem state via web research (July 2026). Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 implementation lessons (Lessons 1-70) distilled from actual TDD cycles. ADR-011 added (source resolution via `transpilePackages`). ADR-010 accepted (Resend Native Templates for Trigger.dev workers). For maintenance instructions, see the to-distill-project-into-skill SKILL.md §6 (Skill Maintenance & Evolution).*

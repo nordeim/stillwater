@@ -5,11 +5,33 @@
  *   - getPlans returns active plans
  *   - getMySubscription returns the linked subscription (or null)
  *   - getMySubscription returns null when no memberId
- *   - subscribe/cancel/pause stubs throw PRECONDITION_FAILED
+ *   - subscribe creates a Stripe Checkout Session and returns the URL
+ *   - cancel calls cancelAtPeriodEnd on the Stripe subscription
+ *   - pause calls pauseSubscription on the Stripe subscription
+ *   - resume calls resumeSubscription on the Stripe subscription
  *   - UNAUTHORIZED when no session on protected procedures
+ *
+ * Phase 7: Stubs replaced with real Stripe integration.
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock @stillwater/payments so Stripe calls are intercepted
+const mockCreateCheckoutSession = vi.fn();
+const mockCancelAtPeriodEnd = vi.fn();
+const mockPauseSubscription = vi.fn();
+const mockResumeSubscription = vi.fn();
+
+vi.mock('@stillwater/payments', () => ({
+  createCheckoutSession: (...args: unknown[]) =>
+    mockCreateCheckoutSession(...args),
+  cancelAtPeriodEnd: (...args: unknown[]) => mockCancelAtPeriodEnd(...args),
+  pauseSubscription: (...args: unknown[]) =>
+    mockPauseSubscription(...args),
+  resumeSubscription: (...args: unknown[]) =>
+    mockResumeSubscription(...args),
+}));
+
 import { membershipsRouter } from './memberships';
 import type { TRPCContext } from '../trpc';
 
@@ -68,6 +90,13 @@ const subscriptionFixture = {
   pauseResumesAt: null,
   creditsRemaining: null,
   createdAt: new Date('2026-07-01'),
+};
+
+const memberFixture = {
+  id: 'member-1',
+  userId: 'test-user',
+  displayName: 'Test Member',
+  stripeCustomerId: 'cus_test_123',
 };
 
 describe('membershipsRouter.getPlans', () => {
@@ -133,47 +162,179 @@ describe('membershipsRouter.getMySubscription', () => {
   });
 });
 
-describe('membershipsRouter stubs (Phase 7)', () => {
-  it('subscribe throws PRECONDITION_FAILED', async () => {
-    const caller = membershipsRouter.createCaller(makeCtx());
-    await expect(
-      caller.subscribe({ planId: PLAN_ID }),
-    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
+describe('membershipsRouter.subscribe (Phase 7 — Stripe wired)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('creates a Checkout Session and returns the URL', async () => {
+    const planFindFirst = vi.fn().mockResolvedValue(planFixture);
+    const memberFindFirst = vi.fn().mockResolvedValue(memberFixture);
+    mockCreateCheckoutSession.mockResolvedValue({
+      id: 'cs_test_001',
+      url: 'https://checkout.stripe.com/c/cs_test_001',
+    });
+
+    const ctx = makeCtx({
+      query: {
+        membershipPlans: { findFirst: planFindFirst },
+        members: { findFirst: memberFindFirst },
+      } as never,
+    });
+    const caller = membershipsRouter.createCaller(ctx);
+
+    const result = await caller.subscribe({ planId: PLAN_ID });
+
+    expect(result).toEqual({
+      checkoutUrl: 'https://checkout.stripe.com/c/cs_test_001',
+    });
+    expect(mockCreateCheckoutSession).toHaveBeenCalledWith({
+      customerId: 'cus_test_123',
+      priceId: 'price_abc',
+      successUrl: expect.any(String),
+      cancelUrl: expect.any(String),
+    });
   });
 
-  it('cancel throws PRECONDITION_FAILED', async () => {
-    const caller = membershipsRouter.createCaller(makeCtx());
-    await expect(caller.cancel()).rejects.toMatchObject({
+  it('throws NOT_FOUND when plan does not exist', async () => {
+    const planFindFirst = vi.fn().mockResolvedValue(undefined);
+    const ctx = makeCtx({
+      query: {
+        membershipPlans: { findFirst: planFindFirst },
+      } as never,
+    });
+    const caller = membershipsRouter.createCaller(ctx);
+    await expect(caller.subscribe({ planId: PLAN_ID })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('throws PRECONDITION_FAILED when member has no stripeCustomerId', async () => {
+    const planFindFirst = vi.fn().mockResolvedValue(planFixture);
+    const memberFindFirst = vi.fn().mockResolvedValue({
+      ...memberFixture,
+      stripeCustomerId: null,
+    });
+    const ctx = makeCtx({
+      query: {
+        membershipPlans: { findFirst: planFindFirst },
+        members: { findFirst: memberFindFirst },
+      } as never,
+    });
+    const caller = membershipsRouter.createCaller(ctx);
+    await expect(caller.subscribe({ planId: PLAN_ID })).rejects.toMatchObject({
       code: 'PRECONDITION_FAILED',
     });
   });
 
-  it('pause throws PRECONDITION_FAILED', async () => {
-    const caller = membershipsRouter.createCaller(makeCtx());
-    await expect(
-      caller.pause({ resumeAt: new Date('2026-09-01') }),
-    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
-  });
-
-  it('pause (no input) throws PRECONDITION_FAILED', async () => {
-    const caller = membershipsRouter.createCaller(makeCtx());
-    await expect(caller.pause()).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
-    });
-  });
-
-  it('resume throws PRECONDITION_FAILED (Phase 6 stub)', async () => {
-    const caller = membershipsRouter.createCaller(makeCtx());
-    await expect(caller.resume()).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
-    });
-  });
-
-  it('subscribe throws UNAUTHORIZED without session', async () => {
+  it('throws UNAUTHORIZED without session', async () => {
     const ctx = makeCtx({}, { roles: null });
     const caller = membershipsRouter.createCaller(ctx);
     await expect(
       caller.subscribe({ planId: PLAN_ID }),
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+});
+
+describe('membershipsRouter.cancel (Phase 7 — Stripe wired)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls cancelAtPeriodEnd on the Stripe subscription', async () => {
+    const subFindFirst = vi
+      .fn()
+      .mockResolvedValue(subscriptionWithPlanFixture);
+    mockCancelAtPeriodEnd.mockResolvedValue({ id: 'sub_xyz' });
+
+    const ctx = makeCtx({
+      query: { memberSubscriptions: { findFirst: subFindFirst } } as never,
+    });
+    const caller = membershipsRouter.createCaller(ctx);
+
+    await caller.cancel();
+
+    expect(mockCancelAtPeriodEnd).toHaveBeenCalledWith('sub_xyz');
+  });
+
+  it('throws NOT_FOUND when no active subscription', async () => {
+    const subFindFirst = vi.fn().mockResolvedValue(undefined);
+    const ctx = makeCtx({
+      query: { memberSubscriptions: { findFirst: subFindFirst } } as never,
+    });
+    const caller = membershipsRouter.createCaller(ctx);
+    await expect(caller.cancel()).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+});
+
+describe('membershipsRouter.pause (Phase 7 — Stripe wired)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls pauseSubscription on the Stripe subscription', async () => {
+    const subFindFirst = vi
+      .fn()
+      .mockResolvedValue(subscriptionWithPlanFixture);
+    mockPauseSubscription.mockResolvedValue({ id: 'sub_xyz' });
+    const update = vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
+
+    const ctx = makeCtx({
+      query: { memberSubscriptions: { findFirst: subFindFirst } } as never,
+      update,
+    } as never);
+    const caller = membershipsRouter.createCaller(ctx);
+
+    await caller.pause();
+
+    expect(mockPauseSubscription).toHaveBeenCalledWith('sub_xyz');
+  });
+
+  it('throws NOT_FOUND when no active subscription', async () => {
+    const subFindFirst = vi.fn().mockResolvedValue(undefined);
+    const ctx = makeCtx({
+      query: { memberSubscriptions: { findFirst: subFindFirst } } as never,
+    });
+    const caller = membershipsRouter.createCaller(ctx);
+    await expect(
+      caller.pause({ resumeAt: new Date('2026-09-01') }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
+describe('membershipsRouter.resume (Phase 7 — Stripe wired)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls resumeSubscription on the Stripe subscription', async () => {
+    const subFindFirst = vi
+      .fn()
+      .mockResolvedValue({ ...subscriptionWithPlanFixture, status: 'paused' });
+    mockResumeSubscription.mockResolvedValue({ id: 'sub_xyz' });
+    const update = vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
+
+    const ctx = makeCtx({
+      query: { memberSubscriptions: { findFirst: subFindFirst } } as never,
+      update,
+    } as never);
+    const caller = membershipsRouter.createCaller(ctx);
+
+    await caller.resume();
+
+    expect(mockResumeSubscription).toHaveBeenCalledWith('sub_xyz');
+  });
+
+  it('throws NOT_FOUND when no subscription found', async () => {
+    const subFindFirst = vi.fn().mockResolvedValue(undefined);
+    const ctx = makeCtx({
+      query: { memberSubscriptions: { findFirst: subFindFirst } } as never,
+    });
+    const caller = membershipsRouter.createCaller(ctx);
+    await expect(caller.resume()).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
   });
 });

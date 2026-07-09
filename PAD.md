@@ -89,6 +89,7 @@ Now — implementing the full document:
 | 1.9.0   | 2026-07-08 | Claw Code / Phase 4 | Active | Phase 4 complete — Sanity CMS integration (client + GROQ queries + Zod schemas + 8 content types + Studio app at `apps/studio/`); webhook→ISR revalidation with HMAC-SHA256 at `/api/sanity/webhook/`; Cloudflare Images URL signer (`server-only`); 9 ISR marketing pages (`/`, `/schedule`, `/instructors` + `/[slug]`, `/pricing`, `/blog` + `/[slug]`, `/about`); MarketingNav + Footer with Editorial Calm design; 11 shadcn/ui components (anti-generic patched); `instructors.published` column added (migration `0001_equal_iron_lad.sql`) — `instructors.list` + `getBySlug` filter `published == true` (SKILL §7.5.1); GROQ queries in §14.3 updated with `published == true` filter; ADR-011 added (transpilePackages + source exports build fix); `turbo.json` optimized (removed `dist/**` outputs + `^build` deps from check-types/test); SPECIFICATIONS.md retired (was 7 PAD versions behind); 377 tests (108 db + 102 auth + 106 api + 61 web); `pnpm build` green (12/12 static pages) |
 | 1.9.1   | 2026-07-08 | Claw Code / Phase 5 | Active | Phase 5 complete — SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling, NO force-dynamic); `useSessionAvailability` hook (3 reconnection attempts, exponential backoff 1s→2s→4s); 6 booking UI components (SeatAvailability with role=img aria-label, BookingButton with 44x44px target, BookingConfirmation Radix Dialog, WaitlistButton, BookingFlow orchestrator, useBookingMutation hook); `(studio)/book/[sessionId]` page (Server Component + BookingFlow client); ScheduleGrid extracted from inline /schedule page with Book CTA; Toaster mounted in root layout; waitlist unique index `idx_waitlist_session_member` (migration `0002_lyrical_cargill.sql`); E2E specs (BOOK-001 to BOOK-004); integration test placeholder (BOOK-006 concurrent); 422 tests (109 db + 102 auth + 106 api + 105 web); `pnpm build` green (all routes including `/api/schedule/stream` + `/book/[sessionId]`) |
 | 1.10.0  | 2026-07-08 | Claw Code / Phase 6 | Active | Phase 6 complete — Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`); 7 dashboard components (MembershipStatusCard, CreditUsageWidget, UpcomingClassesWidget, ProfileSummaryCard, ProfileEditForm with react-hook-form+Zod, ManageMembershipPanel with disabled Phase 7 stubs, EnrollmentHistoryTable with CSV export); CSV export utility (`apps/web/src/lib/export/csv.ts`, RFC 4180 compliant, 6 tests); `memberships.getMySubscription` enhanced with `with: { plan: true }` join; `memberships.resume` stub added (Phase 7 dependency); `/dashboard` route unblocks 7 redirect callsites; 429 tests (109 db + 102 auth + 107 api + 111 web); `pnpm build` green (13/13 pages including /dashboard, /profile, /membership, /history) |
+| 1.11.0  | 2026-07-09 | Super Z / Phase 7 | Active | Phase 7 complete — Stripe payment integration fully wired. `@stillwater/payments` package built (7 source files, 43 tests): `client.ts` (Stripe SDK singleton, Dahlia API `2026-06-24.dahlia`, null fallback per SKILL §15.20), `types.ts` (7-event discriminated union + `StripeWebhookResult`), `subscriptions.ts` (5 lifecycle helpers: `createCheckoutSession`, `createCustomerPortalSession`, `pauseSubscription`, `resumeSubscription`, `cancelAtPeriodEnd`), `webhooks.ts` (⭐ idempotent handler with `pg_advisory_xact_lock` per ADR-004 + 7 event handlers + race condition handling via unique index on `stripe_event_id`), `invoices.ts` (cursor-based pagination + DTO transformation), `credit-packs.ts` (one-off `mode: 'payment'` checkout), `refunds.ts` (D12 reduced scope — thin wrapper, v1 uses Stripe Dashboard). Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT for signature verification, 400/500/200 status codes, `runtime: 'nodejs'`, `dynamic: 'force-dynamic'`). tRPC procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices` (all previously threw `PRECONDITION_FAILED`). `payments.refund` retained as D12 stub (v1 uses Stripe Dashboard). ADR-010 accepted (Resend Native Templates for Trigger.dev workers). 5 STRIPE acceptance tests passing (STRIPE-001 through STRIPE-005). `CheckoutButton` component + `lib/stripe/utils.ts` (formatStripeAmount + stripeEventToWebhookLog). `drizzle-orm` added as dependency to `@stillwater/payments`. 499 tests (109 db + 102 auth + 113 api + 43 payments + 132 web); `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green |
 
 ### How to Maintain This Document
 
@@ -1051,7 +1052,7 @@ import { db } from '../index';
 
 ## 8. API Architecture
 
-> **Implementation Status:** ✅ Phase 3 COMPLETE (2026-07-07). 10 tRPC routers (~30 procedures) implemented in `packages/api/src/routers/`. 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`. Booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004. Rate limiting on `bookings.book` (10/min via Upstash). Root router merging all 10 routers in `packages/api/src/root.ts`. Web tRPC integration: HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`). Phase 7 procedures (Stripe) stubbed with `PRECONDITION_FAILED`. Phase 4 added `published == true` filter to `instructors.list` + `getBySlug` (SKILL §7.5.1). Phase 5 confirmed `bookings.book` throws CONFLICT on full session (UI catches and shows WaitlistButton). Phase 6 added `memberships.resume` stub (throws PRECONDITION_FAILED until Phase 7) and enhanced `memberships.getMySubscription` with `with: { plan: true }` join to return plan name, interval, and credits for the member dashboard. Current test count: 429 (107 api + 102 auth + 109 db + 111 web).
+> **Implementation Status:** ✅ Phase 3 COMPLETE (2026-07-07) + ✅ Phase 7 COMPLETE (2026-07-09). 10 tRPC routers (~30 procedures) implemented in `packages/api/src/routers/`. 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`. Booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004. Rate limiting on `bookings.book` (10/min via Upstash). Root router merging all 10 routers in `packages/api/src/root.ts`. Web tRPC integration: HTTP handler (`/api/trpc/[trpc]/route.ts`), RSC server caller (`lib/trpc/server.ts`), React client (`lib/trpc/client.tsx`), query key factory (`lib/trpc/query-keys.ts`). Phase 4 added `published == true` filter to `instructors.list` + `getBySlug` (SKILL §7.5.1). Phase 5 confirmed `bookings.book` throws CONFLICT on full session (UI catches and shows WaitlistButton). Phase 6 added `memberships.getMySubscription` `with: { plan: true }` join. **Phase 7 unstubbed all Stripe procedures**: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices` now call `@stillwater/payments` helpers (previously threw `PRECONDITION_FAILED`). `payments.refund` retained as D12 stub (v1 uses Stripe Dashboard). Current test count: 499 (113 api + 102 auth + 109 db + 43 payments + 132 web).
 
 ### 8.1 tRPC Design Principles
 
@@ -1113,10 +1114,10 @@ export const ownerProcedure     = t.procedure.use(enforceIsAuthed).use(enforceIs
 | members | `getHistory` | protected | query | Attendance + booking history |
 | memberships | `getPlans` | public | query | Available membership plans |
 | memberships | `getMySubscription` | protected | query | Member's active subscription (Phase 6: enhanced with `with: { plan: true }` join) |
-| memberships | `subscribe` | protected | mutation | Start subscription via Stripe (Phase 7 stub) |
+| memberships | `subscribe` | protected | mutation | Start subscription via Stripe Checkout (Phase 7: creates Checkout Session, returns `checkoutUrl`) |
 | memberships | `cancel` | protected | mutation | Cancel subscription at period end |
 | memberships | `pause` | protected | mutation | Pause subscription |
-| memberships | `resume` | protected | mutation | Resume paused subscription (Phase 6 stub — throws PRECONDITION_FAILED until Phase 7) |
+| memberships | `resume` | protected | mutation | Resume paused subscription (Phase 7: calls `resumeSubscription` + updates DB) |
 | payments | `getPortalUrl` | protected | mutation | Stripe customer portal URL |
 | payments | `getInvoices` | protected | query | Invoice history |
 | admin | `getDashboard` | staff | query | KPI summary for admin home |
@@ -1716,6 +1717,8 @@ export const homePageQuery = groq`
 
 ## 15. Payment Architecture
 
+> **Implementation Status:** ✅ Phase 7 COMPLETE (2026-07-09). The `@stillwater/payments` package is fully built (7 source files, 43 tests). The Stripe webhook route at `/api/webhooks/stripe/route.ts` is live. All tRPC procedures (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`) are wired to real Stripe API calls. `payments.refund` remains a D12 stub (v1 uses Stripe Dashboard). ADR-010 accepted (Resend Native Templates for Phase 8 workers). 5 STRIPE acceptance tests passing (STRIPE-001 through STRIPE-005).
+
 ### 15.1 Stripe Entity Mapping
 
 ```
@@ -1830,7 +1833,7 @@ All emails share:
 
 **Bundle Bloat Risk:** React Email v6.6.0 is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (markdown parser), and the full `tailwindcss` compiler into runtime bundles via top-level imports. This threatens Trigger.dev worker CPU budgets (30s for `booking-confirmation`, 30s for `waitlist-promotion` — see §17.1) and Edge middleware bundle limits.
 
-**Rendering Decision (pending ADR-010):**
+**Rendering Decision (ADR-010 Accepted 2026-07-09 — Resend Native Templates for Trigger.dev workers; local JSX rendering for Next.js Server Components only):**
 
 | Approach | Pros | Cons | Recommendation |
 |---|---|---|---|
@@ -2299,7 +2302,7 @@ Source: `avant-garde-design-v4/references/04-accessibility-checklist.md` §Level
 | — | Reduced motion | `0.01ms` durations globally | `@media (prefers-reduced-motion: reduce)` block |
 | — | Time limits | None without warning + extension | No auto-logout, no countdown timers |
 
-**ADA Title II compliance:** As of April 24, 2026, ADA Title II requires WCAG 2.1 AA for state/local government websites. Stillwater targets AAA (stricter), so AA is implicit. Non-compliance risk: legal action, financial penalties, reputation damage.
+**ADA Title II compliance:** As of April 26, 2027, ADA Title II requires WCAG 2.1 AA for state/local government entity websites (DOJ Interim Final Rule published April 20, 2026 extended the original April 24, 2026 deadline by one year). Stillwater targets AAA (stricter), so AA is implicit. Non-compliance risk: legal action, financial penalties, reputation damage.
 
 **Keyboard Navigation Detail:**
 - ✓ All interactive elements reachable via Tab
@@ -3033,9 +3036,11 @@ Unknown error                  "Something unexpected happened. We've been
 
 ---
 
-### ADR-010: Resend Native Templates for Trigger.dev Workers (Proposed)
+### ADR-010: Resend Native Templates for Trigger.dev Workers (Accepted)
 
-**Status:** Proposed (2026-07-06) — pending formal acceptance before Phase 8 implementation.
+**Date:** 2026-07-06 (Proposed) → 2026-07-09 (Accepted)
+**Status:** Accepted
+**Decider:** Super Z (per user confirmation 2026-07-09)
 
 **Context:** React Email v6.0.0 (released April 16, 2026) unified all component packages into a single `react-email` package. While this simplifies imports, the v6 bundle is 1.8MB (514KB gzipped) and pulls `prismjs`, `marked` (markdown parser), and the full `tailwindcss` compiler into runtime bundles via top-level imports. See `react_email_suggestion.md` for full analysis.
 
@@ -3043,9 +3048,17 @@ Trigger.dev workers (ADR-007, §17.1) have strict CPU budgets: 30s for `booking-
 
 Next.js `proxy.ts` (ADR-009) is also at risk — if any server component or module in the proxy's import graph touches `react-email`, the Vercel deployment may fail due to unsupported Node.js APIs or bundle size limits (this applies regardless of whether proxy.ts runs on Edge or Node.js runtime).
 
-**Decision (Proposed):** Adopt **Resend Native Templates** (Alternative A from `react_email_suggestion.md`) for all Trigger.dev worker email sending. Workers send a JSON payload (`templateId` + `variables`) to Resend's API; Resend's infrastructure handles HTML rendering and delivery. This achieves zero bundle bloat in workers and 0ms rendering CPU time.
+**Decision:** Adopt **Resend Native Templates** (Alternative A from `react_email_suggestion.md`) for all Trigger.dev worker email sending. Workers send a JSON payload (`templateId` + `variables`) to Resend's API; Resend's infrastructure handles HTML rendering and delivery. This achieves zero bundle bloat in workers and 0ms rendering CPU time.
 
 For Next.js Server Component email sending (rare — e.g., synchronous welcome email on signup), local JSX rendering via `import { render } from 'react-email'` (v6 unified import) is acceptable since Server Components run on Node.js with no strict CPU budget.
+
+**Acceptance Rationale (2026-07-09):**
+- Bundle size verified via bundlephobia.com: React Email v6.6.0 is 1.8MB minified / 514KB gzipped — confirmed.
+- Trigger.dev v4 `maxDuration` measures CPU time (not wall-clock) — confirmed via trigger.dev/docs; imports count against the budget.
+- Resend `^6.17.1` (NPM latest as of 2026-07-09) supports the `templateId` + `variables` API — confirmed.
+- The 30s CPU budgets on `booking-confirmation` and `waitlist-promotion` workers are too tight to safely absorb a 1.8MB bundle initialization on every cold start.
+- Acceptance unblocks Phase 8 implementation: `services/workers/src/*.ts` will use `resend.emails.send({ to, subject, templateId, variables })` instead of `render(template(props))`.
+- The 13 email templates (BookingConfirmation, BookingCancellation, ClassCancellation, ClassReminder24h, ClassReminder1h, WaitlistOffer, WaitlistExpired, WelcomeMember, MembershipRenewal, MembershipCancellation, MembershipPaused, PaymentFailed, WeeklyDigest) will be deployed to Resend as native templates via a CI/CD script (to be authored in Phase 8). Type safety is preserved by exporting `templateId` string constants from `packages/email/src/index.ts`.
 
 **Rationale:**
 - Protects Trigger.dev CPU budgets from 1.8MB React Email v6 bundle bloat.
@@ -3063,7 +3076,7 @@ For Next.js Server Component email sending (rare — e.g., synchronous welcome e
 - **MJML** (`mjml-react`) — 421KB gzipped (smaller) but loses native React composition; unnecessary migration cost.
 - **Isolated rendering microservice** — adds infrastructure complexity, violates §2.3 "no infra management".
 
-**Source:** `react_email_suggestion.md` §5 Alternative A; MEP D43; PAD §16.3 Email Rendering Strategy.
+**Source:** `react_email_suggestion.md` §5 Alternative A; MEP D43; PAD §16.3 Email Rendering Strategy. Web-verified 2026-07-09: bundlephobia.com/package/react-email, npmjs.com/package/resend, trigger.dev/docs/llms-full.txt.
 
 ---
 
@@ -3395,7 +3408,7 @@ The **`PAD.md`** (Project Architecture Document) is now complete. Here is what w
 |---------|---------|
 | **31 sections** | Full lifecycle: concept → deployment → maintenance |
 | **8 Mermaid diagrams** | System context, container view, ERD, sequence diagrams, state machines, flow charts |
-| **10 Architecture Decision Records** | Every major architectural choice documented with rationale and rejected alternatives (ADR-001 through ADR-009 accepted; ADR-010 proposed for Resend Native Templates) |
+| **11 Architecture Decision Records** | Every major architectural choice documented with rationale and rejected alternatives (ADR-001 through ADR-009 accepted; ADR-010 accepted 2026-07-09 for Resend Native Templates; ADR-011 accepted for transpilePackages source resolution) |
 | **Full database schema** | Entity definitions, relationships, indexes, enum types |
 | **Complete API catalog** | All tRPC routers, procedures, access levels |
 | **Design system specification** | Typography, color palette, spacing, motion — fully anti-generic |

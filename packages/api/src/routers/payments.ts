@@ -1,29 +1,32 @@
 /**
- * F3-04 — paymentsRouter: Stripe portal / invoices / refunds (Phase 7 stubs)
+ * F3-04 — paymentsRouter: Stripe portal / invoices / refunds
  *
- * All procedures are STUBS until Phase 7 wires the Stripe SDK.
+ * Phase 7: getPortalUrl + getInvoices are wired to Stripe.
+ * refund remains a stub (D12 — v1 uses Stripe Dashboard only).
+ *
  *   getPortalUrl  — protected mutation — returns a Billing Portal URL
  *   getInvoices   — protected query    — returns a member's invoice list
- *   refund        — staff mutation     — initiates a refund for a payment
- *
- * Each stub throws PRECONDITION_FAILED so the API surface is stable
- * while the implementation is pending. The web client can feature-detect
- * via the error code.
+ *   refund        — staff mutation     — D12 stub (v1 uses Stripe Dashboard)
  *
  * Source: MEP Phase 3 F3-04 (router scaffold) + Phase 7 (Stripe wiring),
- *         PAD §8.4 + §8.5.
+ *         PAD §8.4 + §8.5 + §15.1, D12 (refund scope reduction).
  */
 
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 import { router, protectedProcedure, staffProcedure } from '../trpc';
+import { members } from '@stillwater/db';
+import { createCustomerPortalSession, listInvoices } from '@stillwater/payments';
 
-const STUB_MESSAGE = 'Stripe integration pending Phase 7';
+const REFUND_STUB_MESSAGE =
+  'Refund UI deferred to v2 (D12) — use Stripe Dashboard for refunds';
 
 export const paymentsRouter = router({
   /**
-   * STUB — return a Stripe Billing Portal URL for the caller.
-   * Phase 7 will call stripe.billingPortal.sessions.create().
+   * Return a Stripe Billing Portal URL for the caller.
+   * The member can manage their subscription (update payment method,
+   * view invoices, cancel) in the Stripe-hosted portal.
    */
   getPortalUrl: protectedProcedure
     .input(
@@ -33,39 +36,121 @@ export const paymentsRouter = router({
         })
         .optional(),
     )
-    .mutation(async () => {
-      throw new TRPCError({ code: 'PRECONDITION_FAILED', message: STUB_MESSAGE });
+    .mutation(async ({ ctx, input }) => {
+      const memberId = ctx.session.user.memberId;
+      if (!memberId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'No member profile linked to this account',
+        });
+      }
+
+      const member = await ctx.db.query.members.findFirst({
+        where: eq(members.id, memberId),
+      });
+      if (!member) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Member not found' });
+      }
+      if (!member.stripeCustomerId) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'No Stripe customer ID — member has no billing history',
+        });
+      }
+
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+      const returnUrl = input?.returnUrl ?? `${appUrl}/dashboard`;
+      const portalUrl = await createCustomerPortalSession({
+        customerId: member.stripeCustomerId,
+        returnUrl,
+      });
+
+      if (!portalUrl) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create Stripe Billing Portal session',
+        });
+      }
+
+      return { portalUrl };
     }),
 
   /**
-   * STUB — return a list of the caller's invoices.
-   * Phase 7 will call stripe.invoices.list({ customer: ... }).
+   * Return a list of the caller's invoices from Stripe.
+   * Uses cursor-based pagination (pass nextCursor as startingAfter
+   * for the next page).
    */
   getInvoices: protectedProcedure
     .input(
       z
         .object({
           limit: z.number().int().min(1).max(100).optional(),
+          startingAfter: z.string().optional(),
         })
         .optional(),
     )
-    .query(async () => {
-      throw new TRPCError({ code: 'PRECONDITION_FAILED', message: STUB_MESSAGE });
+    .query(async ({ ctx, input }) => {
+      const memberId = ctx.session.user.memberId;
+      if (!memberId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'No member profile linked to this account',
+        });
+      }
+
+      const member = await ctx.db.query.members.findFirst({
+        where: eq(members.id, memberId),
+      });
+      if (!member) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Member not found' });
+      }
+      if (!member.stripeCustomerId) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'No Stripe customer ID — member has no billing history',
+        });
+      }
+
+      const result = await listInvoices({
+        customerId: member.stripeCustomerId,
+        ...(input?.limit !== undefined ? { limit: input.limit } : {}),
+        ...(input?.startingAfter !== undefined
+          ? { startingAfter: input.startingAfter }
+          : {}),
+      });
+
+      if (!result) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to list invoices from Stripe',
+        });
+      }
+
+      return result;
     }),
 
   /**
-   * STUB — initiate a refund for a payment. Staff only.
-   * Phase 7 will call stripe.refunds.create({ payment_intent: ... }).
+   * D12 STUB — initiate a refund for a payment. Staff only.
+   *
+   * v1 scope: refunds are handled via Stripe Dashboard only.
+   * In-app refund UI is deferred to v2. The createRefund helper exists
+   * in @stillwater/payments (F7-07) but is not wired here until v2.
    */
   refund: staffProcedure
     .input(
       z.object({
         paymentIntentId: z.string().min(1).max(200),
         amount: z.number().int().min(1).optional(),
-        reason: z.enum(['duplicate', 'fraudulent', 'requested_by_customer']).optional(),
+        reason: z
+          .enum(['duplicate', 'fraudulent', 'requested_by_customer'])
+          .optional(),
       }),
     )
     .mutation(async () => {
-      throw new TRPCError({ code: 'PRECONDITION_FAILED', message: STUB_MESSAGE });
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: REFUND_STUB_MESSAGE,
+      });
     }),
 });
