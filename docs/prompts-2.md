@@ -35,6 +35,12 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+please meticulously plan to review @Project_Brief.md and update it accordingly to accurately reflect the current codebase state and project status
+
+please meticulously review and validate @AGENTS.md , @CLAUDE.md and @MASTER_EXECUTION_PLAN.md against the codebase to check for alignment and to confirm the current project status 
+
+---
+
 Awesome meticulous job so far. Please keep up the good work. Now, please meticulously review the updated `PAD.md`, `stillwater_SKILL.md` and `MASTER_EXECUTION_PLAN.md` again to establish the ground truth, then meticulously plan to create a comprehensive sub-plan for Phase 1 execution. next, review and validate the Phase 1 sub-plan against the codebase to check for alignment before executing it meticulously. use TDD approach to make code changes.
 
 ---
