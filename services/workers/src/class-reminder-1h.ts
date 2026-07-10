@@ -9,6 +9,7 @@
  */
 
 import { task } from '@trigger.dev/sdk';
+
 import { db } from '@stillwater/db';
 import { sendClassReminder1h } from '@stillwater/email';
 
@@ -36,7 +37,6 @@ export const classReminder1h = task({
   },
   maxDuration: 30,
   run: async (payload: { sessionId: string; memberId: string }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const enrollment = (await (db.query.enrollments as any).findFirst({
       where: (e: any, { eq, and }: any) =>
         and(eq(e.sessionId, payload.sessionId), eq(e.memberId, payload.memberId)),
@@ -70,6 +70,6 @@ function formatTimeFromNow(startsAt: Date): string {
   const diffMs = startsAt.getTime() - Date.now();
   const diffMin = Math.round(diffMs / 60000);
   if (diffMin <= 1) return 'in 1 minute';
-  if (diffMin < 60) return `in ${diffMin} minutes`;
+  if (diffMin < 60) return `in ${String(diffMin)} minutes`;
   return 'in 1 hour';
 }

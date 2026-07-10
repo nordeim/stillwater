@@ -24,7 +24,7 @@ export const membershipCreditGrant = task({
     randomize: true,
   },
   maxDuration: 30,
-  run: async (payload: { memberId: string; subscriptionId: string }) => {
+  run: (payload: { memberId: string; subscriptionId: string }) => {
     // Phase 7 webhook handler already resets credits synchronously.
     // This job exists for future email notification capability (v2).
     // For v1: no-op — just return success.

@@ -282,9 +282,10 @@ export const adminRouter = router({
       const start = input.start ?? new Date(end.getFullYear() - 1, end.getMonth(), 1);
 
       // MRR: sum of successful payment amounts in the period
+      // Amount is stored in payload jsonb (Stripe event payload) — extract via SQL
       const mrrRows = await ctx.db
         .select({
-          totalCents: sql<number>`coalesce(sum(${paymentEvents.amountCents}), 0)::int`,
+          totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_received')::bigint), 0)::int`,
           count: sql<number>`count(*)::int`,
         })
         .from(paymentEvents)

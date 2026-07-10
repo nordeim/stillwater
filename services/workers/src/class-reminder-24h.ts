@@ -9,6 +9,7 @@
  */
 
 import { task } from '@trigger.dev/sdk';
+
 import { db } from '@stillwater/db';
 import { sendClassReminder24h } from '@stillwater/email';
 
@@ -37,7 +38,6 @@ export const classReminder24h = task({
   },
   maxDuration: 30,
   run: async (payload: { sessionId: string; memberId: string }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const enrollment = (await (db.query.enrollments as any).findFirst({
       where: (e: any, { eq, and }: any) =>
         and(eq(e.sessionId, payload.sessionId), eq(e.memberId, payload.memberId)),

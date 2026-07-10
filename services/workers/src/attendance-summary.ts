@@ -27,7 +27,7 @@ export const attendanceSummary = task({
     randomize: true,
   },
   maxDuration: 60,
-  run: async () => {
+  run: () => {
     // v1: simplified — returns success. Full no-show marking in v2.
     // The cron schedule (Daily 23:00 PT) is configured in Trigger.dev dashboard.
     return { processed: true, timestamp: new Date().toISOString() };

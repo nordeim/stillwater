@@ -14,6 +14,7 @@
  */
 
 import { task } from '@trigger.dev/sdk';
+
 import { db } from '@stillwater/db';
 import { sendWeeklyDigest } from '@stillwater/email';
 
@@ -46,7 +47,6 @@ export const weeklyDigest = task({
     // 'never' without defineRelations(). Cast to expected shape.
     // Per workers tsconfig: NodeNext + verbatimModuleSyntax means we can't
     // import schema tables directly — use callback syntax for `where`.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const member = (await (db.query.members as any).findFirst({
       where: (m: { id: string }, { eq }: any) => eq(m.id, payload.memberId),
       with: { user: true },
@@ -57,7 +57,6 @@ export const weeklyDigest = task({
     }
 
     // Fetch next 3 confirmed enrollments with upcoming sessions (startsAt > now)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const enrollments = (await (db.query.enrollments as any).findMany({
       where: (e: any, { eq, and }: any) =>
         and(eq(e.memberId, payload.memberId), eq(e.status, 'confirmed')),

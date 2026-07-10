@@ -15,6 +15,7 @@
  */
 
 import { task } from '@trigger.dev/sdk';
+
 import { db } from '@stillwater/db';
 import { sendWaitlistOffer } from '@stillwater/email';
 
@@ -50,7 +51,6 @@ export const waitlistPromotion = task({
     // 'never' without defineRelations(). Cast to expected shape.
     // Per workers tsconfig: NodeNext + verbatimModuleSyntax means we can't
     // import schema tables directly — use callback syntax for `where`.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const entry = (await (db.query.waitlistEntries as any).findFirst({
       where: (e: any, { eq }: any) => eq(e.id, payload.waitlistEntryId),
       with: {

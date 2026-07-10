@@ -14,6 +14,7 @@
  */
 
 import { task } from '@trigger.dev/sdk';
+
 import { db } from '@stillwater/db';
 import { sendPaymentFailed } from '@stillwater/email';
 
@@ -37,7 +38,6 @@ export const paymentFailedNotify = task({
     // 'never' without defineRelations(). Cast to expected shape.
     // Per workers tsconfig: NodeNext + verbatimModuleSyntax means we can't
     // import schema tables directly — use callback syntax for `where`.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const member = (await (db.query.members as any).findFirst({
       where: (m: { id: string }, { eq }: any) => eq(m.id, payload.memberId),
       with: { user: true },

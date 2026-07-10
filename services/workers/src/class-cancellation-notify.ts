@@ -13,6 +13,7 @@
  */
 
 import { task } from '@trigger.dev/sdk';
+
 import { db } from '@stillwater/db';
 import { sendClassCancellation } from '@stillwater/email';
 
@@ -43,7 +44,6 @@ export const classCancellationNotify = task({
     // 'never' without defineRelations(). Cast to expected shape.
     // Per workers tsconfig: NodeNext + verbatimModuleSyntax means we can't
     // import schema tables directly — use callback syntax for `where`.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const enrollments = (await (db.query.enrollments as any).findMany({
       where: (e: any, { eq, and }: any) =>
         and(eq(e.sessionId, payload.sessionId), eq(e.status, 'confirmed')),
