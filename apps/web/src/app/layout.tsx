@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 
 import './globals.css';
 import { TRPCProvider } from '@/lib/trpc/client';
+import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 
 export const metadata: Metadata = {
   title: {
@@ -31,7 +32,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <TRPCProvider>{children}</TRPCProvider>
+        <TRPCProvider>
+          <PostHogProvider>{children}</PostHogProvider>
+        </TRPCProvider>
         <Toaster position="bottom-right" richColors />
       </body>
     </html>

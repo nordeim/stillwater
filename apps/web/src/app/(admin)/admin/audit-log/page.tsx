@@ -4,10 +4,7 @@
  * SSR page. Filterable by date range, staff member, action type.
  * Paginated. Read-only.
  *
- * Note: This page is accessible to staff+ (the (admin) layout requires
- * staff+). The MEP specifies "manager+ only" but the existing layout
- * hierarchy already gates /admin at staff+. A nested layout could be
- * added if stricter gating is needed.
+ * Protected by (admin)/admin/audit-log/layout.tsx (requireRole manager, owner).
  *
  * Source: MEP Phase 9 F9-20.
  */

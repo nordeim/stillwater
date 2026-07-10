@@ -1,0 +1,16 @@
+{
+  "routes": {
+    "/": { "budget": 80, "unit": "kb", "description": "Home — ISR, minimal client JS" },
+    "/schedule": { "budget": 90, "unit": "kb", "description": "Schedule — filter interactivity" },
+    "/book/[sessionId]": { "budget": 200, "unit": "kb", "description": "Booking — Stripe.js + booking flow" },
+    "/dashboard": { "budget": 150, "unit": "kb", "description": "Member dashboard — app shell" },
+    "/admin": { "budget": 400, "unit": "kb", "description": "Admin — TanStack Table, charts" },
+    "/admin/revenue": { "budget": 400, "unit": "kb", "description": "Revenue — Recharts" },
+    "/admin/schedule": { "budget": 400, "unit": "kb", "description": "Schedule — @dnd-kit/core" }
+  },
+  "global": {
+    "warning": 0.9,
+    "error": 1.0,
+    "description": "Warn at 90% of budget, error at 100%"
+  }
+}

@@ -10,7 +10,7 @@
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%209%20complete-success)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%2010%20complete-success)](#project-status)
 
 > **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
@@ -576,10 +576,10 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 7     | Stripe integration (subscriptions + credit packs)  | ✅ Complete   | 4         |
 | 8     | Background jobs + email (11 tasks + 13 templates)  | ✅ Complete   | 3         |
 | 9     | Admin surface (RBAC-gated)                         | ✅ Complete   | 5         |
-| 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
+| 10    | Observability + performance hardening              | ✅ Complete   | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~73% complete** | **~48 days** |
+| **Total** |                                                | **~82% complete** | **~51 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 

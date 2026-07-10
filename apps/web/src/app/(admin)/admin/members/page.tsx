@@ -45,19 +45,27 @@ export default async function AdminMembersPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <p
-          className="text-xs uppercase tracking-[0.2em] text-stone-500"
-          style={{ fontFamily: 'var(--font-mono)' }}
+      <header className="flex items-center justify-between">
+        <div>
+          <p
+            className="text-xs uppercase tracking-[0.2em] text-stone-500"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            Member Directory
+          </p>
+          <h1
+            className="mt-1 font-display text-3xl font-light text-stone-900"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            Members
+          </h1>
+        </div>
+        <a
+          href="/api/admin/members/export"
+          className="border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:border-clay-400 hover:bg-sand-warm hover:text-stone-900"
         >
-          Member Directory
-        </p>
-        <h1
-          className="mt-1 font-display text-3xl font-light text-stone-900"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
-          Members
-        </h1>
+          Export CSV
+        </a>
       </header>
 
       {typedMembers.length === 0 ? (

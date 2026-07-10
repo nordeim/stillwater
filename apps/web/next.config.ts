@@ -1,4 +1,11 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from "@next/bundle-analyzer";
+
+// ── Bundle analyzer (enabled via ANALYZE=true) ────────────────────
+// F10-09: Wraps nextConfig when ANALYZE=true to visualize bundle composition
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 const nextConfig: NextConfig = {
   // ── Turbopack (stable in Next.js 16) ───────────────────────────
@@ -159,11 +166,7 @@ const nextConfig: NextConfig = {
   },
 
   // ── Bundle Analyser (run with ANALYZE=true pnpm build) ─────────
-  ...(process.env.ANALYZE === "true"
-    ? {
-        // Dynamically imported to avoid adding to prod bundle
-      }
-    : {}),
+  // F10-09: Handled by withBundleAnalyzer wrapper above
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

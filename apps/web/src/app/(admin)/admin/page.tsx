@@ -21,13 +21,14 @@ export const dynamic = 'force-dynamic';
 export default async function AdminDashboardPage() {
   const caller = await apiCaller();
 
-  // Fetch dashboard KPIs + this week's schedule in parallel
+  // Fetch dashboard KPIs + this week's schedule + recent signups in parallel
   const weekStart = new Date();
   weekStart.setHours(0, 0, 0, 0); // midnight today
 
-  const [dashboard, weekSchedule] = await Promise.all([
+  const [dashboard, weekSchedule, recentSignups] = await Promise.all([
     caller.admin.getDashboard(),
     caller.schedule.getWeek({ weekStart }),
+    caller.admin.getRecentSignups({ limit: 5 }),
   ]);
 
   // Filter to today's sessions only
@@ -133,6 +134,51 @@ export default async function AdminDashboardPage() {
                 </li>
               );
             })}
+          </ul>
+        )}
+      </section>
+
+      {/* Recent signups */}
+      <section aria-label="Recent signups">
+        <h2
+          className="mb-6 font-display text-2xl font-light text-stone-900"
+          style={{ fontFamily: 'var(--font-display)' }}
+        >
+          Recent Signups
+        </h2>
+        {(recentSignups as unknown[]).length === 0 ? (
+          <div className="border border-stone-200 bg-sand-50 p-8 text-center">
+            <p className="text-sm text-stone-500">
+              No recent member signups.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-stone-200 border border-stone-200 bg-sand-50">
+            {(recentSignups as Array<{
+              id: string;
+              displayName: string;
+              joinedAt: Date;
+              user: { email: string };
+            }>).map((member) => (
+              <li key={member.id} className="flex items-center justify-between px-6 py-4">
+                <div>
+                  <p className="text-sm font-medium text-stone-900">
+                    {member.displayName}
+                  </p>
+                  <p className="text-xs text-stone-500">{member.user.email}</p>
+                </div>
+                <span
+                  className="text-xs text-stone-500"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {new Date(member.joinedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              </li>
+            ))}
           </ul>
         )}
       </section>

@@ -71,6 +71,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.0",
     "@playwright/test": "^1.61.1",
     "@sanity/vision": "^6.3.0",
     "@stillwater/eslint-config": "workspace:*",

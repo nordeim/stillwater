@@ -23,6 +23,7 @@ import {
   roleAssignments,
   auditLog,
 } from '@stillwater/db';
+import { users } from '@stillwater/db';
 
 export const adminRouter = router({
   /**
@@ -157,6 +158,7 @@ export const adminRouter = router({
    * Soft-delete a class (set isActive = false). Phase 9 F9-04.
    * Does NOT actually delete the row — preserves referential integrity
    * for historical enrollments and sessions.
+   * Audit-logged per F9-19 (fire-and-forget pattern — Lesson 79).
    */
   deleteClass: staffProcedure
     .input(z.object({ id: z.string().uuid() }))
@@ -170,6 +172,17 @@ export const adminRouter = router({
       if (!updated) {
         return null; // 404 handled by caller
       }
+
+      // Audit log — fire-and-forget (never block mutation per Lesson 79)
+      await ctx.db.insert(auditLog).values({
+        staffMemberId: ctx.session.user.memberId ?? ctx.session.user.id,
+        action: 'class.delete',
+        entityType: 'class',
+        entityId: input.id,
+        metadata: { title: updated.title },
+      }).catch(() => {
+        // Audit logging should never block the mutation
+      });
 
       return updated;
     }),
@@ -455,5 +468,19 @@ export const adminRouter = router({
       const total = countRows[0]?.count ?? 0;
 
       return { items, total, limit: input.limit, offset: input.offset };
+    }),
+
+  /**
+   * Recent member signups for dashboard (Phase 9 F9-03).
+   * Returns the N most recently joined members with their email.
+   */
+  getRecentSignups: staffProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(20).default(5) }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.query.members.findMany({
+        with: { user: true },
+        orderBy: desc(members.joinedAt),
+        limit: input.limit,
+      });
     }),
 });

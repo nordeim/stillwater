@@ -268,4 +268,29 @@ describe('adminRouter.deleteClass (Phase 9 F9-04)', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
     expect(update).not.toHaveBeenCalled();
   });
+
+  it('writes audit log entry after soft-delete (F9-19 requirement)', async () => {
+    const update = vi.fn();
+    const set = vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'cls-1', isActive: false }]) }) });
+    update.mockReturnValue({ set });
+    const insert = vi.fn().mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        catch: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
+
+    const ctx = makeCtx(
+      { update, insert } as never,
+      ['staff'],
+    );
+    const caller = adminRouter.createCaller(ctx);
+
+    await caller.admin.deleteClass({ id: '11111111-1111-4111-8111-111111111111' });
+
+    // Audit log insert should be called
+    expect(insert).toHaveBeenCalled();
+    const insertCall = insert.mock.calls[0];
+    // The first argument is the table (auditLog), verify values were passed
+    expect(insertCall).toBeDefined();
+  });
 });
