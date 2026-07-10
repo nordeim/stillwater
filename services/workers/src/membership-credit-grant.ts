@@ -28,10 +28,12 @@ export const membershipCreditGrant = task({
     // Phase 7 webhook handler already resets credits synchronously.
     // This job exists for future email notification capability (v2).
     // For v1: no-op — just return success.
-    return {
+    // Trigger.dev requires run() to return Promise<unknown>; return a Promise
+    // without `async` (no await) to satisfy @typescript-eslint/require-await.
+    return Promise.resolve({
       granted: true,
       memberId: payload.memberId,
       note: 'Credits already granted synchronously by webhook handler',
-    };
+    });
   },
 });

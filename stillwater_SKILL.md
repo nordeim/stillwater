@@ -4246,18 +4246,22 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
 **Context:** The `pnpm lint` command failed with `Parsing error: *.test.ts was not found by the project service` for all 11 worker test files + `vitest.config.ts`. Workers `tsconfig.json` excludes `src/**/*.test.ts` (correct per Lesson 28 — test files are run by vitest, not tsc), but ESLint's `projectService` option tries to find each file in the tsconfig project.
 
 **What to do differently:**
-- When a tsconfig excludes test files but ESLint needs to lint them, add an ESLint override that disables `projectService` for those files:
+- When a tsconfig excludes test files but ESLint needs to lint them **with type information**, set `projectService: { allowDefaultProject: [...] }` for those files. This gives them a default TS program (synthetic project) so the shared config's typed rules (`await-thenable`, `no-floating-promises`, `no-misused-promises`, `require-await`) still work:
 ```javascript
 // services/workers/eslint.config.mjs
 {
   files: ['src/**/*.test.ts', 'vitest.config.ts'],
   languageOptions: {
     parserOptions: {
-      projectService: false,
+      projectService: {
+        allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'],
+      },
+      tsconfigRootDir: import.meta.dirname,
     },
   },
 },
 ```
+- **Do NOT use `projectService: false`.** That disables type info for the matched files, and the shared config's typed rules (`await-thenable`, etc.) then crash with *"You have used a rule which requires type information"* — the entire lint run aborts. `allowDefaultProject` is the correct fix: test files stay excluded from the real `tsconfig.json` (so `tsc` is unaffected) but get a default program for ESLint.
 - This is specific to the workers package. Other packages (db, api, web) don't have this issue because their tsconfig includes test files (they use `vitest.config.ts` for test config, not tsconfig exclusion).
 
 **Fix references:** `services/workers/eslint.config.mjs`, `services/workers/tsconfig.json`. See `CLAUDE.md` Gotcha 82, `AGENTS.md` Gotcha 75.
@@ -4292,7 +4296,7 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
 2. `@typescript-eslint/restrict-template-expressions` — `class-reminder-1h.ts` used a `number` variable in a template literal: `` `in ${diffMin} minutes` ``.
 
 **What to do differently:**
-- Don't add `async` to a function that doesn't use `await`. The `async` keyword is only needed when the function body contains `await` expressions. For no-op stubs, use synchronous `run: () =>` instead of `run: async () =>`.
+- Don't add `async` to a function that doesn't use `await`. The `async` keyword is only needed when the function body contains `await` expressions. **But** Trigger.dev's `task()` overloads require `run()` to return `Promise<unknown>` — a synchronous `run: () => { return {...} }` fails type-checking (`TS2769: No overload matches this call`). For no-op stubs, return a Promise **without** `async`: `run: () => Promise.resolve({...})` (satisfies the type AND avoids `require-await`).
 - Always wrap `number` types in `String()` when using them in template literals. ESLint's `restrict-template-expressions` rule forbids `number` because `Number.prototype.toString()` can produce unexpected results for `NaN` (`"NaN"`) and `Infinity` (`"Infinity"`):
 ```typescript
 // WRONG:
@@ -7145,14 +7149,18 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
   files: ['src/**/*.test.ts', 'vitest.config.ts'],
   languageOptions: {
     parserOptions: {
-      projectService: false,
+      projectService: {
+        allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'],
+      },
+      tsconfigRootDir: import.meta.dirname,
     },
   },
 },
 ```
 
-- tsconfig excludes test files (correct for tsc) but ESLint projectService can't find them
-- Disable projectService per-file-type — don't add test files to tsconfig (would break tsc)
+- tsconfig excludes test files (correct for tsc) but ESLint's typed rules still need type info for them
+- Use `projectService: { allowDefaultProject: [...] }` — gives test files a default TS program without adding them to `tsconfig.json` (which would break `tsc`)
+- **Do NOT use `projectService: false`** — it strips type info and crashes typed rules (`await-thenable`, etc.), aborting the lint run
 
 #### 15.24.3 Scoped ESLint Override for Documented `any` Casts
 
@@ -7177,11 +7185,14 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
 #### 15.24.4 Remove Unnecessary `async` + Wrap Numbers in `String()`
 
 ```typescript
-// WRONG — async without await:
+// WRONG — async without await (require-await error):
 run: async () => { return { success: true }; },
 
-// CORRECT — synchronous (no await needed):
+// WRONG — synchronous return (TS2769: task() needs Promise<unknown>):
 run: () => { return { success: true }; },
+
+// CORRECT — Promise return without async (type-safe + no require-await):
+run: () => Promise.resolve({ success: true }),
 
 // WRONG — number in template literal:
 `in ${diffMin} minutes`
@@ -7191,11 +7202,12 @@ run: () => { return { success: true }; },
 ```
 
 - `async` is only needed when the function body contains `await`
+- Trigger.dev `task()` requires `run()` to return a `Promise` — for no-op stubs use `Promise.resolve(...)`, not a synchronous object return
 - `restrict-template-expressions` forbids `number` in template literals (NaN/Infinity risk)
 
 **Key takeaways:**
 - Always verify column names against the actual Drizzle schema before writing SQL
-- ESLint `projectService: false` is the correct fix for test files excluded from tsconfig
+- ESLint `projectService: { allowDefaultProject: [...] }` is the correct fix for test files excluded from tsconfig — `projectService: false` crashes typed rules
 - Scoped ESLint overrides are cleaner than per-line disables when `any` propagates across multiple lines
 - Don't add `async` to functions that don't use `await`
 - Always wrap `number` in `String()` for template literals
@@ -7943,7 +7955,7 @@ Note: The current implementation imports `RevenueChart` directly (it's a Client 
 #### Bug: `async` without `await` (Medium — Lesson 88)
 **Symptom:** `@typescript-eslint/require-await` on no-op stub methods.
 **Root cause:** `async run()` methods that don't contain `await` expressions. The `async` keyword is unnecessary and triggers the linter.
-**Fix:** Remove `async`: `run: () =>` instead of `run: async () =>`.
+**Fix:** Return a Promise without `async`: `run: () => Promise.resolve({...})` instead of `run: async () =>` (triggers `require-await`) or a synchronous `run: () => {...}` (fails `task()`'s `Promise<unknown>` return type → `TS2769`).
 
 #### Bug: `number` in template literal (Medium — Lesson 88)
 **Symptom:** `@typescript-eslint/restrict-template-expressions` on template literal with `number` type.
@@ -8606,12 +8618,12 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 | Finding | Severity | Status |
 |---------|----------|--------|
 | `paymentEvents.amountCents` column doesn't exist — amount in `payload` jsonb | Critical | ✅ Fixed — Lesson 85, §15.24.1 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 81, AGENTS.md Gotcha 74. Fix: `(payload->>'amount_received')::bigint` |
-| Workers ESLint `projectService` can't find test files excluded from tsconfig | High | ✅ Fixed — Lesson 86, §15.24.2 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 82, AGENTS.md Gotcha 75. Fix: `projectService: false` override |
+| Workers ESLint `projectService` can't find test files excluded from tsconfig | High | ✅ Fixed — Lesson 86, §15.24.2 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 82, AGENTS.md Gotcha 75. Fix: `projectService: { allowDefaultProject: [...] }` (the originally-documented `projectService: false` crashed typed rules; corrected) |
 | Workers `db.query.X as any` casts trigger 70+ ESLint errors (per-line disable insufficient) | High | ✅ Fixed — Lesson 87, §15.24.3 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 83, AGENTS.md Gotcha 76. Fix: scoped ESLint override, removed 10 per-line comments |
-| `async` without `await` on no-op stubs (2 files) | Medium | ✅ Fixed — Lesson 88, §15.24.4 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 84, AGENTS.md Gotcha 77. Fix: remove `async` keyword |
+| `async` without `await` on no-op stubs (2 files) | Medium | ✅ Fixed — Lesson 88, §15.24.4 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 84, AGENTS.md Gotcha 77. Fix: `run: () => Promise.resolve({...})` (removing `async` alone breaks `task()`'s `Promise<unknown>` return type) |
 | `restrict-template-expressions` on `number` in template literal (1 file) | Medium | ✅ Fixed — Lesson 88, §16.13 anti-pattern, CLAUDE.md Gotcha 84, AGENTS.md Gotcha 77. Fix: `String(diffMin)` |
 | `import/order` — missing empty line between groups (9 files) | Low | ✅ Fixed — added empty line after `@trigger.dev/sdk` import in all 9 worker files |
-| Post-deploy remediation complete: 1 TS error + 100 ESLint errors = 101 total fixed | — | ✅ All 101 errors resolved in 1 commit across 13 files |
+| Post-deploy remediation + follow-up corrections | — | ⚠️ The 101-error post-deploy remediation was committed **without running the full quality gates**. Two of its prescribed fixes (`projectService: false`, `remove async`) were themselves broken — `check-types` failed with `TS2769` (2 files) and `lint` crashed on typed rules. Corrected via `allowDefaultProject` + `Promise.resolve(...)`. Always run `pnpm check-types && pnpm lint` before claiming green. |
 
 ### v2.4.0 (2026-07-10) — Phase 9 Complete + Admin Surface
 

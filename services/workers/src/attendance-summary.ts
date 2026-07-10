@@ -30,6 +30,8 @@ export const attendanceSummary = task({
   run: () => {
     // v1: simplified — returns success. Full no-show marking in v2.
     // The cron schedule (Daily 23:00 PT) is configured in Trigger.dev dashboard.
-    return { processed: true, timestamp: new Date().toISOString() };
+    // Trigger.dev requires run() to return Promise<unknown>; return a Promise
+    // without `async` (no await) to satisfy @typescript-eslint/require-await.
+    return Promise.resolve({ processed: true, timestamp: new Date().toISOString() });
   },
 });

@@ -22,12 +22,35 @@ import sharedConfig from '@stillwater/eslint-config';
 export default [
   ...sharedConfig,
   {
-    // Test files + vitest.config.ts are excluded from tsconfig but still need linting
+    // Test files + vitest.config.ts are excluded from tsconfig.json (correct for tsc)
+    // but still need linting WITH type information. A dedicated tsconfig.eslint.json
+    // extends tsconfig.json and re-includes the test files, so the shared
+    // config's typed rules (await-thenable, no-floating-promises, no-misused-
+    // promises, require-await) get real type info. We point `project` at it
+    // for test files — this REPLACES the base
+    // `projectService: true` (which can't find the excluded test files).
+    // Do NOT use `projectService: false` (strips type info → crashes typed
+    // rules) or `allowDefaultProject` (its globs can't contain `**`).
     files: ['src/**/*.test.ts', 'vitest.config.ts'],
     languageOptions: {
       parserOptions: {
-        projectService: false,
+        projectService: {
+          allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'],
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
+          defaultProject: './tsconfig.eslint.json',
+        },
+        tsconfigRootDir: import.meta.dirname,
       },
+    },
+  },
+  {
+    // Test files now have type information (via allowDefaultProject + defaultProject
+    // pointing at tsconfig.eslint.json). vitest mocks return `any`, triggering
+    // `no-unsafe-assignment` and `no-unsafe-argument` on test assertions.
+    files: ['src/**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
     },
   },
   {

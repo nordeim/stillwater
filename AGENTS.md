@@ -480,9 +480,9 @@ With `exactOptionalPropertyTypes: true`, nullable columns accept `null` but NOT 
 
 The `payment_events` table has NO `amountCents` column. Amount is in `payload` jsonb. Use `(payload->>'amount_received')::bigint` in SQL. See `CLAUDE.md` Gotcha 81.
 
-### 75. Workers ESLint `projectService` can't find test files (High — Phase 10 fix)
+### 75. Workers ESLint `projectService` + typed rules need test files (High — Phase 10 fix)
 
-Workers tsconfig excludes `*.test.ts` (correct for tsc). ESLint override: `projectService: false` for test files + `vitest.config.ts`. See `CLAUDE.md` Gotcha 82.
+Workers tsconfig excludes `*.test.ts` (correct for tsc). ESLint's shared config enables typed rules (`await-thenable`, `no-floating-promises`, `no-misused-promises`, `require-await`) that require type info. Use `projectService: { allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'] }` so test files get a default TS program **without** `projectService: false` (which strips type info and crashes the typed rules). See `CLAUDE.md` Gotcha 82.
 
 ### 76. Workers `db.query.X as any` casts — scoped ESLint override needed (High — Phase 10 fix)
 
@@ -490,7 +490,7 @@ Per-line `eslint-disable` only covers one line. Scoped override in `services/wor
 
 ### 77. `async` without `await` + `number` in template literals (Medium — Phase 10 fix)
 
-Remove `async` from no-op `run()` stubs. Wrap numbers in `String()` for template literals. See `CLAUDE.md` Gotcha 84.
+For no-op `run()` stubs, return `Promise.resolve(...)` **without** `async` — `async` with no `await` trips `require-await`, but a synchronous `run: () => ({...})` fails Trigger.dev's `task()` overload (which requires `run()` to return `Promise<unknown>` → `TS2769`). `Promise.resolve(...)` satisfies both. Wrap numbers in `String()` for template literals. See `CLAUDE.md` Gotcha 84.
 
 ---
 
@@ -509,7 +509,7 @@ Remove `async` from no-op `run()` stubs. Wrap numbers in `String()` for template
 | 8 — Jobs+Email | ✅ Complete | `@stillwater/email` (19 files, 71 tests: 3 shared components + 13 React Email v6 templates + dual-path `send.ts` + 13 send-helpers + `template-ids.ts`), `@stillwater/workers` (12 files, 33 tests: 11 Trigger.dev v4 tasks with per-task `maxDuration` + retry config). All workers use `sendEmailNative()` via send-helpers (zero React Email 1.8MB bundle bloat per ADR-010). Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` not set), `bookings.book` triggers `booking-confirmation` + `class-reminder-24h` + `class-reminder-1h` (fire-and-forget), `bookings.cancel` job ID fixed `waitlist.promote` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe webhook `invoice.payment_failed` triggers `payment-failed-notify` (post-commit pattern). |
 | 9 — Admin | ✅ Complete | 10 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`). 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable, RevenueChart, MemberRoleEditor owner-only, SignOutButton). 8 new admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails`, `assignRole`, `removeRole`, `listAuditLog`). `audit_log` table (migration `0003_audit_log_phase9.sql`). 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command). `cmdk` dependency. `lib/admin/audit-log.ts` helper. 5 E2E spec files. All admin mutations audit-logged. 2-layer auth defense-in-depth (revenue=manager+, settings=owner). |
 
-**Total: 603+ tests** (109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers — Phase 9 adds audit-log + KpiCard + admin router tests). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
+**Total: 603+ tests** (109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers — Phase 9 adds audit-log + KpiCard + admin router tests). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green **after the post-deploy remediation corrections** — the original `projectService: false` + `remove-async` prescriptions were themselves broken (see Phase 12 post-deploy notes / `stillwater_SKILL.md` Lessons 86 & 88). Always run `pnpm check-types && pnpm lint` before claiming green.
 
 | 12 — Landing | ✅ Complete | Production home page with 8 sections, 15 marketing components, 3 hooks, mobile nav drawer, scroll progress bar, newsletter form. All D25-D35 token conflicts resolved. |
 | — | ✅ ALL PHASES COMPLETE | Phases 0–12 all complete. 603+ tests. |
