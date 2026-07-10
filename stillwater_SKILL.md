@@ -4221,6 +4221,91 @@ await db.insert(auditLog).values({
 
 ---
 
+### Post-Deploy Remediation Lessons (pnpm_log.txt fixes)
+
+### Lesson 85: `payment_events` table has no `amountCents` column — amount is in `payload` jsonb (Post-Phase 12 fix)
+
+**Context:** The `admin.getRevenueDetails` procedure (Phase 10) tried to `SUM(paymentEvents.amountCents)` to calculate MRR. The `pnpm check-types` command failed with `TS2339: Property 'amountCents' does not exist on type 'PgTableWithColumns<...>'`.
+
+**What to do differently:**
+- Always verify that a column exists in the Drizzle schema BEFORE writing SQL that references it. The `payment_events` table schema is: `id`, `memberId`, `stripeEventId`, `type`, `payload` (jsonb), `status`, `processedAt`, `createdAt`. There is NO `amountCents` column.
+- The Stripe payment amount is stored inside the `payload` jsonb field (the raw Stripe event payload). To extract it in SQL, use PostgreSQL's `->>` operator:
+```typescript
+// WRONG (column doesn't exist):
+totalCents: sql<number>`coalesce(sum(${paymentEvents.amountCents}), 0)::int`,
+
+// CORRECT (extract from payload jsonb):
+totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_received')::bigint), 0)::int`,
+```
+- The `amount_received` field is a standard Stripe invoice/payment intent property in the event payload. For events that don't have `amount_received` (e.g., `customer.subscription.updated`), the value will be `NULL` and `coalesce` will treat it as 0.
+
+**Fix references:** `packages/api/src/routers/admin.ts:287`, `packages/db/src/schema/payments.ts`. See `CLAUDE.md` Gotcha 81, `AGENTS.md` Gotcha 74.
+
+### Lesson 86: Workers ESLint `projectService` can't find test files excluded from tsconfig (Post-Phase 12 fix)
+
+**Context:** The `pnpm lint` command failed with `Parsing error: *.test.ts was not found by the project service` for all 11 worker test files + `vitest.config.ts`. Workers `tsconfig.json` excludes `src/**/*.test.ts` (correct per Lesson 28 — test files are run by vitest, not tsc), but ESLint's `projectService` option tries to find each file in the tsconfig project.
+
+**What to do differently:**
+- When a tsconfig excludes test files but ESLint needs to lint them, add an ESLint override that disables `projectService` for those files:
+```javascript
+// services/workers/eslint.config.mjs
+{
+  files: ['src/**/*.test.ts', 'vitest.config.ts'],
+  languageOptions: {
+    parserOptions: {
+      projectService: false,
+    },
+  },
+},
+```
+- This is specific to the workers package. Other packages (db, api, web) don't have this issue because their tsconfig includes test files (they use `vitest.config.ts` for test config, not tsconfig exclusion).
+
+**Fix references:** `services/workers/eslint.config.mjs`, `services/workers/tsconfig.json`. See `CLAUDE.md` Gotcha 82, `AGENTS.md` Gotcha 75.
+
+### Lesson 87: Workers `db.query.X as any` casts need scoped ESLint override, not per-line disables (Post-Phase 12 fix)
+
+**Context:** The `pnpm lint` command failed with ~70 errors (`no-explicit-any`, `no-unsafe-call`, `no-unsafe-member-access`, `no-unsafe-return`) across all 9 worker source files. Each file had a `// eslint-disable-next-line @typescript-eslint/no-explicit-any` comment, but the `any` type propagated to subsequent lines (chained `.findFirst()` calls, callback parameters, return values) that the per-line disable didn't cover.
+
+**What to do differently:**
+- Per-line `eslint-disable-next-line` only suppresses the NEXT line. When `any` propagates across multiple lines (casts, chained calls, return values), use a scoped ESLint override instead:
+```javascript
+// services/workers/eslint.config.mjs
+{
+  files: ['src/**/*.ts'],
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unsafe-call': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+  },
+},
+```
+- Document WHY the override exists (Gotcha 64 / Lesson 71 — Drizzle 0.45 NodeNext limitation) and WHEN it should be removed (when upgrading to Drizzle 1.0+ with `defineRelations()`).
+- After adding the scoped override, remove all per-line `eslint-disable-next-line` comments — they're redundant and add noise.
+
+**Fix references:** `services/workers/eslint.config.mjs`, all 9 worker `.ts` files. See `CLAUDE.md` Gotcha 83, `AGENTS.md` Gotcha 76.
+
+### Lesson 88: `async` without `await` + `number` in template literals — common ESLint pitfalls (Post-Phase 12 fix)
+
+**Context:** Two ESLint rules caught issues that the initial Phase 8 implementation missed:
+1. `@typescript-eslint/require-await` — `attendance-summary.ts` and `membership-credit-grant.ts` had `async run()` methods that don't use `await` (v1 no-op stubs).
+2. `@typescript-eslint/restrict-template-expressions` — `class-reminder-1h.ts` used a `number` variable in a template literal: `` `in ${diffMin} minutes` ``.
+
+**What to do differently:**
+- Don't add `async` to a function that doesn't use `await`. The `async` keyword is only needed when the function body contains `await` expressions. For no-op stubs, use synchronous `run: () =>` instead of `run: async () =>`.
+- Always wrap `number` types in `String()` when using them in template literals. ESLint's `restrict-template-expressions` rule forbids `number` because `Number.prototype.toString()` can produce unexpected results for `NaN` (`"NaN"`) and `Infinity` (`"Infinity"`):
+```typescript
+// WRONG:
+return `in ${diffMin} minutes`;
+
+// CORRECT:
+return `in ${String(diffMin)} minutes`;
+```
+
+**Fix references:** `services/workers/src/attendance-summary.ts`, `services/workers/src/membership-credit-grant.ts`, `services/workers/src/class-reminder-1h.ts`. See `CLAUDE.md` Gotcha 84, `AGENTS.md` Gotcha 77.
+
+---
+
 ## §13. Pitfalls to Avoid
 
 ### 13.1 Architecture Pitfalls
@@ -7032,6 +7117,93 @@ function handleDragEnd(event: DragEndEvent) {
 
 ---
 
+### 15.24 Pattern: Post-Deploy Error Remediation — pnpm_log.txt Fixes (Post-Phase 12)
+
+**Problem:** After deploying all 13 phases, running `pnpm check-types && pnpm lint` revealed 101 errors (1 TypeScript + 100 ESLint) that weren't caught during development because the sandbox environment had OOM issues preventing full quality gate runs.
+
+**Solution:** Four remediation patterns:
+
+#### 15.24.1 Verify Column Existence Before SQL Reference
+
+```typescript
+// WRONG — paymentEvents.amountCents doesn't exist as a column:
+totalCents: sql<number>`coalesce(sum(${paymentEvents.amountCents}), 0)::int`,
+
+// CORRECT — amount is in payload jsonb, extract via ->> operator:
+totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_received')::bigint), 0)::int`,
+```
+
+- Always check the Drizzle schema definition before referencing a column in SQL
+- jsonb fields can be queried with `->>` (text extraction) + `::bigint` cast for numeric aggregation
+- `coalesce(..., 0)` handles NULL values from events without `amount_received`
+
+#### 15.24.2 ESLint projectService Override for Test Files
+
+```javascript
+// services/workers/eslint.config.mjs
+{
+  files: ['src/**/*.test.ts', 'vitest.config.ts'],
+  languageOptions: {
+    parserOptions: {
+      projectService: false,
+    },
+  },
+},
+```
+
+- tsconfig excludes test files (correct for tsc) but ESLint projectService can't find them
+- Disable projectService per-file-type — don't add test files to tsconfig (would break tsc)
+
+#### 15.24.3 Scoped ESLint Override for Documented `any` Casts
+
+```javascript
+// services/workers/eslint.config.mjs
+{
+  files: ['src/**/*.ts'],
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unsafe-call': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+  },
+},
+```
+
+- Per-line `eslint-disable-next-line` only covers ONE line — `any` propagates to chained calls
+- Use scoped override for the entire package with documented rationale
+- Remove all per-line disable comments after adding the scoped override
+- Re-enable when upgrading to Drizzle 1.0+ with `defineRelations()`
+
+#### 15.24.4 Remove Unnecessary `async` + Wrap Numbers in `String()`
+
+```typescript
+// WRONG — async without await:
+run: async () => { return { success: true }; },
+
+// CORRECT — synchronous (no await needed):
+run: () => { return { success: true }; },
+
+// WRONG — number in template literal:
+`in ${diffMin} minutes`
+
+// CORRECT — wrap with String():
+`in ${String(diffMin)} minutes`
+```
+
+- `async` is only needed when the function body contains `await`
+- `restrict-template-expressions` forbids `number` in template literals (NaN/Infinity risk)
+
+**Key takeaways:**
+- Always verify column names against the actual Drizzle schema before writing SQL
+- ESLint `projectService: false` is the correct fix for test files excluded from tsconfig
+- Scoped ESLint overrides are cleaner than per-line disables when `any` propagates across multiple lines
+- Don't add `async` to functions that don't use `await`
+- Always wrap `number` in `String()` for template literals
+
+**Source:** Post-deploy remediation. Lessons 85-88. See `CLAUDE.md` Gotchas 81-84, `AGENTS.md` Gotchas 74-77.
+
+---
+
 ## §16. Coding Anti-Patterns
 
 ### 16.1 TypeScript Anti-Patterns
@@ -7751,6 +7923,35 @@ Note: The current implementation imports `RevenueChart` directly (it's a Client 
 
 ---
 
+### 16.13 Post-Deploy Remediation Anti-Patterns (pnpm_log.txt fixes)
+
+#### Bug: Referencing non-existent column in SQL (Critical — Lesson 85)
+**Symptom:** `TS2339: Property 'amountCents' does not exist on type 'PgTableWithColumns<...>'`.
+**Root cause:** The `payment_events` table has no `amountCents` column. The amount is inside the `payload` jsonb. Writing SQL that references a non-existent column fails TypeScript compilation.
+**Fix:** Verify column existence against the Drizzle schema. Use `->>` to extract from jsonb: `(payload->>'amount_received')::bigint`.
+
+#### Bug: ESLint projectService fails on test files excluded from tsconfig (High — Lesson 86)
+**Symptom:** `Parsing error: *.test.ts was not found by the project service`.
+**Root cause:** Workers tsconfig excludes `src/**/*.test.ts` (correct for tsc). ESLint's `projectService` tries to find each file in the tsconfig project and fails.
+**Fix:** Add ESLint override `projectService: false` for test files + `vitest.config.ts`.
+
+#### Bug: Per-line eslint-disable doesn't cover multi-line `any` propagation (High — Lesson 87)
+**Symptom:** ~70 `no-explicit-any` + `no-unsafe-*` errors across 9 worker files.
+**Root cause:** `eslint-disable-next-line` only suppresses the NEXT line. When `db.query.X as any` propagates `any` to chained calls, callback parameters, and return values, subsequent lines are still flagged.
+**Fix:** Use a scoped ESLint override for the entire `src/**/*.ts` glob. Remove all per-line disable comments.
+
+#### Bug: `async` without `await` (Medium — Lesson 88)
+**Symptom:** `@typescript-eslint/require-await` on no-op stub methods.
+**Root cause:** `async run()` methods that don't contain `await` expressions. The `async` keyword is unnecessary and triggers the linter.
+**Fix:** Remove `async`: `run: () =>` instead of `run: async () =>`.
+
+#### Bug: `number` in template literal (Medium — Lesson 88)
+**Symptom:** `@typescript-eslint/restrict-template-expressions` on template literal with `number` type.
+**Root cause:** `Number.prototype.toString()` can produce `"NaN"` or `"Infinity"` for edge cases. ESLint forbids `number` in template literals to prevent this.
+**Fix:** Wrap with `String()`: `` `in ${String(diffMin)} minutes` ``.
+
+---
+
 ## §17. Responsive Breakpoint Reference
 
 ### 17.1 Tailwind v4 Default Breakpoints (no custom config)
@@ -8399,6 +8600,18 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 ---
 
 ## Appendix C: Audit History
+
+### v2.8.0 (2026-07-10) — Post-Deploy Remediation: pnpm_log.txt Fixes
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| `paymentEvents.amountCents` column doesn't exist — amount in `payload` jsonb | Critical | ✅ Fixed — Lesson 85, §15.24.1 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 81, AGENTS.md Gotcha 74. Fix: `(payload->>'amount_received')::bigint` |
+| Workers ESLint `projectService` can't find test files excluded from tsconfig | High | ✅ Fixed — Lesson 86, §15.24.2 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 82, AGENTS.md Gotcha 75. Fix: `projectService: false` override |
+| Workers `db.query.X as any` casts trigger 70+ ESLint errors (per-line disable insufficient) | High | ✅ Fixed — Lesson 87, §15.24.3 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 83, AGENTS.md Gotcha 76. Fix: scoped ESLint override, removed 10 per-line comments |
+| `async` without `await` on no-op stubs (2 files) | Medium | ✅ Fixed — Lesson 88, §15.24.4 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 84, AGENTS.md Gotcha 77. Fix: remove `async` keyword |
+| `restrict-template-expressions` on `number` in template literal (1 file) | Medium | ✅ Fixed — Lesson 88, §16.13 anti-pattern, CLAUDE.md Gotcha 84, AGENTS.md Gotcha 77. Fix: `String(diffMin)` |
+| `import/order` — missing empty line between groups (9 files) | Low | ✅ Fixed — added empty line after `@trigger.dev/sdk` import in all 9 worker files |
+| Post-deploy remediation complete: 1 TS error + 100 ESLint errors = 101 total fixed | — | ✅ All 101 errors resolved in 1 commit across 13 files |
 
 ### v2.4.0 (2026-07-10) — Phase 9 Complete + Admin Surface
 
