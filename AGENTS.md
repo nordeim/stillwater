@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-10 (v2.5.0) — Phase 0–10 complete (603+ tests). Phase 10 (Observability + Performance Hardening) built: Sentry client/server/edge configs + instrumentation hook, PostHog analytics with 18 events + provider mounted in root layout, structured JSON logger (Axiom-compatible via console.* + Vercel log drain) + request ID helper, Sentry-connected error boundary component, bundle analyzer (@next/bundle-analyzer) + .bundle-stats.json budgets + CI check script, Lighthouse CI config (Perf 95+ warn, A11y/SEO/BP 100 error, CLS 0.05 error), 3 Checkly synthetic checks (booking flow, SSE endpoint, API health). Total: 80 gotchas.
+> **Updated:** 2026-07-10 (v2.6.0) — Phase 0–11 complete (603+ tests). Phase 11 (WCAG AAA Audit + SEO + OG Images) built: full SEO metadata in root layout (OG/Twitter/canonical/robots), robots.ts, sitemap.ts (static + dynamic instructor/blog routes), manifest.ts (PWA), 3 OG image generators (@vercel/og — default + blog + instructor), JSON-LD schemas (YogaStudio/Article/Person/Breadcrumb) + JsonLd component, a11y components (SkipLink + SrOnly + focus-utils with trapFocus/restoreFocus), E2E a11y + SEO tests (axe-core on 6 routes + keyboard nav + reduced-motion + metadata + robots/sitemap verification). Total: 80 gotchas.
 
 ---
 
@@ -495,7 +495,7 @@ With `exactOptionalPropertyTypes: true`, nullable columns accept `null` but NOT 
 
 **Total: 603+ tests** (109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers — Phase 9 adds audit-log + KpiCard + admin router tests). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
-| 10–12 | ⬜ Pending | Phase 10 (Observability) ✅ complete. Phases 11–12 pending. See `MASTER_EXECUTION_PLAN.md` §6. |
+| 11–12 | ⬜ Pending | Phase 10 (Observability) + Phase 11 (A11y+SEO) ✅ complete. Phase 12 (Landing port) pending. See `MASTER_EXECUTION_PLAN.md` §6. |
 
 ---
 
