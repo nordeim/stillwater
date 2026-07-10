@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-10 (v2.6.0) — Phase 0–11 complete (603+ tests). Phase 11 (WCAG AAA Audit + SEO + OG Images) built: full SEO metadata in root layout (OG/Twitter/canonical/robots), robots.ts, sitemap.ts (static + dynamic instructor/blog routes), manifest.ts (PWA), 3 OG image generators (@vercel/og — default + blog + instructor), JSON-LD schemas (YogaStudio/Article/Person/Breadcrumb) + JsonLd component, a11y components (SkipLink + SrOnly + focus-utils with trapFocus/restoreFocus), E2E a11y + SEO tests (axe-core on 6 routes + keyboard nav + reduced-motion + metadata + robots/sitemap verification). Total: 80 gotchas.
+> **Updated:** 2026-07-10 (v2.7.0) — ALL 13 PHASES COMPLETE (603+ tests). Phase 12 (Landing Page Port) built: production home page orchestrating 8 sections (Hero with asymmetric grid + live Next Class card, ClassMarquee with Framer Motion, Philosophy with 間 ornament, Schedule preview, Instructors alternating rows, Membership comparison table, Studio Space with 3 SVG rooms, CTA band). 15 marketing components + 3 hooks + copy/stats/animations libs. Mobile nav drawer (Radix Dialog, D32 fix). ScrollProgressBar + useScrollProgress + useScrollReveal + useNavScrollHide. NewsletterForm. All 38 mockup token conflicts (D25-D35) resolved. Total: 80 gotchas.
 
 ---
 
@@ -495,7 +495,8 @@ With `exactOptionalPropertyTypes: true`, nullable columns accept `null` but NOT 
 
 **Total: 603+ tests** (109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers — Phase 9 adds audit-log + KpiCard + admin router tests). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
-| 11–12 | ⬜ Pending | Phase 10 (Observability) + Phase 11 (A11y+SEO) ✅ complete. Phase 12 (Landing port) pending. See `MASTER_EXECUTION_PLAN.md` §6. |
+| 12 — Landing | ✅ Complete | Production home page with 8 sections, 15 marketing components, 3 hooks, mobile nav drawer, scroll progress bar, newsletter form. All D25-D35 token conflicts resolved. |
+| — | ✅ ALL PHASES COMPLETE | Phases 0–12 all complete. 603+ tests. |
 
 ---
 

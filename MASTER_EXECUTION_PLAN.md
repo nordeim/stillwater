@@ -353,7 +353,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 9     | Admin surface (RBAC-gated)                             | ✅ COMPLETE  | v1.13.0     | —          |
 | 10    | Observability + performance hardening                  | ✅ COMPLETE  | v1.14.0     | —          |
 | 11    | WCAG AAA audit + SEO + OG images                       | ✅ COMPLETE  | v1.15.0     | —          |
-| 12    | Landing page port (mockup → Next.js production)        | ⬜ PENDING   | —           | —          |
+| 12    | Landing page port (mockup → Next.js production)        | ✅ COMPLETE  | v1.16.0     | —          |
 
 **Quality gates (verified 2026-07-09):**
 - `pnpm check-types` — ✅ Green (9/9 packages)
@@ -4031,7 +4031,7 @@ pnpm lighthouse ci
 
 ---
 
-### Phase 12 — Landing Page Port (Mockup → Production Next.js) ⬜ PENDING
+### Phase 12 — Landing Page Port (Mockup → Production Next.js) ✅ COMPLETE
 
 **Goal:** The static HTML mockup in `static_landing_page_mockup.html` (visual reference) and `static_landing_page_html_mockup.md` (design rationale) is faithfully ported to a production Next.js page using the shared design system, Radix primitives, Framer Motion, Sanity-backed content, and live tRPC schedule data.
 
@@ -4040,18 +4040,18 @@ pnpm lighthouse ci
 **Estimated duration:** 4 days.
 
 **Acceptance criteria:**
-- [ ] Visual fidelity: side-by-side comparison shows no regressions
-- [ ] All marketing copy from mockup reproduced verbatim OR moved to Sanity
-- [ ] Self-hosted fonts (Cormorant + DM Sans + JetBrains Mono — all free Google Fonts)
-- [ ] All 9 fluid clamp() values use PAD tokens (D28)
-- [ ] Spacing uses `--space-N` (D26), not mockup `--sp-N`
-- [ ] Color tokens use `--color-` prefix (e.g., `--color-stone-950`), not mockup's unprefixed `--stone-950`
-- [ ] Motion uses `--duration-*` (D27), not `--dur-*`
-- [ ] Beginner badge uses `--color-success` (D29)
-- [ ] Mobile nav drawer implemented (D32)
-- [ ] All schedule items expandable (D35)
-- [ ] OG image generated for home page
-- [ ] Lighthouse: Performance 95+, Accessibility 100, SEO 100
+- [x] Visual fidelity: side-by-side comparison shows no regressions
+- [x] All marketing copy from mockup reproduced verbatim OR moved to Sanity
+- [x] Self-hosted fonts (Cormorant + DM Sans + JetBrains Mono — all free Google Fonts)
+- [x] All 9 fluid clamp() values use PAD tokens (D28)
+- [x] Spacing uses `--space-N` (D26), not mockup `--sp-N`
+- [x] Color tokens use `--color-` prefix (e.g., `--color-stone-950`), not mockup's unprefixed `--stone-950`
+- [x] Motion uses `--duration-*` (D27), not `--dur-*`
+- [x] Beginner badge uses `--color-success` (D29)
+- [x] Mobile nav drawer implemented (D32)
+- [x] All schedule items expandable (D35)
+- [x] OG image generated for home page
+- [x] Lighthouse: Performance 95+, Accessibility 100, SEO 100
 
 #### Files to CREATE / UPDATE
 
