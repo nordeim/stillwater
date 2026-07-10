@@ -1,12 +1,16 @@
-$ pnpm install && pnpm db:migrate && pnpm check-types
+$ pnpm install && pnpm db:migrate && pnpm check-types && pnpm lint && pnpm test && pnpm build
 Scope: all 14 workspace projects
-✓ Lockfile passes supply-chain policies (verified 20h ago)
-apps/web                                 | [WARN] deprecated recharts@2.15.4
-[WARN] 5 deprecated subdependencies found: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5, glob@10.5.0, uuid@10.0.0, uuid@8.3.2
-Packages: +29 -7
-+++++++++++++++++++++++++++++-------
-Progress: resolved 1861, reused 1667, downloaded 21, added 29, done
-Done in 31.9s using pnpm v11.9.0
+Already up to date
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 11.9.0 → 11.11.0.    │
+   │   Changelog: https://pnpm.io/v/11.11.0   │
+   │     To update, run: pnpm add -g pnpm     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+Done in 676ms using pnpm v11.9.0
 $ turbo db:migrate --filter=@stillwater/db
 ╭───────────────────────────────────────────────────────────────────────────╮
 │                                                                           │
@@ -26,14 +30,14 @@ $ turbo db:migrate --filter=@stillwater/db
 @stillwater/db:db:migrate: $ drizzle-kit migrate
 @stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
 @stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
-@stillwater/db:db:migrate: ◇ injected env (34) from ../../.env.local // tip: ◈ encrypted .env [www.dotenvx.com]
-@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ override existing { override: true }
+@stillwater/db:db:migrate: ◇ injected env (34) from ../../.env.local // tip: ⌘ enable debugging { debug: true }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ enable debugging { debug: true }
 @stillwater/db:db:migrate: Using 'pg' driver for database querying
 [✓] migrations applied successfully!
 
  Tasks:    1 successful, 1 total
 Cached:    0 cached, 1 total
-  Time:    1.876s 
+  Time:    2.584s 
 
 $ turbo check-types
 ╭───────────────────────────────────────────────────────────────────────────╮
@@ -50,214 +54,363 @@ $ turbo check-types
    • Running check-types in 13 packages
    • Remote caching disabled
 
-@stillwater/api:check-types: cache miss, executing 08148343770c68e2
-@stillwater/payments:check-types: cache miss, executing 3be7fcd7f40646ae
-@stillwater/db:check-types: cache miss, executing 2fd3d0638af8096e
-@stillwater/config:check-types: cache miss, executing 968a3a078e16069e
-@stillwater/web:check-types: cache miss, executing d52954e902a9edc0
-@stillwater/workers:check-types: cache miss, executing 3ad703cc050aba39
-@stillwater/email:check-types: cache miss, executing 84fc7a13e58dfff1
-@stillwater/ui:check-types: cache hit, replaying logs fbd1c9054bc4d661
-@stillwater/ui:check-types: $ tsc --noEmit
+@stillwater/payments:check-types: cache hit, replaying logs 3be7fcd7f40646ae
+@stillwater/payments:check-types: $ tsc --noEmit
 @stillwater/auth:check-types: cache hit, replaying logs 4fcfe48da1731089
 @stillwater/auth:check-types: $ tsc --noEmit
-@stillwater/payments:check-types: $ tsc --noEmit
-@stillwater/api:check-types: $ tsc --noEmit
-@stillwater/web:check-types: $ tsc --noEmit
-@stillwater/workers:check-types: $ tsc --noEmit
-@stillwater/email:check-types: $ tsc --noEmit
-@stillwater/db:check-types: $ tsc --noEmit
+@stillwater/web:check-types: cache miss, executing d52954e902a9edc0
+@stillwater/api:check-types: cache miss, executing eaffe4acd4247903
+@stillwater/ui:check-types: cache hit, replaying logs fbd1c9054bc4d661
+@stillwater/ui:check-types: $ tsc --noEmit
+@stillwater/config:check-types: cache hit, replaying logs 968a3a078e16069e
 @stillwater/config:check-types: $ tsc --noEmit
-@stillwater/api:check-types: src/routers/admin.ts:287:64 - error TS2339: Property 'amountCents' does not exist on type 'PgTableWithColumns<{ name: "payment_events"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "payment_events"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>; ... 6 more ...; createdAt: PgColumn<...>; };...'.
-@stillwater/api:check-types: 
-@stillwater/api:check-types: 287           totalCents: sql<number>`coalesce(sum(${paymentEvents.amountCents}), 0)::int`,
-@stillwater/api:check-types:                                                                    ~~~~~~~~~~~
-@stillwater/api:check-types: 
-@stillwater/api:check-types: 
-@stillwater/api:check-types: Found 1 error in src/routers/admin.ts:287
-@stillwater/api:check-types: 
-@stillwater/api:check-types: [ELIFECYCLE] Command failed with exit code 2.
-Segmentation fault (core dumped)
-[ELIFECYCLE] Command failed with exit code 139.
+@stillwater/email:check-types: cache hit, replaying logs 84fc7a13e58dfff1
+@stillwater/email:check-types: $ tsc --noEmit
+@stillwater/workers:check-types: cache miss, executing f79355e3e54162c9
+@stillwater/db:check-types: cache hit, replaying logs 2fd3d0638af8096e
+@stillwater/db:check-types: $ tsc --noEmit
+@stillwater/api:check-types: $ tsc --noEmit
+@stillwater/workers:check-types: $ tsc --noEmit
+@stillwater/web:check-types: $ tsc --noEmit
+@stillwater/web:check-types: src/app/(admin)/admin/members/[id]/page.tsx:11:10 - error TS2305: Module '"next/server.js"' has no exported member 'notFound'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 11 import { notFound } from 'next/server';
+@stillwater/web:check-types:             ~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(admin)/admin/members/[id]/page.tsx:47:48 - error TS2345: Argument of type '"owner"' is not assignable to parameter of type '"member"'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 47   const isOwner = session?.user.roles.includes('owner') ?? false;
+@stillwater/web:check-types:                                                   ~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(admin)/admin/members/[id]/page.tsx:49:11 - error TS2339: Property 'member' does not exist on type '{ member: { id: string; createdAt: Date; userId: string; displayName: string; phone: string | null; dateOfBirth: Date | null; emergencyContact: string | null; emergencyPhone: string | null; ... 4 more ...; roles: never; }; enrollmentHistory: { ...; }[]; paymentHistory: { ...; }[]; } | null'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 49   const { member, enrollmentHistory, paymentHistory } = detail;
+@stillwater/web:check-types:              ~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(admin)/admin/members/[id]/page.tsx:49:19 - error TS2339: Property 'enrollmentHistory' does not exist on type '{ member: { id: string; createdAt: Date; userId: string; displayName: string; phone: string | null; dateOfBirth: Date | null; emergencyContact: string | null; emergencyPhone: string | null; ... 4 more ...; roles: never; }; enrollmentHistory: { ...; }[]; paymentHistory: { ...; }[]; } | null'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 49   const { member, enrollmentHistory, paymentHistory } = detail;
+@stillwater/web:check-types:                      ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(admin)/admin/members/[id]/page.tsx:49:38 - error TS2339: Property 'paymentHistory' does not exist on type '{ member: { id: string; createdAt: Date; userId: string; displayName: string; phone: string | null; dateOfBirth: Date | null; emergencyContact: string | null; emergencyPhone: string | null; ... 4 more ...; roles: never; }; enrollmentHistory: { ...; }[]; paymentHistory: { ...; }[]; } | null'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 49   const { member, enrollmentHistory, paymentHistory } = detail;
+@stillwater/web:check-types:                                         ~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(admin)/layout.tsx:21:22 - error TS2322: Type '{ user: { memberId: null; roles: readonly ["member"]; activeSubscription: null; id: string; createdAt: Date; updatedAt: Date; email: string; emailVerified: boolean; name: string; image?: string | null | undefined; }; session: { ...; }; } | { ...; }' is not assignable to type '{ user: { id: string; email: string; name: string | null; memberId: string | null; roles: ("member" | "instructor" | "staff" | "manager" | "owner")[]; }; }'.
+@stillwater/web:check-types:   Type '{ user: { memberId: null; roles: readonly ["member"]; activeSubscription: null; id: string; createdAt: Date; updatedAt: Date; email: string; emailVerified: boolean; name: string; image?: string | null | undefined; }; session: { ...; }; }' is not assignable to type '{ user: { id: string; email: string; name: string | null; memberId: string | null; roles: ("member" | "instructor" | "staff" | "manager" | "owner")[]; }; }'.
+@stillwater/web:check-types:     The types of 'user.roles' are incompatible between these types.
+@stillwater/web:check-types:       The type 'readonly ["member"]' is 'readonly' and cannot be assigned to the mutable type '("member" | "instructor" | "staff" | "manager" | "owner")[]'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 21   return <AdminShell session={session}>{children}</AdminShell>;
+@stillwater/web:check-types:                         ~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types:   src/components/admin/AdminShell.tsx:20:3
+@stillwater/web:check-types:     20   session: {
+@stillwater/web:check-types:          ~~~~~~~
+@stillwater/web:check-types:     The expected type comes from property 'session' which is declared here on type 'IntrinsicAttributes & AdminShellProps'
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(marketing)/blog/[slug]/opengraph-image.tsx:11:10 - error TS2724: '"@/lib/sanity/client"' has no exported member named 'sanityClient'. Did you mean 'getSanityClient'?
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 11 import { sanityClient } from '@/lib/sanity/client';
+@stillwater/web:check-types:             ~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types:   src/lib/sanity/client.ts:20:17
+@stillwater/web:check-types:     20 export function getSanityClient(): SanityClient | null {
+@stillwater/web:check-types:                        ~~~~~~~~~~~~~~~
+@stillwater/web:check-types:     'getSanityClient' is declared here.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(marketing)/instructors/[slug]/opengraph-image.tsx:26:23 - error TS2339: Property 'name' does not exist on type '{ id: string; userId: string; slug: string; bio: string | null; specialties: string[] | null; imageKey: string | null; isActive: boolean; published: boolean; sortOrder: number | null; }'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 26     name = instructor.name ?? name;
+@stillwater/web:check-types:                          ~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(marketing)/page.tsx:64:27 - error TS2322: Type 'unknown[]' is not assignable to type '{ id: string; name: string; slug: string; bio?: string | null; }[]'.
+@stillwater/web:check-types:   Type 'unknown' is not assignable to type '{ id: string; name: string; slug: string; bio?: string | null; }'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 64       <InstructorsSection instructors={instructors as unknown[]} />
+@stillwater/web:check-types:                              ~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types:   src/components/marketing/InstructorsSection.tsx:15:3
+@stillwater/web:check-types:     15   instructors: Array<{
+@stillwater/web:check-types:          ~~~~~~~~~~~
+@stillwater/web:check-types:     The expected type comes from property 'instructors' which is declared here on type 'IntrinsicAttributes & InstructorsSectionProps'
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/(marketing)/page.tsx:67:26 - error TS2322: Type 'unknown[]' is not assignable to type 'MembershipPlan[]'.
+@stillwater/web:check-types:   Type 'unknown' is not assignable to type 'MembershipPlan'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 67       <MembershipSection plans={membershipPlans as unknown[]} />
+@stillwater/web:check-types:                             ~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types:   src/components/marketing/MembershipSection.tsx:23:3
+@stillwater/web:check-types:     23   plans: MembershipPlan[];
+@stillwater/web:check-types:          ~~~~~
+@stillwater/web:check-types:     The expected type comes from property 'plans' which is declared here on type 'IntrinsicAttributes & MembershipSectionProps'
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/api/admin/members/export/route.ts:51:34 - error TS2345: Argument of type '(val: string) => string' is not assignable to parameter of type '(value: string | undefined, index: number, array: (string | undefined)[]) => string'.
+@stillwater/web:check-types:   Types of parameters 'val' and 'value' are incompatible.
+@stillwater/web:check-types:     Type 'string | undefined' is not assignable to type 'string'.
+@stillwater/web:check-types:       Type 'undefined' is not assignable to type 'string'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 51     ...rows.map((row) => row.map(escapeCsv).join(',')),
+@stillwater/web:check-types:                                     ~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/app/sitemap.ts:12:10 - error TS2724: '"@/lib/sanity/client"' has no exported member named 'sanityClient'. Did you mean 'getSanityClient'?
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 12 import { sanityClient } from '@/lib/sanity/client';
+@stillwater/web:check-types:             ~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types:   src/lib/sanity/client.ts:20:17
+@stillwater/web:check-types:     20 export function getSanityClient(): SanityClient | null {
+@stillwater/web:check-types:                        ~~~~~~~~~~~~~~~
+@stillwater/web:check-types:     'getSanityClient' is declared here.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/ClassForm.tsx:72:5 - error TS2322: Type 'Resolver<{ title: string; slug: string; level: "all" | "beginner" | "intermediate" | "advanced"; durationMinutes: unknown; maxCapacity: unknown; description?: string | undefined; imageKey?: string | undefined; metaTitle?: string | undefined; metaDescription?: string | undefined; }, any, { ...; }>' is not assignable to type 'Resolver<{ title: string; slug: string; level: "all" | "beginner" | "intermediate" | "advanced"; durationMinutes: number; maxCapacity: number; description?: string | undefined; imageKey?: string | undefined; metaTitle?: string | undefined; metaDescription?: string | undefined; }, any, { ...; }>'.
+@stillwater/web:check-types:   Types of parameters 'options' and 'options' are incompatible.
+@stillwater/web:check-types:     Type 'ResolverOptions<{ title: string; slug: string; level: "all" | "beginner" | "intermediate" | "advanced"; durationMinutes: number; maxCapacity: number; description?: string | undefined; imageKey?: string | undefined; metaTitle?: string | undefined; metaDescription?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ title: string; slug: string; level: "all" | "beginner" | "intermediate" | "advanced"; durationMinutes: unknown; maxCapacity: unknown; description?: string | undefined; imageKey?: string | undefined; metaTitle?: string | undefined; metaDescription?: string | undefined; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+@stillwater/web:check-types:       Type 'unknown' is not assignable to type 'number'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 72     resolver: zodResolver(classSchema),
+@stillwater/web:check-types:        ~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/ClassForm.tsx:123:34 - error TS2345: Argument of type '(data: ClassFormValues) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+@stillwater/web:check-types:   Types of parameters 'data' and 'data' are incompatible.
+@stillwater/web:check-types:     Type 'TFieldValues' is not assignable to type '{ title: string; slug: string; level: "all" | "beginner" | "intermediate" | "advanced"; durationMinutes: number; maxCapacity: number; description?: string | undefined; imageKey?: string | undefined; metaTitle?: string | undefined; metaDescription?: string | undefined; }'.
+@stillwater/web:check-types:       Type 'FieldValues' is missing the following properties from type '{ title: string; slug: string; level: "all" | "beginner" | "intermediate" | "advanced"; durationMinutes: number; maxCapacity: number; description?: string | undefined; imageKey?: string | undefined; metaTitle?: string | undefined; metaDescription?: string | undefined; }': title, slug, level, durationMinutes, maxCapacity
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 123     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+@stillwater/web:check-types:                                      ~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/KpiCard.test.tsx:18:48 - error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion<HTMLElement>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 18     expect(screen.getByText('Active Members')).toBeInTheDocument();
+@stillwater/web:check-types:                                                   ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/KpiCard.test.tsx:19:36 - error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion<HTMLElement>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 19     expect(screen.getByText('42')).toBeInTheDocument();
+@stillwater/web:check-types:                                       ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/KpiCard.test.tsx:24:35 - error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion<HTMLElement>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 24     expect(screen.getByText('—')).toBeInTheDocument();
+@stillwater/web:check-types:                                      ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/KpiCard.test.tsx:30:21 - error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion<HTMLElement>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 30     expect(trendEl).toBeInTheDocument();
+@stillwater/web:check-types:                        ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/KpiCard.test.tsx:38:21 - error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion<HTMLElement>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 38     expect(trendEl).toBeInTheDocument();
+@stillwater/web:check-types:                        ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/KpiCard.test.tsx:49:47 - error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion<HTMLElement | null>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 49     expect(screen.queryByText('Loading')).not.toBeInTheDocument();
+@stillwater/web:check-types:                                                  ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/KpiCard.test.tsx:60:40 - error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion<HTMLElement>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 60     expect(screen.getByTestId('icon')).toBeInTheDocument();
+@stillwater/web:check-types:                                           ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/KpiCard.test.tsx:65:51 - error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion<HTMLElement | null>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 65     expect(screen.queryByLabelText(/Trend:/)).not.toBeInTheDocument();
+@stillwater/web:check-types:                                                      ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/ScheduleCalendar.tsx:92:32 - error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+@stillwater/web:check-types:   Type 'undefined' is not assignable to type 'string'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 92     const dayOffset = parseInt(dayStr, 10);
+@stillwater/web:check-types:                                   ~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/ScheduleCalendar.tsx:93:27 - error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+@stillwater/web:check-types:   Type 'undefined' is not assignable to type 'string'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 93     const hour = parseInt(hourStr, 10);
+@stillwater/web:check-types:                              ~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/ScheduleCalendar.tsx:227:12 - error TS2375: Type '{ initialData: { startsAt: string; } | undefined; onSuccess: () => void; onCancel: () => void; }' is not assignable to type 'SessionFormProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+@stillwater/web:check-types:   Types of property 'initialData' are incompatible.
+@stillwater/web:check-types:     Type '{ startsAt: string; } | undefined' is not assignable to type 'Partial<{ classId: string; instructorId: string; startsAt: string; durationMinutes: number; isVirtual: boolean; roomId?: string | undefined; overrideCapacity?: number | undefined; streamUrl?: string | undefined; }>'.
+@stillwater/web:check-types:       Type 'undefined' is not assignable to type 'Partial<{ classId: string; instructorId: string; startsAt: string; durationMinutes: number; isVirtual: boolean; roomId?: string | undefined; overrideCapacity?: number | undefined; streamUrl?: string | undefined; }>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 227           <SessionForm
+@stillwater/web:check-types:                ~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/SessionForm.tsx:53:5 - error TS2322: Type 'Resolver<{ classId: string; instructorId: string; startsAt: string; roomId?: string | undefined; durationMinutes?: unknown; overrideCapacity?: unknown; isVirtual?: boolean | undefined; streamUrl?: string | undefined; }, any, { ...; }>' is not assignable to type 'Resolver<{ classId: string; instructorId: string; startsAt: string; durationMinutes: number; isVirtual: boolean; roomId?: string | undefined; overrideCapacity?: number | undefined; streamUrl?: string | undefined; }, any, { ...; }>'.
+@stillwater/web:check-types:   Types of parameters 'options' and 'options' are incompatible.
+@stillwater/web:check-types:     Type 'ResolverOptions<{ classId: string; instructorId: string; startsAt: string; durationMinutes: number; isVirtual: boolean; roomId?: string | undefined; overrideCapacity?: number | undefined; streamUrl?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ classId: string; instructorId: string; startsAt: string; roomId?: string | undefined; durationMinutes?: unknown; overrideCapacity?: unknown; isVirtual?: boolean | undefined; streamUrl?: string | undefined; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+@stillwater/web:check-types:       Type 'unknown' is not assignable to type 'number'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 53     resolver: zodResolver(sessionSchema),
+@stillwater/web:check-types:        ~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/SessionForm.tsx:83:7 - error TS2353: Object literal may only specify known properties, and 'durationMinutes' does not exist in type '{ classId: string; instructorId: string; startsAt: unknown; endsAt: unknown; roomId?: string | undefined; overrideCapacity?: number | undefined; isVirtual?: boolean | undefined; streamUrl?: string | undefined; }'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 83       durationMinutes: data.durationMinutes,
+@stillwater/web:check-types:          ~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/SessionForm.tsx:93:34 - error TS2345: Argument of type '(data: SessionFormValues) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+@stillwater/web:check-types:   Types of parameters 'data' and 'data' are incompatible.
+@stillwater/web:check-types:     Type 'TFieldValues' is not assignable to type '{ classId: string; instructorId: string; startsAt: string; durationMinutes: number; isVirtual: boolean; roomId?: string | undefined; overrideCapacity?: number | undefined; streamUrl?: string | undefined; }'.
+@stillwater/web:check-types:       Type 'FieldValues' is missing the following properties from type '{ classId: string; instructorId: string; startsAt: string; durationMinutes: number; isVirtual: boolean; roomId?: string | undefined; overrideCapacity?: number | undefined; streamUrl?: string | undefined; }': classId, instructorId, startsAt, durationMinutes, isVirtual
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 93     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+@stillwater/web:check-types:                                     ~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/admin/SessionForm.tsx:127:20 - error TS2339: Property 'name' does not exist on type '{ id: string; userId: string; slug: string; bio: string | null; specialties: string[] | null; imageKey: string | null; isActive: boolean; published: boolean; sortOrder: number | null; }'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 127               {ins.name}
+@stillwater/web:check-types:                        ~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/marketing/ScheduleSection.tsx:28:23 - error TS2322: Type 'unknown[]' is not assignable to type 'ScheduleSession[]'.
+@stillwater/web:check-types:   Type 'unknown' is not assignable to type 'ScheduleSession'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 28         <ScheduleGrid sessions={sessions} />
+@stillwater/web:check-types:                          ~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types:   src/components/marketing/ScheduleGrid.tsx:19:46
+@stillwater/web:check-types:     19 export function ScheduleGrid({ sessions }: { sessions: ScheduleSession[] }) {
+@stillwater/web:check-types:                                                     ~~~~~~~~
+@stillwater/web:check-types:     The expected type comes from property 'sessions' which is declared here on type 'IntrinsicAttributes & { sessions: ScheduleSession[]; }'
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/ui/calendar.tsx:25:9 - error TS2353: Object literal may only specify known properties, and 'caption' does not exist in type 'Partial<ClassNames>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 25         caption: "flex justify-center pt-1 relative items-center",
+@stillwater/web:check-types:            ~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types:   ../../node_modules/.pnpm/react-day-picker@10.0.1_@types+react@19.2.17_react@19.2.7/node_modules/react-day-picker/dist/esm/types/props.d.ts:44:5
+@stillwater/web:check-types:     44     classNames?: Partial<ClassNames>;
+@stillwater/web:check-types:            ~~~~~~~~~~
+@stillwater/web:check-types:     The expected type comes from property 'classNames' which is declared here on type 'IntrinsicAttributes & DayPickerProps'
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/components/ui/calendar.tsx:56:9 - error TS2353: Object literal may only specify known properties, and 'IconLeft' does not exist in type 'Partial<CustomComponents>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 56         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+@stillwater/web:check-types:            ~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types:   ../../node_modules/.pnpm/react-day-picker@10.0.1_@types+react@19.2.17_react@19.2.7/node_modules/react-day-picker/dist/esm/types/props.d.ts:254:5
+@stillwater/web:check-types:     254     components?: Partial<CustomComponents>;
+@stillwater/web:check-types:             ~~~~~~~~~~
+@stillwater/web:check-types:     The expected type comes from property 'components' which is declared here on type 'IntrinsicAttributes & DayPickerProps'
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/hooks/useScrollReveal.ts:42:3 - error TS2322: Type 'RefObject<T | null>' is not assignable to type 'RefObject<T>'.
+@stillwater/web:check-types:   Type 'T | null' is not assignable to type 'T'.
+@stillwater/web:check-types:     'T' could be instantiated with an arbitrary type which could be unrelated to 'T | null'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 42   return ref;
+@stillwater/web:check-types:      ~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/a11y/focus-utils.ts:35:9 - error TS18048: 'last' is possibly 'undefined'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 35         last.focus();
+@stillwater/web:check-types:            ~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/a11y/focus-utils.ts:40:9 - error TS18048: 'first' is possibly 'undefined'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 40         first.focus();
+@stillwater/web:check-types:            ~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/analytics/posthog.test.ts:69:12 - error TS18048: 'initCall' is possibly 'undefined'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 69     expect(initCall[1]).toMatchObject({
+@stillwater/web:check-types:               ~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/analytics/posthog.ts:20:7 - error TS2561: Object literal may only specify known properties, but 'capture_pageviews' does not exist in type 'Partial<PostHogConfig>'. Did you mean to write 'capture_pageview'?
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 20       capture_pageviews: true,
+@stillwater/web:check-types:          ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/observability/error-boundary.tsx:37:3 - error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<ErrorBoundaryProps, ErrorBoundaryState, any>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 37   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+@stillwater/web:check-types:      ~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/observability/error-boundary.tsx:61:3 - error TS4114: This member must have an 'override' modifier because it overrides a member in the base class 'Component<ErrorBoundaryProps, ErrorBoundaryState, any>'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 61   render(): ReactNode {
+@stillwater/web:check-types:      ~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/observability/logger.test.ts:28:18 - error TS2532: Object is possibly 'undefined'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 28     const json = (console.info as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+@stillwater/web:check-types:                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/observability/logger.test.ts:42:18 - error TS2532: Object is possibly 'undefined'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 42     const json = (console.error as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+@stillwater/web:check-types:                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/observability/logger.test.ts:57:18 - error TS2532: Object is possibly 'undefined'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 57     const json = (console.warn as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+@stillwater/web:check-types:                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/observability/logger.test.ts:68:18 - error TS2532: Object is possibly 'undefined'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 68     const json = (console.debug as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+@stillwater/web:check-types:                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/observability/logger.test.ts:84:18 - error TS2532: Object is possibly 'undefined'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 84     const json = (console.info as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+@stillwater/web:check-types:                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/seo/schemas.test.ts:42:12 - error TS2571: Object is of type 'unknown'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 42     expect(schema['author']['name']).toBe('Mei Tanaka');
+@stillwater/web:check-types:               ~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/seo/schemas.test.ts:44:12 - error TS2571: Object is of type 'unknown'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 44     expect(schema['publisher']['name']).toBe('Stillwater Yoga Studio');
+@stillwater/web:check-types:               ~~~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/seo/schemas.test.ts:56:12 - error TS2571: Object is of type 'unknown'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 56     expect(schema['worksFor']['name']).toBe('Stillwater Yoga Studio');
+@stillwater/web:check-types:               ~~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: src/lib/seo/schemas.test.ts:67:12 - error TS2571: Object is of type 'unknown'.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 67     expect(schema['itemListElement'][0]).toEqual({
+@stillwater/web:check-types:               ~~~~~~~~~~~~~~~~~~~~~~~~~
+@stillwater/web:check-types: 
+@stillwater/web:check-types: 
+@stillwater/web:check-types: Found 48 errors in 20 files.
+@stillwater/web:check-types: 
+@stillwater/web:check-types: Errors  Files
+@stillwater/web:check-types:      5  src/app/(admin)/admin/members/[id]/page.tsx:11
+@stillwater/web:check-types:      1  src/app/(admin)/layout.tsx:21
+@stillwater/web:check-types:      1  src/app/(marketing)/blog/[slug]/opengraph-image.tsx:11
+@stillwater/web:check-types:      1  src/app/(marketing)/instructors/[slug]/opengraph-image.tsx:26
+@stillwater/web:check-types:      2  src/app/(marketing)/page.tsx:64
+@stillwater/web:check-types:      1  src/app/api/admin/members/export/route.ts:51
+@stillwater/web:check-types:      1  src/app/sitemap.ts:12
+@stillwater/web:check-types:      2  src/components/admin/ClassForm.tsx:72
+@stillwater/web:check-types:      8  src/components/admin/KpiCard.test.tsx:18
+@stillwater/web:check-types:      3  src/components/admin/ScheduleCalendar.tsx:92
+@stillwater/web:check-types:      4  src/components/admin/SessionForm.tsx:53
+@stillwater/web:check-types:      1  src/components/marketing/ScheduleSection.tsx:28
+@stillwater/web:check-types:      2  src/components/ui/calendar.tsx:25
+@stillwater/web:check-types:      1  src/hooks/useScrollReveal.ts:42
+@stillwater/web:check-types:      2  src/lib/a11y/focus-utils.ts:35
+@stillwater/web:check-types:      1  src/lib/analytics/posthog.test.ts:69
+@stillwater/web:check-types:      1  src/lib/analytics/posthog.ts:20
+@stillwater/web:check-types:      2  src/lib/observability/error-boundary.tsx:37
+@stillwater/web:check-types:      5  src/lib/observability/logger.test.ts:28
+@stillwater/web:check-types:      4  src/lib/seo/schemas.test.ts:42
+@stillwater/web:check-types: [ELIFECYCLE] Command failed with exit code 1.
+@stillwater/web#check-types:  ERROR  command (/home/project/stillwater/apps/web) /home/pete/.local/share/pnpm/store/v11/links/@/pnpm/11.9.0/3ffdaeac3a5344b68164ba8be477b1270e1dae24d6ea4f11cb8bfa65f611e915/bin/pnpm run check-types exited (1)
 
-$ pnpm lint && pnpm test && pnpm build
-$ turbo lint
-╭───────────────────────────────────────────────────────────────────────────╮
-│                                                                           │
-│                    Update available v2.10.3 ≫ v2.10.4                     │
-│    Changelog: https://github.com/vercel/turborepo/releases/tag/v2.10.4    │
-│           Run "pnpm dlx @turbo/codemod@latest update" to update           │
-│                                                                           │
-│          Follow @turborepo for updates: https://x.com/turborepo           │
-╰───────────────────────────────────────────────────────────────────────────╯
-• turbo 2.10.3
-
-   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/studio, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
-   • Running lint in 13 packages
-   • Remote caching disabled
-
-@stillwater/web:lint: cache miss, executing 2a8ac7de3af5ce19
-@stillwater/workers:lint: cache miss, executing 48491d06a3d1cb5e
-@stillwater/web:lint: $ eslint .
-@stillwater/workers:lint: $ eslint .
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/attendance-summary.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/attendance-summary.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/attendance-summary.ts
-@stillwater/workers:lint:   30:3  error  Async method 'run' has no 'await' expression  @typescript-eslint/require-await
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/booking-confirmation.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/booking-confirmation.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/booking-confirmation.ts
-@stillwater/workers:lint:   14:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   48:31  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   48:61  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   49:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   49:31  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   49:39  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   49:39  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   49:44  error  Unsafe member access .id on an `any` value                     @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-cancellation-notify.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/class-cancellation-notify.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-cancellation-notify.ts
-@stillwater/workers:lint:   15:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   47:32  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   47:62  error  Unsafe member access .findMany on an `any` value               @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   48:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   48:36  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   49:9   error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   49:9   error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   49:13  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   49:18  error  Unsafe member access .sessionId on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   49:49  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   49:54  error  Unsafe member access .status on an `any` value                 @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-reminder-1h.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/class-reminder-1h.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-reminder-1h.ts
-@stillwater/workers:lint:   11:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   40:31  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   40:61  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   41:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   41:36  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   42:9   error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   42:9   error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   42:13  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   42:18  error  Unsafe member access .sessionId on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   42:49  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   42:54  error  Unsafe member access .memberId on an `any` value               @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   73:34  error  Invalid type "number" of template literal expression           @typescript-eslint/restrict-template-expressions
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-reminder-24h.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/class-reminder-24h.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-reminder-24h.ts
-@stillwater/workers:lint:   11:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   41:31  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   41:61  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   42:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   42:36  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   43:9   error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   43:9   error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   43:13  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   43:18  error  Unsafe member access .sessionId on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   43:49  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   43:54  error  Unsafe member access .memberId on an `any` value               @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/membership-credit-grant.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/membership-credit-grant.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/membership-credit-grant.ts
-@stillwater/workers:lint:   27:3  error  Async method 'run' has no 'await' expression  @typescript-eslint/require-await
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/membership-expiry-warn.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/membership-expiry-warn.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/membership-expiry-warn.ts
-@stillwater/workers:lint:   17:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   47:27  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   47:53  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   48:42  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   48:50  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   48:50  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/payment-failed-notify.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/payment-failed-notify.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/payment-failed-notify.ts
-@stillwater/workers:lint:   16:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   41:27  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   41:53  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   42:42  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   42:50  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   42:50  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/waitlist-expiry.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/waitlist-expiry.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/waitlist-expiry.ts
-@stillwater/workers:lint:   17:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   48:26  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   48:60  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   49:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   49:31  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   49:39  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   49:39  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   49:44  error  Unsafe member access .id on an `any` value                     @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/waitlist-promotion.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/waitlist-promotion.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/waitlist-promotion.ts
-@stillwater/workers:lint:   17:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   54:26  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   54:60  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   55:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   55:31  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   55:39  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   55:39  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   55:44  error  Unsafe member access .id on an `any` value                     @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/weekly-digest.test.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/weekly-digest.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/src/weekly-digest.ts
-@stillwater/workers:lint:   16:1   error  There should be at least one empty line between import groups  import/order
-@stillwater/workers:lint:   50:27  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   50:53  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   51:42  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   51:50  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   51:50  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   61:32  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   61:62  error  Unsafe member access .findMany on an `any` value               @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   62:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   62:36  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
-@stillwater/workers:lint:   63:9   error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
-@stillwater/workers:lint:   63:9   error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   63:13  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   63:18  error  Unsafe member access .memberId on an `any` value               @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint:   63:47  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
-@stillwater/workers:lint:   63:52  error  Unsafe member access .status on an `any` value                 @typescript-eslint/no-unsafe-member-access
-@stillwater/workers:lint: 
-@stillwater/workers:lint: /home/project/stillwater/services/workers/vitest.config.ts
-@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/vitest.config.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-@stillwater/workers:lint: 
-@stillwater/workers:lint: ✖ 100 problems (100 errors, 0 warnings)
-@stillwater/workers:lint:   9 errors and 0 warnings potentially fixable with the `--fix` option.
-@stillwater/workers:lint: 
-@stillwater/workers:lint: [ELIFECYCLE] Command failed with exit code 1.
-@stillwater/web:lint: [ELIFECYCLE] Command failed.
-@stillwater/workers#lint:  ERROR  command (/home/project/stillwater/services/workers) /home/pete/.local/share/pnpm/store/v11/links/@/pnpm/11.9.0/3ffdaeac3a5344b68164ba8be477b1270e1dae24d6ea4f11cb8bfa65f611e915/bin/pnpm run lint exited (1)
-
- Tasks:    0 successful, 2 total
-Cached:    0 cached, 2 total
-  Time:    31.271s 
-Failed:    @stillwater/workers#lint
+ Tasks:    8 successful, 9 total
+Cached:    6 cached, 9 total
+  Time:    9.392s 
+Failed:    @stillwater/web#check-types
 
  ERROR  run failed: command  exited (1)
 [ELIFECYCLE] Command failed with exit code 1.
