@@ -1,0 +1,264 @@
+$ pnpm install && pnpm db:migrate && pnpm check-types
+Scope: all 14 workspace projects
+✓ Lockfile passes supply-chain policies (verified 20h ago)
+apps/web                                 | [WARN] deprecated recharts@2.15.4
+[WARN] 5 deprecated subdependencies found: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5, glob@10.5.0, uuid@10.0.0, uuid@8.3.2
+Packages: +29 -7
++++++++++++++++++++++++++++++-------
+Progress: resolved 1861, reused 1667, downloaded 21, added 29, done
+Done in 31.9s using pnpm v11.9.0
+$ turbo db:migrate --filter=@stillwater/db
+╭───────────────────────────────────────────────────────────────────────────╮
+│                                                                           │
+│                    Update available v2.10.3 ≫ v2.10.4                     │
+│    Changelog: https://github.com/vercel/turborepo/releases/tag/v2.10.4    │
+│           Run "pnpm dlx @turbo/codemod@latest update" to update           │
+│                                                                           │
+│          Follow @turborepo for updates: https://x.com/turborepo           │
+╰───────────────────────────────────────────────────────────────────────────╯
+• turbo 2.10.3
+
+   • Packages in scope: @stillwater/db
+   • Running db:migrate in 1 packages
+   • Remote caching disabled
+
+@stillwater/db:db:migrate: cache bypass, force executing 92b100b74ce291f1
+@stillwater/db:db:migrate: $ drizzle-kit migrate
+@stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
+@stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
+@stillwater/db:db:migrate: ◇ injected env (34) from ../../.env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ override existing { override: true }
+@stillwater/db:db:migrate: Using 'pg' driver for database querying
+[✓] migrations applied successfully!
+
+ Tasks:    1 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    1.876s 
+
+$ turbo check-types
+╭───────────────────────────────────────────────────────────────────────────╮
+│                                                                           │
+│                    Update available v2.10.3 ≫ v2.10.4                     │
+│    Changelog: https://github.com/vercel/turborepo/releases/tag/v2.10.4    │
+│           Run "pnpm dlx @turbo/codemod@latest update" to update           │
+│                                                                           │
+│          Follow @turborepo for updates: https://x.com/turborepo           │
+╰───────────────────────────────────────────────────────────────────────────╯
+• turbo 2.10.3
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/studio, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running check-types in 13 packages
+   • Remote caching disabled
+
+@stillwater/api:check-types: cache miss, executing 08148343770c68e2
+@stillwater/payments:check-types: cache miss, executing 3be7fcd7f40646ae
+@stillwater/db:check-types: cache miss, executing 2fd3d0638af8096e
+@stillwater/config:check-types: cache miss, executing 968a3a078e16069e
+@stillwater/web:check-types: cache miss, executing d52954e902a9edc0
+@stillwater/workers:check-types: cache miss, executing 3ad703cc050aba39
+@stillwater/email:check-types: cache miss, executing 84fc7a13e58dfff1
+@stillwater/ui:check-types: cache hit, replaying logs fbd1c9054bc4d661
+@stillwater/ui:check-types: $ tsc --noEmit
+@stillwater/auth:check-types: cache hit, replaying logs 4fcfe48da1731089
+@stillwater/auth:check-types: $ tsc --noEmit
+@stillwater/payments:check-types: $ tsc --noEmit
+@stillwater/api:check-types: $ tsc --noEmit
+@stillwater/web:check-types: $ tsc --noEmit
+@stillwater/workers:check-types: $ tsc --noEmit
+@stillwater/email:check-types: $ tsc --noEmit
+@stillwater/db:check-types: $ tsc --noEmit
+@stillwater/config:check-types: $ tsc --noEmit
+@stillwater/api:check-types: src/routers/admin.ts:287:64 - error TS2339: Property 'amountCents' does not exist on type 'PgTableWithColumns<{ name: "payment_events"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "payment_events"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>; ... 6 more ...; createdAt: PgColumn<...>; };...'.
+@stillwater/api:check-types: 
+@stillwater/api:check-types: 287           totalCents: sql<number>`coalesce(sum(${paymentEvents.amountCents}), 0)::int`,
+@stillwater/api:check-types:                                                                    ~~~~~~~~~~~
+@stillwater/api:check-types: 
+@stillwater/api:check-types: 
+@stillwater/api:check-types: Found 1 error in src/routers/admin.ts:287
+@stillwater/api:check-types: 
+@stillwater/api:check-types: [ELIFECYCLE] Command failed with exit code 2.
+Segmentation fault (core dumped)
+[ELIFECYCLE] Command failed with exit code 139.
+
+$ pnpm lint && pnpm test && pnpm build
+$ turbo lint
+╭───────────────────────────────────────────────────────────────────────────╮
+│                                                                           │
+│                    Update available v2.10.3 ≫ v2.10.4                     │
+│    Changelog: https://github.com/vercel/turborepo/releases/tag/v2.10.4    │
+│           Run "pnpm dlx @turbo/codemod@latest update" to update           │
+│                                                                           │
+│          Follow @turborepo for updates: https://x.com/turborepo           │
+╰───────────────────────────────────────────────────────────────────────────╯
+• turbo 2.10.3
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/studio, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running lint in 13 packages
+   • Remote caching disabled
+
+@stillwater/web:lint: cache miss, executing 2a8ac7de3af5ce19
+@stillwater/workers:lint: cache miss, executing 48491d06a3d1cb5e
+@stillwater/web:lint: $ eslint .
+@stillwater/workers:lint: $ eslint .
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/attendance-summary.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/attendance-summary.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/attendance-summary.ts
+@stillwater/workers:lint:   30:3  error  Async method 'run' has no 'await' expression  @typescript-eslint/require-await
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/booking-confirmation.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/booking-confirmation.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/booking-confirmation.ts
+@stillwater/workers:lint:   14:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   48:31  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   48:61  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   49:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   49:31  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   49:39  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   49:39  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   49:44  error  Unsafe member access .id on an `any` value                     @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-cancellation-notify.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/class-cancellation-notify.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-cancellation-notify.ts
+@stillwater/workers:lint:   15:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   47:32  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   47:62  error  Unsafe member access .findMany on an `any` value               @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   48:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   48:36  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   49:9   error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   49:9   error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   49:13  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   49:18  error  Unsafe member access .sessionId on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   49:49  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   49:54  error  Unsafe member access .status on an `any` value                 @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-reminder-1h.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/class-reminder-1h.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-reminder-1h.ts
+@stillwater/workers:lint:   11:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   40:31  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   40:61  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   41:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   41:36  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   42:9   error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   42:9   error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   42:13  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   42:18  error  Unsafe member access .sessionId on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   42:49  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   42:54  error  Unsafe member access .memberId on an `any` value               @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   73:34  error  Invalid type "number" of template literal expression           @typescript-eslint/restrict-template-expressions
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-reminder-24h.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/class-reminder-24h.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/class-reminder-24h.ts
+@stillwater/workers:lint:   11:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   41:31  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   41:61  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   42:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   42:36  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   43:9   error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   43:9   error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   43:13  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   43:18  error  Unsafe member access .sessionId on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   43:49  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   43:54  error  Unsafe member access .memberId on an `any` value               @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/membership-credit-grant.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/membership-credit-grant.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/membership-credit-grant.ts
+@stillwater/workers:lint:   27:3  error  Async method 'run' has no 'await' expression  @typescript-eslint/require-await
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/membership-expiry-warn.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/membership-expiry-warn.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/membership-expiry-warn.ts
+@stillwater/workers:lint:   17:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   47:27  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   47:53  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   48:42  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   48:50  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   48:50  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/payment-failed-notify.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/payment-failed-notify.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/payment-failed-notify.ts
+@stillwater/workers:lint:   16:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   41:27  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   41:53  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   42:42  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   42:50  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   42:50  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/waitlist-expiry.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/waitlist-expiry.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/waitlist-expiry.ts
+@stillwater/workers:lint:   17:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   48:26  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   48:60  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   49:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   49:31  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   49:39  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   49:39  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   49:44  error  Unsafe member access .id on an `any` value                     @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/waitlist-promotion.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/waitlist-promotion.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/waitlist-promotion.ts
+@stillwater/workers:lint:   17:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   54:26  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   54:60  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   55:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   55:31  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   55:39  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   55:39  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   55:44  error  Unsafe member access .id on an `any` value                     @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/weekly-digest.test.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/src/weekly-digest.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/src/weekly-digest.ts
+@stillwater/workers:lint:   16:1   error  There should be at least one empty line between import groups  import/order
+@stillwater/workers:lint:   50:27  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   50:53  error  Unsafe member access .findFirst on an `any` value              @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   51:42  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   51:50  error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   51:50  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   61:32  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   61:62  error  Unsafe member access .findMany on an `any` value               @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   62:18  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   62:36  error  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+@stillwater/workers:lint:   63:9   error  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+@stillwater/workers:lint:   63:9   error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   63:13  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   63:18  error  Unsafe member access .memberId on an `any` value               @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint:   63:47  error  Unsafe call of an `any` typed value                            @typescript-eslint/no-unsafe-call
+@stillwater/workers:lint:   63:52  error  Unsafe member access .status on an `any` value                 @typescript-eslint/no-unsafe-member-access
+@stillwater/workers:lint: 
+@stillwater/workers:lint: /home/project/stillwater/services/workers/vitest.config.ts
+@stillwater/workers:lint:   0:0  error  Parsing error: /home/project/stillwater/services/workers/vitest.config.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+@stillwater/workers:lint: 
+@stillwater/workers:lint: ✖ 100 problems (100 errors, 0 warnings)
+@stillwater/workers:lint:   9 errors and 0 warnings potentially fixable with the `--fix` option.
+@stillwater/workers:lint: 
+@stillwater/workers:lint: [ELIFECYCLE] Command failed with exit code 1.
+@stillwater/web:lint: [ELIFECYCLE] Command failed.
+@stillwater/workers#lint:  ERROR  command (/home/project/stillwater/services/workers) /home/pete/.local/share/pnpm/store/v11/links/@/pnpm/11.9.0/3ffdaeac3a5344b68164ba8be477b1270e1dae24d6ea4f11cb8bfa65f611e915/bin/pnpm run lint exited (1)
+
+ Tasks:    0 successful, 2 total
+Cached:    0 cached, 2 total
+  Time:    31.271s 
+Failed:    @stillwater/workers#lint
+
+ ERROR  run failed: command  exited (1)
+[ELIFECYCLE] Command failed with exit code 1.
+
