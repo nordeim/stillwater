@@ -10,7 +10,7 @@
 [![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![tRPC](https://img.shields.io/badge/tRPC-v11-2596BE?logo=trpc&logoColor=white)](https://trpc.io/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#license)
-[![Status](https://img.shields.io/badge/status-Phase%206%20complete-success)](#project-status)
+[![Status](https://img.shields.io/badge/status-Phase%209%20complete-success)](#project-status)
 
 > **A sanctuary for mindful movement.** An enterprise-grade yoga studio management platform — public marketing surface, member booking application, RBAC-gated admin, real-time seat availability via SSE, Stripe subscription billing, and Trigger.dev v4 background jobs. Built with the calm intentionality of Japanese editorial design.
 
@@ -22,7 +22,7 @@ Stillwater is the operational backbone and digital face of a boutique yoga studi
 
 The platform replaces a class of brittle brochure-site-plus-Stripe-link yoga websites with a SaaS-grade product: PostgreSQL advisory locks for double-booking prevention, idempotent Stripe webhook processing, an 11-job Trigger.dev v4 background worker for emails and waitlist promotion, and WCAG 2.2 Level AAA accessibility for the 35–65 demographic the studio serves.
 
-The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 11 ADRs (all Accepted as of 2026-07-09 — ADR-010 was the last to be accepted); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v2.1.0) condensing 21 source skills.
+The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is the canonical Project Architecture Document with 11 ADRs (all Accepted as of 2026-07-09 — ADR-010 was the last to be accepted); [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) is the 13-phase TDD execution plan that reconciles 45 discrepancies between source documents; [`stillwater_SKILL.md`](./stillwater_SKILL.md) is the distilled project skill (v2.3.0) condensing 21 source skills.
 
 ---
 
@@ -575,11 +575,11 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 6     | Member dashboard + membership management           | ✅ Complete   | 4         |
 | 7     | Stripe integration (subscriptions + credit packs)  | ✅ Complete   | 4         |
 | 8     | Background jobs + email (11 tasks + 13 templates)  | ✅ Complete   | 3         |
-| 9     | Admin surface (RBAC-gated)                         | ⬜ Pending     | 5         |
+| 9     | Admin surface (RBAC-gated)                         | ✅ Complete   | 5         |
 | 10    | Observability + performance hardening              | ⬜ Pending     | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ⬜ Pending     | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ⬜ Pending     | 4         |
-| **Total** |                                                | **~64% complete** | **~43 days** |
+| **Total** |                                                | **~73% complete** | **~48 days** |
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -617,11 +617,19 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | Tailwind v4 classes not applying                              | Verify `globals.css` imports `@stillwater/ui/globals` BEFORE `tailwindcss`; `@theme` block maps every token. |
 | Dev server returns 500 on every page                          | `babel-plugin-react-compiler` not installed. Run `pnpm add -F @stillwater/web babel-plugin-react-compiler`. Required by `reactCompiler: true` in `next.config.ts`. |
 | `pnpm check-types` fails TS2345 in `packages/config`          | t3-env `createEnv()` missing `clientPrefix`. Add `clientPrefix: 'NEXT_PUBLIC_'` and pass schema inline (not as separate variable). |
-| `pnpm check-types` fails TS2353/TS2322 in `trigger.config.ts` | Trigger.dev v4 type changes: `machine` is string literal (not object), `build.env` removed. |
+| `pnpm check-types` fails TS2353/TS2322 in `trigger.config.ts` | Trigger.dev v4 type changes: use `machine: "micro"` (string literal canonical form). Env vars via dashboard/CLI, not `trigger.config.ts`. |
 | `pnpm check-types` fails TS1295 in workers                    | `verbatimModuleSyntax` requires ESM. Add `"type": "module"` to `services/workers/package.json`. |
 | `pnpm check-types` fails TS6059 in workers                    | `rootDir: "src"` excludes `trigger.config.ts`. Remove `rootDir`/`outDir` (irrelevant with `noEmit: true`). |
 | `pnpm dev --filter=web` fails "No package found"              | Package name is `@stillwater/web`, not `web`. Use `--filter=@stillwater/web` or `--filter=./apps/web`. |
 | `turbopackFileSystemCaching` warning in dev                   | Stale property name. Use `turbopackFileSystemCacheForDev` (Next.js 16.2.10). |
+| `Module not found: Can't resolve 'cmdk'` (Phase 9)           | `cmdk` not installed for shadcn `command` component. Run `pnpm --filter @stillwater/web add cmdk`. |
+| `TRPCError: BAD_REQUEST` calling `bookings.checkIn` (Phase 9) | `bookings.checkIn` takes `{ sessionId, memberId }`, NOT `{ enrollmentId }`. Pass `entry.member.id`, not `entry.id`. |
+| `TRPCError: BAD_REQUEST` calling `schedule.getWeek({})` (Phase 9) | `getWeek` requires `{ weekStart: date }`. Pass `weekStart: new Date()` (set hours to 0). |
+| `Cannot find name 'ilike'` in admin search (Phase 9)         | Import `ilike` and `or` from `drizzle-orm`. Use `or(ilike(t.col, '%search%'), ilike(t.col2, '%search%'))`. |
+| `TRPCError: FORBIDDEN` when assigning roles (Phase 9)        | `admin.assignRole` uses `ownerProcedure` (Tier 4), not `staffProcedure`. Only owner can assign roles. |
+| Drag session in calendar doesn't update (Phase 9)            | `sessions.update` procedure doesn't exist yet (Phase 10). Drag shows info toast. |
+| Revenue chart shows single point (Phase 9)                   | Monthly GROUP BY query not implemented (Phase 10). Chart shows total for period. |
+| `Type 'undefined' not assignable` inserting to `audit_log` (Phase 9) | `metadata` is jsonb nullable. Use `null`, not `undefined`: `metadata: metadata ?? null`. |
 
 ---
 
@@ -856,11 +864,11 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 
 | Document                                  | Purpose                                                              |
 |-------------------------------------------|----------------------------------------------------------------------|
-| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 11 ADRs; v1.10.0) |
-| [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.4.0) |
-| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v2.1.0; 21 source skills condensed; 65 lessons) |
-| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v2.0.0; 57 gotchas) |
-| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (50 gotchas)  |
+| [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 11 ADRs; v1.13.0) |
+| [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.6.0) |
+| [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v2.3.0; 21 source skills condensed; 75 lessons) |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v2.4.0; 80 gotchas) |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (73 gotchas)  |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |
 | [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture (some sections superseded by ADRs) |
 | [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |

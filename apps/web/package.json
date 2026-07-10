@@ -33,6 +33,7 @@
     "@sanity/client": "^7.23.0",
     "@sanity/image-url": "^2.1.1",
     "@sentry/nextjs": "^10.63.0",
+    "cmdk": "^1.0.4",
     "@stillwater/api": "workspace:*",
     "@stillwater/auth": "workspace:*",
     "@stillwater/config": "workspace:*",

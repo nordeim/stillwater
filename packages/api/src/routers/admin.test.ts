@@ -196,3 +196,76 @@ describe('adminRouter.getClassRoster', () => {
     expect(findMany).not.toHaveBeenCalled();
   });
 });
+
+describe('adminRouter.listClasses (Phase 9 F9-04)', () => {
+  it('returns paginated class list with total count', async () => {
+    const mockClasses = [
+      { id: 'cls-1', title: 'Vinyasa Flow', slug: 'vinyasa', level: 'all', durationMinutes: 60, maxCapacity: 20, isActive: true },
+      { id: 'cls-2', title: 'Yin Yoga', slug: 'yin', level: 'beginner', durationMinutes: 75, maxCapacity: 15, isActive: true },
+    ];
+    const findMany = vi.fn().mockResolvedValue(mockClasses);
+    // Mock the count query: db.select({count}).from(classes).where(...)
+    const where = vi.fn().mockResolvedValue([{ count: 2 }]);
+    const fromResult = Object.assign(Promise.resolve([{ count: 2 }]), { where });
+    const from = vi.fn().mockReturnValue(fromResult);
+    const select = vi.fn().mockReturnValue({ from });
+
+    const ctx = makeCtx(
+      {
+        query: { classes: { findMany } } as never,
+        select,
+      } as never,
+      ['staff'],
+    );
+    const caller = adminRouter.createCaller(ctx);
+
+    const result = await caller.admin.listClasses({ limit: 20, offset: 0 });
+
+    // The listClasses procedure accesses ctx.db.query.classes.findMany and ctx.db.select
+    expect(result.items).toEqual(mockClasses);
+  });
+
+  it('throws FORBIDDEN for member-only caller', async () => {
+    const findMany = vi.fn();
+    const ctx = makeCtx(
+      { query: { classes: { findMany } } as never } as never,
+      ['member'],
+    );
+    const caller = adminRouter.createCaller(ctx);
+    await expect(
+      caller.admin.listClasses({ limit: 20, offset: 0 }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+});
+
+describe('adminRouter.deleteClass (Phase 9 F9-04)', () => {
+  it('soft-deletes a class by setting isActive = false', async () => {
+    const update = vi.fn();
+    const set = vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'cls-1', isActive: false }]) }) });
+    update.mockReturnValue({ set });
+
+    const ctx = makeCtx(
+      { update } as never,
+      ['staff'],
+    );
+    const caller = adminRouter.createCaller(ctx);
+
+    const result = await caller.admin.deleteClass({ id: '11111111-1111-4111-8111-111111111111' });
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith(expect.objectContaining({ isActive: false }));
+  });
+
+  it('throws FORBIDDEN for member-only caller', async () => {
+    const update = vi.fn();
+    const ctx = makeCtx(
+      { update } as never,
+      ['member'],
+    );
+    const caller = adminRouter.createCaller(ctx);
+    await expect(
+      caller.admin.deleteClass({ id: '11111111-1111-4111-8111-111111111111' }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(update).not.toHaveBeenCalled();
+  });
+});

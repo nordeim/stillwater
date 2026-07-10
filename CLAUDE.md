@@ -1,9 +1,9 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 2.3.0
+version: 2.4.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia), Trigger.dev v4"
-last_updated: 2026-07-09
+last_updated: 2026-07-10
 ---
 
 # Stillwater
@@ -15,13 +15,13 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 **Canonical Sources** (read in this order when in doubt — precedence: design specs → visual guidance → tech stack → architecture culmination → derived working copy):
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` + `static_landing_page_html_mockup.md` — visual + UI/UX aesthetics guidance only (token VALUES come from SKILL §4.1 / PAD §11.4)
-3. `stillwater_SKILL.md` — distilled project skill (v2.1.0; 21 source skills condensed; 65 lessons); authoritative tech-stack specifics
-4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.10.0); culmination of the above into codebase architecture
-5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.4.0)
+3. `stillwater_SKILL.md` — distilled project skill (v2.3.0; 21 source skills condensed; 75 lessons); authoritative tech-stack specifics
+4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.13.0); culmination of the above into codebase architecture
+5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.6.0)
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–8 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 17 tables (14 domain + 3 Better Auth) + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (7 source files, 43 tests: `client.ts` singleton with Dahlia API, `types.ts` 7-event discriminated union, `subscriptions.ts` 5 lifecycle helpers, `webhooks.ts` idempotent handler with `pg_advisory_xact_lock` + 7 event handlers, `invoices.ts` cursor pagination, `credit-packs.ts` one-off checkout, `refunds.ts` D12 thin wrapper), Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT, signature verification, 400/500/200), `CheckoutButton` component, `lib/stripe/utils.ts`, all tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`), `payments.refund` retained as D12 stub, ADR-010 accepted (Resend Native Templates), 5 STRIPE acceptance tests passing. Phase 8: Background jobs + email — `@stillwater/email` package (19 source files, 71 tests: 3 shared components, 13 React Email v6 templates, dual-path send.ts with sendEmail for Server Components + sendEmailNative for workers per ADR-010, 13 send-helpers, template-ids.ts), `@stillwater/workers` package (12 source files, 33 tests: 11 Trigger.dev v4 tasks with per-task maxDuration + retry, all use sendEmailNative via send-helpers), integration wiring (getJobsClient in @stillwater/config with stub fallback, bookings.book triggers booking-confirmation + reminders fire-and-forget, bookings.cancel job ID fixed to waitlist-promotion, memberships.cancel/pause send emails, Stripe webhook invoice.payment_failed triggers payment-failed-notify post-commit). 603 tests (109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green. Phase 9-12 pending.
+**Phase 0–9 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 17 tables (14 domain + 3 Better Auth) + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (7 source files, 43 tests: `client.ts` singleton with Dahlia API, `types.ts` 7-event discriminated union, `subscriptions.ts` 5 lifecycle helpers, `webhooks.ts` idempotent handler with `pg_advisory_xact_lock` + 7 event handlers, `invoices.ts` cursor pagination, `credit-packs.ts` one-off checkout, `refunds.ts` D12 thin wrapper), Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT, signature verification, 400/500/200), `CheckoutButton` component, `lib/stripe/utils.ts`, all tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`), `payments.refund` retained as D12 stub, ADR-010 accepted (Resend Native Templates), 5 STRIPE acceptance tests passing. Phase 8: Background jobs + email — `@stillwater/email` package (19 source files, 71 tests: 3 shared components, 13 React Email v6 templates, dual-path send.ts with sendEmail for Server Components + sendEmailNative for workers per ADR-010, 13 send-helpers, template-ids.ts), `@stillwater/workers` package (12 source files, 33 tests: 11 Trigger.dev v4 tasks with per-task maxDuration + retry, all use sendEmailNative via send-helpers), integration wiring (getJobsClient in @stillwater/config with stub fallback, bookings.book triggers booking-confirmation + reminders fire-and-forget, bookings.cancel job ID fixed to waitlist-promotion, memberships.cancel/pause send emails, Stripe webhook invoice.payment_failed triggers payment-failed-notify post-commit). Phase 9: Admin surface (RBAC-gated) — 10 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`), 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable with check-in, RevenueChart via Recharts, MemberRoleEditor owner-only, SignOutButton), 8 new admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails` with real MRR/churn/attendance, `assignRole` owner-only, `removeRole` owner-only, `listAuditLog`), `audit_log` table (migration `0003_audit_log_phase9.sql`) with 3 indexes, 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command), `cmdk` dependency, `lib/admin/audit-log.ts` helper, 5 E2E spec files with skipIf guards. All admin mutations audit-logged. 2-layer auth defense-in-depth via nested layouts (revenue=manager+, settings=owner). 603+ tests. Phase 10-12 pending.
 
 ---
 
@@ -447,7 +447,7 @@ Before committing, verify locally:
 ```bash
 pnpm check-types       # TypeScript green (9/9 tasks)
 pnpm lint              # ESLint green (2/2 tasks)
-pnpm test              # Vitest green (603 tests: 109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers)
+pnpm test              # Vitest green (603+ tests: 109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers — Phase 9 adds audit-log + KpiCard + admin router tests)
 pnpm build             # Next.js production build (13/13 pages)
 ```
 
@@ -524,13 +524,13 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 14. **Calling `auth.api.getSession()` inside `proxy.ts`**: Too expensive for every request regardless of runtime (Edge or Node.js — Next.js 16 docs are inconsistent on the default). Use `getSessionCookie()` (cookie-only) in proxy.ts; full validation in Server Component layouts (D36, ADR-009)
 15. **Importing `@trigger.dev/sdk/v3` (deprecated)**: Use root `import { defineConfig } from "@trigger.dev/sdk"` per official Trigger.dev v4 docs. The `/v3` subpath is the deprecated v3-era pattern (both resolve to the same file, but root is the official v4 path). The `/v4` export does NOT exist. See Gotchas §1.
 16. **Upgrading ESLint to v10**: `eslint-plugin-react@7.37.5` and `eslint-plugin-import@2.32.0` do NOT support ESLint v10 (no v10-compatible versions exist). Stay on ESLint v9.39.4 (`maintenance` dist-tag). See D45.
-17. **Importing `render` from `@react-email/render`**: Deprecated in React Email v6.0.0 (April 16, 2026). Import from `react-email` root: `import { render } from 'react-email'`. See D43.
+17. **Importing `render` from `@react-email/render`**: React Email v6.0.0 (April 16, 2026) unified all imports into the `react-email` root package. While `@react-email/render` itself is NOT deprecated (still actively published as a v6 dependency), the recommended pattern is `import { render } from 'react-email'`. The actually deprecated package is `@react-email/components`. See D43.
 18. **Pinning `typescript: ^6.0.3` in sub-packages**: PAD §5.1 mandates `^5.9.0` for `erasableSyntaxOnly` + `verbatimModuleSyntax` compatibility. See D44 + `pnpm_install_fix.md`.
 19. **Using Zod v3 patterns**: Zod v4 has breaking changes — `z.string().url()` accepts any scheme (use `z.url({ protocol: /^https:$/ })`); `{ errorMap }` removed; `{ message }` deprecated; `z.ZodIssueCode` deprecated (use string literal `'custom'`).
 20. **Using Stripe `currentPeriodEnd` (camelCase)**: Stripe SDK v22 uses snake_case API (`current_period_end`), and it moved to `items.data[0].current_period_end` in the Dahlia API (2026-06-24).
 21. **Enabling `reactCompiler: true` without installing `babel-plugin-react-compiler`**: The package is NOT a built-in — it must be manually installed (`pnpm add -F @stillwater/web babel-plugin-react-compiler`). Without it, every page returns 500. See Gotcha 11.
 22. **Passing t3-env schema as a separate variable to `createEnv()`**: TypeScript can't infer generics — pass schema inline. Also, `clientPrefix: 'NEXT_PUBLIC_'` is required. See Gotcha 12.
-23. **Using Trigger.dev v3-style `machine: { preset: "micro" }` or `build.env`**: v4 changed the type — `machine` is now a string literal; `build.env` was removed. See Gotcha 13.
+23. **Using Trigger.dev v3-style `machine: { preset: "micro" }`**: v4 promotes the string literal form (`machine: "micro"`) as the canonical/documented pattern. The object form `{ preset: "..." }` still type-accepts for backward compatibility but is no longer documented. Note: env vars in v4 are managed via the Trigger.dev dashboard/CLI (the `deploy.env` field still exists in the type but is no longer documented; there was never a `build.env` field). See Gotcha 13.
 24. **Using `--filter=web` instead of `--filter=@stillwater/web`**: Turbo matches by package name, not directory. The package name is `@stillwater/web`.
 
 ---
@@ -753,13 +753,13 @@ These are real issues encountered during Phase 0 implementation. Each has a veri
 
 **Fix:** `packages/config/src/env.ts` was restructured: schemas extracted as `serverSchema` and `clientSchema` consts (for the build-context fallback), then passed inline to `createEnv({ clientPrefix: 'NEXT_PUBLIC_', server: serverSchema, client: clientSchema, runtimeEnv: {...} })`.
 
-### Gotcha 13: Trigger.dev v4 type changes — `machine` is string, `build.env` removed (High)
+### Gotcha 13: Trigger.dev v4 type changes — `machine` string canonical, env vars via dashboard/CLI (High)
 
 **Symptom:** `pnpm check-types` fails with TS2353 ("'env' does not exist in type") and TS2322 ("Type '{ preset: string; }' is not assignable to type 'micro' | 'small-1x' | ...").
 
-**Root cause:** Trigger.dev v4 SDK changed the `defineConfig` type signature: `machine` is now a string literal (`"micro"`, `"small-1x"`, etc.), not an object with `preset`. The `build.env` property was removed — environment variables are injected at runtime by Trigger.dev Cloud.
+**Root cause:** Trigger.dev v4 SDK promotes the string literal form (`machine: "micro"`) as the canonical/documented `machine` configuration. The object form (`{ preset: "..." }`) still type-accepts for backward compatibility but is no longer documented. For environment variables, v4 promotes the dashboard/CLI as the primary management method (the `deploy.env` field still exists in the type definition but is no longer documented; there was never a `build.env` field in v3 or v4).
 
-**Fix:** `services/workers/trigger.config.ts` updated: `machine: { preset: "micro" }` → `machine: "micro"`; removed `build.env` block.
+**Fix:** `services/workers/trigger.config.ts` uses `machine: "micro"` (string literal). Environment variables are configured via the Trigger.dev dashboard or `trigger.dev env set` CLI, not in `trigger.config.ts`.
 
 ### Gotcha 14: Drizzle 0.45 column API — `.isUnique` not `.unique` (Phase 1)
 
@@ -1362,11 +1362,11 @@ const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
 
 **Symptom:** Accessing `subscription.current_period_end` returns `undefined` or triggers a deprecation warning.
 
-**Root cause:** Stripe's Basil API (2025-03-31) deprecated the top-level `subscription.current_period_start` and `subscription.current_period_end` fields. In the Dahlia API (2026-06-24, SDK v22+), these fields are accessed at `subscription.items.data[0].current_period_end`. The SDK exposes snake_case throughout to match the API wire format.
+**Root cause:** Stripe's Basil API (2025-03-31) **removed** the top-level `subscription.current_period_start` and `subscription.current_period_end` fields in a single step (per the Basil changelog: "removes subscription-level periods"), adding subscription item-level billing periods instead. In the Dahlia API (2026-06-24, SDK v22+), these fields are accessed at `subscription.items.data[0].current_period_end`. The SDK exposes snake_case throughout to match the API wire format.
 
 **Fix:** Access period dates via the items array:
 ```typescript
-// WRONG (deprecated in Basil, removed in Dahlia):
+// WRONG (removed in Basil 2025-03-31, not available in Dahlia):
 const periodEnd = subscription.current_period_end;
 
 // CORRECT (Dahlia):
@@ -1493,6 +1493,158 @@ for (const action of postCommitActions) {
 }
 ```
 
+### Gotcha 68: `cmdk` not installed — command component requires manual install (High — Phase 9)
+
+**Symptom:** `Module not found: Can't resolve 'cmdk'` when using the `Command` shadcn component for combobox selectors (class/instructor/room selectors in admin forms).
+
+**Root cause:** The `command.tsx` shadcn component imports from `cmdk`, but `cmdk` is NOT a built-in dependency. It must be manually installed.
+
+**Fix:** `pnpm add cmdk` (or `pnpm --filter @stillwater/web add cmdk`). The package is already listed in `apps/web/package.json` at `^1.0.4`.
+
+### Gotcha 69: `bookings.checkIn` takes `sessionId + memberId`, NOT `enrollmentId` (Critical — Phase 9)
+
+**Symptom:** `TRPCError: BAD_REQUEST` or `NOT_FOUND` when calling `bookings.checkIn` from the RosterTable.
+
+**Root cause:** The `bookings.checkIn` procedure input schema is `{ sessionId: uuid, memberId: uuid }` — NOT `{ enrollmentId: uuid }`. The RosterTable initially called `handleCheckIn(entry.id)` (enrollment ID) but must call `handleCheckIn(entry.member.id)` (member ID).
+
+**Fix:** Pass `sessionId` (from the page prop) + `memberId` (from `entry.member.id`):
+```typescript
+checkInMutation.mutate({ sessionId, memberId: entry.member.id });
+```
+
+### Gotcha 70: `schedule.getWeek` requires `weekStart` date input (Medium — Phase 9)
+
+**Symptom:** `TRPCError: BAD_REQUEST` when calling `schedule.getWeek({})` from the admin dashboard.
+
+**Root cause:** The `getWeek` procedure input schema requires `{ weekStart: z.coerce.date() }`. An empty object `{}` fails Zod validation.
+
+**Fix:** Pass a `weekStart` date:
+```typescript
+const weekStart = new Date();
+weekStart.setHours(0, 0, 0, 0); // midnight today
+const sessions = await caller.schedule.getWeek({ weekStart });
+```
+
+### Gotcha 71: Admin audit logging must be fire-and-forget (Medium — Phase 9)
+
+**Symptom:** Admin mutation fails or delays because the audit log insert throws or blocks.
+
+**Root cause:** Audit logging should NEVER block the actual mutation. If the `audit_log` insert fails (e.g., DB constraint violation, connection issue), the mutation should still succeed.
+
+**Fix:** The `logAdminAction()` helper in `lib/admin/audit-log.ts` wraps the insert in try/catch and logs errors to `console.error` only. It does NOT throw. For inline audit logging in tRPC procedures (e.g., `admin.assignRole`), use `.catch(() => {})` on the insert promise:
+```typescript
+await ctx.db.insert(auditLog).values({...}).catch(() => {
+  // Audit logging should never block the mutation
+});
+```
+
+### Gotcha 72: Drizzle `ilike` + `or` for admin search queries (Medium — Phase 9)
+
+**Symptom:** TypeScript error: `Cannot find name 'ilike'` or `'or'` when building admin search queries.
+
+**Root cause:** `ilike` and `or` are Drizzle ORM operators that must be imported from `drizzle-orm`.
+
+**Fix:** Import `ilike` and `or` from `drizzle-orm`:
+```typescript
+import { eq, and, gte, lte, sql, ilike, or, desc } from 'drizzle-orm';
+// Search across multiple columns:
+or(
+  ilike(classes.title, `%${search}%`),
+  ilike(classes.slug, `%${search}%`),
+)
+```
+
+### Gotcha 73: `ownerProcedure` tier for role assignment (Critical — Phase 9)
+
+**Symptom:** `TRPCError: FORBIDDEN` when a non-owner admin tries to assign roles.
+
+**Root cause:** Role assignment (`admin.assignRole` / `admin.removeRole`) uses `ownerProcedure` (Tier 4 — highest privilege), NOT `staffProcedure` (Tier 3). Only the `owner` role can assign/remove roles per PAD §9.2 RBAC matrix.
+
+**Fix:** Use `ownerProcedure` for role management procedures. The `MemberRoleEditor` component is only rendered when `session.user.roles.includes('owner')` (checked in the member detail page).
+
+### Gotcha 74: `SignOutButton` uses form POST for CSRF safety (Medium — Phase 9)
+
+**Symptom:** Sign-out works but a security audit flags potential CSRF vulnerability.
+
+**Root cause:** Sign-out via `fetch()` or `<a>` link is vulnerable to CSRF (an attacker can craft a form/image that triggers sign-out). The `/auth/sign-out` route rejects GET requests (returns 405) — only POST is allowed.
+
+**Fix:** `SignOutButton` uses `<form action="/auth/sign-out" method="POST">` — a native form POST that the browser handles directly. No fetch/XHR needed. The POST-only route prevents CSRF via image tags or links.
+
+### Gotcha 75: AdminShell sidebar link visibility uses role hierarchy (Medium — Phase 9)
+
+**Symptom:** Staff user sees "Revenue" or "Settings" links in the admin sidebar (should be hidden).
+
+**Root cause:** The `AdminShell` component uses a `ROLE_LEVEL` map to determine link visibility: `{ member: 0, instructor: 0, staff: 1, manager: 2, owner: 3 }`. Each nav item has a `minRole` — the link is only shown if any of the user's roles has a level ≥ the item's min level.
+
+**Fix:** The `canSeeLink()` function checks:
+```typescript
+function canSeeLink(userRoles: StudioRole[], minRole: StudioRole): boolean {
+  const minLevel = ROLE_LEVEL[minRole];
+  return userRoles.some((role) => ROLE_LEVEL[role] >= minLevel);
+}
+```
+Revenue link: `minRole: 'manager'` (visible to manager + owner only). Settings link: `minRole: 'owner'` (visible to owner only).
+
+### Gotcha 76: Recharts bundle size — use `next/dynamic` for admin charts (Medium — Phase 9)
+
+**Symptom:** Admin route bundle exceeds 400kb budget because Recharts (~200kb) is imported at the top level.
+
+**Root cause:** Recharts is a large library. Importing it statically in a Server Component adds it to the route bundle.
+
+**Fix:** Use `next/dynamic` to lazy-load chart components:
+```typescript
+import dynamic from 'next/dynamic';
+const RevenueChart = dynamic(() => import('@/components/admin/RevenueChart').then(m => m.RevenueChart), { ssr: false });
+```
+Note: The current implementation imports RevenueChart directly (it's a Client Component already). For Phase 10, consider dynamic import if bundle size becomes an issue.
+
+### Gotcha 77: `@dnd-kit/core` drag-to-reschedule deferred to Phase 10 (Medium — Phase 9)
+
+**Symptom:** Dragging a session in the ScheduleCalendar shows an info toast but does NOT update the session time.
+
+**Root cause:** The ScheduleCalendar has `@dnd-kit/core` DnD wired, but actual session time updates require a `sessions.update` procedure that doesn't exist yet. The current `sessions` router only has `create` + `cancel` — no `update`.
+
+**Fix:** The `handleDragEnd` handler shows an info toast: `"Drag-to-reschedule requires sessions.update procedure (Phase 10)"`. Phase 10 will add `sessions.update` and wire the DnD handler to call it.
+
+### Gotcha 78: Revenue chart monthly breakdown needs GROUP BY query (Low — Phase 9)
+
+**Symptom:** The RevenueChart shows a single data point ("Total") instead of a 12-month line chart.
+
+**Root cause:** The current `admin.getRevenueDetails` returns a single total for the period. A monthly breakdown requires a `GROUP BY` query on `payment_events.createdAt` truncated to month.
+
+**Fix:** Phase 10 enhancement — add a `GROUP BY date_trunc('month', created_at)` query to return `Array<{ month: string; mrr: number }>` for the chart. The current chart renders with a single-point placeholder.
+
+### Gotcha 79: `react-day-picker` v10 API — `IconLeft`/`IconRight` components (Low — Phase 9)
+
+**Symptom:** Calendar component renders without navigation arrows, or TypeScript error on `components` prop.
+
+**Root cause:** `react-day-picker` v10 changed the API for custom icons. Instead of passing icon components as props, you pass them via the `components` option:
+```typescript
+components={{
+  IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+  IconRight: () => <ChevronRight className="h-4 w-4" />,
+}}
+```
+
+**Fix:** The `calendar.tsx` component already uses the v10 `components` API. If upgrading react-day-picker, verify the icon API hasn't changed again.
+
+### Gotcha 80: `audit_log.metadata` is jsonb nullable — use `null`, not `undefined` (Low — Phase 9)
+
+**Symptom:** TypeScript error: `Type 'undefined' is not assignable to type '...'` when inserting into `audit_log` without metadata.
+
+**Root cause:** The `metadata` column is defined as `jsonb('metadata')` (nullable). In Drizzle, nullable columns accept `null` but NOT `undefined` (with `exactOptionalPropertyTypes: true`).
+
+**Fix:** Pass `null` explicitly when there's no metadata:
+```typescript
+await db.insert(auditLog).values({
+  staffMemberId,
+  action,
+  entityType,
+  entityId,
+  metadata: metadata ?? null, // NOT undefined
+});
+```
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -1529,7 +1681,7 @@ for (const action of postCommitActions) {
 | Tailwind v4 classes not applying | `globals.css` import order | Must import `@stillwater/ui/globals` BEFORE `tailwindcss`; `@theme` block maps every token. |
 | Dev server returns 500 on every page | `babel-plugin-react-compiler` not installed | `pnpm add -F @stillwater/web babel-plugin-react-compiler`. `reactCompiler: true` requires this package. See Gotcha 11. |
 | `pnpm check-types` fails TS2345 in `packages/config` | t3-env `createEnv()` missing `clientPrefix` | Add `clientPrefix: 'NEXT_PUBLIC_'` and pass schema inline to `createEnv()`. See Gotcha 12. |
-| `pnpm check-types` fails TS2353/TS2322 in `trigger.config.ts` | Trigger.dev v4 type changes | `machine` is string not object; `build.env` removed. See Gotcha 13. |
+| `pnpm check-types` fails TS2353/TS2322 in `trigger.config.ts` | Trigger.dev v4 type changes | Use `machine: "micro"` (string literal, canonical form). Env vars via dashboard/CLI, not `trigger.config.ts`. See Gotcha 13. |
 | `pnpm check-types` fails TS1295 in workers | `verbatimModuleSyntax` requires ESM | Add `"type": "module"` to `services/workers/package.json`. |
 | `pnpm check-types` fails TS6059 in workers | `rootDir: "src"` excludes `trigger.config.ts` | Remove `rootDir` and `outDir` from workers tsconfig (irrelevant with `noEmit: true`). |
 | `pnpm dev --filter=web` fails "No package found" | Package name is `@stillwater/web`, not `web` | Use `--filter=@stillwater/web` or `--filter=./apps/web`. |
@@ -1558,7 +1710,7 @@ for (const action of postCommitActions) {
 | `subscription.plan.name` TypeScript error: `never` (Phase 6) | Drizzle 0.45 `with: { plan: true }` infers as `never` | Cast to `SubscriptionWithPlan` type. See Gotcha 55. |
 | Dashboard page loads slowly — sequential data fetching (Phase 6) | Three `await` calls in sequence | Use `Promise.all` for parallel fetching. See Gotcha 56. |
 | `react-hook-form` validation not working (Phase 6) | Missing `zodResolver` in `useForm` config | Pass `resolver: zodResolver(schema)` to `useForm`. See Gotcha 57. |
-| `subscription.current_period_end` is `undefined` (Phase 7) | Stripe Basil/Dahlia deprecated top-level field | Access via `subscription.items.data[0].current_period_end`. See Gotcha 58. |
+| `subscription.current_period_end` is `undefined` (Phase 7) | Stripe Basil removed top-level field (2025-03-31) | Access via `subscription.items.data[0].current_period_end`. See Gotcha 58. |
 | `pg_advisory_xact_lock` type error or silent failure (Phase 7) | BigInt literal (`5381n`) needs ES2020; key must be bigint | Use `BigInt(5381)` constructor; mask to 32 bits for single-arg variant. See Gotcha 59. |
 | Stripe webhook `400 Invalid signature` even with correct secret (Phase 7) | Body parsed as JSON, re-serialized → signature mismatch | Read body as `await request.text()`, pass raw string to `constructEvent`. See Gotcha 60. |
 | `sub.plan.classCreditsPerCycle` TypeScript error: `never` (Phase 7) | Drizzle 0.45 `with: { plan: true }` infers as `never` | Cast query result to expected shape. See Gotcha 61. |
@@ -1573,6 +1725,15 @@ for (const action of postCommitActions) {
 | `Job triggered but data doesn't exist` (Phase 8) | Job triggered inside a transaction that rolled back | Use post-commit pattern — see Gotcha 67. |
 | `Cannot find module '@stillwater/email'` in api (Phase 8) | `@stillwater/email` not added as workspace dependency | `pnpm --filter @stillwater/api add @stillwater/email@workspace:*`. |
 | `vitest test files fail with TS2835 (explicit file extensions)` in workers (Phase 8) | NodeNext requires `.js` extensions in `import` paths; test files type-checked by tsc | Exclude test files from workers tsconfig: `"exclude": [..., "src/**/*.test.ts"]`. |
+| `Module not found: Can't resolve 'cmdk'` (Phase 9) | `cmdk` not installed for shadcn command component | `pnpm --filter @stillwater/web add cmdk`. See Gotcha 68. |
+| `TRPCError: BAD_REQUEST` calling `bookings.checkIn` from RosterTable (Phase 9) | `bookings.checkIn` takes `{ sessionId, memberId }`, NOT `{ enrollmentId }` | Pass `entry.member.id` (member ID), not `entry.id` (enrollment ID). See Gotcha 69. |
+| `TRPCError: BAD_REQUEST` calling `schedule.getWeek({})` (Phase 9) | `getWeek` requires `{ weekStart: date }` input | Pass `weekStart: new Date()` (set hours to 0). See Gotcha 70. |
+| `Cannot find name 'ilike'` or `'or'` in admin search (Phase 9) | Drizzle operators not imported | `import { ilike, or } from 'drizzle-orm'`. See Gotcha 72. |
+| `TRPCError: FORBIDDEN` when assigning roles (Phase 9) | `admin.assignRole` uses `ownerProcedure`, not `staffProcedure` | Only owner role can assign/remove roles. See Gotcha 73. |
+| Staff sees Revenue/Settings in sidebar (Phase 9) | `AdminShell` role-based visibility not working | Verify `canSeeLink()` + `ROLE_LEVEL` map. See Gotcha 75. |
+| Drag session in calendar doesn't update time (Phase 9) | `sessions.update` procedure doesn't exist yet | Phase 10 will add it. See Gotcha 77. |
+| Revenue chart shows single point, not 12 months (Phase 9) | Monthly GROUP BY query not implemented | Phase 10 enhancement. See Gotcha 78. |
+| `Type 'undefined' not assignable` inserting to `audit_log` (Phase 9) | `metadata` is jsonb nullable — use `null`, not `undefined` | `metadata: metadata ?? null`. See Gotcha 80. |
 
 ---
 

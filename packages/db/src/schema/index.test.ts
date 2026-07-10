@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import * as schema from './index';
 
 describe('F1-14: schema barrel export', () => {
-  it('exports all 14 tables', () => {
+  it('exports all 15 domain tables (+ 3 Better Auth tables = 18 total)', () => {
     const expectedTables = [
       'users',
       'members',
@@ -25,6 +25,7 @@ describe('F1-14: schema barrel export', () => {
       'paymentEvents',
       'classPackages',
       'roleAssignments',
+      'auditLog',
     ];
 
     for (const table of expectedTables) {
@@ -49,7 +50,7 @@ describe('F1-14: schema barrel export', () => {
     }
   });
 
-  it('exports exactly 14 table objects (not more, not less)', () => {
+  it('exports exactly 15 domain table objects (not more, not less)', () => {
     // Count pgTable exports — filter out enums and utilities
     const tableNames = [
       'users',
@@ -66,9 +67,10 @@ describe('F1-14: schema barrel export', () => {
       'paymentEvents',
       'classPackages',
       'roleAssignments',
+      'auditLog',
     ];
 
-    expect(tableNames.length).toBe(14);
+    expect(tableNames.length).toBe(15);
     for (const name of tableNames) {
       expect(schema[name]).toBeDefined();
     }

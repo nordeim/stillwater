@@ -37,3 +37,6 @@ export * from './payments';
 
 // RBAC table (1)
 export * from './role-assignments';
+
+// Audit table (1 — Phase 9)
+export * from './audit-log';

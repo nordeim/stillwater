@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-09 (v2.3.0) — Phase 0–8 complete (603 tests). Phase 8 (Background Jobs + Email) built: `@stillwater/email` (19 files, 71 tests: 3 components + 13 templates + dual-path `send.ts` + 13 send-helpers + `template-ids`), `@stillwater/workers` (12 files, 33 tests: 11 Trigger.dev v4 tasks), integration wired (`getJobsClient` in `@stillwater/config`, bookings triggers 3 jobs, memberships sends emails, webhook triggers `payment-failed-notify` post-commit). 5 new gotchas (63–67). Total: 67 gotchas.
+> **Updated:** 2026-07-10 (v2.4.0) — Phase 0–9 complete (603+ tests). Phase 9 (Admin Surface) built: 10 admin pages (`/admin` dashboard, classes + `[id]` + `new`, schedule, instructors, members + `[id]`, revenue, settings, audit-log), 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with `@dnd-kit/core`, RosterTable, RevenueChart, MemberRoleEditor, SignOutButton), 8 new admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails`, `assignRole` owner-only, `removeRole` owner-only, `listAuditLog`), `audit_log` table (migration `0003_audit_log_phase9.sql`), 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command), `cmdk` dependency, `lib/admin/audit-log.ts` helper, 5 E2E spec files with skipIf guards. 13 new gotchas (68–80). Total: 80 gotchas.
 
 ---
 
@@ -28,6 +28,9 @@
 | React Email | 6.6.6 (`^6.6.6`) | v6 unified all imports to `react-email` root. `@react-email/render` is DEPRECATED. |
 | Resend | 6.17.1 (`^6.17.1`) | |
 | Zod | 4.4.3 (`^4.4.3`) | v4 breaking: `z.string().url()` accepts any scheme; `{ errorMap }` removed; `z.ZodIssueCode` deprecated |
+| cmdk | ^1.0.4 | Phase 9: Required by shadcn `command` component (combobox selectors). NOT installed by default — `pnpm add cmdk`. |
+| @dnd-kit/core | ^6.3.1 | Phase 9: ScheduleCalendar drag-and-drop. D42 resolved. |
+| recharts | ^2.15.4 | Phase 9: RevenueChart MRR chart. D42 resolved. Use `next/dynamic` if bundle size concern. |
 
 ---
 
@@ -421,25 +424,78 @@ Even `const m = '@trigger.dev/' + 'sdk'; await import(m)` gets statically resolv
 
 Collect actions in array during transaction, execute after commit. Don't trigger inside `db.transaction()`. See `CLAUDE.md` Gotcha 67.
 
+### 61. `cmdk` not installed — manual install required (High — Phase 9)
+
+The shadcn `command` component (used for combobox selectors) imports from `cmdk`. NOT a built-in. `pnpm --filter @stillwater/web add cmdk`. See `CLAUDE.md` Gotcha 68.
+
+### 62. `bookings.checkIn` takes `{ sessionId, memberId }`, NOT `{ enrollmentId }` (Critical — Phase 9)
+
+RosterTable must pass `entry.member.id` (member ID), not `entry.id` (enrollment ID). The procedure signature is `{ sessionId: uuid, memberId: uuid }`. See `CLAUDE.md` Gotcha 69.
+
+### 63. `schedule.getWeek` requires `{ weekStart: date }` input (Medium — Phase 9)
+
+Can't call with `{}`. Pass `weekStart: new Date()` (set hours to 0 for midnight). See `CLAUDE.md` Gotcha 70.
+
+### 64. Admin audit logging must be fire-and-forget (Medium — Phase 9)
+
+`logAdminAction()` wraps in try/catch, logs to `console.error`, never throws. For inline tRPC audit logging, use `.catch(() => {})` on the insert. Audit logging must NEVER block mutations. See `CLAUDE.md` Gotcha 71.
+
+### 65. Drizzle `ilike` + `or` for admin search queries (Medium — Phase 9)
+
+`import { ilike, or } from 'drizzle-orm'`. Use `or(ilike(t.col, '%search%'), ilike(t.col2, '%search%'))` for multi-column search. See `CLAUDE.md` Gotcha 72.
+
+### 66. `ownerProcedure` for role assignment (Critical — Phase 9)
+
+`admin.assignRole` / `admin.removeRole` use `ownerProcedure` (Tier 4), NOT `staffProcedure` (Tier 3). Only `owner` role can assign/remove roles. `MemberRoleEditor` only rendered when `session.user.roles.includes('owner')`. See `CLAUDE.md` Gotcha 73.
+
+### 67. `SignOutButton` uses form POST for CSRF safety (Medium — Phase 9)
+
+`<form action="/auth/sign-out" method="POST">` — native form POST, no fetch. The route rejects GET (405). Prevents CSRF via image tags/links. See `CLAUDE.md` Gotcha 74.
+
+### 68. AdminShell sidebar link visibility — role hierarchy map (Medium — Phase 9)
+
+`ROLE_LEVEL: { member: 0, instructor: 0, staff: 1, manager: 2, owner: 3 }`. Each nav item has `minRole`. `canSeeLink()` checks if any user role level ≥ item min level. Revenue=manager+, Settings=owner only. See `CLAUDE.md` Gotcha 75.
+
+### 69. Recharts bundle size — consider `next/dynamic` (Medium — Phase 9)
+
+Recharts is ~200kb. Admin pages using charts should use `next/dynamic` with `ssr: false` if bundle exceeds 400kb budget. Currently imported directly (Client Component). See `CLAUDE.md` Gotcha 76.
+
+### 70. `@dnd-kit` drag-to-reschedule deferred to Phase 10 (Medium — Phase 9)
+
+ScheduleCalendar has DnD wired, but `sessions.update` procedure doesn't exist. Drag shows info toast. Phase 10 will add `sessions.update` and wire the handler. See `CLAUDE.md` Gotcha 77.
+
+### 71. Revenue chart monthly breakdown needs GROUP BY (Low — Phase 9)
+
+Current `getRevenueDetails` returns single total. Monthly breakdown requires `GROUP BY date_trunc('month', created_at)`. Phase 10 enhancement. See `CLAUDE.md` Gotcha 78.
+
+### 72. `react-day-picker` v10 API — `components` for icons (Low — Phase 9)
+
+v10 uses `components: { IconLeft, IconRight }` instead of v9 props. The `calendar.tsx` already uses v10 API. Verify if upgrading. See `CLAUDE.md` Gotcha 79.
+
+### 73. `audit_log.metadata` is jsonb nullable — use `null`, not `undefined` (Low — Phase 9)
+
+With `exactOptionalPropertyTypes: true`, nullable columns accept `null` but NOT `undefined`. Pass `metadata: metadata ?? null`. See `CLAUDE.md` Gotcha 80.
+
 ---
 
-## Phase status (as of 2026-07-09)
+## Phase status (as of 2026-07-10)
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
-| 1 — DB Schema | ✅ Complete | 17 tables (14 domain + 3 Better Auth: session, account, verification), 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` (waitlist unique). 109 db tests. |
+| 1 — DB Schema | ✅ Complete | 18 tables (15 domain + 3 Better Auth: session, account, verification), 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql`. 109+ db tests. |
 | 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth tests. |
-| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 113 api tests (was 107; +6 from Phase 7 unstubbing). |
+| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 119+ api tests (Phase 9 added admin listClasses/deleteClass/listMembers/getMemberDetail/getRevenueDetails/assignRole/removeRole/listAuditLog). |
 | 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 8 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). |
 | 5 — Booking | ✅ Complete | SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components (BookingButton, BookingConfirmation, BookingFlow, SeatAvailability, WaitlistButton), `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. |
 | 6 — Dashboard | ✅ Complete | Member dashboard (/dashboard, /profile, /membership, /history), 7 dashboard components, CSV export, memberships.resume stub (now unstubbed in Phase 7), plan join. |
 | 7 — Stripe | ✅ Complete | `@stillwater/payments` package (7 files, 43 tests): client singleton (Dahlia API), 7-event types, 5 subscription helpers, idempotent webhook handler with `pg_advisory_xact_lock` (ADR-004), invoice pagination, credit-pack checkout, D12 refund wrapper. Stripe webhook route at `/api/webhooks/stripe` (body as TEXT, sig verify, 400/500/200). All tRPC procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`. `payments.refund` retained as D12 stub. `CheckoutButton` component + `lib/stripe/utils.ts`. ADR-010 accepted. 5 STRIPE tests passing (STRIPE-001 through STRIPE-005). 43 payments tests + 14 new web tests (stripe utils + CheckoutButton). |
 | 8 — Jobs+Email | ✅ Complete | `@stillwater/email` (19 files, 71 tests: 3 shared components + 13 React Email v6 templates + dual-path `send.ts` + 13 send-helpers + `template-ids.ts`), `@stillwater/workers` (12 files, 33 tests: 11 Trigger.dev v4 tasks with per-task `maxDuration` + retry config). All workers use `sendEmailNative()` via send-helpers (zero React Email 1.8MB bundle bloat per ADR-010). Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` not set), `bookings.book` triggers `booking-confirmation` + `class-reminder-24h` + `class-reminder-1h` (fire-and-forget), `bookings.cancel` job ID fixed `waitlist.promote` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe webhook `invoice.payment_failed` triggers `payment-failed-notify` (post-commit pattern). |
+| 9 — Admin | ✅ Complete | 10 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`). 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable, RevenueChart, MemberRoleEditor owner-only, SignOutButton). 8 new admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails`, `assignRole`, `removeRole`, `listAuditLog`). `audit_log` table (migration `0003_audit_log_phase9.sql`). 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command). `cmdk` dependency. `lib/admin/audit-log.ts` helper. 5 E2E spec files. All admin mutations audit-logged. 2-layer auth defense-in-depth (revenue=manager+, settings=owner). |
 
-**Total: 603 tests** (109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
+**Total: 603+ tests** (109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers — Phase 9 adds audit-log + KpiCard + admin router tests). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green.
 
-| 9–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
+| 10–12 | ⬜ Pending | See `MASTER_EXECUTION_PLAN.md` §6. |
 
 ---
 
@@ -464,8 +520,8 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ```bash
 pnpm check-types       # Must be green (9/9 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (603 tests: 109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers)
-pnpm build             # Must be green (13/13 static pages)
+pnpm test              # Must be green (603+ tests: 109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers)
+pnpm build             # Must be green (includes all admin routes)
 ```
 
 Integration tests (require Docker Postgres): `pnpm test:integration --filter=@stillwater/db`
@@ -478,10 +534,10 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
-3. `stillwater_SKILL.md` — distilled project skill (v2.2.0; 21 source skills condensed; 65 lessons); authoritative tech-stack specifics
-4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.10.0); culmination of the above into codebase architecture
-5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.4.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.1.0 with 57 gotchas)
+3. `stillwater_SKILL.md` — distilled project skill (v2.3.0; 21 source skills condensed; 75 lessons); authoritative tech-stack specifics
+4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.13.0); culmination of the above into codebase architecture
+5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.6.0)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.4.0 with 80 gotchas)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 

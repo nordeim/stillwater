@@ -15,7 +15,7 @@
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
 | Version     | 1.6.0                                                              |
-| Status      | ACTIVE — LIVING PLAN (Phases 0–8 COMPLETE per PAD v1.10.0 / SKILL v2.1.0; re-validated 2026-07-09) |
+| Status      | ACTIVE — LIVING PLAN (Phases 0–8 COMPLETE per PAD v1.12.0 / SKILL v2.3.0; re-validated 2026-07-09) |
 | Date        | 2026-07-09                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
@@ -337,7 +337,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 
 ## Current Status (as of 2026-07-09)
 
-> **Source of truth:** PAD v1.10.0 / SKILL v2.1.0. Verified against codebase 2026-07-09.
+> **Source of truth:** PAD v1.12.0 / SKILL v2.3.0. Verified against codebase 2026-07-09.
 
 | Phase | Focus                                                  | Status      | PAD Version | Test Count |
 |-------|--------------------------------------------------------|-------------|-------------|------------|
@@ -348,9 +348,9 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 4     | Marketing surface (Sanity CMS, ISR)                    | ✅ COMPLETE  | v1.9.0      | —          |
 | 5     | Booking flow + SSE real-time seats                     | ✅ COMPLETE  | v1.9.1      | —          |
 | 6     | Member dashboard + membership mgmt                     | ✅ COMPLETE  | v1.10.0     | 132        |
-| 7     | Stripe integration (subscriptions + credit packs)      | ✅ COMPLETE  | v1.10.0     | 43         |
-| 8     | Background jobs (11 Trigger.dev tasks)                 | ✅ COMPLETE  | v1.10.0     | 104        |
-| 9     | Admin surface (RBAC-gated)                             | ⬜ PENDING   | —           | —          |
+| 7     | Stripe integration (subscriptions + credit packs)      | ✅ COMPLETE  | v1.11.0     | 43         |
+| 8     | Background jobs (11 Trigger.dev tasks)                 | ✅ COMPLETE  | v1.12.0     | 104        |
+| 9     | Admin surface (RBAC-gated)                             | ✅ COMPLETE  | v1.13.0     | —          |
 | 10    | Observability + performance hardening                  | ⬜ PENDING   | —           | —          |
 | 11    | WCAG AAA audit + SEO + OG images                       | ⬜ PENDING   | —           | —          |
 | 12    | Landing page port (mockup → Next.js production)        | ⬜ PENDING   | —           | —          |
@@ -1100,7 +1100,7 @@ curl http://localhost:3000                  # 200 + "Stillwater" in body
 
 #### Phase 1 acceptance test
 ```bash
-pnpm db:generate              # produces 0001_initial.sql
+pnpm db:generate              # produces 0000_dear_dagger.sql (consolidated single migration per PAD v1.8.0)
 pnpm db:migrate               # applies migration
 psql -c '\dt'                 # 14 tables listed
 psql -c '\dT'                 # 8 enums listed
@@ -4340,7 +4340,7 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 
 > **External validation:** `guide_auth-v5_vs_better-auth.md` (July 2026) independently confirms ADR-008 (Better Auth v1.6.23 stable) and ADR-009 (`proxy.ts` rename). The guide additionally mandates a **2-layer auth pattern** (cookie-only `proxy.ts` + Server Component `requireAuth()`/`requireRole()`) which has been incorporated into Phase 2 (F2-13 rewrite + F2-16 through F2-19 new layout files). See discrepancy D36 below.
 >
-> **✅ PAD Alignment Verified:** Re-validated 2026-07-09 against PAD v1.10.0 / SKILL v2.1.0. Phases 0–8 COMPLETE; Phases 9–12 PENDING. All stack versions, discrepancy resolutions (D1–D50), and ADRs (ADR-001…ADR-011) are reflected in the codebase. The plan and PAD are aligned through Phase 8. Re-validation will be needed after Phases 9–12.
+> **✅ PAD Alignment Verified:** Re-validated 2026-07-09 against PAD v1.12.0 / SKILL v2.3.0. Phases 0–8 COMPLETE; Phases 9–12 PENDING. All stack versions, discrepancy resolutions (D1–D45), and ADRs (ADR-001…ADR-011) are reflected in the codebase. The plan and PAD are aligned through Phase 8. Re-validation will be needed after Phases 9–12.
 
 | PAD § | Topic                                  | Satisfied by (file / phase)                                                |
 |-------|----------------------------------------|----------------------------------------------------------------------------|
@@ -4359,15 +4359,15 @@ After IMPLEMENT, the following matrix must be GREEN. Each row maps a source-docu
 | 13    | Real-Time Architecture (SSE)           | Phase 5 (`apps/web/app/api/schedule/stream/route.ts`)                      |
 | 14    | Content Management (Sanity)            | Phase 4 (`apps/studio/` + `packages/sanity/` if extracted)                 |
 | 15    | Payment Architecture (Stripe)          | Phase 7 (`packages/payments/*` + `apps/web/app/api/webhooks/stripe/`)      |
-| 16    | Background Jobs                        | Phase 8 (`services/workers/src/*`)                                         |
-| 17    | Email (React Email + Resend)           | Phase 8 (`packages/email/src/templates/*`)                                 |
+| 16    | Email (React Email + Resend)           | Phase 8 (`packages/email/src/templates/*`)                                 |
+| 17    | Background Jobs                        | Phase 8 (`services/workers/src/*`)                                         |
 | 18    | Testing Strategy                       | Every phase (TDD test files listed per-file)                               |
 | 19    | Observability                          | Phase 10 (Sentry, PostHog, Axiom, Checkly)                                 |
 | 20    | Performance Targets                    | Phase 10 + per-route bundle budgets                                        |
 | 21    | Accessibility                          | Phase 11 (WCAG AAA audit) + per-component tests                            |
 | 22    | Deployment & Environments              | Phase 0 (CI workflows), Phase 10 (Vercel + Neon)                           |
-| 23    | ADRs                                   | ADR-001 to ADR-007 (existing) + ADR-008 (Better Auth v1.6.23) + ADR-009 (proxy.ts) + ADR-010 (Resend Native Templates proposed) + ADR-011 (transpilePackages + exports.default — accepted) — ✅ all 11 ADRs in PAD.md §29 |
-| 24    | Glossary                               | This document Appendix C                                                   |
+| 29    | ADRs                                   | ADR-001 to ADR-007 (existing) + ADR-008 (Better Auth v1.6.23) + ADR-009 (proxy.ts) + ADR-010 (Resend Native Templates — Accepted 2026-07-09) + ADR-011 (transpilePackages + exports.default — accepted) — ✅ all 11 ADRs in PAD.md §29 |
+| 30    | Glossary                               | This document Appendix C                                                   |
 
 ### 7.2 scaffolding_files.md coverage
 
@@ -4580,6 +4580,6 @@ pnpm jobs:deploy            # Trigger.dev cloud
 
 ---
 
-**End of MASTER_EXECUTION_PLAN.md v1.3.0**
+**End of MASTER_EXECUTION_PLAN.md v1.6.0**
 
 > Awaiting VALIDATE checkpoint. Once confirmed, Phase 0 IMPLEMENT begins immediately.

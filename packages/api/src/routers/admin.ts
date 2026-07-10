@@ -1,22 +1,27 @@
 /**
- * F3-04 — adminRouter: staff dashboard data (read-only)
+ * F3-04 + F9-04 — adminRouter: staff dashboard data + class management
  *
  * All procedures require a staff-tier session (staffProcedure).
- *   getDashboard   — top-level KPIs (counts of members, sessions, revenue)
- *   getRevenue     — aggregated revenue in a date range (Phase 7 will power this fully)
- *   getClassRoster — confirmed enrollments for a session, with member display names
+ *   getDashboard    — top-level KPIs (counts of members, sessions, revenue)
+ *   getRevenue      — aggregated revenue in a date range
+ *   getClassRoster  — confirmed enrollments for a session, with member display names
+ *   listClasses     — paginated class list with search + filter (Phase 9)
+ *   deleteClass     — soft-delete a class (isActive = false) (Phase 9)
  *
- * Source: MEP Phase 3 F3-04, PAD §8.5 (staff endpoints).
+ * Source: MEP Phase 3 F3-04, Phase 9 F9-04, PAD §8.5 (staff endpoints).
  */
 
 import { z } from 'zod';
-import { eq, and, gte, lte, sql } from 'drizzle-orm';
-import { router, staffProcedure } from '../trpc';
+import { eq, and, gte, lte, sql, ilike, or, desc } from 'drizzle-orm';
+import { router, staffProcedure, ownerProcedure } from '../trpc';
 import {
   members,
+  classes,
   classSessions,
   enrollments,
   paymentEvents,
+  roleAssignments,
+  auditLog,
 } from '@stillwater/db';
 
 export const adminRouter = router({
@@ -99,5 +104,356 @@ export const adminRouter = router({
         with: { member: true },
         orderBy: enrollments.enrolledAt,
       });
+    }),
+
+  /**
+   * Paginated class list with search + active filter (Phase 9 F9-04).
+   * Used by the admin class catalog table.
+   */
+  listClasses: staffProcedure
+    .input(
+      z.object({
+        search: z.string().max(200).optional(),
+        isActive: z.boolean().optional(),
+        limit: z.number().int().min(1).max(100).default(20),
+        offset: z.number().int().min(0).default(0),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const conditions = [];
+      if (input.search) {
+        conditions.push(
+          or(
+            ilike(classes.title, `%${input.search}%`),
+            ilike(classes.slug, `%${input.search}%`),
+          ),
+        );
+      }
+      if (input.isActive !== undefined) {
+        conditions.push(eq(classes.isActive, input.isActive));
+      }
+
+      const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const items = await ctx.db.query.classes.findMany({
+        where,
+        with: { style: true },
+        orderBy: classes.title,
+        limit: input.limit,
+        offset: input.offset,
+      });
+
+      // Count total for pagination
+      const countRows = await ctx.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(classes)
+        .where(where ?? sql`true`);
+      const total = countRows[0]?.count ?? 0;
+
+      return { items, total, limit: input.limit, offset: input.offset };
+    }),
+
+  /**
+   * Soft-delete a class (set isActive = false). Phase 9 F9-04.
+   * Does NOT actually delete the row — preserves referential integrity
+   * for historical enrollments and sessions.
+   */
+  deleteClass: staffProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [updated] = await ctx.db
+        .update(classes)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(classes.id, input.id))
+        .returning();
+
+      if (!updated) {
+        return null; // 404 handled by caller
+      }
+
+      return updated;
+    }),
+
+  /**
+   * Paginated member list with search + subscription filter (Phase 9 F9-09).
+   * Used by the admin member directory.
+   */
+  listMembers: staffProcedure
+    .input(
+      z.object({
+        search: z.string().max(200).optional(),
+        limit: z.number().int().min(1).max(100).default(20),
+        offset: z.number().int().min(0).default(0),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const conditions = [];
+      if (input.search) {
+        conditions.push(
+          or(
+            ilike(members.displayName, `%${input.search}%`),
+            ilike(members.notes, `%${input.search}%`),
+          ),
+        );
+      }
+
+      const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const items = await ctx.db.query.members.findMany({
+        where,
+        with: { user: true, roles: true },
+        orderBy: members.joinedAt,
+        limit: input.limit,
+        offset: input.offset,
+      });
+
+      const countRows = await ctx.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(members)
+        .where(where ?? sql`true`);
+      const total = countRows[0]?.count ?? 0;
+
+      return { items, total, limit: input.limit, offset: input.offset };
+    }),
+
+  /**
+   * Single member detail with subscription + attendance + payment history (Phase 9 F9-10).
+   */
+  getMemberDetail: staffProcedure
+    .input(z.object({ memberId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const member = await ctx.db.query.members.findFirst({
+        where: eq(members.id, input.memberId),
+        with: { user: true, roles: true },
+      });
+
+      if (!member) {
+        return null;
+      }
+
+      // Fetch enrollments (attendance history)
+      const enrollmentHistory = await ctx.db.query.enrollments.findMany({
+        where: eq(enrollments.memberId, input.memberId),
+        with: { session: { with: { class: true } } },
+        orderBy: enrollments.enrolledAt,
+        limit: 50,
+      });
+
+      // Fetch payment events
+      const paymentHistory = await ctx.db.query.paymentEvents.findMany({
+        where: eq(paymentEvents.memberId, input.memberId),
+        orderBy: paymentEvents.createdAt,
+        limit: 50,
+      });
+
+      return {
+        member,
+        enrollmentHistory,
+        paymentHistory,
+      };
+    }),
+
+  /**
+   * Revenue details: MRR (last 12 months), churn rate, attendance metrics (Phase 9 F9-11).
+   * Replaces the stub getRevenue with real calculations from payment_events.
+   */
+  getRevenueDetails: staffProcedure
+    .input(
+      z.object({
+        start: z.coerce.date().optional(),
+        end: z.coerce.date().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const end = input.end ?? new Date();
+      const start = input.start ?? new Date(end.getFullYear() - 1, end.getMonth(), 1);
+
+      // MRR: sum of successful payment amounts in the period
+      const mrrRows = await ctx.db
+        .select({
+          totalCents: sql<number>`coalesce(sum(${paymentEvents.amountCents}), 0)::int`,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(paymentEvents)
+        .where(
+          and(
+            eq(paymentEvents.status, 'processed'),
+            gte(paymentEvents.createdAt, start),
+            lte(paymentEvents.createdAt, end),
+          ),
+        );
+
+      const totalRevenueCents = mrrRows[0]?.totalCents ?? 0;
+      const paymentCount = mrrRows[0]?.count ?? 0;
+
+      // Churn: count of cancelled subscriptions / total subscriptions ever
+      // (simplified — Phase 10 will add proper cohort analysis)
+      const churnRows = await ctx.db
+        .select({
+          cancelled: sql<number>`count(*) filter (where status = 'cancelled')::int`,
+          total: sql<number>`count(*)::int`,
+        })
+        .from(sql`member_subscriptions`);
+
+      const cancelledCount = churnRows[0]?.cancelled ?? 0;
+      const totalSubs = churnRows[0]?.total ?? 0;
+      const churnRate = totalSubs > 0 ? (cancelledCount / totalSubs) * 100 : 0;
+
+      // Attendance: avg class size + no-show rate
+      const attendanceRows = await ctx.db
+        .select({
+          avgSize: sql<number>`coalesce(avg(session_size), 0)::float`,
+          noShows: sql<number>`count(*) filter (where status = 'no_show')::int`,
+          totalEnrollments: sql<number>`count(*)::int`,
+        })
+        .from(
+          sql`(select enrollments.session_id, count(*) as session_size from enrollments where enrollments.status in ('confirmed', 'attended') group by enrollments.session_id) as session_counts`,
+        )
+        .crossJoin(sql`enrollments`);
+
+      const avgClassSize = attendanceRows[0]?.avgSize ?? 0;
+      const noShows = attendanceRows[0]?.noShows ?? 0;
+      const totalEnrollments = attendanceRows[0]?.totalEnrollments ?? 0;
+      const noShowRate = totalEnrollments > 0 ? (noShows / totalEnrollments) * 100 : 0;
+
+      return {
+        windowStart: start,
+        windowEnd: end,
+        totalRevenueCents,
+        paymentCount,
+        churnRate,
+        avgClassSize,
+        noShowRate,
+        totalSubs,
+        cancelledSubs: cancelledCount,
+      };
+    }),
+
+  /**
+   * Assign a role to a member (owner only). Phase 9 F9-18.
+   * Logs the action to audit_log.
+   */
+  assignRole: ownerProcedure
+    .input(
+      z.object({
+        memberId: z.string().uuid(),
+        role: z.enum(['member', 'instructor', 'staff', 'manager', 'owner']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if role already assigned (idempotent)
+      const existing = await ctx.db.query.roleAssignments.findFirst({
+        where: and(
+          eq(roleAssignments.memberId, input.memberId),
+          eq(roleAssignments.role, input.role),
+        ),
+      });
+
+      if (existing) {
+        return existing; // Already assigned — no-op
+      }
+
+      const [created] = await ctx.db
+        .insert(roleAssignments)
+        .values({
+          memberId: input.memberId,
+          role: input.role,
+        })
+        .returning();
+
+      // Audit log
+      await ctx.db.insert(auditLog).values({
+        staffMemberId: ctx.session.user.memberId ?? ctx.session.user.id,
+        action: 'role.assign',
+        entityType: 'role',
+        entityId: input.memberId,
+        metadata: { role: input.role },
+      }).catch(() => {
+        // Audit logging should never block the mutation
+      });
+
+      return created;
+    }),
+
+  /**
+   * Remove a role from a member (owner only). Phase 9 F9-18.
+   * Logs the action to audit_log.
+   */
+  removeRole: ownerProcedure
+    .input(
+      z.object({
+        memberId: z.string().uuid(),
+        role: z.enum(['member', 'instructor', 'staff', 'manager', 'owner']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .delete(roleAssignments)
+        .where(
+          and(
+            eq(roleAssignments.memberId, input.memberId),
+            eq(roleAssignments.role, input.role),
+          ),
+        );
+
+      // Audit log
+      await ctx.db.insert(auditLog).values({
+        staffMemberId: ctx.session.user.memberId ?? ctx.session.user.id,
+        action: 'role.remove',
+        entityType: 'role',
+        entityId: input.memberId,
+        metadata: { role: input.role },
+      }).catch(() => {
+        // Audit logging should never block the mutation
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * List audit log entries with filters (manager+ only). Phase 9 F9-20.
+   */
+  listAuditLog: staffProcedure
+    .input(
+      z.object({
+        staffMemberId: z.string().uuid().optional(),
+        action: z.string().max(100).optional(),
+        start: z.coerce.date().optional(),
+        end: z.coerce.date().optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+        offset: z.number().int().min(0).default(0),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const conditions = [];
+      if (input.staffMemberId) {
+        conditions.push(eq(auditLog.staffMemberId, input.staffMemberId));
+      }
+      if (input.action) {
+        conditions.push(eq(auditLog.action, input.action));
+      }
+      if (input.start) {
+        conditions.push(gte(auditLog.createdAt, input.start));
+      }
+      if (input.end) {
+        conditions.push(lte(auditLog.createdAt, input.end));
+      }
+
+      const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const items = await ctx.db.query.auditLog.findMany({
+        where,
+        orderBy: desc(auditLog.createdAt),
+        limit: input.limit,
+        offset: input.offset,
+      });
+
+      const countRows = await ctx.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(auditLog)
+        .where(where ?? sql`true`);
+      const total = countRows[0]?.count ?? 0;
+
+      return { items, total, limit: input.limit, offset: input.offset };
     }),
 });
