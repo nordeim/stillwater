@@ -1661,23 +1661,29 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
 ```
 The `amount_received` field is a standard Stripe invoice/payment intent property in the event payload.
 
-### Gotcha 82: Workers ESLint `projectService` can't find test files excluded from tsconfig (High — Phase 10 fix)
+### Gotcha 82: Workers ESLint `projectService` + typed rules need test files (High — Phase 10 fix)
 
-**Symptom:** `pnpm lint` fails with `Parsing error: *.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject` for all 11 worker test files + `vitest.config.ts`.
+**Symptom:** `pnpm lint` fails with `Parsing error: *.test.ts was not found by the project service` for all worker test files + `vitest.config.ts`.
 
-**Root cause:** Workers `tsconfig.json` excludes `src/**/*.test.ts` (correct per Lesson 28 — test files are run by vitest, not tsc). However, ESLint's `projectService` option tries to find each file in the tsconfig project, and when it can't, it throws a parsing error.
+**Root cause:** Workers `tsconfig.json` excludes `src/**/*.test.ts` (correct for tsc). `projectService: true` can't find them. **Setting `projectService: false` strips type info and crashes the shared config's typed rules** (`await-thenable`, `no-floating-promises`, `no-misused-promises`, `require-await` — they need type info).
 
-**Fix:** Add an ESLint override in `services/workers/eslint.config.mjs` that disables `projectService` for test files and config files:
+**Fix (4 components in `services/workers/eslint.config.mjs` + 1 new file):**
+1. **`allowDefaultProject` + `defaultProject`** pointing at a real `tsconfig.eslint.json` (extends `tsconfig.json`, re-includes test files). Globs can't contain `**`; matched against `path.relative(tsconfigRootDir, absolutePath)` (package-relative `src/*.test.ts`). Set `maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING` ≥ file count (default 8, workers 12).
 ```javascript
-{
-  files: ['src/**/*.test.ts', 'vitest.config.ts'],
-  languageOptions: {
-    parserOptions: {
-      projectService: false,
-    },
-  },
+projectService: {
+  allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'],
+  defaultProject: './tsconfig.eslint.json',
+  maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
 },
 ```
+2. **Test-file typed-rule exceptions** — vitest mocks return `any`, triggering `no-unsafe-assignment`/`no-unsafe-argument`:
+```javascript
+{ files: ['src/**/*.test.ts'], rules: { '@typescript-eslint/no-unsafe-assignment': 'off', '@typescript-eslint/no-unsafe-argument': 'off' } }
+```
+3. **`services/workers/tsconfig.eslint.json`** (NEW): `{ "extends": "./tsconfig.json", "include": ["src/**/*.ts", "vitest.config.ts"], "exclude": ["node_modules", "dist", ".turbo"] }`
+4. **`vitest.config.ts` import order** — `import { resolve } from 'node:path';` before `import { defineConfig } from 'vitest/config';` (builtin before external).
+
+See `stillwater_SKILL.md` §15.24.2, `AGENTS.md` Gotcha 75.
 
 ### Gotcha 83: Workers `db.query.X as any` casts trigger 70+ ESLint errors (High — Phase 10 fix)
 
@@ -1707,7 +1713,7 @@ The `amount_received` field is a standard Stripe invoice/payment intent property
 2. `class-reminder-1h.ts` uses a `number` variable in a template literal: `` `in ${diffMin} minutes` `` — ESLint forbids this because `Number.prototype.toString()` can produce unexpected results for `NaN`, `Infinity`.
 
 **Fix:**
-1. Remove `async` from `run: async () =>` → `run: () =>` (no `await` = no need for `async`).
+1. For Trigger.dev no-op `run()` stubs, return `Promise.resolve({...})` **without** `async`. Removing `async` alone breaks `task()`'s `Promise<unknown>` return type (`TS2769: No overload matches this call`). `Promise.resolve(...)` satisfies the type AND avoids `require-await`.
 2. Wrap with `String()`: `` `in ${String(diffMin)} minutes` ``.
 
 ---
@@ -1800,9 +1806,9 @@ The `amount_received` field is a standard Stripe invoice/payment intent property
 | Revenue chart shows single point, not 12 months (Phase 9) | Monthly GROUP BY query not implemented | Phase 10 enhancement. See Gotcha 78. |
 | `Type 'undefined' not assignable` inserting to `audit_log` (Phase 9) | `metadata` is jsonb nullable — use `null`, not `undefined` | `metadata: metadata ?? null`. See Gotcha 80. |
 | `TS2339: Property 'amountCents' does not exist` in admin.ts (Phase 10 fix) | `payment_events` table has no `amountCents` column — amount is in `payload` jsonb | Use `(payload->>'amount_received')::bigint` SQL extraction. See Gotcha 81. |
-| `Parsing error: *.test.ts was not found by the project service` in workers (Phase 10 fix) | Workers tsconfig excludes test files (correct for tsc) but ESLint projectService can't find them | Add ESLint override `projectService: false` for test files. See Gotcha 82. |
+| `Parsing error: *.test.ts was not found by the project service` in workers (Phase 10 fix) | Workers tsconfig excludes test files (correct for tsc); `projectService: true` can't find them; `projectService: false` crashes typed rules | Use `projectService: { allowDefaultProject, defaultProject: './tsconfig.eslint.json', maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20 }`. Create `tsconfig.eslint.json`. Add `no-unsafe-assignment`/`no-unsafe-argument` override for test files. Fix `vitest.config.ts` import order. See Gotcha 82. |
 | ~70 `no-explicit-any` + `no-unsafe-*` errors in workers (Phase 10 fix) | `db.query.X as any` casts (Gotcha 64) — per-line eslint-disable only covers one line | Scoped ESLint override for all worker src files. See Gotcha 83. |
-| `require-await` on worker `async run()` methods (Phase 10 fix) | `async` method doesn't use `await` (v1 no-op stubs) | Remove `async` keyword: `run: () =>`. See Gotcha 84. |
+| `require-await` on worker `async run()` methods (Phase 10 fix) | `async` method doesn't use `await` (v1 no-op stubs); but removing `async` alone breaks `task()`'s `Promise<unknown>` return type | Use `run: () => Promise.resolve({...})` — satisfies both type and lint. See Gotcha 84. |
 | `restrict-template-expressions` on number in template literal (Phase 10 fix) | `number` type in `${diffMin}` — ESLint forbids (NaN/Infinity risk) | Wrap with `String()`: `${String(diffMin)}`. See Gotcha 84. |
 
 ---

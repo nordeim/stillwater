@@ -4246,7 +4246,7 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
 **Context:** The `pnpm lint` command failed with `Parsing error: *.test.ts was not found by the project service` for all 11 worker test files + `vitest.config.ts`. Workers `tsconfig.json` excludes `src/**/*.test.ts` (correct per Lesson 28 — test files are run by vitest, not tsc), but ESLint's `projectService` option tries to find each file in the tsconfig project.
 
 **What to do differently:**
-- When a tsconfig excludes test files but ESLint needs to lint them **with type information**, set `projectService: { allowDefaultProject: [...] }` for those files. This gives them a default TS program (synthetic project) so the shared config's typed rules (`await-thenable`, `no-floating-promises`, `no-misused-promises`, `require-await`) still work:
+- When a tsconfig excludes test files but ESLint needs to lint them **with type information**, set `projectService: { allowDefaultProject: [...] }` for those files. This gives them a default TS program, **backed by a real `tsconfig.eslint.json`** (extends `tsconfig.json`, re-includes test files) so module resolution matches the package's compiler options (NodeNext, etc.) — not a synthetic default:
 ```javascript
 // services/workers/eslint.config.mjs
 {
@@ -4255,16 +4255,22 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
     parserOptions: {
       projectService: {
         allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'],
+        defaultProject: './tsconfig.eslint.json',
+        maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
       },
       tsconfigRootDir: import.meta.dirname,
     },
   },
 },
 ```
-- **Do NOT use `projectService: false`.** That disables type info for the matched files, and the shared config's typed rules (`await-thenable`, etc.) then crash with *"You have used a rule which requires type information"* — the entire lint run aborts. `allowDefaultProject` is the correct fix: test files stay excluded from the real `tsconfig.json` (so `tsc` is unaffected) but get a default program for ESLint.
-- This is specific to the workers package. Other packages (db, api, web) don't have this issue because their tsconfig includes test files (they use `vitest.config.ts` for test config, not tsconfig exclusion).
+- `allowDefaultProject` globs are matched against `path.relative(tsconfigRootDir, fileAbsolute)` (package-relative, e.g. `src/attendance-summary.test.ts`). Globs must NOT contain `**` (typescript-eslint restriction).
+- **Do NOT use `projectService: false`.** That disables type info for the matched files, and the shared config's typed rules (`await-thenable`, etc.) then crash with *"You have used a rule which requires type information"* — the entire lint run aborts.
+- If more than 8 files match (ESLint's built-in limit), set `maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING` to a larger value (workers has 12 matched files: 11 test + vitest.config.ts).
+- You'll also need a separate ESLint override scoped to `src/**/*.test.ts` that disables `@typescript-eslint/no-unsafe-assignment` and `@typescript-eslint/no-unsafe-argument` — vitest mocks return `any`, and with type info available these typed rules fire on test assertions.
+- Fix `vitest.config.ts` import order: builtin `node:path` must come before external `vitest/config` (this was latent — invisible when the parser was broken).
+- This is specific to the workers package. Other packages (db, api, web) don't have this issue because their tsconfig includes test files.
 
-**Fix references:** `services/workers/eslint.config.mjs`, `services/workers/tsconfig.json`. See `CLAUDE.md` Gotcha 82, `AGENTS.md` Gotcha 75.
+**Fix references:** `services/workers/eslint.config.mjs`, `services/workers/tsconfig.eslint.json` (NEW file), `services/workers/vitest.config.ts`. See `CLAUDE.md` Gotcha 82, `AGENTS.md` Gotcha 75.
 
 ### Lesson 87: Workers `db.query.X as any` casts need scoped ESLint override, not per-line disables (Post-Phase 12 fix)
 
@@ -7151,6 +7157,8 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
     parserOptions: {
       projectService: {
         allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'],
+        defaultProject: './tsconfig.eslint.json',
+        maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
       },
       tsconfigRootDir: import.meta.dirname,
     },
@@ -7159,8 +7167,12 @@ totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_receive
 ```
 
 - tsconfig excludes test files (correct for tsc) but ESLint's typed rules still need type info for them
-- Use `projectService: { allowDefaultProject: [...] }` — gives test files a default TS program without adding them to `tsconfig.json` (which would break `tsc`)
+- Use `projectService: { allowDefaultProject, defaultProject, maxCount }` — `defaultProject` points at a real `tsconfig.eslint.json` (extends `tsconfig.json`, re-includes test files) for correct module resolution instead of synthetic defaults
 - **Do NOT use `projectService: false`** — it strips type info and crashes typed rules (`await-thenable`, etc.), aborting the lint run
+- `allowDefaultProject` globs are matched against `path.relative(tsconfigRootDir, absolutePath)` (package-relative); they must NOT contain `**` (typescript-eslint restriction)
+- If >8 files match the default project, set `maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING` to a larger value
+- You'll also need a separate ESLint override disabling `no-unsafe-assignment`/`no-unsafe-argument` for test files — vitest mocks return `any` triggers these with type info active
+- Fix `vitest.config.ts` import order: `node:path` (builtin) must come before `vitest/config` (external)
 
 #### 15.24.3 Scoped ESLint Override for Documented `any` Casts
 
@@ -7207,7 +7219,7 @@ run: () => Promise.resolve({ success: true }),
 
 **Key takeaways:**
 - Always verify column names against the actual Drizzle schema before writing SQL
-- ESLint `projectService: { allowDefaultProject: [...] }` is the correct fix for test files excluded from tsconfig — `projectService: false` crashes typed rules
+- ESLint `projectService: { allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'], defaultProject: './tsconfig.eslint.json', maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20 }` + a dedicated `tsconfig.eslint.json` + a test-file `no-unsafe-assignment`/`no-unsafe-argument` override is the correct fix for test files excluded from tsconfig — `projectService: false` crashes typed rules
 - Scoped ESLint overrides are cleaner than per-line disables when `any` propagates across multiple lines
 - Don't add `async` to functions that don't use `await`
 - Always wrap `number` in `String()` for template literals
@@ -7945,7 +7957,7 @@ Note: The current implementation imports `RevenueChart` directly (it's a Client 
 #### Bug: ESLint projectService fails on test files excluded from tsconfig (High — Lesson 86)
 **Symptom:** `Parsing error: *.test.ts was not found by the project service`.
 **Root cause:** Workers tsconfig excludes `src/**/*.test.ts` (correct for tsc). ESLint's `projectService` tries to find each file in the tsconfig project and fails.
-**Fix:** Add ESLint override `projectService: false` for test files + `vitest.config.ts`.
+**Fix:** Use `projectService: { allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'], defaultProject: './tsconfig.eslint.json', maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20 }`. Create `tsconfig.eslint.json` (extends `tsconfig.json`, re-includes test files). Add a separate ESLint override for `src/**/*.test.ts` disabling `no-unsafe-assignment`/`no-unsafe-argument`. Fix `vitest.config.ts` import order (`node:path` before `vitest/config`). **Never** use `projectService: false` — it strips type info and crashes typed rules.
 
 #### Bug: Per-line eslint-disable doesn't cover multi-line `any` propagation (High — Lesson 87)
 **Symptom:** ~70 `no-explicit-any` + `no-unsafe-*` errors across 9 worker files.
@@ -8618,7 +8630,7 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 | Finding | Severity | Status |
 |---------|----------|--------|
 | `paymentEvents.amountCents` column doesn't exist — amount in `payload` jsonb | Critical | ✅ Fixed — Lesson 85, §15.24.1 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 81, AGENTS.md Gotcha 74. Fix: `(payload->>'amount_received')::bigint` |
-| Workers ESLint `projectService` can't find test files excluded from tsconfig | High | ✅ Fixed — Lesson 86, §15.24.2 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 82, AGENTS.md Gotcha 75. Fix: `projectService: { allowDefaultProject: [...] }` (the originally-documented `projectService: false` crashed typed rules; corrected) |
+| Workers ESLint: test files excluded from tsconfig need type info for typed rules | High | ✅ Fixed — Lesson 86, §15.24.2 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 82, AGENTS.md Gotcha 75. Fix: `projectService: { allowDefaultProject, defaultProject: './tsconfig.eslint.json', maxCount: 20 }` + `tsconfig.eslint.json` (NEW file) + test-file `no-unsafe-assignment`/`no-unsafe-argument` override + `vitest.config.ts` import-order fix. `projectService: false` crashes typed rules. |
 | Workers `db.query.X as any` casts trigger 70+ ESLint errors (per-line disable insufficient) | High | ✅ Fixed — Lesson 87, §15.24.3 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 83, AGENTS.md Gotcha 76. Fix: scoped ESLint override, removed 10 per-line comments |
 | `async` without `await` on no-op stubs (2 files) | Medium | ✅ Fixed — Lesson 88, §15.24.4 pattern, §16.13 anti-pattern, CLAUDE.md Gotcha 84, AGENTS.md Gotcha 77. Fix: `run: () => Promise.resolve({...})` (removing `async` alone breaks `task()`'s `Promise<unknown>` return type) |
 | `restrict-template-expressions` on `number` in template literal (1 file) | Medium | ✅ Fixed — Lesson 88, §16.13 anti-pattern, CLAUDE.md Gotcha 84, AGENTS.md Gotcha 77. Fix: `String(diffMin)` |

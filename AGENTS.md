@@ -482,7 +482,7 @@ The `payment_events` table has NO `amountCents` column. Amount is in `payload` j
 
 ### 75. Workers ESLint `projectService` + typed rules need test files (High — Phase 10 fix)
 
-Workers tsconfig excludes `*.test.ts` (correct for tsc). ESLint's shared config enables typed rules (`await-thenable`, `no-floating-promises`, `no-misused-promises`, `require-await`) that require type info. Use `projectService: { allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'] }` so test files get a default TS program **without** `projectService: false` (which strips type info and crashes the typed rules). See `CLAUDE.md` Gotcha 82.
+Workers tsconfig excludes `*.test.ts` (correct for tsc). ESLint's shared config enables typed rules (`await-thenable`, `no-floating-promises`, `no-misused-promises`, `require-await`) that require type info. Use `projectService: { allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'], defaultProject: './tsconfig.eslint.json', maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20 }` — NOT `projectService: false` (which strips type info and crashes those rules). Also create `services/workers/tsconfig.eslint.json` (extends `tsconfig.json`, re-includes test files), add a separate override disabling `no-unsafe-assignment`/`no-unsafe-argument` for test files (vitest mocks return `any`), and fix `vitest.config.ts` import order (`node:path` before `vitest/config`). See `CLAUDE.md` Gotcha 82.
 
 ### 76. Workers `db.query.X as any` casts — scoped ESLint override needed (High — Phase 10 fix)
 

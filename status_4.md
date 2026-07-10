@@ -156,3 +156,45 @@ The doc's central claim was false — two of its prescribed fixes were actively 
 @stillwater/web has 188 pre-existing lint errors (unrelated — no web files were touched). The doc's broader "all green" claim was incorrect for the whole monorepo even before this commit. The workers package — the focus of the 
 commit's documentation — is now green. 
 
+---
+
+Sync Complete — All Three Docs Updated 
+ 
+### Documents synced 
+ 
+┌─────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐ 
+│ Doc                         │ Sections corrected                                                                         │ Stale content removed                                                                                       │ 
+├─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ stillwater_SKILL.md (5      │ Lesson 86 + fix-refs, §15.24.2, §15.24 key takeaway, §16.13 projectService anti-pattern,   │ projectService: false prescription in §16.13; incomplete allowDefaultProject-only code/prose → full working │ 
+│ edits)                      │ Appendix C v2.8.0 row                                                                      │ config                                                                                                      │ 
+├─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ CLAUDE.md (4 edits)         │ Gotcha 82 (full rewrite), Gotcha 84 fix #1, troubleshooting table rows 1809 + 1811         │ projectService: false → allowDefaultProject + defaultProject + maxCount + tsconfig.eslint.json; remove      │ 
+│                             │                                                                                            │ async → Promise.resolve(...)                                                                                │ 
+├─────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ AGENTS.md (1 edit)          │ Gotcha 75 expanded                                                                         │ Incomplete allowDefaultProject-only → full components                                                       │ 
+└─────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ 
+ 
+### Final-state consistency — the working fix now documented as 
+ 
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬────────────────────────────────────────────────────────────┐ 
+│ Component                                                                                                                                                            │ Documented in                                              │ 
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤ 
+│ projectService: { allowDefaultProject: ['src/*.test.ts', 'vitest.config.ts'], defaultProject: './tsconfig.eslint.json', maximumDefaultProjectFileMatchCount...: 20 } │ SKILL.md L86/§15.24.2, CLAUDE.md G82, AGENTS.md G75        │ 
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤ 
+│ services/workers/tsconfig.eslint.json (NEW file — extends tsconfig, includes tests)                                                                                  │ All three docs                                             │ 
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤ 
+│ ESLint override: no-unsafe-assignment/no-unsafe-argument off for src/**/*.test.ts                                                                                    │ All three docs                                             │ 
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤ 
+│ vitest.config.ts import order fix (node:path before vitest/config)                                                                                                   │ All three docs                                             │ 
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤ 
+│ return Promise.resolve({...}) without async for Trigger.dev no-op stubs                                                                                              │ SKILL.md L88/§15.24.4/§16.13, CLAUDE.md G84, AGENTS.md G77 │ 
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤ 
+│ String(diffMin) for template-literals (was already correct)                                                                                                          │ All three docs ✓                                           │ 
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────┘ 
+ 
+### Verification 
+ 
+- No stale projectService: false prescriptions remain in any gotcha/lesson/pattern/anti-pattern section 
+- No stale remove async as fix remains 
+- Gates: workers check-types / lint / test all remain green (this round was docs-only, no code changed)
+
