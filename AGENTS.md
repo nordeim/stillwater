@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-10 (v2.7.0) — ALL 13 PHASES COMPLETE (603+ tests). Phase 12 (Landing Page Port) built: production home page orchestrating 8 sections (Hero with asymmetric grid + live Next Class card, ClassMarquee with Framer Motion, Philosophy with 間 ornament, Schedule preview, Instructors alternating rows, Membership comparison table, Studio Space with 3 SVG rooms, CTA band). 15 marketing components + 3 hooks + copy/stats/animations libs. Mobile nav drawer (Radix Dialog, D32 fix). ScrollProgressBar + useScrollProgress + useScrollReveal + useNavScrollHide. NewsletterForm. All 38 mockup token conflicts (D25-D35) resolved. Total: 80 gotchas.
+> **Updated:** 2026-07-10 (v2.8.0) — ALL 13 PHASES COMPLETE (603+ tests). Post-Phase 12 fix: resolved 101 errors from pnpm_log.txt (1 TS2339 + 100 ESLint). Fixed `paymentEvents.amountCents` (column doesn't exist — amount in `payload` jsonb), workers ESLint `projectService` for test files, scoped `no-explicit-any` override for Drizzle 0.45 `as any` casts (Gotcha 64), `require-await` on no-op stubs, `restrict-template-expressions` on number. 4 new gotchas (81-84). Total: 84 gotchas.
 
 ---
 
@@ -476,6 +476,22 @@ v10 uses `components: { IconLeft, IconRight }` instead of v9 props. The `calenda
 
 With `exactOptionalPropertyTypes: true`, nullable columns accept `null` but NOT `undefined`. Pass `metadata: metadata ?? null`. See `CLAUDE.md` Gotcha 80.
 
+### 74. `paymentEvents.amountCents` doesn't exist — amount in `payload` jsonb (Critical — Phase 10 fix)
+
+The `payment_events` table has NO `amountCents` column. Amount is in `payload` jsonb. Use `(payload->>'amount_received')::bigint` in SQL. See `CLAUDE.md` Gotcha 81.
+
+### 75. Workers ESLint `projectService` can't find test files (High — Phase 10 fix)
+
+Workers tsconfig excludes `*.test.ts` (correct for tsc). ESLint override: `projectService: false` for test files + `vitest.config.ts`. See `CLAUDE.md` Gotcha 82.
+
+### 76. Workers `db.query.X as any` casts — scoped ESLint override needed (High — Phase 10 fix)
+
+Per-line `eslint-disable` only covers one line. Scoped override in `services/workers/eslint.config.mjs` disables `no-explicit-any` + `no-unsafe-*` for all `src/**/*.ts`. Removed 10 per-line comments. See `CLAUDE.md` Gotcha 83.
+
+### 77. `async` without `await` + `number` in template literals (Medium — Phase 10 fix)
+
+Remove `async` from no-op `run()` stubs. Wrap numbers in `String()` for template literals. See `CLAUDE.md` Gotcha 84.
+
 ---
 
 ## Phase status (as of 2026-07-10)
@@ -538,7 +554,7 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 3. `stillwater_SKILL.md` — distilled project skill (v2.3.0; 21 source skills condensed; 75 lessons); authoritative tech-stack specifics
 4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.13.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.6.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.4.0 with 80 gotchas)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.8.0 with 84 gotchas)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 

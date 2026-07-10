@@ -1,7 +1,7 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 2.7.0
+version: 2.8.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia), Trigger.dev v4"
 last_updated: 2026-07-10
 ---
@@ -1645,6 +1645,71 @@ await db.insert(auditLog).values({
 });
 ```
 
+### Gotcha 81: `paymentEvents.amountCents` does not exist — amount is in `payload` jsonb (Critical — Phase 10 fix)
+
+**Symptom:** `pnpm check-types` fails with `TS2339: Property 'amountCents' does not exist on type 'PgTableWithColumns<...>'` in `packages/api/src/routers/admin.ts`.
+
+**Root cause:** The `payment_events` table has NO `amountCents` column. The table schema is: `id`, `memberId`, `stripeEventId`, `type`, `payload` (jsonb), `status`, `processedAt`, `createdAt`. The Stripe payment amount is stored inside the `payload` jsonb field (the raw Stripe event payload), NOT as a top-level column. The `admin.getRevenueDetails` procedure tried to `SUM(paymentEvents.amountCents)` which doesn't exist.
+
+**Fix:** Extract the amount from the jsonb payload using PostgreSQL's `->>` operator:
+```typescript
+// WRONG (column doesn't exist):
+totalCents: sql<number>`coalesce(sum(${paymentEvents.amountCents}), 0)::int`,
+
+// CORRECT (extract from payload jsonb):
+totalCents: sql<number>`coalesce(sum((${paymentEvents.payload}->>'amount_received')::bigint), 0)::int`,
+```
+The `amount_received` field is a standard Stripe invoice/payment intent property in the event payload.
+
+### Gotcha 82: Workers ESLint `projectService` can't find test files excluded from tsconfig (High — Phase 10 fix)
+
+**Symptom:** `pnpm lint` fails with `Parsing error: *.test.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject` for all 11 worker test files + `vitest.config.ts`.
+
+**Root cause:** Workers `tsconfig.json` excludes `src/**/*.test.ts` (correct per Lesson 28 — test files are run by vitest, not tsc). However, ESLint's `projectService` option tries to find each file in the tsconfig project, and when it can't, it throws a parsing error.
+
+**Fix:** Add an ESLint override in `services/workers/eslint.config.mjs` that disables `projectService` for test files and config files:
+```javascript
+{
+  files: ['src/**/*.test.ts', 'vitest.config.ts'],
+  languageOptions: {
+    parserOptions: {
+      projectService: false,
+    },
+  },
+},
+```
+
+### Gotcha 83: Workers `db.query.X as any` casts trigger 70+ ESLint errors (High — Phase 10 fix)
+
+**Symptom:** `pnpm lint` fails with ~70 errors: `no-explicit-any`, `no-unsafe-call`, `no-unsafe-member-access`, `no-unsafe-return` across all 9 worker source files.
+
+**Root cause:** Workers use `db.query.enrollments as any` casts per Gotcha 64 / Lesson 71 — Drizzle 0.45 relational query types infer as `never` in NodeNext without `defineRelations()`. The per-line `eslint-disable-next-line` comments only covered the FIRST line of the cast, but the `any` type propagated to subsequent lines (chained `.findFirst()` calls, callback parameters, return values).
+
+**Fix:** Added a scoped ESLint override for `src/**/*.ts` in `services/workers/eslint.config.mjs` that disables the 4 affected rules. Removed all 10 per-line `eslint-disable-next-line` comments from the 9 worker files (they're now redundant). These rules will be re-enabled when upgrading to Drizzle 1.0+ with `defineRelations()`.
+```javascript
+{
+  files: ['src/**/*.ts'],
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unsafe-call': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+  },
+},
+```
+
+### Gotcha 84: `async` methods without `await` trigger `require-await` + `restrict-template-expressions` on numbers (Medium — Phase 10 fix)
+
+**Symptom:** `pnpm lint` fails with `@typescript-eslint/require-await` on `attendance-summary.ts` and `membership-credit-grant.ts`, and `@typescript-eslint/restrict-template-expressions` on `class-reminder-1h.ts`.
+
+**Root cause:**
+1. Two worker tasks have `async run()` methods that don't use `await` (v1 no-op stubs that just return success).
+2. `class-reminder-1h.ts` uses a `number` variable in a template literal: `` `in ${diffMin} minutes` `` — ESLint forbids this because `Number.prototype.toString()` can produce unexpected results for `NaN`, `Infinity`.
+
+**Fix:**
+1. Remove `async` from `run: async () =>` → `run: () =>` (no `await` = no need for `async`).
+2. Wrap with `String()`: `` `in ${String(diffMin)} minutes` ``.
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -1734,6 +1799,11 @@ await db.insert(auditLog).values({
 | Drag session in calendar doesn't update time (Phase 9) | `sessions.update` procedure doesn't exist yet | Phase 10 will add it. See Gotcha 77. |
 | Revenue chart shows single point, not 12 months (Phase 9) | Monthly GROUP BY query not implemented | Phase 10 enhancement. See Gotcha 78. |
 | `Type 'undefined' not assignable` inserting to `audit_log` (Phase 9) | `metadata` is jsonb nullable — use `null`, not `undefined` | `metadata: metadata ?? null`. See Gotcha 80. |
+| `TS2339: Property 'amountCents' does not exist` in admin.ts (Phase 10 fix) | `payment_events` table has no `amountCents` column — amount is in `payload` jsonb | Use `(payload->>'amount_received')::bigint` SQL extraction. See Gotcha 81. |
+| `Parsing error: *.test.ts was not found by the project service` in workers (Phase 10 fix) | Workers tsconfig excludes test files (correct for tsc) but ESLint projectService can't find them | Add ESLint override `projectService: false` for test files. See Gotcha 82. |
+| ~70 `no-explicit-any` + `no-unsafe-*` errors in workers (Phase 10 fix) | `db.query.X as any` casts (Gotcha 64) — per-line eslint-disable only covers one line | Scoped ESLint override for all worker src files. See Gotcha 83. |
+| `require-await` on worker `async run()` methods (Phase 10 fix) | `async` method doesn't use `await` (v1 no-op stubs) | Remove `async` keyword: `run: () =>`. See Gotcha 84. |
+| `restrict-template-expressions` on number in template literal (Phase 10 fix) | `number` type in `${diffMin}` — ESLint forbids (NaN/Infinity risk) | Wrap with `String()`: `${String(diffMin)}`. See Gotcha 84. |
 
 ---
 

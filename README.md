@@ -630,6 +630,11 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | Drag session in calendar doesn't update (Phase 9)            | `sessions.update` procedure doesn't exist yet (Phase 10). Drag shows info toast. |
 | Revenue chart shows single point (Phase 9)                   | Monthly GROUP BY query not implemented (Phase 10). Chart shows total for period. |
 | `Type 'undefined' not assignable` inserting to `audit_log` (Phase 9) | `metadata` is jsonb nullable. Use `null`, not `undefined`: `metadata: metadata ?? null`. |
+| `TS2339: Property 'amountCents' does not exist` in admin.ts | `payment_events` has no `amountCents` column — amount is in `payload` jsonb. Use `(payload->>'amount_received')::bigint`. |
+| `Parsing error: *.test.ts was not found by project service` in workers | Workers tsconfig excludes test files (correct for tsc). ESLint override: `projectService: false` for test files. |
+| ~70 `no-explicit-any` + `no-unsafe-*` errors in workers | `db.query.X as any` casts (Gotcha 64). Scoped ESLint override in `services/workers/eslint.config.mjs`. |
+| `require-await` on worker `async run()` | Remove `async` from no-op stubs: `run: () =>`. |
+| `restrict-template-expressions` on number in template literal | Wrap with `String()`: `${String(diffMin)}`. |
 
 ---
 
@@ -867,8 +872,8 @@ Proprietary. © 2025 Stillwater Yoga Studio LLC — Portland, Oregon. All rights
 | [`PAD.md`](./PAD.md)                      | Canonical Project Architecture Document (31 sections, 11 ADRs; v1.13.0) |
 | [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) | 13-phase TDD execution plan (~260 files, 45 discrepancies, 10 resolved questions; v1.6.0) |
 | [`stillwater_SKILL.md`](./stillwater_SKILL.md) | Distilled project skill (v2.3.0; 21 source skills condensed; 75 lessons) |
-| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v2.4.0; 80 gotchas) |
-| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (73 gotchas)  |
+| [`CLAUDE.md`](./CLAUDE.md)                | Full agent briefing — gotchas, troubleshooting, lessons learnt (v2.8.0; 84 gotchas) |
+| [`AGENTS.md`](./AGENTS.md)                | Compact high-signal instructions for AI coding agents (77 gotchas)  |
 | [`scaffolding_files.md`](./scaffolding_files.md) | Phase 0 ready-to-paste config files (**HISTORICAL** — Phase 0 complete; actual files on disk are canonical) |
 | [`design.md`](./design.md)                | Three-path architecture critique + merged optimal architecture (some sections superseded by ADRs) |
 | [`react_email_suggestion.md`](./react_email_suggestion.md) | React Email v6 paradigm shift analysis + Resend Native Templates recommendation |
