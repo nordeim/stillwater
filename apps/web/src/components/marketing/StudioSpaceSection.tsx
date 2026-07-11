@@ -10,6 +10,7 @@
 
 import { SectionHeader } from './SectionHeader';
 import { StudioSpaceSVG } from './StudioSpaceSVG';
+
 import { SECTION_LABELS, SECTION_TITLES } from '@/lib/marketing/copy';
 import { STATS_DISPLAY } from '@/lib/marketing/stats';
 

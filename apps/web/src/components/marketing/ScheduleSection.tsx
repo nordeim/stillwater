@@ -10,6 +10,7 @@
 
 import { ScheduleGrid } from './ScheduleGrid';
 import { SectionHeader } from './SectionHeader';
+
 import { SECTION_LABELS, SECTION_TITLES } from '@/lib/marketing/copy';
 
 interface ScheduleSectionProps {
@@ -25,7 +26,7 @@ export function ScheduleSection({ sessions }: ScheduleSectionProps) {
           label={SECTION_LABELS.schedule}
           title={SECTION_TITLES.schedule}
         />
-        <ScheduleGrid sessions={sessions as Array<{ id: string; startsAt: Date; class: { name: string }; instructor: { slug: string }; room: { name: string } }>} />
+        <ScheduleGrid sessions={sessions as { id: string; startsAt: Date; class: { name: string }; instructor: { slug: string }; room: { name: string } }[]} />
       </div>
     </section>
   );

@@ -8,8 +8,9 @@
  */
 
 import type { MetadataRoute } from 'next';
-import { apiCaller } from '@/lib/trpc/server';
+
 import { getSanityClient } from '@/lib/sanity/client';
+import { apiCaller } from '@/lib/trpc/server';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
@@ -43,10 +44,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       const client = getSanityClient();
       if (client) {
-        const posts = await client.fetch(
+        const posts = await client.fetch<{ slug: { current: string } }[]>(
           `*[_type == "blogPost" && published == true] | order(publishedAt desc) { slug }`
         );
-        blogRoutes = (posts as Array<{ slug: { current: string } }>).map((post) => ({
+        blogRoutes = posts.map((post) => ({
           url: `${baseUrl}/blog/${post.slug.current}`,
           lastModified: new Date(),
           changeFrequency: 'monthly' as const,

@@ -10,7 +10,10 @@
  * Source: MEP Phase 10 F10-04, PAD §18.2.
  */
 
+import posthog from 'posthog-js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { analytics, initPostHog, ANALYTICS_EVENT_COUNT } from './posthog';
 
 // Mock posthog-js
 vi.mock('posthog-js', () => ({
@@ -20,9 +23,6 @@ vi.mock('posthog-js', () => ({
     opt_in_capturing: vi.fn(),
   },
 }));
-
-import posthog from 'posthog-js';
-import { analytics, initPostHog, ANALYTICS_EVENT_COUNT } from './posthog';
 
 describe('F10-04: PostHog analytics', () => {
   beforeEach(() => {
@@ -38,7 +38,9 @@ describe('F10-04: PostHog analytics', () => {
   it('classBooked calls posthog.capture with correct event name + props', () => {
     analytics.classBooked({ sessionId: 's1', classId: 'c1' });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- posthog is a vi.fn mock, not a real class method
     expect(posthog.capture).toHaveBeenCalledTimes(1);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- posthog is a vi.fn mock, not a real class method
     expect(posthog.capture).toHaveBeenCalledWith('class_booked', {
       sessionId: 's1',
       classId: 'c1',
@@ -48,13 +50,16 @@ describe('F10-04: PostHog analytics', () => {
   it('pageViewed calls posthog.capture with event name only', () => {
     analytics.pageViewed();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- posthog is a vi.fn mock, not a real class method
     expect(posthog.capture).toHaveBeenCalledTimes(1);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- posthog is a vi.fn mock, not a real class method
     expect(posthog.capture).toHaveBeenCalledWith('page_viewed');
   });
 
   it('membershipStarted calls with correct props', () => {
     analytics.membershipStarted({ planId: 'p1', stripeSubscriptionId: 'sub_123' });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- posthog is a vi.fn mock, not a real class method
     expect(posthog.capture).toHaveBeenCalledWith('membership_started', {
       planId: 'p1',
       stripeSubscriptionId: 'sub_123',
@@ -64,6 +69,7 @@ describe('F10-04: PostHog analytics', () => {
   it('initPostHog calls posthog.init with reverse proxy host', () => {
     initPostHog();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- posthog is a vi.fn mock, not a real class method
     expect(posthog.init).toHaveBeenCalledTimes(1);
     const initCall = (posthog.init as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(initCall?.[1]).toMatchObject({

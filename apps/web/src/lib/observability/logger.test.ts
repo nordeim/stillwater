@@ -10,15 +10,16 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { logger } from './logger';
 
 describe('F10-06: Structured logger', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'info').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(console, 'debug').mockImplementation(() => {});
+    vi.spyOn(console, 'info').mockImplementation(() => { /* mock */ });
+    vi.spyOn(console, 'error').mockImplementation(() => { /* mock */ });
+    vi.spyOn(console, 'warn').mockImplementation(() => { /* mock */ });
+    vi.spyOn(console, 'debug').mockImplementation(() => { /* mock */ });
   });
 
   it('logger.info sends structured JSON to console.info', () => {

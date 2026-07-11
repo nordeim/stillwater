@@ -12,8 +12,10 @@
  */
 
 import Link from 'next/link';
-import { SignOutButton } from '@/components/auth/SignOutButton';
+
 import type { StudioRole } from '@stillwater/auth';
+
+import { SignOutButton } from '@/components/auth/SignOutButton';
 
 interface AdminShellProps {
   children: React.ReactNode;

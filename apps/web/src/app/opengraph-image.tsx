@@ -13,7 +13,7 @@ export const alt = 'Stillwater Yoga Studio — A sanctuary for mindful movement 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-export default async function Image() {
+export default function Image() {
   return new ImageResponse(
     (
       <div

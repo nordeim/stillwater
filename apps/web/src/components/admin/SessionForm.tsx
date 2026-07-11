@@ -10,25 +10,27 @@
 
 'use client';
 
-import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, type Resolver } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
-import { trpc } from '@/lib/trpc/client';
+
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+import { trpc } from '@/lib/trpc/client';
+
 
 const sessionSchema = z.object({
-  classId: z.string().uuid('Select a class'),
-  instructorId: z.string().uuid('Select an instructor'),
-  roomId: z.string().uuid().optional(),
+  classId: z.uuid('Select a class'),
+  instructorId: z.uuid('Select an instructor'),
+  roomId: z.uuid().optional(),
   startsAt: z.string().min(1, 'Start date/time is required'),
   durationMinutes: z.coerce.number().int().min(5).max(480).default(60),
   overrideCapacity: z.coerce.number().int().min(1).max(500).optional(),
   isVirtual: z.boolean().default(false),
-  streamUrl: z.string().url().optional(),
+  streamUrl: z.url().optional(),
 }).refine(
   (data) => !data.isVirtual || data.streamUrl,
   { message: 'Stream URL is required for virtual sessions', path: ['streamUrl'] }
@@ -179,7 +181,7 @@ export function SessionForm({ initialData, onSuccess, onCancel }: SessionFormPro
         <Checkbox
           id="isVirtual"
           checked={isVirtual}
-          onCheckedChange={(checked) => setValue('isVirtual', checked === true)}
+          onCheckedChange={(checked) => { setValue('isVirtual', checked === true); }}
         />
         <Label htmlFor="isVirtual" className="cursor-pointer">
           Virtual session (requires stream URL)

@@ -8,8 +8,9 @@
  */
 
 import type { Metadata } from 'next';
-import { apiCaller } from '@/lib/trpc/server';
+
 import { KpiCard } from '@/components/admin/KpiCard';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard — Stillwater',
@@ -34,13 +35,13 @@ export default async function AdminDashboardPage() {
   // Filter to today's sessions only
   const now = new Date();
   const today = now.toISOString().split('T')[0];
-  const todaysSessions = (weekSchedule as Array<{
+  const todaysSessions = (weekSchedule as {
     id: string;
     startsAt: Date;
     status: string;
     class?: { name: string };
     instructor?: { name: string };
-  }>).filter((s) => {
+  }[]).filter((s) => {
     const sessionDate = new Date(s.startsAt).toISOString().split('T')[0];
     return sessionDate === today && s.status === 'scheduled';
   });
@@ -154,12 +155,12 @@ export default async function AdminDashboardPage() {
           </div>
         ) : (
           <ul className="divide-y divide-stone-200 border border-stone-200 bg-sand-50">
-            {(recentSignups as Array<{
+            {(recentSignups as {
               id: string;
               displayName: string;
               joinedAt: Date;
               user: { email: string };
-            }>).map((member) => (
+            }[]).map((member) => (
               <li key={member.id} className="flex items-center justify-between px-6 py-4">
                 <div>
                   <p className="text-sm font-medium text-stone-900">

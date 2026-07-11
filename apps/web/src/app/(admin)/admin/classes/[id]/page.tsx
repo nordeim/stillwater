@@ -7,12 +7,14 @@
  * Source: MEP Phase 9 F9-05.
  */
 
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { apiCaller } from '@/lib/trpc/server';
+import { notFound } from 'next/navigation';
+
+import type { Metadata } from 'next';
+
 import { ClassForm } from '@/components/admin/ClassForm';
 import { Button } from '@/components/ui/button';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Edit Class — Stillwater Admin',

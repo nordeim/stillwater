@@ -11,7 +11,10 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableHeader,
@@ -20,8 +23,8 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { trpc } from '@/lib/trpc/client';
+
 
 interface RosterEntry {
   id: string;
@@ -148,7 +151,7 @@ export function RosterTable({ sessionId, initialRoster }: RosterTableProps) {
                         size="sm"
                         variant={isCheckedIn ? 'outline' : 'default'}
                         disabled={isCheckedIn || checkInMutation.isPending}
-                        onClick={() => handleCheckIn(entry.member.id)}
+                        onClick={() => { handleCheckIn(entry.member.id); }}
                         aria-label={
                           isCheckedIn
                             ? `${entry.member.displayName} already checked in`

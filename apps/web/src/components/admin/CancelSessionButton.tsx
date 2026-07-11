@@ -9,10 +9,10 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { trpc } from '@/lib/trpc/client';
+
 
 interface CancelSessionButtonProps {
   sessionId: string;
@@ -77,7 +80,7 @@ export function CancelSessionButton({ sessionId }: CancelSessionButtonProps) {
             <Textarea
               id="cancel-reason"
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => { setReason(e.target.value); }}
               rows={3}
               placeholder="e.g., Instructor unavailable, room maintenance…"
               maxLength={500}
@@ -95,7 +98,7 @@ export function CancelSessionButton({ sessionId }: CancelSessionButtonProps) {
             >
               {cancelMutation.isPending ? 'Cancelling…' : 'Confirm Cancel'}
             </Button>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={() => { setOpen(false); }}>
               Keep Session
             </Button>
           </div>

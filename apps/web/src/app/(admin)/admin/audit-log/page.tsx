@@ -10,7 +10,7 @@
  */
 
 import type { Metadata } from 'next';
-import { apiCaller } from '@/lib/trpc/server';
+
 import {
   Table,
   TableHeader,
@@ -19,6 +19,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Audit Log — Stillwater Admin',
@@ -75,15 +76,7 @@ export default async function AdminAuditLogPage() {
             </TableHeader>
             <TableBody>
               {result.items.map((entry) => {
-                const e = entry as {
-                  id: string;
-                  staffMemberId: string;
-                  action: string;
-                  entityType: string;
-                  entityId: string;
-                  metadata: unknown;
-                  createdAt: Date;
-                };
+                const e = entry;
                 return (
                   <TableRow key={e.id}>
                     <TableCell

@@ -11,15 +11,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, type Resolver } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
-import { trpc } from '@/lib/trpc/client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { trpc } from '@/lib/trpc/client';
+
 
 const classLevelValues = ['all', 'beginner', 'intermediate', 'advanced'] as const;
 
@@ -141,7 +144,7 @@ export function ClassForm({
         <Input
           id="slug"
           {...register('slug', {
-            onChange: () => setSlugEdited(true),
+            onChange: () => { setSlugEdited(true); },
           })}
           placeholder="vinyasa-flow"
           aria-invalid={!!errors.slug}

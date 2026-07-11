@@ -69,7 +69,7 @@ export const FOOTER_NEWSLETTER_LABEL = 'Stay Connected';
 export const FOOTER_NEWSLETTER_PLACEHOLDER = 'your@email.com';
 export const FOOTER_NEWSLETTER_CTA = 'Subscribe';
 
-export const FOOTER_COPYRIGHT = `© ${new Date().getFullYear()} Stillwater Yoga Studio. All rights reserved.`;
+export const FOOTER_COPYRIGHT = `© ${String(new Date().getFullYear())} Stillwater Yoga Studio. All rights reserved.`;
 
 export const FOOTER_LINKS = {
   navigate: [

@@ -35,7 +35,8 @@ export default async function SchedulePage() {
 
   const grouped = new Map<string, ScheduleSession[]>();
   for (const session of typedSessions) {
-    const dateKey = session.startsAt.toISOString().split('T')[0]!;
+    const dateKey = session.startsAt.toISOString().split('T')[0];
+    if (!dateKey) continue;
     const existing = grouped.get(dateKey) ?? [];
     existing.push(session);
     grouped.set(dateKey, existing);

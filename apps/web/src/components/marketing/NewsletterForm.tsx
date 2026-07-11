@@ -11,9 +11,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
 import { FOOTER_NEWSLETTER_PLACEHOLDER, FOOTER_NEWSLETTER_CTA } from '@/lib/marketing/copy';
 
 const newsletterSchema = z.object({

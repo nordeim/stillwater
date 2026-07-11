@@ -7,17 +7,19 @@
  */
 
 import Link from 'next/link';
-import { SectionHeader } from './SectionHeader';
+
 import { InstructorRow } from './InstructorRow';
+import { SectionHeader } from './SectionHeader';
+
 import { SECTION_LABELS, SECTION_TITLES } from '@/lib/marketing/copy';
 
 interface InstructorsSectionProps {
-  instructors: Array<{
+  instructors: {
     id: string;
     name: string;
     slug: string;
     bio?: string | null;
-  }>;
+  }[];
 }
 
 export function InstructorsSection({ instructors }: InstructorsSectionProps) {

@@ -21,7 +21,7 @@ import {
 } from 'recharts';
 
 interface RevenueChartProps {
-  data: Array<{ month: string; mrr: number }>;
+  data: { month: string; mrr: number }[];
 }
 
 export function RevenueChart({ data }: RevenueChartProps) {

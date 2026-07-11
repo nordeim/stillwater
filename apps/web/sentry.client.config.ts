@@ -20,7 +20,8 @@ Sentry.init({
   ],
   // PII-aware: do not send request bodies for booking endpoints
   beforeBreadcrumb(breadcrumb) {
-    if (breadcrumb.category === 'fetch' && breadcrumb.data?.url?.includes('/api/trpc/bookings')) {
+    const url: unknown = breadcrumb.data?.url;
+    if (breadcrumb.category === 'fetch' && typeof url === 'string' && url.includes('/api/trpc/bookings')) {
       return null;
     }
     return breadcrumb;

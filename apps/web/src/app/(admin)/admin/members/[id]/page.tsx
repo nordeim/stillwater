@@ -7,11 +7,11 @@
  * Source: MEP Phase 9 F9-10.
  */
 
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { apiCaller } from '@/lib/trpc/server';
-import { getSession } from '@/lib/auth';
+import { notFound } from 'next/navigation';
+
+import type { Metadata } from 'next';
+
 import { MemberRoleEditor } from '@/components/admin/MemberRoleEditor';
 import {
   Table,
@@ -21,6 +21,8 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { getSession } from '@/lib/auth';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Member Detail — Stillwater Admin',
@@ -44,7 +46,7 @@ export default async function AdminMemberDetailPage({ params }: PageProps) {
 
   // Check if current user is owner (for role editor visibility)
   const session = await getSession();
-  const isOwner = (session?.user.roles as string[])?.includes('owner') ?? false;
+  const isOwner = (session?.user.roles as string[] | undefined)?.includes('owner') ?? false;
 
   const { member, enrollmentHistory, paymentHistory } = detail as {
     member: {
@@ -53,7 +55,7 @@ export default async function AdminMemberDetailPage({ params }: PageProps) {
       joinedAt: Date;
       phone: string | null;
       user: { email: string };
-      roles: Array<{ role: string }>;
+      roles: { role: string }[];
     };
     enrollmentHistory: unknown[];
     paymentHistory: unknown[];

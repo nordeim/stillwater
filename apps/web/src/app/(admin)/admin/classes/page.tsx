@@ -7,9 +7,11 @@
  * Source: MEP Phase 9 F9-04, PAD §10.2 (RSC data fetching).
  */
 
-import type { Metadata } from 'next';
 import Link from 'next/link';
-import { apiCaller } from '@/lib/trpc/server';
+
+import type { Metadata } from 'next';
+
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableHeader,
@@ -18,7 +20,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Classes — Stillwater Admin',

@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
+
 import { trapFocus, restoreFocus } from './focus-utils';
 
 describe('F11-12: Focus management utilities', () => {

@@ -8,6 +8,7 @@
  */
 
 import Link from 'next/link';
+
 import { CTA_BAND_TITLE, CTA_BAND_SUBTITLE, CTA_BAND_PRIMARY, CTA_BAND_GHOST } from '@/lib/marketing/copy';
 
 export function CtaBand() {

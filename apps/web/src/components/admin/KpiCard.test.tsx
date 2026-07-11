@@ -6,12 +6,13 @@
  * Per MEP Phase 9 F9-13.
  */
 
-import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, afterEach } from 'vitest';
+
 import { KpiCard } from './KpiCard';
 
 describe('F9-13: KpiCard', () => {
-  afterEach(() => cleanup());
+  afterEach(() => { cleanup(); });
 
   it('renders label and value', () => {
     render(<KpiCard label="Active Members" value={42} />);

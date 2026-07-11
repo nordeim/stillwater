@@ -18,7 +18,7 @@ export function SignOutButton() {
     <form
       action="/auth/sign-out"
       method="POST"
-      onSubmit={() => setIsSigningOut(true)}
+      onSubmit={() => { setIsSigningOut(true); }}
     >
       <button
         type="submit"

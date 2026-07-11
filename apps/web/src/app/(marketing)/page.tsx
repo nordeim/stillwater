@@ -8,18 +8,19 @@
  */
 
 import type { Metadata } from 'next';
-import { apiCaller } from '@/lib/trpc/server';
-import { Hero } from '@/components/marketing/Hero';
+
 import { ClassMarquee } from '@/components/marketing/ClassMarquee';
-import { Philosophy } from '@/components/marketing/Philosophy';
-import { ScheduleSection } from '@/components/marketing/ScheduleSection';
+import { CtaBand } from '@/components/marketing/CtaBand';
+import { Hero } from '@/components/marketing/Hero';
 import { InstructorsSection } from '@/components/marketing/InstructorsSection';
 import { MembershipSection } from '@/components/marketing/MembershipSection';
-import { StudioSpaceSection } from '@/components/marketing/StudioSpaceSection';
-import { CtaBand } from '@/components/marketing/CtaBand';
+import { Philosophy } from '@/components/marketing/Philosophy';
+import { ScheduleSection } from '@/components/marketing/ScheduleSection';
 import { ScrollProgressBar } from '@/components/marketing/ScrollProgressBar';
+import { StudioSpaceSection } from '@/components/marketing/StudioSpaceSection';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { yogaStudioSchema } from '@/lib/seo/schemas';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Stillwater Yoga Studio — Mindful Movement in SE Portland',

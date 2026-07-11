@@ -9,9 +9,10 @@
  * Source: MEP Phase 2 F2-17, Phase 9 F9-01, SKILL §5.7.
  */
 
-import { requireRole } from '@/lib/auth';
-import { AdminShell } from '@/components/admin/AdminShell';
 import type { StillwaterSession } from '@stillwater/auth';
+
+import { AdminShell } from '@/components/admin/AdminShell';
+import { requireRole } from '@/lib/auth';
 
 export default async function AdminLayout({
   children,

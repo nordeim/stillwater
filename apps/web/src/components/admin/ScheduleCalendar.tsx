@@ -15,6 +15,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+
 import {
   DndContext,
   PointerSensor,
@@ -22,10 +23,13 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import { trpc } from '@/lib/trpc/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { SessionForm } from './SessionForm';
 import { toast } from 'sonner';
+
+import { SessionForm } from './SessionForm';
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { trpc } from '@/lib/trpc/client';
+
 
 interface ScheduleSession {
   id: string;
@@ -59,7 +63,7 @@ function startOfWeek(date: Date): Date {
 function formatHour(hour: number): string {
   const period = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:00 ${period}`;
+  return `${String(displayHour)}:00 ${period}`;
 }
 
 export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps) {
@@ -73,7 +77,7 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  const updateSession = trpc.sessions.cancel.useMutation({
+  const _updateSession = trpc.sessions.cancel.useMutation({
     // Reusing cancel for now — Phase 10 will add sessions.update
     onSuccess: () => toast.success('Session updated'),
     onError: (e) => toast.error(e.message || 'Failed to update session'),
@@ -98,7 +102,7 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
 
     // Calculate duration from original session
     const durationMs = new Date(session.endsAt).getTime() - new Date(session.startsAt).getTime();
-    const durationMinutes = Math.round(durationMs / 60000);
+    const _durationMinutes = Math.round(durationMs / 60000);
 
     toast.info(`Drag-to-reschedule requires sessions.update procedure (Phase 10). New time would be: ${newStart.toLocaleString()}`);
     // TODO: Phase 10 — add sessions.update mutation and call it here:
@@ -123,7 +127,7 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
       );
       const hour = start.getHours();
       if (dayDiff >= 0 && dayDiff < 7) {
-        grid[`${dayDiff}-${hour}`] = session;
+        grid[`${String(dayDiff)}-${String(hour)}`] = session;
       }
     }
     return grid;
@@ -174,16 +178,16 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
                 {formatHour(hour)}
               </div>
               {DAYS.map((_, dayOffset) => {
-                const slotKey = `${dayOffset}-${hour}`;
+                const slotKey = `${String(dayOffset)}-${String(hour)}`;
                 const session = sessionGrid[slotKey];
                 return (
                   <div
                     key={slotKey}
                     id={slotKey}
                     className="min-h-[48px] border-r border-stone-200 p-1"
-                    onClick={() => !session && handleSlotClick(dayOffset, hour)}
+                    onClick={() => { if (!session) handleSlotClick(dayOffset, hour); }}
                     role={session ? undefined : 'button'}
-                    aria-label={session ? undefined : `Create session on ${DAYS[dayOffset]} at ${formatHour(hour)}`}
+                    aria-label={session ? undefined : `Create session on ${DAYS[dayOffset] ?? ''} at ${formatHour(hour)}`}
                   >
                     {session ? (
                       <div
@@ -228,14 +232,14 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
             {...(createDateTime
               ? { initialData: { startsAt: createDateTime.toISOString().slice(0, 16) } }
               : {})}
-            onSuccess={() => setCreateDialogOpen(false)}
-            onCancel={() => setCreateDialogOpen(false)}
+            onSuccess={() => { setCreateDialogOpen(false); }}
+            onCancel={() => { setCreateDialogOpen(false); }}
           />
         </DialogContent>
       </Dialog>
 
       {/* Edit session dialog */}
-      <Dialog open={!!selectedSession} onOpenChange={(open) => !open && setSelectedSession(null)}>
+      <Dialog open={!!selectedSession} onOpenChange={(open) => { if (!open) setSelectedSession(null); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Session Details</DialogTitle>

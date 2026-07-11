@@ -8,7 +8,9 @@
  */
 
 import Link from 'next/link';
+
 import { SectionHeader } from './SectionHeader';
+
 import { SECTION_LABELS, SECTION_TITLES, MEMBERSHIP_TRIAL_NOTE } from '@/lib/marketing/copy';
 
 interface MembershipPlan {

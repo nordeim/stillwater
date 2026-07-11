@@ -31,7 +31,7 @@ export function getStudioStats(): StudioStats {
 }
 
 export const STATS_DISPLAY = [
-  { label: 'Weekly Classes', value: `${FALLBACK_STATS.weeklyClasses}+` },
-  { label: 'Instructors', value: `${FALLBACK_STATS.instructorCount}` },
-  { label: 'Studio Rooms', value: `${FALLBACK_STATS.studioRooms}` },
+  { label: 'Weekly Classes', value: `${String(FALLBACK_STATS.weeklyClasses)}+` },
+  { label: 'Instructors', value: String(FALLBACK_STATS.instructorCount) },
+  { label: 'Studio Rooms', value: String(FALLBACK_STATS.studioRooms) },
 ] as const;

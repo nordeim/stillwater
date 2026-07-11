@@ -10,10 +10,13 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
-import { Button } from '@/components/ui/button';
+
 import { toast } from 'sonner';
+
 import type { StudioRole } from '@stillwater/auth';
+
+import { Button } from '@/components/ui/button';
+import { trpc } from '@/lib/trpc/client';
 
 const ALL_ROLES: StudioRole[] = ['member', 'instructor', 'staff', 'manager', 'owner'];
 
@@ -81,7 +84,7 @@ export function MemberRoleEditor({ memberId, currentRoles }: MemberRoleEditorPro
             </span>
             <button
               type="button"
-              onClick={() => handleRemove(role)}
+              onClick={() => { handleRemove(role); }}
               aria-label={`Remove ${role} role`}
               className="text-stone-400 hover:text-error"
             >
@@ -107,7 +110,7 @@ export function MemberRoleEditor({ memberId, currentRoles }: MemberRoleEditorPro
           <select
             id="role-select"
             value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value as StudioRole)}
+            onChange={(e) => { setSelectedRole(e.target.value as StudioRole); }}
             className="flex h-9 w-40 rounded-none border border-stone-300 bg-transparent px-3 py-1 text-sm"
           >
             {ALL_ROLES.map((r) => (

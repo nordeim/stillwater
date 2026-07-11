@@ -32,7 +32,7 @@ export function useNavScrollHide() {
 
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); };
   }, []);
 
   return { hidden, scrolled };

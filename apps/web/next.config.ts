@@ -1,5 +1,6 @@
-import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+
+import type { NextConfig } from "next";
 
 // ── Bundle analyzer (enabled via ANALYZE=true) ────────────────────
 // F10-09: Wraps nextConfig when ANALYZE=true to visualize bundle composition

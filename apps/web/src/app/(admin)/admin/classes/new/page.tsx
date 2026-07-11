@@ -6,8 +6,10 @@
  * Source: MEP Phase 9 F9-05.
  */
 
-import type { Metadata } from 'next';
 import Link from 'next/link';
+
+import type { Metadata } from 'next';
+
 import { ClassForm } from '@/components/admin/ClassForm';
 
 export const metadata: Metadata = {
@@ -16,7 +18,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminClassNewPage() {
+export default function AdminClassNewPage() {
   return (
     <div className="space-y-8">
       <header>

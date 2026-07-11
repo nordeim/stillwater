@@ -11,7 +11,9 @@
 'use client';
 
 import { Component, type ReactNode } from 'react';
+
 import * as Sentry from '@sentry/nextjs';
+
 import { Button } from '@/components/ui/button';
 
 interface ErrorBoundaryProps {

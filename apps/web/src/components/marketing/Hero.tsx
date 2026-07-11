@@ -9,7 +9,9 @@
  */
 
 import Link from 'next/link';
+
 import { HeroNextClass } from './HeroNextClass';
+
 import {
   HERO_EYEBROW,
   HERO_HEADLINE_LINES,

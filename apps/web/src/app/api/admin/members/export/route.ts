@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
+
 import { apiCaller } from '@/lib/trpc/server';
 
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,7 @@ export async function GET(): Promise<NextResponse> {
       displayName: string;
       joinedAt: Date;
       user: { email: string };
-      roles: Array<{ role: string }>;
+      roles: { role: string }[];
     };
     return [
       member.displayName,

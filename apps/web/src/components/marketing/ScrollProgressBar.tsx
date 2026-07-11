@@ -17,7 +17,7 @@ export function ScrollProgressBar() {
   return (
     <div
       className="fixed left-0 right-0 top-0 z-[60] h-0.5 origin-left bg-clay-400"
-      style={{ transform: `scaleX(${progress})` }}
+      style={{ transform: `scaleX(${String(progress)})` }}
       aria-hidden="true"
     />
   );

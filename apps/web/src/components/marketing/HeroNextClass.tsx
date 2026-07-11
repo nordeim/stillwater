@@ -11,7 +11,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import Link from 'next/link';
+
 import { trpc } from '@/lib/trpc/client';
 
 export function HeroNextClass() {
@@ -20,6 +22,7 @@ export function HeroNextClass() {
   useEffect(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deriving initial weekStart once on mount (no external system to sync)
     setWeekStart(d);
   }, []);
 
@@ -35,11 +38,13 @@ export function HeroNextClass() {
       const session = s as { startsAt: Date; status: string };
       return new Date(session.startsAt) > now && session.status === 'scheduled';
     })
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- preserve null-safe chain when sessions is undefined
     ?.sort((a, b) => {
       const sa = a as { startsAt: Date };
       const sb = b as { startsAt: Date };
       return new Date(sa.startsAt).getTime() - new Date(sb.startsAt).getTime();
     })
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- preserve null-safe chain when sessions is undefined
     ?.[0] as {
       id: string;
       startsAt: Date;

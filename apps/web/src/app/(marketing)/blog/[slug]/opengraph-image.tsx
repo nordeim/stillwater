@@ -8,6 +8,7 @@
  */
 
 import { ImageResponse } from '@vercel/og';
+
 import { getSanityClient } from '@/lib/sanity/client';
 
 export const runtime = 'edge';
@@ -24,7 +25,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   try {
     const client = getSanityClient();
     if (client) {
-      const post = await client.fetch(
+      const post = await client.fetch<{ title?: string; author?: string } | null>(
         `*[_type == "blogPost" && published == true && slug.current == $slug][0] { title, author }`,
         { slug },
       );

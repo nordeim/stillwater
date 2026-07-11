@@ -10,9 +10,10 @@
  */
 
 import type { Metadata } from 'next';
-import { apiCaller } from '@/lib/trpc/server';
+
 import { KpiCard } from '@/components/admin/KpiCard';
 import { RevenueChart } from '@/components/admin/RevenueChart';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Revenue — Stillwater Admin',
@@ -27,7 +28,7 @@ export default async function AdminRevenuePage() {
   const end = new Date();
   const start = new Date(end.getFullYear() - 1, end.getMonth(), 1);
 
-  const [revenue, dashboard] = await Promise.all([
+  const [revenue, _dashboard] = await Promise.all([
     caller.admin.getRevenueDetails({ start, end }),
     caller.admin.getDashboard(),
   ]);

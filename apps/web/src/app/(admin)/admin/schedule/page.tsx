@@ -8,9 +8,10 @@
  */
 
 import type { Metadata } from 'next';
-import { apiCaller } from '@/lib/trpc/server';
-import { ScheduleCalendar } from '@/components/admin/ScheduleCalendar';
+
 import { CancelSessionButton } from '@/components/admin/CancelSessionButton';
+import { ScheduleCalendar } from '@/components/admin/ScheduleCalendar';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Schedule — Stillwater Admin',

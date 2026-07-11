@@ -7,9 +7,10 @@
  * Source: MEP Phase 9 F9-09.
  */
 
-import type { Metadata } from 'next';
 import Link from 'next/link';
-import { apiCaller } from '@/lib/trpc/server';
+
+import type { Metadata } from 'next';
+
 import {
   Table,
   TableHeader,
@@ -18,6 +19,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
   title: 'Members — Stillwater Admin',
@@ -39,7 +41,7 @@ export default async function AdminMembersPage() {
     displayName: string;
     joinedAt: Date;
     user: { email: string };
-    roles: Array<{ role: string }>;
+    roles: { role: string }[];
   }
   const typedMembers = result.items as unknown as MemberRow[];
 

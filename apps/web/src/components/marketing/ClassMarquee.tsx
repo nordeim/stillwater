@@ -10,7 +10,9 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
+
 import { MarqueeItem } from './MarqueeItem';
+
 import { MARQUEE_ITEMS } from '@/lib/marketing/copy';
 
 export function ClassMarquee() {

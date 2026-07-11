@@ -8,7 +8,9 @@
  */
 
 import Link from 'next/link';
+
 import { NewsletterForm } from './NewsletterForm';
+
 import {
   FOOTER_NEWSLETTER_LABEL,
   FOOTER_COPYRIGHT,

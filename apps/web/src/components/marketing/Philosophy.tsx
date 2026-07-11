@@ -8,7 +8,7 @@
  * Source: MEP Phase 12 F12-05.
  */
 
-import { PHILOSOPHY_QUOTE, PHILOSOPHY_QUOTE_EMPHASIS, PHILOSOPHY_BODY, SECTION_LABELS, SECTION_TITLES } from '@/lib/marketing/copy';
+import { PHILOSOPHY_QUOTE, PHILOSOPHY_QUOTE_EMPHASIS, PHILOSOPHY_BODY, SECTION_LABELS } from '@/lib/marketing/copy';
 
 export function Philosophy() {
   // Split quote to emphasis the last part

@@ -7,6 +7,7 @@
  */
 
 import { ImageResponse } from '@vercel/og';
+
 import { apiCaller } from '@/lib/trpc/server';
 
 export const runtime = 'nodejs';
@@ -23,7 +24,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   try {
     const caller = await apiCaller();
     const instructor = await caller.instructors.getBySlug({ slug });
-    name = instructor.slug ?? name;
+    name = instructor.slug;
     bio = instructor.bio?.slice(0, 120) ?? '';
   } catch {
     // Graceful fallback

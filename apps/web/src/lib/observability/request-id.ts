@@ -12,8 +12,9 @@
  */
 
 import 'server-only';
-import { headers } from 'next/headers';
 import { randomUUID } from 'crypto';
+
+import { headers } from 'next/headers';
 
 /**
  * Get the request ID from the x-request-id header, or generate a new one.

@@ -36,7 +36,7 @@ export function useScrollReveal<T extends HTMLElement>(): RefObject<T | null> {
 
     observer.observe(element);
 
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); };
   }, []);
 
   return ref;

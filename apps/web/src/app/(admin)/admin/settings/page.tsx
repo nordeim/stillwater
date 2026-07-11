@@ -10,6 +10,7 @@
  */
 
 import type { Metadata } from 'next';
+
 import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
@@ -92,7 +93,7 @@ export default async function AdminSettingsPage() {
         <ul className="space-y-2">
           {membersResult.items
             .filter((m: unknown) => {
-              const member = m as { roles: Array<{ role: string }> };
+              const member = m as { roles: { role: string }[] };
               return member.roles.some(
                 (r: { role: string }) =>
                   r.role === 'staff' || r.role === 'manager' || r.role === 'owner',
@@ -103,7 +104,7 @@ export default async function AdminSettingsPage() {
                 id: string;
                 displayName: string;
                 user: { email: string };
-                roles: Array<{ role: string }>;
+                roles: { role: string }[];
               };
               return (
                 <li
@@ -132,7 +133,7 @@ export default async function AdminSettingsPage() {
             })}
         </ul>
         {membersResult.items.filter((m: unknown) => {
-          const member = m as { roles: Array<{ role: string }> };
+          const member = m as { roles: { role: string }[] };
           return member.roles.some(
             (r: { role: string }) =>
               r.role === 'staff' || r.role === 'manager' || r.role === 'owner',

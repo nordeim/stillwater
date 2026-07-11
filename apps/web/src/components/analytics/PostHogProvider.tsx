@@ -10,6 +10,7 @@
 'use client';
 
 import { useEffect, type ReactNode } from 'react';
+
 import { initPostHog } from '@/lib/analytics/posthog';
 
 interface PostHogProviderProps {

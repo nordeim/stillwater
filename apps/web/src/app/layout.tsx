@@ -3,9 +3,9 @@ import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 
 import './globals.css';
-import { TRPCProvider } from '@/lib/trpc/client';
-import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { SkipLink } from '@/components/a11y/SkipLink';
+import { PostHogProvider } from '@/components/analytics/PostHogProvider';
+import { TRPCProvider } from '@/lib/trpc/client';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),

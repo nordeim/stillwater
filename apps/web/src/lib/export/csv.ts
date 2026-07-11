@@ -41,7 +41,9 @@ export function arrayToCSV(data: Record<string, unknown>[]): string {
     return '';
   }
 
-  const headers = Object.keys(data[0]!);
+  const firstRow = data[0];
+  if (!firstRow) return '';
+  const headers = Object.keys(firstRow);
   const headerRow = headers.map(escapeCSVField).join(',');
   const dataRows = data.map((row) =>
     headers.map((h) => escapeCSVField(row[h])).join(','),
