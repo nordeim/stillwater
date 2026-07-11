@@ -1,9 +1,9 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 2.8.0
+version: 2.9.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia), Trigger.dev v4"
-last_updated: 2026-07-10
+last_updated: 2026-07-11
 ---
 
 # Stillwater
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–9 Status**: ✅ COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 17 tables (14 domain + 3 Better Auth) + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~30 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (7 source files, 43 tests: `client.ts` singleton with Dahlia API, `types.ts` 7-event discriminated union, `subscriptions.ts` 5 lifecycle helpers, `webhooks.ts` idempotent handler with `pg_advisory_xact_lock` + 7 event handlers, `invoices.ts` cursor pagination, `credit-packs.ts` one-off checkout, `refunds.ts` D12 thin wrapper), Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT, signature verification, 400/500/200), `CheckoutButton` component, `lib/stripe/utils.ts`, all tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`), `payments.refund` retained as D12 stub, ADR-010 accepted (Resend Native Templates), 5 STRIPE acceptance tests passing. Phase 8: Background jobs + email — `@stillwater/email` package (19 source files, 71 tests: 3 shared components, 13 React Email v6 templates, dual-path send.ts with sendEmail for Server Components + sendEmailNative for workers per ADR-010, 13 send-helpers, template-ids.ts), `@stillwater/workers` package (12 source files, 33 tests: 11 Trigger.dev v4 tasks with per-task maxDuration + retry, all use sendEmailNative via send-helpers), integration wiring (getJobsClient in @stillwater/config with stub fallback, bookings.book triggers booking-confirmation + reminders fire-and-forget, bookings.cancel job ID fixed to waitlist-promotion, memberships.cancel/pause send emails, Stripe webhook invoice.payment_failed triggers payment-failed-notify post-commit). Phase 9: Admin surface (RBAC-gated) — 10 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`), 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable with check-in, RevenueChart via Recharts, MemberRoleEditor owner-only, SignOutButton), 8 new admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails` with real MRR/churn/attendance, `assignRole` owner-only, `removeRole` owner-only, `listAuditLog`), `audit_log` table (migration `0003_audit_log_phase9.sql`) with 3 indexes, 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command), `cmdk` dependency, `lib/admin/audit-log.ts` helper, 5 E2E spec files with skipIf guards. All admin mutations audit-logged. 2-layer auth defense-in-depth via nested layouts (revenue=manager+, settings=owner). 603+ tests. Phase 10-12 pending.
+**Phase 0–12 Status**: ✅ ALL 13 PHASES COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 18 tables (15 domain + 3 Better Auth) + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~42 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 18 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (7 source files, 43 tests: `client.ts` singleton with Dahlia API, `types.ts` 7-event discriminated union, `subscriptions.ts` 5 lifecycle helpers, `webhooks.ts` idempotent handler with `pg_advisory_xact_lock` + 7 event handlers, `invoices.ts` cursor pagination, `credit-packs.ts` one-off checkout, `refunds.ts` D12 thin wrapper), Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT, signature verification, 400/500/200), `CheckoutButton` component, `lib/stripe/utils.ts`, all tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`), `payments.refund` retained as D12 stub, ADR-010 accepted (Resend Native Templates), 5 STRIPE acceptance tests passing. Phase 8: Background jobs + email — `@stillwater/email` package (19 source files, 71 tests: 3 shared components, 13 React Email v6 templates, dual-path send.ts with sendEmail for Server Components + sendEmailNative for workers per ADR-010, 13 send-helpers, template-ids.ts), `@stillwater/workers` package (12 source files, 33 tests: 11 Trigger.dev v4 tasks with per-task maxDuration + retry, all use sendEmailNative via send-helpers), integration wiring (getJobsClient in @stillwater/config with stub fallback, bookings.book triggers booking-confirmation + reminders fire-and-forget, bookings.cancel job ID fixed to waitlist-promotion, memberships.cancel/pause send emails, Stripe webhook invoice.payment_failed triggers payment-failed-notify post-commit). Phase 9: Admin surface (RBAC-gated) — 11 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`), 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable with check-in, RevenueChart via Recharts, MemberRoleEditor owner-only, SignOutButton), 12 admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails` with real MRR/churn/attendance, `assignRole` owner-only, `removeRole` owner-only, `listAuditLog`, `getDashboard`, `getRevenue`, `getClassRoster`, `getAttendanceStats`), `audit_log` table (migration `0003_audit_log_phase9.sql`) with 3 indexes, 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command), `cmdk` dependency, `lib/admin/audit-log.ts` helper, 5 E2E spec files with skipIf guards. All admin mutations audit-logged. 2-layer auth defense-in-depth via nested layouts (revenue=manager+, settings=owner). Phase 10: Observability (Sentry + PostHog 18 events + Axiom + Checkly 3 checks). Phase 11: WCAG AAA audit + SEO (robots, sitemap, manifest, 4 OG images, JSON-LD, SkipLink, SrOnly, focus-utils). Phase 12: Landing page port (19 marketing components, 3 hooks, mobile nav drawer, scroll progress bar). **643 tests passing** (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers). All quality gates green: `pnpm check-types` ✅, `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (643/643), `pnpm build` ✅ (9/9 packages, 16 static pages).
 
 ---
 
@@ -447,7 +447,7 @@ Before committing, verify locally:
 ```bash
 pnpm check-types       # TypeScript green (9/9 tasks)
 pnpm lint              # ESLint green (2/2 tasks)
-pnpm test              # Vitest green (603+ tests: 109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers — Phase 9 adds audit-log + KpiCard + admin router tests)
+pnpm test              # Vitest green (643 tests: 117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers)
 pnpm build             # Next.js production build (13/13 pages)
 ```
 
@@ -597,7 +597,7 @@ See `react_email_suggestion.md` Alternative A for the ADR-010 rationale.
 ### Database / Data Layer
 
 - **PostgreSQL 17** on Neon (serverless, branching for preview envs)
-- **17 tables** ✅ implemented (14 domain in Phase 1 + 3 Better Auth in Phase 2): `users`, `members`, `instructors`, `class_styles`, `classes`, `rooms`, `class_sessions`, `enrollments`, `waitlist_entries`, `membership_plans`, `member_subscriptions`, `class_packages`, `payment_events`, `role_assignments` + `session`, `account`, `verification` — see `packages/db/src/schema/`
+- **18 tables** ✅ implemented (15 domain + 3 Better Auth): `users`, `members`, `instructors`, `class_styles`, `classes`, `rooms`, `class_sessions`, `enrollments`, `waitlist_entries`, `membership_plans`, `member_subscriptions`, `class_packages`, `payment_events`, `role_assignments`, `audit_log` (Phase 9) + `session`, `account`, `verification` (Better Auth) — see `packages/db/src/schema/`
 - **8 enums** ✅ implemented in Phase 1: `class_level`, `session_status`, `enrollment_status`, `waitlist_status`, `subscription_status`, `billing_interval`, `studio_role`, `payment_status` — see `packages/db/src/schema/enums.ts`
 - **5 critical indexes** ✅ implemented in Phase 1 (4 partial + 1 unique): `idx_sessions_starts_at_status`, `idx_enrollments_session_status`, `idx_waitlist_session_position`, `idx_subscriptions_member_status`, `idx_payment_events_stripe_id` — see `PAD.md` §7.3
 - **3 additional indexes** (Phase 1): `idx_members_stripe_customer_id` (D6 webhook lookup), `idx_enrollments_session_member` (unique — double-booking prevention), `idx_role_assignments_member_role` (unique — duplicate grant prevention)
@@ -605,7 +605,7 @@ See `react_email_suggestion.md` Alternative A for the ADR-010 rationale.
 - **15 FK constraints** with cascade rules: CASCADE (members→users, enrollments→sessions/members, waitlist→sessions/members, etc.), RESTRICT (class_sessions→instructors, member_subscriptions→membership_plans), SET NULL (class_sessions→rooms, payment_events→members)
 - **Two DB URLs**: `DATABASE_URL` (pooled, app queries) + `DATABASE_URL_UNPOOLED` (migrations only — PgBouncer breaks prepared statements)
 - **Drizzle ORM 0.45**: schema in TypeScript (`packages/db/src/schema/`); neon-http serverless driver; `db` client exported from `packages/db/src/index.ts` with `DrizzleDB` type
-- **Migration**: `drizzle-kit generate` → migrations: `0000_dear_dagger.sql` (Phase 1), `0001_equal_iron_lad.sql` (Phase 4 — instructors.published), `0002_lyrical_cargill.sql` (Phase 5 — waitlist unique index); apply via `pnpm db:migrate`
+- **Migration**: `drizzle-kit generate` → migrations: `0000_dear_dagger.sql` (Phase 1), `0001_equal_iron_lad.sql` (Phase 4 — instructors.published), `0002_lyrical_cargill.sql` (Phase 5 — waitlist unique index), `0003_audit_log_phase9.sql` (Phase 9 — audit_log table + 3 indexes); apply via `pnpm db:migrate`
 - **Seed**: `pnpm db:seed` loads 5 members, 3 instructors, 4 classes, 7 sessions, 3 membership plans — idempotent via `onConflictDoNothing`
 - **Reset**: `pnpm db:reset` (LOCAL ONLY — refuses in production) drops schema, re-migrates, re-seeds
 - **Read replica** for admin revenue reports (PAD §22.4 — Phase 9)
@@ -1716,6 +1716,62 @@ See `stillwater_SKILL.md` §15.24.2, `AGENTS.md` Gotcha 75.
 1. For Trigger.dev no-op `run()` stubs, return `Promise.resolve({...})` **without** `async`. Removing `async` alone breaks `task()`'s `Promise<unknown>` return type (`TS2769: No overload matches this call`). `Promise.resolve(...)` satisfies the type AND avoids `require-await`.
 2. Wrap with `String()`: `` `in ${String(diffMin)} minutes` ``.
 
+### Gotcha 85: `server-only` package throws in Vitest tests (Critical — Phase 10 fix)
+
+**Symptom:** `logger.test.ts` fails with: `Error: This module cannot be imported from a Client Component module. It should only be used from a Server Component.`
+
+**Root cause:** `apps/web/src/lib/auth.ts` and `apps/web/src/lib/observability/logger.ts` both have `import 'server-only'` at the top. The `server-only` package (by Meta/React) throws when imported outside of React Server Components. Vitest runs in a Node context that the package considers "client-side," so it throws.
+
+**Fix:** Two approaches (both needed):
+1. Add `vi.mock('server-only', () => ({}))` to `test/setup.ts` (global mock for all tests).
+2. Add a `server-only` alias in `apps/web/vitest.config.ts` pointing to an empty stub file (`test/empty-server-only.ts` with `export {};`). This is more reliable than `vi.mock` for side-effect-only imports.
+
+See `test/empty-server-only.ts` and the `resolve.alias` entry in `apps/web/vitest.config.ts`.
+
+### Gotcha 86: `@testing-library/jest-dom` not registered — `toBeInTheDocument` fails (Critical — Phase 10 fix)
+
+**Symptom:** `KpiCard.test.tsx` (7 tests) fails with: `Invalid Chai property: toBeInTheDocument`.
+
+**Root cause:** The test file uses `// @vitest-environment jsdom` magic comment (correct for DOM tests), but `toBeInTheDocument()` is a `@testing-library/jest-dom` matcher that is NOT registered. Four issues:
+1. `@testing-library/jest-dom` was NOT installed (not in `apps/web/package.json` devDeps).
+2. `test/setup.ts` did not import `@testing-library/jest-dom/vitest`.
+3. `apps/web/vitest.config.ts` had no `setupFiles` array — the shared setup file was never loaded.
+4. `tsc --noEmit` also reported TS2339 because the type augmentation wasn't registered.
+
+**Fix:**
+1. Install: `pnpm add -D -F @stillwater/web @testing-library/jest-dom` (also install at root for shared setup resolution).
+2. Add `import '@testing-library/jest-dom/vitest';` to `test/setup.ts`.
+3. Add `setupFiles: [resolve(__dirname, '../../test/setup.ts')]` to `apps/web/vitest.config.ts`.
+4. Add `src/vitest-setup.d.ts` with `/// <reference types="@testing-library/jest-dom/vitest" />` for `tsc` type augmentation.
+
+### Gotcha 87: `react-day-picker` v10 API — `IconLeft`/`IconRight` removed (High — Phase 10 fix)
+
+**Symptom:** `calendar.tsx` fails TS2353: `'IconLeft' does not exist in type 'Partial<CustomComponents>'` and `'caption' does not exist in type 'Partial<ClassNames>'`.
+
+**Root cause:** `apps/web/package.json` installs `react-day-picker: ^10.0.1`, but `calendar.tsx` used the v8 API (`components.IconLeft`, `components.IconRight`, `classNames.caption`, `classNames.nav_button_previous`). v9/v10 removed `IconLeft`/`IconRight` in favor of a single `Chevron` component with an `orientation` prop. Several `classNames` keys were also renamed.
+
+**Fix:** Rewrite `calendar.tsx` to the v10 API:
+- Replace `IconLeft`/`IconRight` with `Chevron: ({ orientation }) => orientation === 'left' ? <ChevronLeft/> : <ChevronRight/>`
+- Update `classNames` keys: `caption` → `month_caption`, `nav_button_previous` → `button_previous`, `nav_button_next` → `button_next`, `head_row` → `weekdays`, `head_cell` → `weekday`, `row` → `week`, `month_grid` replaces `table`
+
+See `apps/web/src/components/ui/calendar.tsx` for the full v10 implementation.
+
+### Gotcha 88: PostHog `capture_pageviews` (plural) is not a valid `PostHogConfig` key (Medium — Phase 10 fix)
+
+**Symptom:** `posthog.ts` fails TS2561: `'capture_pageviews' does not exist in type 'Partial<PostHogConfig>'. Did you mean 'capture_pageview'?`
+
+**Root cause:** The code used `capture_pageviews: true` (plural). PostHog's official config type uses `capture_pageview` (singular, Boolean|String, default `true`). The plural form may be accepted as a runtime alias in some older PostHog versions but is NOT in the typed config interface.
+
+**Fix:** Change `capture_pageviews: true` → `capture_pageview: true` in both `posthog.ts` (line 20) and `posthog.test.ts` (line 71, which asserts the config). Verified via PostHog official docs: https://posthog.com/docs/libraries/js/config
+
+### Gotcha 89: `zodResolver` generic mismatch with `z.coerce.number()` + `.default()` (Medium — Phase 10 fix)
+
+**Symptom:** `SessionForm.tsx` and `ClassForm.tsx` fail TS2322: `Type 'Resolver<{...durationMinutes: unknown...}>' is not assignable to type 'Resolver<{...durationMinutes: number...}>'`.
+
+**Root cause:** `@hookform/resolvers` v5 has stricter generic inference. When a Zod schema uses `z.coerce.number().default(60)`, the **input** type has `durationMinutes?: unknown` (coerced from string) but the **output** type has `durationMinutes: number`. `z.infer<typeof schema>` returns the output type, but `zodResolver` infers the input type for the resolver generic. This creates a mismatch: `Resolver<InputType>` can't be assigned to `Resolver<OutputType>`.
+
+**Fix:** Cast the resolver: `resolver: zodResolver(sessionSchema) as Resolver<SessionFormValues>`. Import `Resolver` type from `react-hook-form`. This is a known limitation of `@hookform/resolvers` v5 with coercing schemas — the cast is safe because the form values type (`z.infer`) represents what the form produces after validation.
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -1810,6 +1866,14 @@ See `stillwater_SKILL.md` §15.24.2, `AGENTS.md` Gotcha 75.
 | ~70 `no-explicit-any` + `no-unsafe-*` errors in workers (Phase 10 fix) | `db.query.X as any` casts (Gotcha 64) — per-line eslint-disable only covers one line | Scoped ESLint override for all worker src files. See Gotcha 83. |
 | `require-await` on worker `async run()` methods (Phase 10 fix) | `async` method doesn't use `await` (v1 no-op stubs); but removing `async` alone breaks `task()`'s `Promise<unknown>` return type | Use `run: () => Promise.resolve({...})` — satisfies both type and lint. See Gotcha 84. |
 | `restrict-template-expressions` on number in template literal (Phase 10 fix) | `number` type in `${diffMin}` — ESLint forbids (NaN/Infinity risk) | Wrap with `String()`: `${String(diffMin)}`. See Gotcha 84. |
+| `This module cannot be imported from a Client Component` in tests (Phase 10 fix) | `server-only` package throws in Vitest; `lib/auth.ts` + `lib/observability/logger.ts` import it | Alias `server-only` to empty stub in `vitest.config.ts` + `vi.mock('server-only', () => ({}))` in `test/setup.ts`. See Gotcha 85. |
+| `Invalid Chai property: toBeInTheDocument` in KpiCard tests (Phase 10 fix) | `@testing-library/jest-dom` not installed + not wired in vitest setup | Install package, import in `test/setup.ts`, add `setupFiles` to web vitest config, add `vitest-setup.d.ts` for tsc. See Gotcha 86. |
+| `TS2353: 'IconLeft' does not exist in type 'Partial<CustomComponents>'` (Phase 10 fix) | `react-day-picker` v10 removed `IconLeft`/`IconRight` in favor of single `Chevron` component | Rewrite `calendar.tsx` to v10 API: `Chevron: ({ orientation }) => ...`. See Gotcha 87. |
+| `TS2561: 'capture_pageviews' does not exist in type 'Partial<PostHogConfig>'` (Phase 10 fix) | PostHog config key is `capture_pageview` (singular), not `capture_pageviews` (plural) | Change to `capture_pageview: true` in `posthog.ts` + `posthog.test.ts`. See Gotcha 88. |
+| `TS2322: Resolver<{...unknown...}> not assignable to Resolver<{...number...}>` (Phase 10 fix) | `@hookform/resolvers` v5 generic mismatch with `z.coerce.number()` + `.default()` | Cast: `zodResolver(schema) as Resolver<FormValues>`. See Gotcha 89. |
+| `caller.admin.X is not a function` in admin.test.ts (Phase 10 fix) | `adminRouter` is a flat router — `caller = adminRouter.createCaller(ctx)` accesses procedures at top level, not nested under `.admin` | Change `caller.admin.listClasses(...)` → `caller.listClasses(...)`. |
+| `pnpm build` fails: `turbo` can't find package manager binary | pnpm not on PATH (corepack shim at `/usr/lib/node_modules/corepack/shims/pnpm`) | `export PATH="/usr/lib/node_modules/corepack/shims:$PATH"` before running `pnpm build`. |
+| `git push` fails: `Invalid command: 'git-receive-pack '"'"'...'` | SSH wrapper `shlex.join()` re-quotes single-string remote command; GitHub git-shell rejects it | Use the fixed wrapper at `skills/how-to-git-push-using-ssh-wrapper/scripts/ssh_git_wrapper_v3.py` (normalizes via `shlex.split()` → `shlex.join()`). See that skill for full instructions. |
 
 ---
 

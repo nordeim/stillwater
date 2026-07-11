@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-10 (v2.8.0) — ALL 13 PHASES COMPLETE (603+ tests). Post-Phase 12 fix: resolved 101 errors from pnpm_log.txt (1 TS2339 + 100 ESLint). Fixed `paymentEvents.amountCents` (column doesn't exist — amount in `payload` jsonb), workers ESLint `projectService` for test files, scoped `no-explicit-any` override for Drizzle 0.45 `as any` casts (Gotcha 64), `require-await` on no-op stubs, `restrict-template-expressions` on number. 4 new gotchas (81-84). Total: 84 gotchas.
+> **Updated:** 2026-07-11 (v2.9.0) — ALL 13 PHASES COMPLETE (643 tests, 0 failures). Quality gates fully green: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (643/643), `pnpm build` ✅ (9/9 packages, 16 static pages). Phase 10 remediation: fixed 48 TS errors (react-day-picker v10 API, PostHog `capture_pageview` singular, `server-only` in tests, `zodResolver` generic cast, `override` modifiers, `RefObject<T | null>`, focus-utils null guard, sanity client import fix, RHF resolver casts), 52 ESLint errors (restrict-template-expressions, no-deprecated z.uuid()/z.url(), no-unsafe-* with SanityClient.fetch<T>(), no-confusing-void-expression, require-await), 13 test failures (admin.test.ts caller pattern, KpiCard jest-dom setup, logger server-only mock). 5 new gotchas (85-89). Total: 89 gotchas.
 
 ---
 
@@ -82,11 +82,11 @@ docker compose ps              # Verify healthy
 apps/web/          → Next.js 16 (marketing + studio + admin route groups)
 apps/studio/       → Sanity Studio config (✅ Phase 4 complete — 8 schemas + sanity.config.ts; runtime hosted at stillwater.sanity.studio per Q4 decision)
 packages/api/      → tRPC routers (10 routers, 4 procedure tiers)
-packages/db/       → Drizzle schema (17 tables: 14 domain + 3 Better Auth, 8 enums, 5 critical indexes)
+packages/db/       → Drizzle schema (18 tables: 15 domain + 3 Better Auth, 8 enums, 5 critical indexes)
 packages/auth/     → Better Auth config (Google OAuth + Magic Link + customSession + 13×6 RBAC)
 packages/email/    → React Email v6 + Resend (✅ Phase 8 complete — 19 source files, 71 tests: 3 components + 13 templates + dual-path `send.ts` + 13 send-helpers + `template-ids`)
 packages/payments/ → Stripe client + idempotent webhooks (✅ Phase 7 complete — 7 source files, 43 tests: client, types, subscriptions, webhooks, invoices, credit-packs, refunds)
-packages/ui/       → Design tokens (CSS) + fonts (self-hosted Cormorant + DM Sans + JetBrains Mono) + Radix components
+packages/ui/       → Design tokens (CSS) + fonts (self-hosted Cormorant + DM Sans + JetBrains Mono). NOTE: Radix/shadcn components live in `apps/web/src/components/ui/` (18 files), NOT in packages/ui — the ui package barrel (`index.ts`) is intentionally empty.
 packages/config/   → t3-env Zod-validated env schema (34 vars)
 services/workers/  → Trigger.dev v4 tasks (✅ Phase 8 complete — 12 source files, 33 tests: 11 tasks with per-task `maxDuration` + retry)
 tooling/{eslint,typescript,tailwind}/  → Shared configs
@@ -499,20 +499,20 @@ For no-op `run()` stubs, return `Promise.resolve(...)` **without** `async` — `
 | Phase | Status | Notes |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | All 10 D15–D24 patches applied. |
-| 1 — DB Schema | ✅ Complete | 18 tables (15 domain + 3 Better Auth: session, account, verification), 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql`. 109+ db tests. |
+| 1 — DB Schema | ✅ Complete | 18 tables (15 domain + 3 Better Auth: session, account, verification), 8 enums, 5 critical indexes, migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql`. 117 db tests. |
 | 2 — Auth | ✅ Complete | Better Auth + RBAC + 2-layer auth. 102 auth tests. |
-| 3 — tRPC | ✅ Complete | 10 routers (~30 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 119+ api tests (Phase 9 added admin listClasses/deleteClass/listMembers/getMemberDetail/getRevenueDetails/assignRole/removeRole/listAuditLog). |
+| 3 — tRPC | ✅ Complete | 10 routers (~42 procedures), 4 access tiers, advisory lock booking, rate limiting, web integration. 118 api tests. |
 | 4 — Marketing | ✅ Complete | Sanity CMS + 8 content types + Studio app, 8 ISR marketing pages, webhook→ISR with HMAC, Cloudflare Images signer, 11 shadcn components, `transpilePackages` build fix (ADR-011). |
 | 5 — Booking | ✅ Complete | SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components (BookingButton, BookingConfirmation, BookingFlow, SeatAvailability, WaitlistButton), `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. |
 | 6 — Dashboard | ✅ Complete | Member dashboard (/dashboard, /profile, /membership, /history), 7 dashboard components, CSV export, memberships.resume stub (now unstubbed in Phase 7), plan join. |
 | 7 — Stripe | ✅ Complete | `@stillwater/payments` package (7 files, 43 tests): client singleton (Dahlia API), 7-event types, 5 subscription helpers, idempotent webhook handler with `pg_advisory_xact_lock` (ADR-004), invoice pagination, credit-pack checkout, D12 refund wrapper. Stripe webhook route at `/api/webhooks/stripe` (body as TEXT, sig verify, 400/500/200). All tRPC procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`. `payments.refund` retained as D12 stub. `CheckoutButton` component + `lib/stripe/utils.ts`. ADR-010 accepted. 5 STRIPE tests passing (STRIPE-001 through STRIPE-005). 43 payments tests + 14 new web tests (stripe utils + CheckoutButton). |
 | 8 — Jobs+Email | ✅ Complete | `@stillwater/email` (19 files, 71 tests: 3 shared components + 13 React Email v6 templates + dual-path `send.ts` + 13 send-helpers + `template-ids.ts`), `@stillwater/workers` (12 files, 33 tests: 11 Trigger.dev v4 tasks with per-task `maxDuration` + retry config). All workers use `sendEmailNative()` via send-helpers (zero React Email 1.8MB bundle bloat per ADR-010). Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` not set), `bookings.book` triggers `booking-confirmation` + `class-reminder-24h` + `class-reminder-1h` (fire-and-forget), `bookings.cancel` job ID fixed `waitlist.promote` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe webhook `invoice.payment_failed` triggers `payment-failed-notify` (post-commit pattern). |
-| 9 — Admin | ✅ Complete | 10 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`). 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable, RevenueChart, MemberRoleEditor owner-only, SignOutButton). 8 new admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails`, `assignRole`, `removeRole`, `listAuditLog`). `audit_log` table (migration `0003_audit_log_phase9.sql`). 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command). `cmdk` dependency. `lib/admin/audit-log.ts` helper. 5 E2E spec files. All admin mutations audit-logged. 2-layer auth defense-in-depth (revenue=manager+, settings=owner). |
+| 9 — Admin | ✅ Complete | 11 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`). 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable, RevenueChart, MemberRoleEditor owner-only, SignOutButton). 12 admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails`, `assignRole`, `removeRole`, `listAuditLog`, `getDashboard`, `getRevenue`, `getClassRoster`, `getAttendanceStats`). `audit_log` table (migration `0003_audit_log_phase9.sql`). 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command). `cmdk` dependency. `lib/admin/audit-log.ts` helper. 5 E2E spec files. All admin mutations audit-logged. 2-layer auth defense-in-depth (revenue=manager+, settings=owner). |
 
-**Total: 603+ tests** (109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers — Phase 9 adds audit-log + KpiCard + admin router tests). `pnpm install` / `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green **after the post-deploy remediation corrections** — the original `projectService: false` + `remove-async` prescriptions were themselves broken (see Phase 12 post-deploy notes / `stillwater_SKILL.md` Lessons 86 & 88). Always run `pnpm check-types && pnpm lint` before claiming green.
+**Total: 643 tests** (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers). `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (643/643), `pnpm build` ✅ (9/9 packages, 16 static pages). All quality gates green as of 2026-07-11.
 
-| 12 — Landing | ✅ Complete | Production home page with 8 sections, 15 marketing components, 3 hooks, mobile nav drawer, scroll progress bar, newsletter form. All D25-D35 token conflicts resolved. |
-| — | ✅ ALL PHASES COMPLETE | Phases 0–12 all complete. 603+ tests. |
+| 12 — Landing | ✅ Complete | Production home page with 8 sections, 19 marketing components, 3 hooks, mobile nav drawer, scroll progress bar, newsletter form. All D25-D35 token conflicts resolved. |
+| — | ✅ ALL PHASES COMPLETE | Phases 0–12 all complete. 643 tests. All quality gates green. |
 
 ---
 
@@ -537,7 +537,7 @@ Full catalog: `MASTER_EXECUTION_PLAN.md` §2.
 ```bash
 pnpm check-types       # Must be green (9/9 tasks)
 pnpm lint              # Must be green (2/2 tasks)
-pnpm test              # Must be green (603+ tests: 109+ db + 102 auth + 119+ api + 43 payments + 139+ web + 71 email + 33 workers)
+pnpm test              # Must be green (643 tests: 117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers)
 pnpm build             # Must be green (includes all admin routes)
 ```
 
@@ -551,10 +551,10 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
 2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
-3. `stillwater_SKILL.md` — distilled project skill (v2.3.0; 21 source skills condensed; 75 lessons); authoritative tech-stack specifics
-4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.13.0); culmination of the above into codebase architecture
+3. `stillwater_SKILL.md` — distilled project skill (v2.8.0; 21 source skills condensed; 88 lessons); authoritative tech-stack specifics
+4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.17.0); culmination of the above into codebase architecture
 5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.6.0)
-6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.8.0 with 84 gotchas)
+6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.9.0 with 89 gotchas)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
 

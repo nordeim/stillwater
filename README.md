@@ -58,7 +58,7 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 | Language         | TypeScript                  | 5.9.0       | Strict mode + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` + `erasableSyntaxOnly` (no `enum`/`namespace`) |
 | API Layer        | tRPC                        | v11         | End-to-end type safety; server caller for RSC, React Query for client |
 | ORM              | Drizzle ORM                 | 0.45.0      | Schema in TypeScript, no codegen, advisory lock support        |
-| Database         | PostgreSQL                  | 17          | 17 tables (14 domain + 3 Better Auth), 8 enums, 5 critical indexes (incl. partial + unique)|
+| Database         | PostgreSQL                  | 17          | 18 tables (15 domain + 3 Better Auth), 8 enums, 5 critical indexes (incl. partial + unique)|
 | DB Host          | Neon                        | latest      | Serverless PG with branching for preview envs                  |
 | Cache / Rate Limit | Upstash Redis             | latest      | Per-procedure rate limiting on auth + booking mutations        |
 | Auth             | Better Auth                 | 1.6.23      | Replaces Auth.js v5 (ADR-008); Drizzle adapter; 2-layer auth pattern |
@@ -254,12 +254,12 @@ curl http://localhost:3000
 docker compose ps postgres
 # Expected: "healthy" status
 
-# All 17 tables created (Phase 1: 14 domain + Phase 2: 3 Better Auth)
+# All 18 tables created (Phase 1: 14 domain + Phase 2: 3 Better Auth + Phase 9: audit_log)
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dt'
-# Expected: 17 tables listed (users, members, instructors, class_styles, classes, rooms,
+# Expected: 18 tables listed (users, members, instructors, class_styles, classes, rooms,
 #           class_sessions, enrollments, waitlist_entries, membership_plans,
 #           member_subscriptions, class_packages, payment_events, role_assignments,
-#           session, account, verification)
+#           audit_log, session, account, verification)
 
 # All 8 enums created (Phase 1)
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dT'
@@ -270,9 +270,9 @@ docker compose exec postgres psql -U stillwater -d stillwater_dev -c '\dT'
 docker compose exec postgres psql -U stillwater -d stillwater_dev -c 'SELECT count(*) FROM users;'
 # Expected: 5
 
-# Unit tests pass (603 tests, no DB needed for unit tests)
+# Unit tests pass (643 tests total, no DB needed for unit tests)
 pnpm test --filter=@stillwater/db
-# Expected: "Test Files  16 passed (16)" + "Tests  109 passed (109)"
+# Expected: "Test Files  17 passed (17)" + "Tests  117 passed (117)"
 
 # Adminer GUI available
 open http://localhost:8080
@@ -694,6 +694,19 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 ---
 
 ## What's New
+
+### v1.11.0 (2026-07-11) — Quality Gates Remediation: All Gates Green
+
+| Change | Details |
+|---|---|
+| **All quality gates green** | `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (643/643), `pnpm build` ✅ (9/9 packages, 16 static pages) |
+| **48 TS errors fixed** in `@stillwater/web` | `calendar.tsx` rewritten to react-day-picker v10 API (`Chevron` replaces `IconLeft`/`IconRight`); `posthog.ts` `capture_pageviews` → `capture_pageview` (singular); `error-boundary.tsx` `override` modifiers; `useScrollReveal.ts` `RefObject<T | null>`; `focus-utils.ts` null guard; `schemas.test.ts` unknown indexing casts; `SessionForm.tsx` endsAt computation + `ins.slug` + zodResolver cast + spread-conditional; `ClassForm.tsx` zodResolver cast; `notFound` import from `next/navigation`; sanity client `getSanityClient()` fix; `exactOptionalPropertyTypes` spread-conditionals |
+| **52 ESLint errors fixed** in `@stillwater/web` | `restrict-template-expressions` (String() wrapping); `no-deprecated` (`z.string().uuid()` → `z.uuid()`, `z.string().url()` → `z.url()`); `no-unsafe-*` (SanityClient.fetch<T>() generic); `no-confusing-void-expression` (braces); `require-await` (remove async); `no-empty-function` (comments); `import/order` (auto-fix); `no-empty-object-type` (type alias); `react/no-unknown-property` (cmdk); `react-compiler/set-state-in-effect` (disable with comment) |
+| **13 test failures fixed** | `admin.test.ts` `caller.admin.X` → `caller.X` (5 tests); `KpiCard.test.tsx` jest-dom setup (7 tests — installed `@testing-library/jest-dom`, wired `setupFiles`, added `vitest-setup.d.ts`); `logger.test.ts` `server-only` mock (1 test — alias to empty stub + `vi.mock` in setup) |
+| **5 new gotchas (85-89)** | `server-only` in Vitest, `@testing-library/jest-dom` setup, react-day-picker v10 API, PostHog `capture_pageview` singular, `zodResolver` generic cast |
+| **SSH wrapper skill** | `skills/how-to-git-push-using-ssh-wrapper/` — new skill with fixed `ssh_git_wrapper_v3.py` (shlex.join() quoting bug fix for GitHub git-shell) |
+| **Test count** | 643 passing (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers) — was 626/12-failing |
+| **Doc reconciliation** | CLAUDE.md v2.9.0 (89 gotchas), AGENTS.md v2.9.0, PAD.md v1.18.0, README.md — all counts and status updated to match actual codebase |
 
 ### v1.10.0 (2026-07-09) — Phase 8 Complete: Background Jobs + Email Templates
 
