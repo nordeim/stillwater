@@ -14,9 +14,9 @@
 
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
-| Version     | 1.6.0                                                              |
-| Status      | ACTIVE — LIVING PLAN (Phases 0–8 COMPLETE per PAD v1.12.0 / SKILL v2.3.0; re-validated 2026-07-09) |
-| Date        | 2026-07-09                                                         |
+| Version     | 1.7.0                                                              |
+| Status      | ACTIVE — LIVING PLAN (Phases 0–12 COMPLETE per PAD v1.18.0 / SKILL v2.9.0; re-validated 2026-07-11) |
+| Date        | 2026-07-11                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
 | Workflow    | ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER          |
 | Methodology | TDD (`RED → GREEN → REFACTOR → COMMIT`, one cycle per commit)     |
@@ -33,6 +33,7 @@
 | 1.4.0   | 2026-07-08 | Claw Code / Sync | Re-synced plan to codebase through Phase 6. Marked Phases 0–6 COMPLETE (per PAD v1.10.0 / SKILL v2.1.0); added Status column to §5 phase table + Current Status block; refreshed §7.1 (PAD v1.8.0→v1.10.0) and ADR count (10→11); corrected Phase 4 marketing-route enumeration (removed phantom `/classes/[slug]`; confirmed 8 actual routes); added `stillwater_SKILL.md` to Source Document Map + Sources; verified 429 tests green across all quality gates. |
 | 1.5.0   | 2026-07-09 | Claw Code / Sync | Re-synced plan to codebase through Phase 7. Marked Phase 7 ✅ COMPLETE (per AGENTS.md / CLAUDE.md v2.2.0); updated §5 phase table + Current Status (Phase 7 ✅, test counts api 107→113 / web 111→132 / payments +43; total 429→499); refreshed stack pin (Tailwind ^4.3.0→^4.3.2); corrected D20 resolution to `eslint-plugin-tailwindcss: ^4.0.6`. |
 | 1.6.0   | 2026-07-09 | Claw Code / Sync | Re-synced plan to codebase through Phase 8. Marked Phase 8 ✅ COMPLETE (per AGENTS.md v2.3.0 / CLAUDE.md v2.1.0 / verified against codebase 2026-07-09): `@stillwater/workers` (11 Trigger.dev v4 tasks, 33 tests) + `@stillwater/email` (13 React Email v6 templates + 3 shared components, 71 tests) implemented; D3/D4 resolved to "implemented"; updated §5 phase table + Current Status (Phase 8 ✅, +71 email +33 workers tests; total 499→603); refreshed Quality Gates test total to 603 (109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers). | |
+| 1.7.0   | 2026-07-11 | Claw Code / Sync | Re-synced plan metadata to codebase 2026-07-11 (AGENTS.md/CLAUDE.md v2.9.0). Body already marks Phases 9–12 ✅ COMPLETE; this entry corrects header (v1.6.0→v1.7.0, Status Phases 0–8→0–12), §5 source-of-truth (PAD v1.12.0→v1.18.0, SKILL v2.3.0→v2.9.0), Quality Gates test total 603→643 (db 117, api 118, web 159) + lint warnings 2→9, and per-phase counts (Phase 1 109→117, Phase 3 113→118, Phase 6 132→159). Validated live: check-types 9/9, lint 0 err/9 warn, test 643/643. Also corrected tRPC procedure count ~30→~42 (5 occurrences) verified against 42 actual procedures. | |
 
 ### Source Document Map
 
@@ -58,7 +59,7 @@ This plan breaks the build into **13 phases (Phase 0 → Phase 12)** that sequen
 - **Phase 0** — Monorepo scaffold (covered by `scaffolding_files.md`; one correction pass + missing config files)
 - **Phase 1** — Database schema, migrations, seed data
 - **Phase 2** — Better Auth + RBAC + `proxy.ts` route protection
-- **Phase 3** — tRPC v11 routers (10 routers, ~30 procedures)
+- **Phase 3** — tRPC v11 routers (10 routers, ~42 procedures)
 - **Phase 4** — Marketing surface with Sanity CMS
 - **Phase 5** — Booking flow + SSE real-time seat availability
 - **Phase 6** — Member dashboard + membership management
@@ -307,7 +308,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 0     | Monorepo scaffold + tooling + Docker + Phase 0 fixes  | —         | 2         | ~45   | ✅ COMPLETE    |
 | 1     | DB schema, Drizzle migrations, seed data               | 0         | 3         | ~20   | ✅ COMPLETE    |
 | 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth pattern) | 0, 1      | 3         | ~19   | ✅ COMPLETE    |
-| 3     | tRPC v11 routers (10 routers, ~30 procedures)          | 0, 1, 2   | 5         | ~25   | ✅ COMPLETE    |
+| 3     | tRPC v11 routers (10 routers, ~42 procedures)          | 0, 1, 2   | 5         | ~25   | ✅ COMPLETE    |
 | 4     | Marketing surface (Sanity CMS, ISR)                    | 0, 1, 2, 3| 4         | ~30   | ✅ COMPLETE    |
 | 5     | Booking flow + SSE real-time seats                     | 3         | 5         | ~18   | ✅ COMPLETE    |
 | 6     | Member dashboard + membership mgmt                     | 3, 7      | 4         | ~12   | ✅ COMPLETE    |
@@ -337,17 +338,17 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 
 ## Current Status (as of 2026-07-09)
 
-> **Source of truth:** PAD v1.12.0 / SKILL v2.3.0. Verified against codebase 2026-07-09.
+> **Source of truth:** PAD v1.18.0 / SKILL v2.9.0. Verified against codebase 2026-07-11.
 
 | Phase | Focus                                                  | Status      | PAD Version | Test Count |
 |-------|--------------------------------------------------------|-------------|-------------|------------|
 | 0     | Monorepo scaffold + tooling + Docker + Phase 0 fixes  | ✅ COMPLETE  | v1.4.0      | —          |
-| 1     | DB schema, Drizzle migrations, seed data               | ✅ COMPLETE  | v1.5.0      | 109        |
+| 1     | DB schema, Drizzle migrations, seed data               | ✅ COMPLETE  | v1.5.0      | 117        |
 | 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)         | ✅ COMPLETE  | v1.6.0      | 102        |
-| 3     | tRPC v11 routers (10 routers, ~30 procedures)          | ✅ COMPLETE  | v1.7.0      | 113        |
+| 3     | tRPC v11 routers (10 routers, ~42 procedures)          | ✅ COMPLETE  | v1.7.0      | 118        |
 | 4     | Marketing surface (Sanity CMS, ISR)                    | ✅ COMPLETE  | v1.9.0      | —          |
 | 5     | Booking flow + SSE real-time seats                     | ✅ COMPLETE  | v1.9.1      | —          |
-| 6     | Member dashboard + membership mgmt                     | ✅ COMPLETE  | v1.10.0     | 132        |
+| 6     | Member dashboard + membership mgmt                     | ✅ COMPLETE  | v1.10.0     | 159        |
 | 7     | Stripe integration (subscriptions + credit packs)      | ✅ COMPLETE  | v1.11.0     | 43         |
 | 8     | Background jobs (11 Trigger.dev tasks)                 | ✅ COMPLETE  | v1.12.0     | 104        |
 | 9     | Admin surface (RBAC-gated)                             | ✅ COMPLETE  | v1.13.0     | —          |
@@ -355,11 +356,11 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 11    | WCAG AAA audit + SEO + OG images                       | ✅ COMPLETE  | v1.15.0     | —          |
 | 12    | Landing page port (mockup → Next.js production)        | ✅ COMPLETE  | v1.16.0     | —          |
 
-**Quality gates (verified 2026-07-09):**
+**Quality gates (verified 2026-07-11):**
 - `pnpm check-types` — ✅ Green (9/9 packages)
-- `pnpm lint` — ✅ Green (0 errors, 2 pre-existing warnings in non-null assertions)
-- `pnpm test` — ✅ Green (**603 tests:** 109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers)
-- `pnpm build` — not verified (requires explicit request per `AGENTS.md`)
+- `pnpm lint` — ✅ Green (0 errors, 9 intentional warnings)
+- `pnpm test` — ✅ Green (**643 tests:** 117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers)
+- `pnpm build` — ✅ Green (9/9 packages, 16 static pages; verified 2026-07-11)
 
 **Key confirmations:**
 - `proxy.ts` 2-layer pattern **VERIFIED:** cookie-only `getSessionCookie()` (sync, no `getSession`, no DB), RBAC enforcement in `(admin)`/`(studio)` layouts — matches ADR-009/D36.
@@ -1616,7 +1617,7 @@ pnpm test:e2e -- --grep "auth"                   # auth E2E tests green
 
 ---
 
-### Phase 3 — tRPC v11 Routers (10 routers, ~30 procedures) ✅ COMPLETE (PAD v1.7.0)
+### Phase 3 — tRPC v11 Routers (10 routers, ~42 procedures) ✅ COMPLETE (PAD v1.7.0)
 
 **Goal:** All 10 tRPC routers implemented with full Zod input validation, RBAC middleware, and integration tests against Testcontainers Postgres.
 
@@ -1626,7 +1627,7 @@ pnpm test:e2e -- --grep "auth"                   # auth E2E tests green
 
 **Acceptance criteria:**
 - [ ] All 10 routers registered in `root.ts`
-- [ ] All ~30 procedures from PAD §8.4 implemented
+- [ ] All ~42 procedures from PAD §8.4 implemented
 - [ ] 90% test coverage on `packages/api/routers/*`
 - [ ] Booking procedure uses advisory lock (no double-booking under concurrent requests)
 - [ ] RBAC middleware enforces 4 access tiers (`public`, `protected`, `staff`, `owner`)
@@ -4580,6 +4581,6 @@ pnpm jobs:deploy            # Trigger.dev cloud
 
 ---
 
-**End of MASTER_EXECUTION_PLAN.md v1.6.0**
+**End of MASTER_EXECUTION_PLAN.md v1.7.0**
 
 > Awaiting VALIDATE checkpoint. Once confirmed, Phase 0 IMPLEMENT begins immediately.

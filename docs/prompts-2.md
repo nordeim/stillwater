@@ -126,6 +126,29 @@ yes, please meticulously proceed with your best recommendations
 
 ---
 
+---
+
+awesome meticulous job so far. please keep up the good work. now, please meticulously review the 'pnpm' execution log attached, validate the errors against the codebase to investigate the root causes and the optimal fixes.
+
+---
+
+please meticulously plan to update the relevant documents mentioned in the last git commit so that they are in sync with the latest code changes (fixes) as well as the lessons learnt.
+
+
+---
+
+yes, please meticulously plan to proceed with your best recommendations. but first re-evaluate and re-validate your findings to confirm root causes and the optiomal fixes
+
+---
+
+awesome meticulous job so far. please keep up the good work. now, please `git commit` locally all changes, then `git push` to my GitHub repo using the attached ssh ky and the script `/home/z/my-project/stillwater/docs/ssh_git_wrapper_v3.py` and  `/home/z/my-project/stillwater/docs/ssh_git_wrapper_v3_readme.md`
+
+---
+
+please meticulously plan to proceed with your recommended next steps, 1 to 3, after re-evaluating and re-validating the issues and gaps to ensure alignment.
+
+---
+
 awesome meticulous job so far. please keep up the good work. now, please meticulously plan to create a comprehensive sub-plan for Phase 7 execution with a detailed ToDo list. review and validate the Phase 7 sub-plan against the source documents `PAD.md` and `MASTER_EXECUTION_PLAN.md` with `stillwater_SKILL.md` providing programming guidance, also validate against the current codebase for alignment before proceeding to execute the sub-plan meticulously. use TDD approach to make code changes.
 
 ---

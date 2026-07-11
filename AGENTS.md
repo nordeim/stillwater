@@ -553,7 +553,7 @@ Atomic commits: one TDD cycle (RED → GREEN → REFACTOR) = one commit. Convent
 2. `static_landing_page_mockup.html` — visual + UI/UX aesthetics guidance ONLY (token VALUES come from SKILL §4.1 / PAD §11.4)
 3. `stillwater_SKILL.md` — distilled project skill (v2.8.0; 21 source skills condensed; 88 lessons); authoritative tech-stack specifics
 4. `PAD.md` — Project Architecture Document (31 sections, 11 ADRs; v1.17.0); culmination of the above into codebase architecture
-5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.6.0)
+5. `MASTER_EXECUTION_PLAN.md` — derived working copy for the coding agent (13-phase plan + 45 reconciled discrepancies D1–D45 + all 10 Open Questions resolved; v1.7.0)
 6. `CLAUDE.md` — full agent briefing (gotchas, troubleshooting, lessons learnt — v2.9.0 with 89 gotchas)
 7. `scaffolding_files.md` — Phase 0 ready-to-paste configs (**HISTORICAL**: Phase 0 complete; actual files on disk are canonical)
 8. `react_email_suggestion.md` / `pnpm_install_fix.md` — ecosystem discovery docs
