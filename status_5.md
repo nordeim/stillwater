@@ -270,3 +270,60 @@ Completion Summary — Project_Brief.md update
 No code, build, or lint run required (documentation-only). Project_Brief_1.md was not touched (you referenced @Project_Brief.md specifically). The brief now matches AGENTS.md, CLAUDE.md, and MASTER_EXECUTION_PLAN.md (all v-aligned to  
 the 643-test / 13-phase / 2026-07-11 state).
 
+---
+
+Database Verification Report — Migration & Seed vs. Codebase 
+ 
+Method: Connected to the live Postgres (stillwater_dev @ localhost:5432, PostgreSQL 17.10) using the provided DATABASE_URL and inspected structure + data directly. Read-only; no changes made. 
+ 
+### ✅ 1. Tables — 18/18 present, names match 
+ 
+All 18 expected tables exist (snake_case of the 18 pgTable declarations): account, audit_log, class_packages, class_sessions, class_styles, classes, enrollments, instructors, member_subscriptions, members, membership_plans, 
+payment_events, role_assignments, rooms, session, users, verification, waitlist_entries. Count = 18. 
+ 
+### ✅ 2. Enums — 8/8 present, names match 
+ 
+billing_interval, class_level, enrollment_status, payment_status, session_status, studio_role, subscription_status, waitlist_status = 8, exactly the 8 enums in packages/db/src/schema/enums.ts. 
+ 
+### ✅ 3. Custom indexes — 12/12 present, names match 
+ 
+All 12 idx_* indexes from the migrations exist (8 standard + 4 unique): idx_audit_log_{action,entity,staff_created}, idx_enrollments_{session_member,session_status}, idx_members_stripe_customer_id, idx_payment_events_stripe_id, 
+idx_role_assignments_member_role, idx_sessions_starts_at_status, idx_subscriptions_member_status, idx_waitlist_{session_member,session_position}. Count = 12. 
+ 
+### ✅ 4. Migrations applied — 4/4 recorded 
+ 
+drizzle.__drizzle_migrations (note: the tracking table lives in the drizzle schema, not public — a naive public.__drizzle_migrations query fails) contains 4 rows with hashes + created_at timestamps, corresponding to 0000_dear_dagger → 
+0001_equal_iron_lad → 0002_lyrical_cargill → 0003_audit_log_phase9. The presence of audit_log + its 3 indexes confirms the latest migration (0003) was applied, not just the early ones. 
+ 
+### ✅ 5. Seed data — counts match expectations 
+ 
+┌──────────────────┬───────┬──────────┬───┬────────────────────────────────────────────────────────────────────────────────────────┬───────┬────────────────────────────────┐ 
+│ Table            │ Count │ Expected │   │ Table                                                                                  │ Count │ Expected                       │ 
+├──────────────────┼───────┼──────────┼───┼────────────────────────────────────────────────────────────────────────────────────────┼───────┼────────────────────────────────┤ 
+│ users            │ 5     │ 5 ✓      │   │ class_styles                                                                           │ 4     │ 4 ✓                            │ 
+├──────────────────┼───────┼──────────┼───┼────────────────────────────────────────────────────────────────────────────────────────┼───────┼────────────────────────────────┤ 
+│ members          │ 5     │ 5 ✓      │   │ rooms                                                                                  │ 2     │ 2 ✓                            │ 
+├──────────────────┼───────┼──────────┼───┼────────────────────────────────────────────────────────────────────────────────────────┼───────┼────────────────────────────────┤ 
+│ instructors      │ 3     │ 3 ✓      │   │ role_assignments                                                                       │ 11    │ (RBAC seeding ✓)               │ 
+├──────────────────┼───────┼──────────┼───┼────────────────────────────────────────────────────────────────────────────────────────┼───────┼────────────────────────────────┤ 
+│ classes          │ 4     │ 4 ✓      │   │ enrollments / waitlist / payment_events / audit_log / account / session / verification │ 0     │ 0 ✓ (no bookings/payments yet) │ 
+├──────────────────┼───────┼──────────┼───┼────────────────────────────────────────────────────────────────────────────────────────┼───────┼────────────────────────────────┤ 
+│ class_sessions   │ 7     │ 7 ✓      │   │                                                                                        │       │                                │ 
+├──────────────────┼───────┼──────────┼───┼────────────────────────────────────────────────────────────────────────────────────────┼───────┼────────────────────────────────┤ 
+│ membership_plans │ 3     │ 3 ✓      │   │                                                                                        │       │                                │ 
+└──────────────────┴───────┴──────────┴───┴────────────────────────────────────────────────────────────────────────────────────────┴───────┴────────────────────────────────┘ 
+ 
+All non-empty seed tables match AGENTS.md/Project_Brief.md (5 users, 5 members, 3 instructors, 4 classes, 7 sessions, 3 plans, 4 styles, 2 rooms). The empty tables are correctly empty (no bookings/payments/audit events generated yet). 
+ 
+### Note on hash cross-check 
+ 
+The earlier "HASH MISMATCH" was a false negative: the migration .sql files do not embed a -- Hash: comment, so the file-side grep returned empty. drizzle-kit stores the hash only in the DB tracking table. The applicable check is the   
+count match (4 files on disk = 4 rows applied) plus the structural evidence above — both pass. No drift between applied state and source migrations. 
+ 
+---
+ 
+### Verdict: ✅ PASS — Database correctly migrated and seeded 
+ 
+The live database is fully consistent with the current codebase: 18 tables, 8 enums, 12 named indexes, 4 applied migrations, and seed data matching the documented fixture. No discrepancies, missing objects, or drift detected. The 
+migrations tracking table's location in the drizzle schema (rather than public) is the only non-obvious detail, and it's working as designed.   
+

@@ -1,0 +1,292 @@
+$ pnpm build
+$ turbo build
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/studio, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running build in 13 packages
+   • Remote caching disabled
+
+@stillwater/studio:build: cache hit, replaying logs 75f4808420c7fa7e
+@stillwater/studio:build: $ sanity build
+@stillwater/studio:build: 
+@stillwater/studio:build: 
+@stillwater/studio:build:    ╭──────────────────────────────────────╮
+@stillwater/studio:build:    │                                      │
+@stillwater/studio:build:    │   Update available: 6.3.0 → 6.4.0    │
+@stillwater/studio:build:    │                                      │
+@stillwater/studio:build:    │   Run pnpm update sanity to update   │
+@stillwater/studio:build:    │                                      │
+@stillwater/studio:build:    ╰──────────────────────────────────────╯
+@stillwater/studio:build: 
+@stillwater/studio:build: 
+@stillwater/studio:build:  ›   Warning: Declared version of styled-components (^6.1.13) is not compatible with the version required by sanity (^6.1.15). This might cause problems!
+✔ Clean output folder (45ms)
+✔ Build Sanity Studio (8439ms)
+@stillwater/studio:build: 
+@stillwater/ui:build: cache hit, replaying logs 68ce1fb03de828c3
+@stillwater/ui:build: $ tsc --build
+@stillwater/config:build: cache hit, replaying logs ca0262aa381a6c93
+@stillwater/config:build: $ tsc --build
+@stillwater/email:build: cache hit, replaying logs fcef09623a01089b
+@stillwater/db:build: cache hit, replaying logs 4de3eb9c5c33c247
+@stillwater/email:build: $ tsc --build
+@stillwater/db:build: $ tsc --build
+@stillwater/payments:build: cache hit, replaying logs bc34ef9aa91f8b01
+@stillwater/payments:build: $ tsc --build
+@stillwater/auth:build: cache hit, replaying logs dd15fc5d5059c3de
+@stillwater/auth:build: $ tsc --build
+@stillwater/api:build: cache hit, replaying logs 72ce17d538fe611b
+@stillwater/api:build: $ tsc --build
+@stillwater/web:build: cache hit, replaying logs 7187d2988dd82b69
+@stillwater/web:build: $ next build
+@stillwater/web:build: ▲ Next.js 16.2.10 (Turbopack)
+@stillwater/web:build: 
+@stillwater/web:build:   Creating an optimized production build ...
+@stillwater/web:build: ✓ Compiled successfully in 26.7s
+@stillwater/web:build: ✓ Finished TypeScript in 15.8s 
+⚠ Using edge runtime on a page currently disables static generation for that page
+@stillwater/web:build: ✓ Collecting page data using 3 workers in 3.8s 
+✓ Generating static pages using 3 workers (16/16) in 405ms
+@stillwater/web:build: ✓ Finalizing page optimization in 18ms 
+@stillwater/web:build: 
+@stillwater/web:build: Route (app)                                     Revalidate  Expire
+@stillwater/web:build: ┌ ƒ /
+@stillwater/web:build: ├ ○ /_not-found
+@stillwater/web:build: ├ ○ /about                                              1d      1y
+@stillwater/web:build: ├ ƒ /admin
+@stillwater/web:build: ├ ƒ /admin/audit-log
+@stillwater/web:build: ├ ƒ /admin/classes
+@stillwater/web:build: ├ ƒ /admin/classes/[id]
+@stillwater/web:build: ├ ƒ /admin/classes/new
+@stillwater/web:build: ├ ƒ /admin/instructors
+@stillwater/web:build: ├ ƒ /admin/members
+@stillwater/web:build: ├ ƒ /admin/members/[id]
+@stillwater/web:build: ├ ƒ /admin/revenue
+@stillwater/web:build: ├ ƒ /admin/schedule
+@stillwater/web:build: ├ ƒ /admin/settings
+@stillwater/web:build: ├ ƒ /api/admin/members/export
+@stillwater/web:build: ├ ƒ /api/auth/[...all]
+@stillwater/web:build: ├ ƒ /api/sanity/webhook
+@stillwater/web:build: ├ ƒ /api/schedule/stream
+@stillwater/web:build: ├ ƒ /api/trpc/[trpc]
+@stillwater/web:build: ├ ƒ /api/webhooks/stripe
+@stillwater/web:build: ├ ƒ /auth/callback
+@stillwater/web:build: ├ ƒ /auth/error
+@stillwater/web:build: ├ ƒ /auth/sign-in
+@stillwater/web:build: ├ ƒ /auth/sign-out
+@stillwater/web:build: ├ ○ /blog                                               1h      1y
+@stillwater/web:build: ├ ƒ /blog/[slug]
+@stillwater/web:build: ├ ƒ /blog/[slug]/opengraph-image-yqks0s
+@stillwater/web:build: ├ ƒ /book/[sessionId]
+@stillwater/web:build: ├ ƒ /dashboard
+@stillwater/web:build: ├ ƒ /history
+@stillwater/web:build: ├ ƒ /instructors
+@stillwater/web:build: ├ ƒ /instructors/[slug]
+@stillwater/web:build: ├ ƒ /instructors/[slug]/opengraph-image-dbn2vc
+@stillwater/web:build: ├ ○ /manifest.webmanifest
+@stillwater/web:build: ├ ƒ /membership
+@stillwater/web:build: ├ ƒ /opengraph-image
+@stillwater/web:build: ├ ƒ /pricing
+@stillwater/web:build: ├ ƒ /profile
+@stillwater/web:build: ├ ○ /robots.txt
+@stillwater/web:build: ├ ƒ /schedule
+@stillwater/web:build: └ ƒ /sitemap.xml
+@stillwater/web:build: 
+@stillwater/web:build: 
+@stillwater/web:build: ○  (Static)   prerendered as static content
+@stillwater/web:build: ƒ  (Dynamic)  server-rendered on demand
+@stillwater/web:build: 
+@stillwater/web:build: 
+
+ Tasks:    9 successful, 9 total
+Cached:    9 cached, 9 total
+  Time:    91ms >>> FULL TURBO
+
+$ pnpm check-types && pnpm lint && pnpm test 
+$ turbo check-types
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/studio, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running check-types in 13 packages
+   • Remote caching disabled
+
+@stillwater/config:check-types: cache hit, replaying logs 227503e879cbe187
+@stillwater/auth:check-types: cache hit, replaying logs a6daa57d0fe9ca49
+@stillwater/payments:check-types: cache hit, replaying logs d11c8e4a634df1d1
+@stillwater/config:check-types: $ tsc --noEmit
+@stillwater/payments:check-types: $ tsc --noEmit
+@stillwater/auth:check-types: $ tsc --noEmit
+@stillwater/email:check-types: cache hit, replaying logs f88c6653a165dcac
+@stillwater/email:check-types: $ tsc --noEmit
+@stillwater/api:check-types: cache hit, replaying logs fce7d97c8390c6c8
+@stillwater/ui:check-types: cache hit, replaying logs 861ba015f4a32ecc
+@stillwater/api:check-types: $ tsc --noEmit
+@stillwater/db:check-types: cache hit, replaying logs 1c3899c283f11cce
+@stillwater/db:check-types: $ tsc --noEmit
+@stillwater/web:check-types: cache hit, replaying logs b6cbaacb9712f74d
+@stillwater/web:check-types: $ tsc --noEmit
+@stillwater/ui:check-types: $ tsc --noEmit
+@stillwater/workers:check-types: cache hit, replaying logs 58b5382e3356478c
+@stillwater/workers:check-types: $ tsc --noEmit
+
+ Tasks:    9 successful, 9 total
+Cached:    9 cached, 9 total
+  Time:    227ms >>> FULL TURBO
+
+$ turbo lint
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/studio, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running lint in 13 packages
+   • Remote caching disabled
+
+@stillwater/web:lint: cache hit, replaying logs 6bec3aa0ce2df21a
+@stillwater/workers:lint: cache hit, replaying logs 5fa8397b95db6645
+@stillwater/workers:lint: $ eslint .
+@stillwater/web:lint: $ eslint .
+@stillwater/web:lint: 
+@stillwater/web:lint: /home/project/stillwater/apps/web/src/components/admin/ClassForm.tsx
+@stillwater/web:lint:   86:22  warning  Compilation Skipped: Use of incompatible library
+@stillwater/web:lint: 
+@stillwater/web:lint: This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+@stillwater/web:lint: 
+@stillwater/web:lint: /home/project/stillwater/apps/web/src/components/admin/ClassForm.tsx:86:22
+@stillwater/web:lint:   84 |   });
+@stillwater/web:lint:   85 |
+@stillwater/web:lint: > 86 |   const titleValue = watch('title');
+@stillwater/web:lint:      |                      ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+@stillwater/web:lint:   87 |
+@stillwater/web:lint:   88 |   // Auto-generate slug from title unless user has manually edited the slug
+@stillwater/web:lint:   89 |   useEffect(() => {  react-hooks/incompatible-library
+@stillwater/web:lint: 
+@stillwater/web:lint: /home/project/stillwater/apps/web/src/components/admin/SessionForm.tsx
+@stillwater/web:lint:   77:21  warning  Compilation Skipped: Use of incompatible library
+@stillwater/web:lint: 
+@stillwater/web:lint: This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+@stillwater/web:lint: 
+@stillwater/web:lint: /home/project/stillwater/apps/web/src/components/admin/SessionForm.tsx:77:21
+@stillwater/web:lint:   75 |   });
+@stillwater/web:lint:   76 |
+@stillwater/web:lint: > 77 |   const isVirtual = watch('isVirtual');
+@stillwater/web:lint:      |                     ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+@stillwater/web:lint:   78 |
+@stillwater/web:lint:   79 |   const onSubmit = (data: SessionFormValues) => {
+@stillwater/web:lint:   80 |     const startsAt = new Date(data.startsAt);  react-hooks/incompatible-library
+@stillwater/web:lint: 
+@stillwater/web:lint: /home/project/stillwater/apps/web/src/lib/observability/logger.test.ts
+@stillwater/web:lint:   28:12  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+@stillwater/web:lint:   29:19  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+@stillwater/web:lint:   68:12  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+@stillwater/web:lint:   69:19  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+@stillwater/web:lint:   85:19  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+@stillwater/web:lint: 
+@stillwater/web:lint: /home/project/stillwater/apps/web/src/lib/observability/logger.ts
+@stillwater/web:lint:   52:7  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+@stillwater/web:lint:   55:7  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+@stillwater/web:lint: 
+@stillwater/web:lint: ✖ 9 problems (0 errors, 9 warnings)
+@stillwater/web:lint: 
+
+ Tasks:    2 successful, 2 total
+Cached:    2 cached, 2 total
+  Time:    149ms >>> FULL TURBO
+
+$ turbo test
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/studio, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running test in 13 packages
+   • Remote caching disabled
+
+@stillwater/db:test: cache hit, replaying logs 051ac0dc41ad36eb
+@stillwater/ui:test: cache hit, replaying logs 586fd3a503bbf48d
+@stillwater/payments:test: cache hit, replaying logs 566dd0dff70dd042
+@stillwater/workers:test: cache hit, replaying logs 9e865adcb4ceebee
+@stillwater/workers:test: $ vitest run
+@stillwater/workers:test: 
+@stillwater/workers:test:  RUN  v4.1.9 /home/project/stillwater/services/workers
+@stillwater/workers:test: 
+@stillwater/workers:test: 
+@stillwater/workers:test:  Test Files  11 passed (11)
+@stillwater/workers:test:       Tests  33 passed (33)
+@stillwater/workers:test:    Start at  12:03:39
+@stillwater/workers:test:    Duration  13.25s (transform 4.55s, setup 0ms, import 5.52s, tests 3.63s, environment 2ms)
+@stillwater/workers:test: 
+@stillwater/payments:test: $ vitest run
+@stillwater/payments:test: 
+@stillwater/payments:test:  RUN  v4.1.9 /home/project/stillwater/packages/payments
+@stillwater/payments:test: 
+@stillwater/payments:test: 
+@stillwater/payments:test:  Test Files  7 passed (7)
+@stillwater/payments:test:       Tests  43 passed (43)
+@stillwater/payments:test:    Start at  12:03:39
+@stillwater/payments:test:    Duration  14.07s (transform 5.93s, setup 0ms, import 13.06s, tests 1.79s, environment 1ms)
+@stillwater/payments:test: 
+@stillwater/ui:test: $ vitest run
+@stillwater/ui:test: 
+@stillwater/ui:test:  RUN  v4.1.9 /home/project/stillwater/packages/ui
+@stillwater/ui:test: 
+@stillwater/ui:test: No test files found, exiting with code 0
+@stillwater/ui:test: 
+@stillwater/ui:test: include: **/*.{test,spec}.?(c|m)[jt]s?(x)
+@stillwater/ui:test: exclude:  **/node_modules/**, **/.git/**
+@stillwater/ui:test: 
+@stillwater/api:test: cache hit, replaying logs e17aaa3b1f9167a2
+@stillwater/auth:test: cache hit, replaying logs 0baa4435400b8536
+@stillwater/db:test: $ vitest run
+@stillwater/db:test: 
+@stillwater/db:test:  RUN  v4.1.9 /home/project/stillwater/packages/db
+@stillwater/db:test: 
+@stillwater/db:test: 
+@stillwater/db:test:  Test Files  17 passed (17)
+@stillwater/db:test:       Tests  117 passed (117)
+@stillwater/db:test:    Start at  12:03:39
+@stillwater/db:test:    Duration  38.30s (transform 3.58s, setup 0ms, import 84.55s, tests 1.28s, environment 21ms)
+@stillwater/db:test: 
+@stillwater/email:test: cache hit, replaying logs fcd4cab0f8fc758c
+@stillwater/email:test: $ vitest run
+@stillwater/email:test: 
+@stillwater/email:test:  RUN  v4.1.9 /home/project/stillwater/packages/email
+@stillwater/email:test: 
+@stillwater/email:test: 
+@stillwater/email:test:  Test Files  17 passed (17)
+@stillwater/email:test:       Tests  71 passed (71)
+@stillwater/email:test:    Start at  12:03:39
+@stillwater/email:test:    Duration  56.63s (transform 2.03s, setup 0ms, import 51.18s, tests 4.30s, environment 91.02s)
+@stillwater/email:test: 
+@stillwater/web:test: cache hit, replaying logs 08365fcac8f531a4
+@stillwater/web:test: $ vitest run
+@stillwater/web:test: 
+@stillwater/web:test:  RUN  v4.1.9 /home/project/stillwater/apps/web
+@stillwater/web:test: 
+@stillwater/web:test: 
+@stillwater/web:test:  Test Files  28 passed (28)
+@stillwater/web:test:       Tests  159 passed (159)
+@stillwater/web:test:    Start at  12:03:39
+@stillwater/web:test:    Duration  52.45s (transform 3.30s, setup 14.68s, import 12.83s, tests 19.87s, environment 79.68s)
+@stillwater/web:test: 
+@stillwater/auth:test: $ vitest run
+@stillwater/auth:test: 
+@stillwater/auth:test:  RUN  v4.1.9 /home/project/stillwater/packages/auth
+@stillwater/auth:test: 
+@stillwater/auth:test: 
+@stillwater/auth:test:  Test Files  4 passed (4)
+@stillwater/auth:test:       Tests  102 passed (102)
+@stillwater/auth:test:    Start at  12:03:39
+@stillwater/auth:test:    Duration  17.32s (transform 2.74s, setup 0ms, import 18.25s, tests 401ms, environment 1ms)
+@stillwater/auth:test: 
+@stillwater/api:test: $ vitest run
+@stillwater/api:test: 
+@stillwater/api:test:  RUN  v4.1.9 /home/project/stillwater/packages/api
+@stillwater/api:test: 
+@stillwater/api:test: 
+@stillwater/api:test:  Test Files  13 passed (13)
+@stillwater/api:test:       Tests  118 passed (118)
+@stillwater/api:test:    Start at  12:03:39
+@stillwater/api:test:    Duration  39.10s (transform 6.69s, setup 0ms, import 80.90s, tests 4.80s, environment 10ms)
+@stillwater/api:test: 
+
+ Tasks:    8 successful, 8 total
+Cached:    8 cached, 8 total
+  Time:    206ms >>> FULL TURBO
+

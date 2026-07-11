@@ -149,6 +149,15 @@ please meticulously plan to proceed with your recommended next steps, 1 to 3, af
 
 ---
 
+please check whether the database has been updated correctly via db migration and seeding according to the current codebase by cross-checking against the actual postgres database via `psql -h localhost -p 5432` or the following conmection string.                                                                                                                                                                                                                          
+$ grep postgres .env.local  
+
+---
+
+please meticulously plan to proceed with your recommended next steps, 1 to 3, after re-evaluating and re-validating the issues and gaps to ensure alignment. 
+
+---
+
 awesome meticulous job so far. please keep up the good work. now, please meticulously plan to create a comprehensive sub-plan for Phase 7 execution with a detailed ToDo list. review and validate the Phase 7 sub-plan against the source documents `PAD.md` and `MASTER_EXECUTION_PLAN.md` with `stillwater_SKILL.md` providing programming guidance, also validate against the current codebase for alignment before proceeding to execute the sub-plan meticulously. use TDD approach to make code changes.
 
 ---
