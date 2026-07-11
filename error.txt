@@ -1,0 +1,134 @@
+$ pnpm build
+$ next build
+▲ Next.js 16.2.10 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.5min
+✓ Finished TypeScript in 3.0min    
+⚠ Using edge runtime on a page currently disables static generation for that page
+✓ Collecting page data using 3 workers in 4.6s    
+✓ Generating static pages using 3 workers (16/16) in 468ms
+✓ Finalizing page optimization in 11ms    
+
+Route (app)                                     Revalidate  Expire
+┌ ƒ /
+├ ○ /_not-found
+├ ○ /about                                              1d      1y
+├ ƒ /admin
+├ ƒ /admin/audit-log
+├ ƒ /admin/classes
+├ ƒ /admin/classes/[id]
+├ ƒ /admin/classes/new
+├ ƒ /admin/instructors
+├ ƒ /admin/members
+├ ƒ /admin/members/[id]
+├ ƒ /admin/revenue
+├ ƒ /admin/schedule
+├ ƒ /admin/settings
+├ ƒ /api/admin/members/export
+├ ƒ /api/auth/[...all]
+├ ƒ /api/sanity/webhook
+├ ƒ /api/schedule/stream
+├ ƒ /api/trpc/[trpc]
+├ ƒ /api/webhooks/stripe
+├ ƒ /auth/callback
+├ ƒ /auth/error
+├ ƒ /auth/sign-in
+├ ƒ /auth/sign-out
+├ ○ /blog                                               1h      1y
+├ ƒ /blog/[slug]
+├ ƒ /blog/[slug]/opengraph-image-yqks0s
+├ ƒ /book/[sessionId]
+├ ƒ /dashboard
+├ ƒ /history
+├ ƒ /instructors
+├ ƒ /instructors/[slug]
+├ ƒ /instructors/[slug]/opengraph-image-dbn2vc
+├ ○ /manifest.webmanifest
+├ ƒ /membership
+├ ƒ /opengraph-image
+├ ƒ /pricing
+├ ƒ /profile
+├ ○ /robots.txt
+├ ƒ /schedule
+└ ƒ /sitemap.xml
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+(venv) pete@pop-os:/home/project/stillwater/apps/web
+$ pnpm start
+$ next start
+▲ Next.js 16.2.10
+- Local:         http://localhost:3000
+- Network:       http://192.168.2.132:3000
+✓ Ready in 3.2s
+⨯ Error [TRPCError]: Failed query: select "id", "name", "stripe_price_id", "interval", "class_credits_per_cycle", "guest_passes_per_cycle", "allows_virtual", "allows_in_person", "is_active", "sort_order" from "membership_plans" "membershipPlans" where "membershipPlans"."is_active" = $1 order by "membershipPlans"."sort_order" asc, "membershipPlans"."name" asc
+params: true
+    at async o.middlewares (.next/server/chunks/ssr/_20nnom0._.js:1:12564)
+    at async s (.next/server/chunks/ssr/_20nnom0._.js:4:68)
+    at async b (.next/server/chunks/ssr/_20nnom0._.js:1:12797)
+    at async (.next/server/chunks/ssr/_20nnom0._.js:1:7780)
+    at async g (.next/server/chunks/ssr/[root-of-the-server]__0h0r3sv._.js:1:3690) {
+  code: 'INTERNAL_SERVER_ERROR',
+  digest: '4084299834',
+  [cause]: Error: Failed query: select "id", "name", "stripe_price_id", "interval", "class_credits_per_cycle", "guest_passes_per_cycle", "allows_virtual", "allows_in_person", "is_active", "sort_order" from "membership_plans" "membershipPlans" where "membershipPlans"."is_active" = $1 order by "membershipPlans"."sort_order" asc, "membershipPlans"."name" asc
+  params: true
+      at async o.middlewares (.next/server/chunks/ssr/_20nnom0._.js:1:12564)
+      at async s (.next/server/chunks/ssr/_20nnom0._.js:4:68)
+      at async b (.next/server/chunks/ssr/_20nnom0._.js:1:12797)
+      at async (.next/server/chunks/ssr/_20nnom0._.js:1:7780)
+      at async g (.next/server/chunks/ssr/[root-of-the-server]__0h0r3sv._.js:1:3690) {
+    query: 'select "id", "name", "stripe_price_id", "interval", "class_credits_per_cycle", "guest_passes_per_cycle", "allows_virtual", "allows_in_person", "is_active", "sort_order" from "membership_plans" "membershipPlans" where "membershipPlans"."is_active" = $1 order by "membershipPlans"."sort_order" asc, "membershipPlans"."name" asc',
+    params: [ true ],
+    [cause]: Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+        at async o.middlewares (.next/server/chunks/ssr/_20nnom0._.js:1:12564)
+        at async s (.next/server/chunks/ssr/_20nnom0._.js:4:68)
+        at async b (.next/server/chunks/ssr/_20nnom0._.js:1:12797)
+        at async (.next/server/chunks/ssr/_20nnom0._.js:1:7780)
+        at async g (.next/server/chunks/ssr/[root-of-the-server]__0h0r3sv._.js:1:3690)
+  }
+}
+⨯ Error [TRPCError]: Failed query: select "id", "user_id", "slug", "bio", "specialties", "image_key", "is_active", "published", "sort_order" from "instructors" "instructors" where ("instructors"."is_active" = $1 and "instructors"."published" = $2) order by "instructors"."sort_order" asc, "instructors"."slug" asc
+params: true,true
+    at async o.middlewares (.next/server/chunks/ssr/_20nnom0._.js:1:12564)
+    at async s (.next/server/chunks/ssr/_20nnom0._.js:4:68)
+    at async b (.next/server/chunks/ssr/_20nnom0._.js:1:12797)
+    at async (.next/server/chunks/ssr/_20nnom0._.js:1:7780)
+    at async h (.next/server/chunks/ssr/[root-of-the-server]__15u-d23._.js:1:3703) {
+  code: 'INTERNAL_SERVER_ERROR',
+  digest: '2879921547',
+  [cause]: Error: Failed query: select "id", "user_id", "slug", "bio", "specialties", "image_key", "is_active", "published", "sort_order" from "instructors" "instructors" where ("instructors"."is_active" = $1 and "instructors"."published" = $2) order by "instructors"."sort_order" asc, "instructors"."slug" asc
+  params: true,true
+      at async o.middlewares (.next/server/chunks/ssr/_20nnom0._.js:1:12564)
+      at async s (.next/server/chunks/ssr/_20nnom0._.js:4:68)
+      at async b (.next/server/chunks/ssr/_20nnom0._.js:1:12797)
+      at async (.next/server/chunks/ssr/_20nnom0._.js:1:7780)
+      at async h (.next/server/chunks/ssr/[root-of-the-server]__15u-d23._.js:1:3703) {
+    query: 'select "id", "user_id", "slug", "bio", "specialties", "image_key", "is_active", "published", "sort_order" from "instructors" "instructors" where ("instructors"."is_active" = $1 and "instructors"."published" = $2) order by "instructors"."sort_order" asc, "instructors"."slug" asc',
+    params: [ true, true ],
+    [cause]: Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+        at async o.middlewares (.next/server/chunks/ssr/_20nnom0._.js:1:12564)
+        at async s (.next/server/chunks/ssr/_20nnom0._.js:4:68)
+        at async b (.next/server/chunks/ssr/_20nnom0._.js:1:12797)
+        at async (.next/server/chunks/ssr/_20nnom0._.js:1:7780)
+        at async h (.next/server/chunks/ssr/[root-of-the-server]__15u-d23._.js:1:3703)
+  }
+}
+⨯ Error [TRPCError]: Cannot read properties of undefined (reading 'referencedTable')
+    at ignore-listed frames {
+  code: 'INTERNAL_SERVER_ERROR',
+  digest: '921070944',
+  [cause]: TypeError: Cannot read properties of undefined (reading 'referencedTable')
+      at ignore-listed frames
+}
+⨯ Error [TRPCError]: Cannot read properties of undefined (reading 'referencedTable')
+    at ignore-listed frames {
+  code: 'INTERNAL_SERVER_ERROR',
+  digest: '921070944',
+  [cause]: TypeError: Cannot read properties of undefined (reading 'referencedTable')
+      at ignore-listed frames
+}
+
+
