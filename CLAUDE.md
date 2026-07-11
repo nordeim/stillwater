@@ -1874,6 +1874,9 @@ See `apps/web/src/components/ui/calendar.tsx` for the full v10 implementation.
 | `caller.admin.X is not a function` in admin.test.ts (Phase 10 fix) | `adminRouter` is a flat router — `caller = adminRouter.createCaller(ctx)` accesses procedures at top level, not nested under `.admin` | Change `caller.admin.listClasses(...)` → `caller.listClasses(...)`. |
 | `pnpm build` fails: `turbo` can't find package manager binary | pnpm not on PATH (corepack shim at `/usr/lib/node_modules/corepack/shims/pnpm`) | `export PATH="/usr/lib/node_modules/corepack/shims:$PATH"` before running `pnpm build`. |
 | `git push` fails: `Invalid command: 'git-receive-pack '"'"'...'` | SSH wrapper `shlex.join()` re-quotes single-string remote command; GitHub git-shell rejects it | Use the fixed wrapper at `skills/how-to-git-push-using-ssh-wrapper/scripts/ssh_git_wrapper_v3.py` (normalizes via `shlex.split()` → `shlex.join()`). See that skill for full instructions. |
+| `pnpm build` warning: `styled-components (^6.1.13) is not compatible with sanity (^6.1.15)` | False alarm — Sanity's build tooling compares declared range text, not the actual resolved version. The installed version (6.4.3) satisfies both `^6.1.13` and `^6.1.15` | Safe to ignore. To silence: bump `styled-components` in `apps/studio/package.json` to `^6.1.15`. Not required — runtime is healthy. |
+| `pnpm build` warning: `no output files found for task @stillwater/X#build` (8 packages) | `turbo.json` `build.outputs` only listed `.next/**` — library packages produce `dist/` (`.d.ts` via `emitDeclarationOnly`) which wasn't cached | ✅ FIXED — added `"dist/**"` + `".tsbuildinfo"` to `turbo.json` `build.outputs`. Subsequent builds now show `FULL TURBO` (cached). |
+| `turbo` update available `v2.10.3 ≫ v2.10.4` | Minor patch release available | ✅ UPDATED — `pnpm update turbo` bumped to 2.10.4. `^2.10.3` in `package.json` allows it. |
 
 ---
 

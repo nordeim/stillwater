@@ -231,10 +231,10 @@ pnpm dev
 
 | File | Purpose | Phase 0 Patch |
 |------|---------|---------------|
-| `/package.json` | Root manifest; pnpm 11.9.0, Turborepo 2.10.3 | None |
+| `/package.json` | Root manifest; pnpm 11.9.0, Turborepo 2.10.4 | None |
 | `/pnpm-workspace.yaml` | Workspace + `customConditions: ['@stillwater/source']` | D15 fix |
 | `/.npmrc` | `custom-conditions=@stillwater/source` declaration | D15 fix |
-| `/turbo.json` | Task graph; remove `"ui": "tui"` line | D24 fix |
+| `/turbo.json` | Task graph; `build.outputs` includes `dist/**` + `.tsbuildinfo` for library package caching; remove `"ui": "tui"` line | D24 fix + outputs config |
 | `/.env.example` | 25 env vars; Postgres password must match docker-compose | D17 fix |
 | `/docker-compose.yml` | Postgres 17 + Redis 7 + Adminer | None |
 | `/infrastructure/postgres/init/00-create-extensions.sql` | `uuid-ossp` + `pgcrypto` extensions | D18 fix (NEW) |
