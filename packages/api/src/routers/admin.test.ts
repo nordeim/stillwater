@@ -219,7 +219,7 @@ describe('adminRouter.listClasses (Phase 9 F9-04)', () => {
     );
     const caller = adminRouter.createCaller(ctx);
 
-    const result = await caller.admin.listClasses({ limit: 20, offset: 0 });
+    const result = await caller.listClasses({ limit: 20, offset: 0 });
 
     // The listClasses procedure accesses ctx.db.query.classes.findMany and ctx.db.select
     expect(result.items).toEqual(mockClasses);
@@ -233,7 +233,7 @@ describe('adminRouter.listClasses (Phase 9 F9-04)', () => {
     );
     const caller = adminRouter.createCaller(ctx);
     await expect(
-      caller.admin.listClasses({ limit: 20, offset: 0 }),
+      caller.listClasses({ limit: 20, offset: 0 }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 });
@@ -243,14 +243,20 @@ describe('adminRouter.deleteClass (Phase 9 F9-04)', () => {
     const update = vi.fn();
     const set = vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'cls-1', isActive: false }]) }) });
     update.mockReturnValue({ set });
+    // deleteClass also fire-and-forget inserts an audit log entry — mock it
+    const insert = vi.fn().mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        catch: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
 
     const ctx = makeCtx(
-      { update } as never,
+      { update, insert } as never,
       ['staff'],
     );
     const caller = adminRouter.createCaller(ctx);
 
-    const result = await caller.admin.deleteClass({ id: '11111111-1111-4111-8111-111111111111' });
+    const result = await caller.deleteClass({ id: '11111111-1111-4111-8111-111111111111' });
 
     expect(update).toHaveBeenCalledTimes(1);
     expect(set).toHaveBeenCalledWith(expect.objectContaining({ isActive: false }));
@@ -264,7 +270,7 @@ describe('adminRouter.deleteClass (Phase 9 F9-04)', () => {
     );
     const caller = adminRouter.createCaller(ctx);
     await expect(
-      caller.admin.deleteClass({ id: '11111111-1111-4111-8111-111111111111' }),
+      caller.deleteClass({ id: '11111111-1111-4111-8111-111111111111' }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
     expect(update).not.toHaveBeenCalled();
   });
@@ -285,7 +291,7 @@ describe('adminRouter.deleteClass (Phase 9 F9-04)', () => {
     );
     const caller = adminRouter.createCaller(ctx);
 
-    await caller.admin.deleteClass({ id: '11111111-1111-4111-8111-111111111111' });
+    await caller.deleteClass({ id: '11111111-1111-4111-8111-111111111111' });
 
     // Audit log insert should be called
     expect(insert).toHaveBeenCalled();
