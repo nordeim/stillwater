@@ -4,6 +4,16 @@
  */
 
 import { config } from 'dotenv';
+import { vi } from 'vitest';
+
+// Register @testing-library/jest-dom matchers (toBeInTheDocument, etc.)
+import '@testing-library/jest-dom/vitest';
+
+// Mock 'server-only' package — it throws when imported outside Server Components.
+// Tests that transitively import modules containing `import 'server-only'` (e.g.
+// lib/auth.ts, lib/observability/logger.ts) would otherwise fail with
+// "cannot be imported from a Client Component". (vercel/next.js#60038)
+vi.mock('server-only', () => ({}));
 
 // Load .env.local first (monorepo root), then .env.test if present
 config({ path: '.env.local' });

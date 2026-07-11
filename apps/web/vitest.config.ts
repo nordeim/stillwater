@@ -15,6 +15,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     pool: 'forks',
+    setupFiles: [resolve(__dirname, '../../test/setup.ts')],
     exclude: [
       '**/node_modules/**',
       '**/.git/**',
@@ -34,6 +35,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // `server-only` throws when imported outside Server Components. Alias it
+      // to an empty object so `import 'server-only'` is a no-op in tests.
+      'server-only': resolve(__dirname, '../../test/empty-server-only.ts'),
       '@stillwater/auth': resolve(__dirname, '../../packages/auth/src'),
       '@stillwater/db': resolve(__dirname, '../../packages/db/src'),
       '@stillwater/config': resolve(__dirname, '../../packages/config/src'),
