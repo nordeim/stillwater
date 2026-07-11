@@ -261,9 +261,19 @@ def parse_args(args: list[str]) -> dict[str, Any]:
         if config["host_str"] is None:
             config["host_str"] = arg
             # Everything remaining is the remote shell command.
-            # Use shlex.join to preserve argument boundaries (spaces, quotes).
+            # Git typically passes the entire remote command as a single
+            # argument (e.g. "git-receive-pack 'nordeim/stillwater.git'").
+            # shlex.join() on a single-element list re-quotes the string,
+            # which GitHub's git-shell rejects ("Invalid command").
+            # Fix: normalise via shlex.split() → shlex.join() so the
+            # quoting is canonical and matches what the remote shell expects.
             if i + 1 < len(args):
-                config["command"] = shlex.join(args[i + 1 :])
+                raw_cmd = args[i + 1 :]
+                if len(raw_cmd) == 1:
+                    # Single string — split then re-join to normalise quotes
+                    config["command"] = shlex.join(shlex.split(raw_cmd[0]))
+                else:
+                    config["command"] = shlex.join(raw_cmd)
             break
 
         i += 1
