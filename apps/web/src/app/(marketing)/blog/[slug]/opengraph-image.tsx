@@ -8,7 +8,7 @@
  */
 
 import { ImageResponse } from '@vercel/og';
-import { sanityClient } from '@/lib/sanity/client';
+import { getSanityClient } from '@/lib/sanity/client';
 
 export const runtime = 'edge';
 export const alt = 'Stillwater Yoga Studio Blog';
@@ -22,13 +22,16 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   let author = '';
 
   try {
-    const post = await sanityClient.fetch(
-      `*[_type == "blogPost" && published == true && slug.current == $slug][0] { title, author }`,
-      { slug },
-    );
-    if (post) {
-      title = post.title ?? title;
-      author = post.author ?? '';
+    const client = getSanityClient();
+    if (client) {
+      const post = await client.fetch(
+        `*[_type == "blogPost" && published == true && slug.current == $slug][0] { title, author }`,
+        { slug },
+      );
+      if (post) {
+        title = post.title ?? title;
+        author = post.author ?? '';
+      }
     }
   } catch {
     // Graceful fallback to defaults

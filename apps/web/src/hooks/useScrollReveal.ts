@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, type RefObject } from 'react';
 
-export function useScrollReveal<T extends HTMLElement>(): RefObject<T> {
+export function useScrollReveal<T extends HTMLElement>(): RefObject<T | null> {
   const ref = useRef<T>(null);
 
   useEffect(() => {

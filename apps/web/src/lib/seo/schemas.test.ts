@@ -39,9 +39,9 @@ describe('F11-10: JSON-LD schema builders', () => {
     });
     expect(schema['@type']).toBe('Article');
     expect(schema['headline']).toBe('The Benefits of Yin Yoga');
-    expect(schema['author']['name']).toBe('Mei Tanaka');
+    expect((schema['author'] as { name: string })['name']).toBe('Mei Tanaka');
     expect(schema['datePublished']).toBe('2026-01-15');
-    expect(schema['publisher']['name']).toBe('Stillwater Yoga Studio');
+    expect((schema['publisher'] as { name: string })['name']).toBe('Stillwater Yoga Studio');
   });
 
   it('personSchema returns correct @type and fields', () => {
@@ -53,7 +53,7 @@ describe('F11-10: JSON-LD schema builders', () => {
     expect(schema['@type']).toBe('Person');
     expect(schema['name']).toBe('James Harlow');
     expect(schema['description']).toBe('Ashtanga and Vinyasa teacher');
-    expect(schema['worksFor']['name']).toBe('Stillwater Yoga Studio');
+    expect((schema['worksFor'] as { name: string })['name']).toBe('Stillwater Yoga Studio');
   });
 
   it('breadcrumbSchema returns correct itemListElement', () => {
@@ -64,7 +64,7 @@ describe('F11-10: JSON-LD schema builders', () => {
     ]);
     expect(schema['@type']).toBe('BreadcrumbList');
     expect(schema['itemListElement']).toHaveLength(3);
-    expect(schema['itemListElement'][0]).toEqual({
+    expect((schema['itemListElement'] as unknown[])[0]).toEqual({
       '@type': 'ListItem',
       position: 1,
       name: 'Home',

@@ -9,7 +9,7 @@
 
 import type { MetadataRoute } from 'next';
 import { apiCaller } from '@/lib/trpc/server';
-import { sanityClient } from '@/lib/sanity/client';
+import { getSanityClient } from '@/lib/sanity/client';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
@@ -41,15 +41,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Dynamic: blog posts (Sanity)
     let blogRoutes: MetadataRoute.Sitemap = [];
     try {
-      const posts = await sanityClient.fetch(
-        `*[_type == "blogPost" && published == true] | order(publishedAt desc) { slug }`
-      );
-      blogRoutes = (posts as Array<{ slug: { current: string } }>).map((post) => ({
-        url: `${baseUrl}/blog/${post.slug.current}`,
-        lastModified: new Date(),
-        changeFrequency: 'monthly' as const,
-        priority: 0.6,
-      }));
+      const client = getSanityClient();
+      if (client) {
+        const posts = await client.fetch(
+          `*[_type == "blogPost" && published == true] | order(publishedAt desc) { slug }`
+        );
+        blogRoutes = (posts as Array<{ slug: { current: string } }>).map((post) => ({
+          url: `${baseUrl}/blog/${post.slug.current}`,
+          lastModified: new Date(),
+          changeFrequency: 'monthly' as const,
+          priority: 0.6,
+        }));
+      }
     } catch {
       // Sanity not configured in this environment — skip blog routes
     }

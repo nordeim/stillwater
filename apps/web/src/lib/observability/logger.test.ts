@@ -25,7 +25,7 @@ describe('F10-06: Structured logger', () => {
     logger.info('Test message', { userId: 'u1' });
 
     expect(console.info).toHaveBeenCalledTimes(1);
-    const json = (console.info as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const json = (console.info as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
     const entry = JSON.parse(json);
 
     expect(entry.level).toBe('info');
@@ -39,7 +39,7 @@ describe('F10-06: Structured logger', () => {
     logger.error('Something failed', { requestId: 'r1' }, error);
 
     expect(console.error).toHaveBeenCalledTimes(1);
-    const json = (console.error as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const json = (console.error as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
     const entry = JSON.parse(json);
 
     expect(entry.level).toBe('error');
@@ -54,7 +54,7 @@ describe('F10-06: Structured logger', () => {
     logger.warn('Warning message');
 
     expect(console.warn).toHaveBeenCalledTimes(1);
-    const json = (console.warn as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const json = (console.warn as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
     const entry = JSON.parse(json);
 
     expect(entry.level).toBe('warn');
@@ -65,7 +65,7 @@ describe('F10-06: Structured logger', () => {
     logger.debug('Debug message', { component: 'test' });
 
     expect(console.debug).toHaveBeenCalledTimes(1);
-    const json = (console.debug as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const json = (console.debug as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
     const entry = JSON.parse(json);
 
     expect(entry.level).toBe('debug');
@@ -81,7 +81,7 @@ describe('F10-06: Structured logger', () => {
       classId: 'c1',
     });
 
-    const json = (console.info as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const json = (console.info as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
     const entry = JSON.parse(json);
 
     expect(entry.userId).toBe('u1');

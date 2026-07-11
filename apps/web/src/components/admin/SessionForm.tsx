@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc/client';
@@ -50,7 +50,7 @@ export function SessionForm({ initialData, onSuccess, onCancel }: SessionFormPro
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<SessionFormValues>({
-    resolver: zodResolver(sessionSchema),
+    resolver: zodResolver(sessionSchema) as Resolver<SessionFormValues>,
     defaultValues: {
       durationMinutes: 60,
       isVirtual: false,
@@ -75,15 +75,17 @@ export function SessionForm({ initialData, onSuccess, onCancel }: SessionFormPro
   const isVirtual = watch('isVirtual');
 
   const onSubmit = (data: SessionFormValues) => {
+    const startsAt = new Date(data.startsAt);
+    const endsAt = new Date(startsAt.getTime() + data.durationMinutes * 60_000);
     createMutation.mutate({
       classId: data.classId,
       instructorId: data.instructorId,
-      roomId: data.roomId,
-      startsAt: new Date(data.startsAt),
-      durationMinutes: data.durationMinutes,
-      overrideCapacity: data.overrideCapacity,
+      ...(data.roomId ? { roomId: data.roomId } : {}),
+      startsAt,
+      endsAt,
+      ...(data.overrideCapacity ? { overrideCapacity: data.overrideCapacity } : {}),
       isVirtual: data.isVirtual,
-      streamUrl: data.streamUrl,
+      ...(data.streamUrl ? { streamUrl: data.streamUrl } : {}),
     });
   };
 
@@ -124,7 +126,7 @@ export function SessionForm({ initialData, onSuccess, onCancel }: SessionFormPro
           <option value="" disabled>Select an instructor…</option>
           {instructorsQuery.data?.map((ins) => (
             <option key={ins.id} value={ins.id}>
-              {ins.name}
+              {ins.slug}
             </option>
           ))}
         </select>

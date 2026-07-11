@@ -17,7 +17,7 @@ export function initPostHog() {
   if (typeof window !== 'undefined') {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY ?? '', {
       api_host: '/_analytics', // reverse proxy for privacy (next.config.ts rewrites)
-      capture_pageviews: true,
+      capture_pageview: true,
       capture_exceptions: true,
       persistence: 'localStorage+cookie',
       loaded: (ph) => {

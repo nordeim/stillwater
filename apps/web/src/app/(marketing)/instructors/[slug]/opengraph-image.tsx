@@ -23,7 +23,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   try {
     const caller = await apiCaller();
     const instructor = await caller.instructors.getBySlug({ slug });
-    name = instructor.name ?? name;
+    name = instructor.slug ?? name;
     bio = instructor.bio?.slice(0, 120) ?? '';
   } catch {
     // Graceful fallback

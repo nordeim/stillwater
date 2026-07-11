@@ -39,7 +39,8 @@ export async function GET(): Promise<NextResponse> {
   });
 
   // Escape CSV values (RFC 4180: wrap in quotes if contains comma/quote/newline)
-  const escapeCsv = (val: string): string => {
+  const escapeCsv = (val: string | undefined): string => {
+    if (val === undefined) return '';
     if (/[",\n]/.test(val)) {
       return `"${val.replace(/"/g, '""')}"`;
     }

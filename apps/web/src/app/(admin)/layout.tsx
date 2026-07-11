@@ -11,6 +11,7 @@
 
 import { requireRole } from '@/lib/auth';
 import { AdminShell } from '@/components/admin/AdminShell';
+import type { StillwaterSession } from '@stillwater/auth';
 
 export default async function AdminLayout({
   children,
@@ -18,5 +19,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await requireRole('staff', 'manager', 'owner');
-  return <AdminShell session={session}>{children}</AdminShell>;
+  // Cast: Better Auth's customSession infers a narrower readonly roles tuple;
+  // AdminShell expects a mutable StudioRole[] for its canSeeLink helper.
+  return <AdminShell session={session as unknown as StillwaterSession}>{children}</AdminShell>;
 }

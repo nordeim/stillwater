@@ -66,9 +66,9 @@ describe('F10-04: PostHog analytics', () => {
 
     expect(posthog.init).toHaveBeenCalledTimes(1);
     const initCall = (posthog.init as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(initCall[1]).toMatchObject({
+    expect(initCall?.[1]).toMatchObject({
       api_host: '/_analytics',
-      capture_pageviews: true,
+      capture_pageview: true,
       capture_exceptions: true,
       persistence: 'localStorage+cookie',
     });

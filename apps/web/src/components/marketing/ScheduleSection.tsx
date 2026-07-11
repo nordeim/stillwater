@@ -25,7 +25,7 @@ export function ScheduleSection({ sessions }: ScheduleSectionProps) {
           label={SECTION_LABELS.schedule}
           title={SECTION_TITLES.schedule}
         />
-        <ScheduleGrid sessions={sessions} />
+        <ScheduleGrid sessions={sessions as Array<{ id: string; startsAt: Date; class: { name: string }; instructor: { slug: string }; room: { name: string } }>} />
       </div>
     </section>
   );

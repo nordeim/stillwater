@@ -61,10 +61,10 @@ export default async function HomePage() {
       <ScheduleSection sessions={sessions as unknown[]} />
 
       {/* 5. Instructors (§ 03) */}
-      <InstructorsSection instructors={instructors as unknown[]} />
+      <InstructorsSection instructors={(instructors as unknown[]).map((i) => i as { id: string; name: string; slug: string; bio?: string | null })} />
 
       {/* 6. Membership (§ 04) */}
-      <MembershipSection plans={membershipPlans as unknown[]} />
+      <MembershipSection plans={(membershipPlans as unknown[]).map((p) => p as { id: string; name: string; priceCents: number; interval: string; classCreditsPerCycle: number | null })} />
 
       {/* 7. Studio Space (§ 05) */}
       <StudioSpaceSection />

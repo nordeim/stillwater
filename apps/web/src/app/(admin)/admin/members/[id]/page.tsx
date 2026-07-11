@@ -8,7 +8,7 @@
  */
 
 import type { Metadata } from 'next';
-import { notFound } from 'next/server';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { apiCaller } from '@/lib/trpc/server';
 import { getSession } from '@/lib/auth';
@@ -44,9 +44,20 @@ export default async function AdminMemberDetailPage({ params }: PageProps) {
 
   // Check if current user is owner (for role editor visibility)
   const session = await getSession();
-  const isOwner = session?.user.roles.includes('owner') ?? false;
+  const isOwner = (session?.user.roles as string[])?.includes('owner') ?? false;
 
-  const { member, enrollmentHistory, paymentHistory } = detail;
+  const { member, enrollmentHistory, paymentHistory } = detail as {
+    member: {
+      id: string;
+      displayName: string;
+      joinedAt: Date;
+      phone: string | null;
+      user: { email: string };
+      roles: Array<{ role: string }>;
+    };
+    enrollmentHistory: unknown[];
+    paymentHistory: unknown[];
+  };
 
   return (
     <div className="space-y-8">

@@ -89,8 +89,8 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
 
     // Parse the drop target: "day-hour" format (e.g., "2-14" = Tuesday 2pm)
     const [dayStr, hourStr] = (over.id as string).split('-');
-    const dayOffset = parseInt(dayStr, 10);
-    const hour = parseInt(hourStr, 10);
+    const dayOffset = parseInt(dayStr ?? '0', 10);
+    const hour = parseInt(hourStr ?? '0', 10);
 
     const newStart = new Date(weekStartNormalized);
     newStart.setDate(newStart.getDate() + dayOffset);
@@ -225,11 +225,9 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
             </p>
           )}
           <SessionForm
-            initialData={
-              createDateTime
-                ? { startsAt: createDateTime.toISOString().slice(0, 16) }
-                : undefined
-            }
+            {...(createDateTime
+              ? { initialData: { startsAt: createDateTime.toISOString().slice(0, 16) } }
+              : {})}
             onSuccess={() => setCreateDialogOpen(false)}
             onCancel={() => setCreateDialogOpen(false)}
           />
