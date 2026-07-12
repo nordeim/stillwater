@@ -40,3 +40,9 @@ export * from './role-assignments';
 
 // Audit table (1 — Phase 9)
 export * from './audit-log';
+
+// Relational Query Builder relations (F1-14b)
+// Defines all FK relationships for `db.query.*.findFirst({ with: { ... } })`.
+// Without this, `with: {}` queries throw "Cannot read properties of undefined
+// (reading 'referencedTable')" at runtime.
+export * from './relations';

@@ -39,8 +39,8 @@ export default async function AdminDashboardPage() {
     id: string;
     startsAt: Date;
     status: string;
-    class?: { name: string };
-    instructor?: { name: string };
+    class: { title: string } | null;
+    instructor: { slug: string } | null;
   }[]).filter((s) => {
     const sessionDate = new Date(s.startsAt).toISOString().split('T')[0];
     return sessionDate === today && s.status === 'scheduled';
@@ -125,11 +125,11 @@ export default async function AdminDashboardPage() {
                     {time}
                   </span>
                   <span className="text-sm text-stone-700">
-                    {session.class?.name ?? 'Untitled class'}
+                    {session.class?.title ?? 'Untitled class'}
                   </span>
-                  {session.instructor?.name && (
+                  {session.instructor?.slug && (
                     <span className="text-xs text-stone-500">
-                      with {session.instructor.name}
+                      with {session.instructor.slug.replace(/-/g, ' ')}
                     </span>
                   )}
                 </li>

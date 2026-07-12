@@ -17,13 +17,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const caller = await apiCaller();
     const session = await caller.schedule.getSession({ sessionId });
-    // Cast for Drizzle relational type inference (SKILL §9.9 Gotcha 27)
+    // class.title is the display name (classes table has no `name` column)
     const sessionData = session as {
-      class: { name: string } | null;
+      class: { title: string } | null;
     };
     return {
-      title: sessionData.class?.name ?? 'Book a class',
-      description: `Book your spot in ${sessionData.class?.name ?? 'this class'}`,
+      title: sessionData.class?.title ?? 'Book a class',
+      description: `Book your spot in ${sessionData.class?.title ?? 'this class'}`,
     };
   } catch {
     return { title: 'Book a class' };
@@ -41,18 +41,19 @@ export default async function BookingPage({ params }: PageProps) {
     notFound();
   }
 
-  // Cast for Drizzle relational type inference (SKILL §9.9 Gotcha 27)
+  // Use real Drizzle-inferred types (now that relations() is defined).
+  // class.title (not name); instructor.slug; room.name.
   const sessionData = session as {
     id: string;
     startsAt: Date;
-    class: { name: string; description: string | null } | null;
+    class: { title: string; description: string | null } | null;
     instructor: { slug: string } | null;
     room: { name: string } | null;
     enrolledCount: number;
     overrideCapacity: number | null;
   };
 
-  const className = sessionData.class?.name ?? 'Class';
+  const className = sessionData.class?.title ?? 'Class';
   const instructorName = sessionData.instructor?.slug ?? 'Instructor';
   const roomName = sessionData.room?.name ?? 'Studio';
 
