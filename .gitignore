@@ -76,6 +76,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# ─── Stray debug/build output (never commit) ───────────────
+error.txt
+pnpm_log.txt
+app_start_log.txt
+app_log.txt
+
 # ─── Misc ──────────────────────────────────────────────────
 *.pem
 .cache/

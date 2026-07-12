@@ -10,7 +10,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mockSendClassReminder24h = vi.fn();
 const mockEnrollmentFindFirst = vi.fn();
 const mockSessionsFindMany = vi.fn();
-const mockEnrollmentUpdate = vi.fn();
 const mockEnrollmentUpdateWhere = vi.fn();
 
 vi.mock('@trigger.dev/sdk', () => ({

@@ -20,8 +20,7 @@
 import { task } from '@trigger.dev/sdk';
 import { sql } from 'drizzle-orm';
 
-import { db } from '@stillwater/db';
-import { enrollments } from '@stillwater/db';
+import { db, enrollments } from '@stillwater/db';
 import { sendClassReminder1h } from '@stillwater/email';
 
 interface SessionWithEnrollmentsData {

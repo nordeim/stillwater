@@ -20,7 +20,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { google } from 'better-auth/social-providers';
 import { magicLink } from 'better-auth/plugins/magic-link';
 import { customSession } from 'better-auth/plugins/custom-session';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { db } from '@stillwater/db';
 import {
   members,
@@ -141,14 +141,13 @@ export const auth = betterAuth({
           where: eq(roleAssignments.memberId, member.id),
         });
 
-        // Fetch the member's most recent active subscription (with plan details).
+        // Fetch the member's most recent subscription with plan details.
         // Ordered by createdAt desc so the "current" subscription is first.
-        // Status filter excludes cancelled/incomplete; trialing/past_due/paused
-        // are included because the member still has access.
+        // The status filter is applied in JS below (activeStatuses.includes)
+        // because the DB query fetches the most recent regardless of status,
+        // then we check if it's in an access-granting state.
         const subscription = await db.query.memberSubscriptions.findFirst({
-          where: and(
-            eq(memberSubscriptions.memberId, member.id),
-          ),
+          where: eq(memberSubscriptions.memberId, member.id),
           with: { plan: true },
           orderBy: desc(memberSubscriptions.createdAt),
         });

@@ -56,13 +56,17 @@ export default [
   {
     // Worker source files use `db.query.X as any` casts (Gotcha 64 / Lesson 71)
     // — Drizzle 0.45 relational query types infer as `never` in NodeNext.
-    // These will be removed when upgrading to Drizzle 1.0+ with defineRelations().
+    // The `sql\`...\` as any` cast on .where() is the same pattern (Lesson 94 —
+    // Drizzle 0.45 resolution-mode mismatch between workers' drizzle-orm copy
+    // and @stillwater/db's db object). These will be removed when upgrading
+    // to Drizzle 1.0+ with defineRelations().
     files: ['src/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
     },
   },
 ];
