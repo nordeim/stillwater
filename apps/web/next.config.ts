@@ -1,4 +1,5 @@
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs";
 
 import type { NextConfig } from "next";
 
@@ -170,4 +171,24 @@ const nextConfig: NextConfig = {
   // F10-09: Handled by withBundleAnalyzer wrapper above
 };
 
-export default withBundleAnalyzer(nextConfig);
+// ── Sentry (source map upload in CI) ───────────────────────────
+// F10-09: withSentryConfig wraps nextConfig for source map upload.
+// authToken is only set in CI (SENTRY_AUTH_TOKEN env var); in local
+// dev the wrapper is a no-op (authToken undefined → skip upload).
+// Note: conditional spread for authToken because exactOptionalPropertyTypes
+// forbids passing `undefined` to an optional `string` property.
+const sentryConfig = {
+  // Suppress noisy build logs
+  silent: true,
+  // Auth token for source map upload (CI only)
+  ...(process.env.SENTRY_AUTH_TOKEN
+    ? { authToken: process.env.SENTRY_AUTH_TOKEN }
+    : {}),
+  // Disable Sentry webpack in development (faster builds)
+  disableServerWebpackPlugin: process.env.NODE_ENV === "development",
+  disableClientWebpackPlugin: process.env.NODE_ENV === "development",
+  // Tree-shake Sentry logger in production
+  widenClientFileUpload: true,
+};
+
+export default withBundleAnalyzer(withSentryConfig(nextConfig, sentryConfig));
