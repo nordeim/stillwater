@@ -71,7 +71,7 @@ function formatSSEEvent(data: SeatAvailabilityEvent): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
-export async function POST(request: Request): Promise<Response> {
+export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const sessionId = url.searchParams.get('sessionId');
 

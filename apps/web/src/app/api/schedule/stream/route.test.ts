@@ -48,9 +48,9 @@ describe('SSE schedule stream endpoint', () => {
       overrideCapacity: null,
     });
 
-    const { POST } = await import('./route');
+    const { GET } = await import('./route');
     const req = new Request('http://localhost:3000/api/schedule/stream?sessionId=00000000-0000-4000-8000-000000000001');
-    const res = await POST(req);
+    const res = await GET(req);
 
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('text/event-stream');
@@ -59,16 +59,16 @@ describe('SSE schedule stream endpoint', () => {
   });
 
   it('returns 400 when sessionId query param is missing', async () => {
-    const { POST } = await import('./route');
+    const { GET } = await import('./route');
     const req = new Request('http://localhost:3000/api/schedule/stream');
-    const res = await POST(req);
+    const res = await GET(req);
     expect(res.status).toBe(400);
   });
 
   it('returns 400 when sessionId is not a valid UUID', async () => {
-    const { POST } = await import('./route');
+    const { GET } = await import('./route');
     const req = new Request('http://localhost:3000/api/schedule/stream?sessionId=not-a-uuid');
-    const res = await POST(req);
+    const res = await GET(req);
     expect(res.status).toBe(400);
   });
 
@@ -81,9 +81,9 @@ describe('SSE schedule stream endpoint', () => {
       overrideCapacity: null,
     });
 
-    const { POST } = await import('./route');
+    const { GET } = await import('./route');
     const req = new Request('http://localhost:3000/api/schedule/stream?sessionId=00000000-0000-4000-8000-000000000001');
-    const res = await POST(req);
+    const res = await GET(req);
 
     expect(res.status).toBe(200);
     expect(res.body).not.toBeNull();
@@ -94,9 +94,9 @@ describe('SSE schedule stream endpoint', () => {
   it('returns 404 when session is not found', async () => {
     mockGetSession.mockRejectedValue(new Error('NOT_FOUND'));
 
-    const { POST } = await import('./route');
+    const { GET } = await import('./route');
     const req = new Request('http://localhost:3000/api/schedule/stream?sessionId=00000000-0000-4000-8000-000000000001');
-    const res = await POST(req);
+    const res = await GET(req);
 
     expect(res.status).toBe(404);
   });
