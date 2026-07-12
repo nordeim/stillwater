@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **141 skills** organized into 10 categories. Each entry shows the skill name and a concise description of what it does and when to use it.
+> **144 skills** organized into 10 categories. Each entry shows the skill name and a concise description of what it does and when to use it.
 
 ---
 
@@ -172,6 +172,11 @@
 | **context7-mcp**                     | Programmatic Context7 docs via API/MCP. Priority: API → MCP → Browser fallback.                                                                                                                                                                                                                                                   |
 | **version-management**               | Frontend project lifecycle management. Git-based versioning, path enforcement, project switching.                                                                                                                                                                                                                                 |
 
+> **Cross-reference — Skill distillation (project knowledge → reusable skill):** Three skills capture hard-won project knowledge so future similar projects can leverage it.
+> - **`to-distill-project-into-skill`** — Meta-skill. Six-Phase Distillation (ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER) producing a comprehensive `SKILL.md` (20 sections: tech stack, architecture, design system, anti-patterns, debugging, lessons learned, etc.). Use after a full project completion, major update, security remediation, or architectural overhaul.
+> - **`distill-codebase-skill`** — Reference template for authoring the `SKILL.md` document directly, without the full orchestration. Use when you want to shape the document itself.
+> - **`task-review`** — Saves a *complex task's steps* as a reusable skill. Use when the repeatable asset is the workflow path rather than the whole codebase.
+
 ---
 
 ## 8. Documentation & Content Creation
@@ -245,6 +250,8 @@
 | **memory-architecture**              | OpenClaw memory system architecture reference. Setup, troubleshooting, workspace/LCM/QMD interaction.                            |
 | **design**                           | Router for design-related HTML artifact tasks. Delegates to the correct artifact skill.                                          |
 | **template-skill**                   | Placeholder skill definition. Replace with actual skill content.                                                                 |
+| **sanity-best-practices** | Sanity development best practices: schema design (defineType/defineField), GROQ/defineQuery, TypeGen, Visual Editing (Stega, Presentation), images, Portable Text, Studio structure, localization, migrations, Sanity Functions, and Blueprints. Framework integration guides for Next.js, Nuxt, Astro, Remix, SvelteKit, Angular, Hydrogen, and the App SDK. Use whenever working with Sanity schemas, GROQ, content modeling, Sanity-powered frontend integrations, or reviewing/fixing a Sanity codebase. Companion to `sanity-io-deploy`. |
+| **sanity-io-deploy** | Connect an existing Next.js app to a standalone Sanity Studio — confirm/scaffold the Studio as a sibling folder (never embedded), migrate or author the content schema, deploy the schema and the Studio UI to Sanity hosting, mint a read token + webhook secret, wire env vars, add CORS origins, and verify the live deployment with a headless browser. Use when a task references a Sanity onboarding doc (“Get started with Sanity”), “connect Sanity to my existing Next.js app”, a standalone Studio in a sibling folder, or any of `npm create sanity`, `sanity deploy`, `sanity schema deploy`, `sanity cors`, `sanity tokens`. Companion to the `sanity-best-practices` skill. |
 
 ---
 
@@ -261,8 +268,8 @@
 | 7   | Planning, Workflow & Project Management        | 21      |
 | 8   | Documentation & Content Creation               | 14      |
 | 9   | Career, Learning & Personal Development        | 14      |
-| 10  | DevOps, Infrastructure & External Integrations | 19      |
-|     | **Total**                                      | **142** |
+| 10  | DevOps, Infrastructure & External Integrations | 21      |
+|     | **Total**                                      | **144** |
 
 ---
 

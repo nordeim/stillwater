@@ -1,0 +1,193 @@
+$ pnpm install
+Scope: all 14 workspace projects
+Already up to date
+Done in 684ms using pnpm v11.9.0
+(venv) pete@pop-os:/home/project/stillwater
+$ pnpm install
+Scope: all 14 workspace projects
+Already up to date
+Done in 677ms using pnpm v11.9.0
+(venv) pete@pop-os:/home/project/stillwater
+$ pnpm build
+$ turbo build
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/api, @stillwater/auth, @stillwater/config, @stillwater/db, @stillwater/email, @stillwater/eslint-config, @stillwater/payments, @stillwater/studio, @stillwater/tailwind-config, @stillwater/typescript-config, @stillwater/ui, @stillwater/web, @stillwater/workers
+   • Running build in 13 packages
+   • Remote caching disabled
+
+@stillwater/studio:build: cache miss, executing 7458bae04905a978
+@stillwater/config:build: cache miss, executing bb89ded3e0230a8c
+@stillwater/db:build: cache miss, executing 54ab968937b4da67
+@stillwater/ui:build: cache miss, executing b2d132334895d47f
+@stillwater/config:build: $ tsc --build
+@stillwater/ui:build: $ tsc --build
+@stillwater/db:build: $ tsc --build
+@stillwater/studio:build: $ sanity build
+@stillwater/email:build: cache miss, executing 34b9fd323e4e05dc
+@stillwater/payments:build: cache miss, executing 591d155a7750ccf1
+@stillwater/auth:build: cache miss, executing 367bda711012b759
+@stillwater/auth:build: $ tsc --build
+@stillwater/email:build: $ tsc --build
+@stillwater/payments:build: $ tsc --build
+@stillwater/studio:build: 
+@stillwater/studio:build: 
+@stillwater/studio:build:    ╭──────────────────────────────────────╮
+@stillwater/studio:build:    │                                      │
+@stillwater/studio:build:    │   Update available: 6.3.0 → 6.4.0    │
+@stillwater/studio:build:    │                                      │
+@stillwater/studio:build:    │   Run pnpm update sanity to update   │
+@stillwater/studio:build:    │                                      │
+@stillwater/studio:build:    ╰──────────────────────────────────────╯
+@stillwater/studio:build: 
+@stillwater/studio:build: 
+@stillwater/studio:build:  ›   Warning: Declared version of styled-components (^6.1.13) is not compatible with the version required by sanity (^6.1.15). This might cause problems!
+✔ Clean output folder (68ms)
+@stillwater/api:build: cache miss, executing 5155d3f14ae15f69
+@stillwater/api:build: $ tsc --build
+✔ Build Sanity Studio (7577ms)
+@stillwater/studio:build: 
+@stillwater/web:build: cache miss, executing c31ccb033aa0a575
+@stillwater/web:build: $ next build
+@stillwater/web:build: ▲ Next.js 16.2.10 (Turbopack)
+@stillwater/web:build: - Environments: .env.local
+@stillwater/web:build: - Experiments (use with caution):
+@stillwater/web:build:   · clientTraceMetadata
+@stillwater/web:build: 
+@stillwater/web:build:   Creating an optimized production build ...
+@stillwater/web:build: ✓ Compiled successfully in 28.3s
+✓ Completed runAfterProductionCompile in 478ms
+@stillwater/web:build: ✓ Finished TypeScript in 17.3s 
+⚠ Using edge runtime on a page currently disables static generation for that page
+@stillwater/web:build: ✓ Collecting page data using 3 workers in 4.8s 
+✓ Generating static pages using 3 workers (16/16) in 853ms
+@stillwater/web:build: ✓ Finalizing page optimization in 22ms 
+@stillwater/web:build: 
+@stillwater/web:build: Route (app)                                     Revalidate  Expire
+@stillwater/web:build: ┌ ƒ /
+@stillwater/web:build: ├ ○ /_not-found
+@stillwater/web:build: ├ ○ /about                                              1d      1y
+@stillwater/web:build: ├ ƒ /admin
+@stillwater/web:build: ├ ƒ /admin/audit-log
+@stillwater/web:build: ├ ƒ /admin/classes
+@stillwater/web:build: ├ ƒ /admin/classes/[id]
+@stillwater/web:build: ├ ƒ /admin/classes/new
+@stillwater/web:build: ├ ƒ /admin/instructors
+@stillwater/web:build: ├ ƒ /admin/members
+@stillwater/web:build: ├ ƒ /admin/members/[id]
+@stillwater/web:build: ├ ƒ /admin/revenue
+@stillwater/web:build: ├ ƒ /admin/schedule
+@stillwater/web:build: ├ ƒ /admin/settings
+@stillwater/web:build: ├ ƒ /api/admin/members/export
+@stillwater/web:build: ├ ƒ /api/auth/[...all]
+@stillwater/web:build: ├ ƒ /api/sanity/webhook
+@stillwater/web:build: ├ ƒ /api/schedule/stream
+@stillwater/web:build: ├ ƒ /api/trpc/[trpc]
+@stillwater/web:build: ├ ƒ /api/webhooks/stripe
+@stillwater/web:build: ├ ƒ /auth/callback
+@stillwater/web:build: ├ ƒ /auth/error
+@stillwater/web:build: ├ ƒ /auth/sign-in
+@stillwater/web:build: ├ ƒ /auth/sign-out
+@stillwater/web:build: ├ ○ /blog                                               1h      1y
+@stillwater/web:build: ├ ƒ /blog/[slug]
+@stillwater/web:build: ├ ƒ /blog/[slug]/opengraph-image-yqks0s
+@stillwater/web:build: ├ ƒ /book/[sessionId]
+@stillwater/web:build: ├ ƒ /dashboard
+@stillwater/web:build: ├ ƒ /history
+@stillwater/web:build: ├ ƒ /instructors
+@stillwater/web:build: ├ ƒ /instructors/[slug]
+@stillwater/web:build: ├ ƒ /instructors/[slug]/opengraph-image-dbn2vc
+@stillwater/web:build: ├ ○ /manifest.webmanifest
+@stillwater/web:build: ├ ƒ /membership
+@stillwater/web:build: ├ ƒ /opengraph-image
+@stillwater/web:build: ├ ƒ /pricing
+@stillwater/web:build: ├ ƒ /profile
+@stillwater/web:build: ├ ○ /robots.txt
+@stillwater/web:build: ├ ƒ /schedule
+@stillwater/web:build: └ ƒ /sitemap.xml
+@stillwater/web:build: 
+@stillwater/web:build: 
+@stillwater/web:build: ○  (Static)   prerendered as static content
+@stillwater/web:build: ƒ  (Dynamic)  server-rendered on demand
+@stillwater/web:build: 
+@stillwater/web:build: 
+
+ Tasks:    9 successful, 9 total
+Cached:    0 cached, 9 total
+  Time:    1m12.935s 
+
+(venv) pete@pop-os:/home/project/stillwater
+$ cd apps/web/
+(venv) pete@pop-os:/home/project/stillwater/apps/web
+$ pnpm build
+$ next build
+▲ Next.js 16.2.10 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 36.8s
+✓ Completed runAfterProductionCompile in 485ms
+✓ Finished TypeScript in 43s    
+⚠ Using edge runtime on a page currently disables static generation for that page
+✓ Collecting page data using 3 workers in 4.7s    
+✓ Generating static pages using 3 workers (16/16) in 762ms
+✓ Finalizing page optimization in 23ms    
+
+Route (app)                                     Revalidate  Expire
+┌ ƒ /
+├ ○ /_not-found
+├ ○ /about                                              1d      1y
+├ ƒ /admin
+├ ƒ /admin/audit-log
+├ ƒ /admin/classes
+├ ƒ /admin/classes/[id]
+├ ƒ /admin/classes/new
+├ ƒ /admin/instructors
+├ ƒ /admin/members
+├ ƒ /admin/members/[id]
+├ ƒ /admin/revenue
+├ ƒ /admin/schedule
+├ ƒ /admin/settings
+├ ƒ /api/admin/members/export
+├ ƒ /api/auth/[...all]
+├ ƒ /api/sanity/webhook
+├ ƒ /api/schedule/stream
+├ ƒ /api/trpc/[trpc]
+├ ƒ /api/webhooks/stripe
+├ ƒ /auth/callback
+├ ƒ /auth/error
+├ ƒ /auth/sign-in
+├ ƒ /auth/sign-out
+├ ○ /blog                                               1h      1y
+├ ƒ /blog/[slug]
+├ ƒ /blog/[slug]/opengraph-image-yqks0s
+├ ƒ /book/[sessionId]
+├ ƒ /dashboard
+├ ƒ /history
+├ ƒ /instructors
+├ ƒ /instructors/[slug]
+├ ƒ /instructors/[slug]/opengraph-image-dbn2vc
+├ ○ /manifest.webmanifest
+├ ƒ /membership
+├ ƒ /opengraph-image
+├ ƒ /pricing
+├ ƒ /profile
+├ ○ /robots.txt
+├ ƒ /schedule
+└ ƒ /sitemap.xml
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+(venv) pete@pop-os:/home/project/stillwater/apps/web
+$ pnpm start
+$ next start
+▲ Next.js 16.2.10
+- Local:         http://localhost:3000
+- Network:       http://192.168.2.132:3000
+✓ Ready in 180ms
+
+

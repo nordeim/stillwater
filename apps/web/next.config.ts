@@ -16,6 +16,16 @@ const nextConfig: NextConfig = {
   // ── React Compiler (stable in Next.js 16) ──────────────────────
   reactCompiler: true,
 
+  // ── Allowed Dev Origins ───────────────────────────────────────
+  // Permits these origins to use the dev server (HMR, error overlay)
+  // when accessed via a non-default host.
+  allowedDevOrigins: [
+    'localhost',
+    '127.0.0.1',
+    'stillwater.jesspete.shop',
+    '192.168.2.132',
+  ],
+
   // ── Transpile workspace packages (source resolution) ───────────
   // Turbopack doesn't respect custom `exports` conditions like
   // `@stillwater/source`. By pointing `exports.default` to `./src/*.ts`
