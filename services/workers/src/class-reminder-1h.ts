@@ -6,13 +6,10 @@
  *   sessions starting in the next 1h window and sends reminders to confirmed
  *   enrollees.
  *
- * Why cron instead of per-booking scheduling:
- *   - Handles members who book AFTER the 1h mark (they still get a reminder
- *     if the cron fires before the session starts)
- *   - Doesn't create thousands of scheduled waits in Trigger.dev
- *   - Idempotent: the 5min window + "session hasn't started yet" check
- *     prevents duplicate emails
- *   - Matches PAD §17.1 "scheduled" language
+ * Dedup mechanism (C1 fix): each enrollment has a `reminder1hSentAt` column.
+ *   Before sending, we check if it's null (never sent). After a successful
+ *   send, we set it to NOW(). This prevents duplicate emails when the cron
+ *   fires multiple times within the 15min reminder window.
  *
  * CPU Budget: 30s
  * Retries: 3
@@ -21,8 +18,10 @@
  */
 
 import { task } from '@trigger.dev/sdk';
+import { sql } from 'drizzle-orm';
 
 import { db } from '@stillwater/db';
+import { enrollments } from '@stillwater/db';
 import { sendClassReminder1h } from '@stillwater/email';
 
 interface SessionWithEnrollmentsData {
@@ -31,7 +30,9 @@ interface SessionWithEnrollmentsData {
   class: { title: string };
   instructor: { slug: string };
   enrollments: {
+    id: string;
     status: string;
+    reminder1hSentAt: Date | null;
     member: {
       displayName: string;
       user: { email: string };
@@ -57,7 +58,7 @@ export const classReminder1h = task({
     // Cron fan-out: find all sessions starting in the next 50-65min window.
     // The 15min window (50min to 65min from now) ensures:
     //   - We capture sessions starting in ~1h regardless of cron timing drift
-    //   - A 5min cron cadence means each session is captured exactly once
+    // Dedup is handled per-enrollment via the reminder1hSentAt column.
     const now = new Date();
     const windowStart = new Date(now.getTime() + 50 * 60 * 1000); // +50min
     const windowEnd = new Date(now.getTime() + 65 * 60 * 1000); // +65min
@@ -73,13 +74,15 @@ export const classReminder1h = task({
         class: true,
         instructor: true,
         enrollments: {
-          where: (e: any, { eq }: any) => eq(e.status, 'confirmed'),
+          where: (e: any, { and, eq, isNull }: any) =>
+            and(eq(e.status, 'confirmed'), isNull(e.reminder1hSentAt)),
           with: { member: { with: { user: true } } },
         },
       },
     })) as SessionWithEnrollmentsData[];
 
     let sentCount = 0;
+    let skippedCount = 0;
     for (const session of sessions) {
       for (const enrollment of session.enrollments) {
         try {
@@ -90,14 +93,23 @@ export const classReminder1h = task({
             sessionTime: formatTimeFromNow(session.startsAt),
             instructor: session.instructor.slug,
           });
+
+          // Mark as sent (atomic — only updates rows where still null)
+          await db
+            .update(enrollments)
+            .set({ reminder1hSentAt: new Date() })
+            .where(sql`${enrollments.id} = ${enrollment.id} AND ${enrollments.reminder1hSentAt} IS NULL` as any);
+
           sentCount++;
         } catch {
-          // Don't let one email failure block the rest
+          // Don't let one email failure block the rest.
+          // Don't mark as sent so the next cron run retries.
+          skippedCount++;
         }
       }
     }
 
-    return { sent: true, sessionCount: sessions.length, sentCount };
+    return { sent: true, sessionCount: sessions.length, sentCount, skippedCount };
   },
 });
 
@@ -144,6 +156,12 @@ async function sendSingleReminder(sessionId: string, memberId: string) {
     sessionTime: formatTimeFromNow(enrollment.session.startsAt),
     instructor: enrollment.session.instructor.slug,
   });
+
+  // Mark as sent
+  await db
+    .update(enrollments)
+    .set({ reminder1hSentAt: new Date() })
+    .where(sql`${enrollments.id} = ${enrollment.id}` as any);
 
   return { sent: true };
 }

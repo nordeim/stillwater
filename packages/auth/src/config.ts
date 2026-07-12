@@ -31,7 +31,22 @@ import {
 import { resend } from './resend-client';
 
 // Use process.env directly (not Zod env module) per SKILL §3.4
-const secret = process.env['BETTER_AUTH_SECRET'] ?? 'placeholder-secret-at-least-32-characters-long';
+// C4 fix: NO placeholder fallback for BETTER_AUTH_SECRET. If unset in
+// production, the app MUST fail fast rather than silently using a
+// publicly-known, version-controlled secret that allows session forgery.
+// Build/test contexts (NEXT_PHASE=phase-production-build or NODE_ENV=test)
+// are exempt — no queries execute there.
+const isBuildContext =
+  process.env['NEXT_PHASE'] === 'phase-production-build' ||
+  process.env['NODE_ENV'] === 'test';
+
+const secret = process.env['BETTER_AUTH_SECRET'];
+if (!secret && !isBuildContext) {
+  throw new Error(
+    'BETTER_AUTH_SECRET is not set. Generate one with `openssl rand -base64 32` ' +
+      'and add it to apps/web/.env.local. Without it, session cookies cannot be signed.',
+  );
+}
 const baseURL = process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3000';
 const googleClientId = process.env['GOOGLE_CLIENT_ID'] ?? 'placeholder.apps.googleusercontent.com';
 const googleClientSecret = process.env['GOOGLE_CLIENT_SECRET'] ?? 'placeholder';

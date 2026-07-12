@@ -20,7 +20,7 @@ export default async function HistoryPage() {
     status: string;
     enrolledAt: Date;
     cancelledAt: Date | null;
-    session: { startsAt: Date; class: { name: string } };
+    session: { startsAt: Date; class: { title: string } };
   }
   const typedHistory = history as unknown as HistoryEntry[];
 

@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 interface UpcomingClass {
   id: string;
-  session: { startsAt: Date; class: { name: string } };
+  session: { startsAt: Date; class: { title: string } };
 }
 
 export function UpcomingClassesWidget({ upcoming }: { upcoming: UpcomingClass[] }) {
@@ -35,7 +35,7 @@ export function UpcomingClassesWidget({ upcoming }: { upcoming: UpcomingClass[] 
             <li key={entry.id} className="flex items-center justify-between border-t border-stone-200 pt-3">
               <div>
                 <p className="text-sm font-medium text-stone-900">
-                  {entry.session.class.name}
+                  {entry.session.class.title}
                 </p>
                 <p className="text-xs text-stone-500">
                   {new Date(entry.session.startsAt).toLocaleDateString('en-US', {

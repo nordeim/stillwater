@@ -15,7 +15,7 @@ vi.mock('next/link', () => ({
 interface ScheduleSession {
   id: string;
   startsAt: Date;
-  class: { name: string };
+  class: { title: string };
   instructor: { slug: string };
   room: { name: string };
 }
@@ -25,14 +25,14 @@ describe('ScheduleGrid', () => {
     {
       id: '00000000-0000-4000-8000-000000000001',
       startsAt: new Date('2026-07-10T10:00:00Z'),
-      class: { name: 'Vinyasa Flow' },
+      class: { title: 'Vinyasa Flow' },
       instructor: { slug: 'jane-doe' },
       room: { name: 'Studio A' },
     },
     {
       id: '00000000-0000-4000-8000-000000000002',
       startsAt: new Date('2026-07-10T12:00:00Z'),
-      class: { name: 'Yin Yoga' },
+      class: { title: 'Yin Yoga' },
       instructor: { slug: 'james-harlow' },
       room: { name: 'Studio B' },
     },

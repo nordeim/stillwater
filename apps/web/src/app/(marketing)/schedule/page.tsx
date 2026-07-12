@@ -27,7 +27,7 @@ export default async function SchedulePage() {
   interface ScheduleSession {
     id: string;
     startsAt: Date;
-    class: { name: string };
+    class: { title: string };
     instructor: { slug: string };
     room: { name: string };
   }

@@ -7,13 +7,13 @@ interface HistoryEntry {
   status: string;
   enrolledAt: Date;
   cancelledAt: Date | null;
-  session: { startsAt: Date; class: { name: string } };
+  session: { startsAt: Date; class: { title: string } };
 }
 
 export function EnrollmentHistoryTable({ entries }: { entries: HistoryEntry[] }) {
   const handleExportCSV = () => {
     const csvData = entries.map((e) => ({
-      Class: e.session.class.name,
+      Class: e.session.class.title,
       Date: new Date(e.session.startsAt).toLocaleDateString('en-US'),
       Status: e.status,
       Enrolled: new Date(e.enrolledAt).toLocaleDateString('en-US'),
@@ -68,7 +68,7 @@ export function EnrollmentHistoryTable({ entries }: { entries: HistoryEntry[] })
             {entries.map((entry) => (
               <tr key={entry.id} className="border-b border-stone-200">
                 <td className="px-4 py-3 text-sm text-stone-900">
-                  {entry.session.class.name}
+                  {entry.session.class.title}
                 </td>
                 <td className="px-4 py-3 text-sm text-stone-600">
                   {new Date(entry.session.startsAt).toLocaleDateString('en-US', {

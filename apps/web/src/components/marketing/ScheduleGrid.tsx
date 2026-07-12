@@ -11,7 +11,7 @@ import Link from 'next/link';
 interface ScheduleSession {
   id: string;
   startsAt: Date;
-  class: { name: string };
+  class: { title: string };
   instructor: { slug: string };
   room: { name: string };
 }
@@ -38,7 +38,7 @@ export function ScheduleGrid({ sessions }: { sessions: ScheduleSession[] }) {
             className="mt-2 text-xl font-medium text-stone-900"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            {session.class.name}
+            {session.class.title}
           </h3>
           <p className="mt-1 text-sm text-stone-600">
             with {session.instructor.slug.replace(/-/g, ' ')}

@@ -6,24 +6,23 @@
  *   sessions starting in the next 24h window and sends reminders to confirmed
  *   enrollees.
  *
- * Why cron instead of per-booking scheduling:
- *   - Handles members who book AFTER the 24h mark (they still get the 1h reminder)
- *   - Doesn't create thousands of scheduled waits in Trigger.dev
- *   - Idempotent: if the cron fires twice, the dedup window prevents duplicate
- *     emails (we only send to sessions whose startsAt is in the next 22-24h)
- *   - Matches PAD §17.1 "scheduled" language and the weekly-digest / attendance-
- *     summary pattern
+ * Dedup mechanism (C1 fix): each enrollment has a `reminder24hSentAt` column.
+ *   Before sending, we check if it's null (never sent). After a successful
+ *   send, we set it to NOW(). This prevents duplicate emails when the cron
+ *   fires multiple times within the 2h reminder window. The check-and-set
+ *   is atomic via a single UPDATE ... WHERE reminder_24h_sent_at IS NULL.
  *
- * CPU Budget: 30s per member (the task is invoked once per session, fan-out
- *   handled by the task itself querying all matching enrollments)
+ * CPU Budget: 30s
  * Retries: 3
  *
  * Source: MEP F8-02, PAD §17.1, ADR-010.
  */
 
 import { task } from '@trigger.dev/sdk';
+import { sql } from 'drizzle-orm';
 
 import { db } from '@stillwater/db';
+import { enrollments } from '@stillwater/db';
 import { sendClassReminder24h } from '@stillwater/email';
 
 interface SessionWithEnrollmentsData {
@@ -33,7 +32,9 @@ interface SessionWithEnrollmentsData {
   instructor: { slug: string };
   room: { name: string } | null;
   enrollments: {
+    id: string;
     status: string;
+    reminder24hSentAt: Date | null;
     member: {
       displayName: string;
       user: { email: string };
@@ -62,7 +63,8 @@ export const classReminder24h = task({
     // The 2h window (22h to 24h from now) ensures:
     //   - We don't miss sessions if the cron fires slightly late
     //   - We don't double-send if the cron fires slightly early
-    //   - A 15min cron cadence means each session is captured exactly once
+    // Dedup is handled per-enrollment via the reminder24hSentAt column
+    // (checked and set atomically below).
     const now = new Date();
     const windowStart = new Date(now.getTime() + 22 * 60 * 60 * 1000); // +22h
     const windowEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24h
@@ -79,13 +81,15 @@ export const classReminder24h = task({
         instructor: true,
         room: true,
         enrollments: {
-          where: (e: any, { eq }: any) => eq(e.status, 'confirmed'),
+          where: (e: any, { and, eq, isNull }: any) =>
+            and(eq(e.status, 'confirmed'), isNull(e.reminder24hSentAt)),
           with: { member: { with: { user: true } } },
         },
       },
     })) as SessionWithEnrollmentsData[];
 
     let sentCount = 0;
+    let skippedCount = 0;
     for (const session of sessions) {
       for (const enrollment of session.enrollments) {
         try {
@@ -97,14 +101,24 @@ export const classReminder24h = task({
             instructor: session.instructor.slug,
             studioAddress: '123 SE Division Street, Portland, OR 97202',
           });
+
+          // Mark as sent (atomic — only updates rows where still null,
+          // preventing race conditions if two cron runs overlap)
+          await db
+            .update(enrollments)
+            .set({ reminder24hSentAt: new Date() })
+            .where(sql`${enrollments.id} = ${enrollment.id} AND ${enrollments.reminder24hSentAt} IS NULL` as any);
+
           sentCount++;
         } catch {
-          // Don't let one email failure block the rest — Trigger.dev retries the task
+          // Don't let one email failure block the rest — Trigger.dev retries the task.
+          // Don't mark as sent so the next cron run retries.
+          skippedCount++;
         }
       }
     }
 
-    return { sent: true, sessionCount: sessions.length, sentCount };
+    return { sent: true, sessionCount: sessions.length, sentCount, skippedCount };
   },
 });
 
@@ -154,6 +168,12 @@ async function sendSingleReminder(sessionId: string, memberId: string) {
     instructor: enrollment.session.instructor.slug,
     studioAddress: '123 SE Division Street, Portland, OR 97202',
   });
+
+  // Mark as sent
+  await db
+    .update(enrollments)
+    .set({ reminder24hSentAt: new Date() })
+    .where(sql`${enrollments.id} = ${enrollment.id}` as any);
 
   return { sent: true };
 }

@@ -69,10 +69,13 @@ export const membersRelations = relations(members, ({ one, many }) => ({
   classPackages: many(classPackages),
   // A member has many payment events
   paymentEvents: many(paymentEvents),
-  // A member has many role assignments
-  roleAssignments: many(roleAssignments),
-  // Alias: UI code uses `with: { roles: true }` and `member.roles.map(...)`.
-  // This is the same target as `roleAssignments` with a shorter alias.
+  // A member has many role assignments.
+  // UI code uses `with: { roles: true }` and `member.roles.map(...)` — the
+  // `roles` alias below is the ONLY relation name exposed to consumers.
+  // (Previously a duplicate `roleAssignments: many()` existed alongside
+  // this alias, which created an ambiguous relation graph in Drizzle RQB
+  // and could throw "conflict in relations definitions" at runtime.
+  // Removed because zero consumers use `with: { roleAssignments: true }`.)
   roles: many(roleAssignments),
   // A member (as staff) has many audit log entries
   auditLogs: many(auditLog),

@@ -165,7 +165,7 @@ export default async function AdminMemberDetailPage({ params }: PageProps) {
                     id: string;
                     status: string;
                     enrolledAt: Date;
-                    session: { startsAt: Date; class: { name: string } };
+                    session: { startsAt: Date; class: { title: string } };
                   };
                   return (
                     <TableRow key={entry.id}>
@@ -180,7 +180,7 @@ export default async function AdminMemberDetailPage({ params }: PageProps) {
                         })}
                       </TableCell>
                       <TableCell className="text-stone-900">
-                        {entry.session.class.name}
+                        {entry.session.class.title}
                       </TableCell>
                       <TableCell>
                         <span

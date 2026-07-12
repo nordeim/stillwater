@@ -32,6 +32,12 @@ export const enrollments = pgTable(
     checkedInAt: timestamp('checked_in_at', { mode: 'date' }),
     cancellationReason: text('cancellation_reason'),
     packageCreditId: uuid('package_credit_id'), // FK to class_packages (nullable — set in Phase 7)
+    // Dedup columns for cron-triggered reminder emails (C1 fix).
+    // Set to NOW() after a successful send; checked before sending to
+    // prevent duplicate emails when the cron fires multiple times within
+    // the reminder window.
+    reminder24hSentAt: timestamp('reminder_24h_sent_at', { mode: 'date' }),
+    reminder1hSentAt: timestamp('reminder_1h_sent_at', { mode: 'date' }),
   },
   (table) => [
     // Prevent double-booking: one enrollment per (session, member)

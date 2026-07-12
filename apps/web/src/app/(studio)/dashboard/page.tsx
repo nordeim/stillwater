@@ -28,7 +28,7 @@ export default async function DashboardPage() {
     id: string;
     status: string;
     enrolledAt: Date;
-    session: { startsAt: Date; class: { name: string } };
+    session: { startsAt: Date; class: { title: string } };
   }
   const typedHistory = history as unknown as HistoryEntry[];
   const now = new Date();
