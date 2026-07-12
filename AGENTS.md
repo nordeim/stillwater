@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-11 (v2.9.0) — ALL 13 PHASES COMPLETE (643 tests, 0 failures). Quality gates fully green: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (643/643), `pnpm build` ✅ (9/9 packages, 16 static pages). Phase 10 remediation: fixed 48 TS errors (react-day-picker v10 API, PostHog `capture_pageview` singular, `server-only` in tests, `zodResolver` generic cast, `override` modifiers, `RefObject<T | null>`, focus-utils null guard, sanity client import fix, RHF resolver casts), 52 ESLint errors (restrict-template-expressions, no-deprecated z.uuid()/z.url(), no-unsafe-* with SanityClient.fetch<T>(), no-confusing-void-expression, require-await), 13 test failures (admin.test.ts caller pattern, KpiCard jest-dom setup, logger server-only mock). 5 new gotchas (85-89). Total: 89 gotchas.
+> **Updated:** 2026-07-12 (v3.0.0) — ALL 13 PHASES COMPLETE + post-deploy remediation (651 tests, 0 failures). Quality gates fully green: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (651/651), `pnpm build` ✅ (9/9 packages, 16 static pages — requires real Sanity credentials). **2026-07-12 remediation**: fixed 5 Critical findings from code review audit — Drizzle `relations()` defined (Gotcha 90), SSE POST→GET fix (Gotcha 91), cron dedup columns (Gotcha 92), `BETTER_AUTH_SECRET` fail-fast guard (Gotcha 93), `.env.local` untracked + pre-commit hook (Gotcha 94). 8 new cron fan-out tests. 5 new gotchas (90-94). Total: 94 gotchas.
 
 ---
 
@@ -28,7 +28,7 @@
 | React Email | 6.6.6 (`^6.6.6`) | v6 unified all imports to `react-email` root. `@react-email/render` is DEPRECATED. |
 | Resend | 6.17.1 (`^6.17.1`) | |
 | Zod | 4.4.3 (`^4.4.3`) | v4 breaking: `z.string().url()` accepts any scheme; `{ errorMap }` removed; `z.ZodIssueCode` deprecated |
-| cmdk | ^1.0.4 | Phase 9: Required by shadcn `command` component (combobox selectors). NOT installed by default — `pnpm add cmdk`. |
+| cmdk | ^1.1.1 | Phase 9: Required by shadcn `command` component (combobox selectors). NOT installed by default — `pnpm add cmdk`. Bumped from ^1.0.4 (npm latest 1.1.1 as of 2026-07-12). |
 | @dnd-kit/core | ^6.3.1 | Phase 9: ScheduleCalendar drag-and-drop. D42 resolved. |
 | recharts | ^2.15.4 | Phase 9: RevenueChart MRR chart. D42 resolved. Use `next/dynamic` if bundle size concern. |
 
@@ -492,9 +492,33 @@ Per-line `eslint-disable` only covers one line. Scoped override in `services/wor
 
 For no-op `run()` stubs, return `Promise.resolve(...)` **without** `async` — `async` with no `await` trips `require-await`, but a synchronous `run: () => ({...})` fails Trigger.dev's `task()` overload (which requires `run()` to return `Promise<unknown>` → `TS2769`). `Promise.resolve(...)` satisfies both. Wrap numbers in `String()` for template literals. See `CLAUDE.md` Gotcha 84.
 
+### 78. Drizzle `relations()` must be defined for RQB `with: {}` queries (Critical — 2026-07-12 fix)
+
+Without `relations()` in `packages/db/src/schema/relations.ts`, every `db.query.*.findFirst({ with: { ... } })` throws `Cannot read properties of undefined (reading 'referencedTable')` at runtime. If you add a new FK, add a `one()` relation + inverse `many()`. Do NOT add duplicate `many()` to the same target without `relationName` (causes conflict error). The `as any` / `as ExpectedShape` casts in workers/routers are STILL NEEDED — `relations()` fixes runtime, not TypeScript type inference (Drizzle 0.45 infers nested `with` as `never` until 1.0+ `defineRelations()`). See `CLAUDE.md` Gotcha 90.
+
+### 79. SSE endpoint must export `GET`, NOT `POST` (Critical — 2026-07-12 fix)
+
+The browser `EventSource` API ONLY sends GET. The SSE route at `apps/web/src/app/api/schedule/stream/route.ts` must export `GET` (not `POST`). See `CLAUDE.md` Gotcha 91.
+
+### 80. Cron-triggered workers need dedup columns (Critical — 2026-07-12 fix)
+
+Cron fan-out windows are wider than cadence (2h window / 15min cron = 8 captures). Without dedup, members get 3–8 duplicate emails. The `enrollments` table has `reminder24hSentAt` + `reminder1hSentAt` columns (migration `0004`). Workers filter `isNull(reminderXhSentAt)` and set it atomically after send. See `CLAUDE.md` Gotcha 92.
+
+### 81. `BETTER_AUTH_SECRET` must NOT have a placeholder fallback (Critical security — 2026-07-12 fix)
+
+`packages/auth/src/config.ts` throws at module load if `BETTER_AUTH_SECRET` is unset in non-build context. No placeholder fallback. Build/test contexts are exempt. See `CLAUDE.md` Gotcha 93.
+
+### 82. `.env.local` must NOT be tracked by git (Critical security — 2026-07-12 fix)
+
+`git rm --cached .env.local` untracked the file. Pre-commit hook at `scripts/pre-commit-check.sh` blocks future accidental commits of `.env*.local` files. Install: `ln -s ../../scripts/pre-commit-check.sh .git/hooks/pre-commit`. See `CLAUDE.md` Gotcha 94.
+
+### 83. `class.name` → `class.title` sweep (Critical — 2026-07-12 fix)
+
+The `classes` table has `title`, NOT `name`. Any code referencing `session.class.name` renders `undefined`. All 9 occurrences across 8 files were fixed. If you see `class.name` in a new file, change it to `class.title`.
+
 ---
 
-## Phase status (as of 2026-07-10)
+## Phase status (as of 2026-07-12)
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -506,13 +530,13 @@ For no-op `run()` stubs, return `Promise.resolve(...)` **without** `async` — `
 | 5 — Booking | ✅ Complete | SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components (BookingButton, BookingConfirmation, BookingFlow, SeatAvailability, WaitlistButton), `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. |
 | 6 — Dashboard | ✅ Complete | Member dashboard (/dashboard, /profile, /membership, /history), 7 dashboard components, CSV export, memberships.resume stub (now unstubbed in Phase 7), plan join. |
 | 7 — Stripe | ✅ Complete | `@stillwater/payments` package (7 files, 43 tests): client singleton (Dahlia API), 7-event types, 5 subscription helpers, idempotent webhook handler with `pg_advisory_xact_lock` (ADR-004), invoice pagination, credit-pack checkout, D12 refund wrapper. Stripe webhook route at `/api/webhooks/stripe` (body as TEXT, sig verify, 400/500/200). All tRPC procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`. `payments.refund` retained as D12 stub. `CheckoutButton` component + `lib/stripe/utils.ts`. ADR-010 accepted. 5 STRIPE tests passing (STRIPE-001 through STRIPE-005). 43 payments tests + 14 new web tests (stripe utils + CheckoutButton). |
-| 8 — Jobs+Email | ✅ Complete | `@stillwater/email` (19 files, 71 tests: 3 shared components + 13 React Email v6 templates + dual-path `send.ts` + 13 send-helpers + `template-ids.ts`), `@stillwater/workers` (12 files, 33 tests: 11 Trigger.dev v4 tasks with per-task `maxDuration` + retry config). All workers use `sendEmailNative()` via send-helpers (zero React Email 1.8MB bundle bloat per ADR-010). Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` not set), `bookings.book` triggers `booking-confirmation` + `class-reminder-24h` + `class-reminder-1h` (fire-and-forget), `bookings.cancel` job ID fixed `waitlist.promote` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe webhook `invoice.payment_failed` triggers `payment-failed-notify` (post-commit pattern). |
+| 8 — Jobs+Email | ✅ Complete | `@stillwater/email` (19 files, 71 tests), `@stillwater/workers` (12 files, **41 tests** — was 33, +8 cron fan-out tests). **class-reminder-24h/1h now cron fan-out with dedup** (Gotcha 80). All workers use `sendEmailNative()` via send-helpers (ADR-010). `bookings.book` triggers `booking-confirmation` only (reminders are cron-triggered now). |
 | 9 — Admin | ✅ Complete | 11 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`). 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable, RevenueChart, MemberRoleEditor owner-only, SignOutButton). 12 admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails`, `assignRole`, `removeRole`, `listAuditLog`, `getDashboard`, `getRevenue`, `getClassRoster`, `getAttendanceStats`). `audit_log` table (migration `0003_audit_log_phase9.sql`). 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command). `cmdk` dependency. `lib/admin/audit-log.ts` helper. 5 E2E spec files. All admin mutations audit-logged. 2-layer auth defense-in-depth (revenue=manager+, settings=owner). |
 
-**Total: 643 tests** (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers). `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (643/643), `pnpm build` ✅ (9/9 packages, 16 static pages). All quality gates green as of 2026-07-11.
+**Total: 651 tests** (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 41 workers). `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (651/651), `pnpm build` ✅ (9/9 packages, 16 static pages — requires real Sanity credentials). All quality gates green as of 2026-07-12.
 
 | 12 — Landing | ✅ Complete | Production home page with 8 sections, 19 marketing components, 3 hooks, mobile nav drawer, scroll progress bar, newsletter form. All D25-D35 token conflicts resolved. |
-| — | ✅ ALL PHASES COMPLETE | Phases 0–12 all complete. 643 tests. All quality gates green. |
+| — | ✅ ALL PHASES COMPLETE + remediation | Phases 0–12 all complete. 2026-07-12 remediation fixed 5 Critical findings (Drizzle relations, SSE GET, cron dedup, auth secret, .env.local). 651 tests. All quality gates green. |
 
 ---
 

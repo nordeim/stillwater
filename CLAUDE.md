@@ -1,9 +1,9 @@
 ---
 IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
-version: 2.9.0
+version: 3.0.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia), Trigger.dev v4"
-last_updated: 2026-07-11
+last_updated: 2026-07-12
 ---
 
 # Stillwater
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–12 Status**: ✅ ALL 13 PHASES COMPLETE. Phase 0: scaffold + design tokens. Phase 1: 18 tables (15 domain + 3 Better Auth) + 8 enums + 5 critical indexes via Drizzle (migrations `0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~42 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (7 source files, 43 tests: `client.ts` singleton with Dahlia API, `types.ts` 7-event discriminated union, `subscriptions.ts` 5 lifecycle helpers, `webhooks.ts` idempotent handler with `pg_advisory_xact_lock` + 7 event handlers, `invoices.ts` cursor pagination, `credit-packs.ts` one-off checkout, `refunds.ts` D12 thin wrapper), Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT, signature verification, 400/500/200), `CheckoutButton` component, `lib/stripe/utils.ts`, all tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`), `payments.refund` retained as D12 stub, ADR-010 accepted (Resend Native Templates), 5 STRIPE acceptance tests passing. Phase 8: Background jobs + email — `@stillwater/email` package (19 source files, 71 tests: 3 shared components, 13 React Email v6 templates, dual-path send.ts with sendEmail for Server Components + sendEmailNative for workers per ADR-010, 13 send-helpers, template-ids.ts), `@stillwater/workers` package (12 source files, 33 tests: 11 Trigger.dev v4 tasks with per-task maxDuration + retry, all use sendEmailNative via send-helpers), integration wiring (getJobsClient in @stillwater/config with stub fallback, bookings.book triggers booking-confirmation + reminders fire-and-forget, bookings.cancel job ID fixed to waitlist-promotion, memberships.cancel/pause send emails, Stripe webhook invoice.payment_failed triggers payment-failed-notify post-commit). Phase 9: Admin surface (RBAC-gated) — 11 admin pages (`/admin` dashboard, `/admin/classes` + `[id]` + `new`, `/admin/schedule`, `/admin/instructors`, `/admin/members` + `[id]`, `/admin/revenue`, `/admin/settings`, `/admin/audit-log`), 9 admin components (AdminShell, KpiCard, ClassForm, SessionForm, ScheduleCalendar with @dnd-kit/core, RosterTable with check-in, RevenueChart via Recharts, MemberRoleEditor owner-only, SignOutButton), 12 admin tRPC procedures (`listClasses`, `deleteClass`, `listMembers`, `getMemberDetail`, `getRevenueDetails` with real MRR/churn/attendance, `assignRole` owner-only, `removeRole` owner-only, `listAuditLog`, `getDashboard`, `getRevenue`, `getClassRoster`, `getAttendanceStats`), `audit_log` table (migration `0003_audit_log_phase9.sql`) with 3 indexes, 7 new shadcn components (table, form, input, textarea, checkbox, calendar, command), `cmdk` dependency, `lib/admin/audit-log.ts` helper, 5 E2E spec files with skipIf guards. All admin mutations audit-logged. 2-layer auth defense-in-depth via nested layouts (revenue=manager+, settings=owner). Phase 10: Observability (Sentry + PostHog 18 events + Axiom + Checkly 3 checks). Phase 11: WCAG AAA audit + SEO (robots, sitemap, manifest, 4 OG images, JSON-LD, SkipLink, SrOnly, focus-utils). Phase 12: Landing page port (19 marketing components, 3 hooks, mobile nav drawer, scroll progress bar). **643 tests passing** (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers). All quality gates green: `pnpm check-types` ✅, `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (643/643), `pnpm build` ✅ (9/9 packages, 16 static pages).
+**Phase 0–12 Status**: ✅ ALL 13 PHASES COMPLETE + post-deploy remediation. Phase 0: scaffold + design tokens. Phase 1: 18 tables (15 domain + 3 Better Auth) + 8 enums + 5 critical indexes via Drizzle (migrations `0000`–`0003`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~42 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300, **GET not POST** — EventSource API is GET-only), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (7 source files, 43 tests), Stripe webhook route with idempotent `pg_advisory_xact_lock` handler, all tRPC procedures unstubbed, ADR-010 accepted (Resend Native Templates). Phase 8: Background jobs + email — `@stillwater/email` package (19 source files, 71 tests), `@stillwater/workers` package (12 source files, 33→41 tests: 11 Trigger.dev v4 tasks, **class-reminder-24h/1h now cron fan-out with dedup** — see Gotcha 90), integration wiring. Phase 9: Admin surface (RBAC-gated) — 11 admin pages, 9 admin components, 12 admin tRPC procedures, `audit_log` table (migration `0003`), 7 shadcn components, `cmdk` dependency, 5 E2E specs. Phase 10: Observability (Sentry + PostHog 18 events + Axiom + Checkly 3 checks, **`withSentryConfig` wrapper added** — see Gotcha 91). Phase 11: WCAG AAA audit + SEO (robots, sitemap, manifest, 4 OG images, JSON-LD, SkipLink, SrOnly, focus-utils). Phase 12: Landing page port (19 marketing components, 3 hooks, mobile nav drawer, scroll progress bar). **Post-deploy remediation (2026-07-12)**: Drizzle `relations()` defined (migration `0004` adds `reminder24hSentAt` + `reminder1hSentAt` dedup columns), `BETTER_AUTH_SECRET` fail-fast guard, `.env.local` untracked, `class.name→class.title` sweep complete, SSE POST→GET fix, booking reminder cron dedup, `activeSubscription` wired, `withSentryConfig` wrapper, 10 SKILL factual corrections. **651 tests passing** (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 41 workers). All quality gates green: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (651/651), `pnpm build` ✅ (9/9 packages, 16 static pages — requires real Sanity credentials).
 
 ---
 
@@ -1772,6 +1772,48 @@ See `apps/web/src/components/ui/calendar.tsx` for the full v10 implementation.
 
 **Fix:** Cast the resolver: `resolver: zodResolver(sessionSchema) as Resolver<SessionFormValues>`. Import `Resolver` type from `react-hook-form`. This is a known limitation of `@hookform/resolvers` v5 with coercing schemas — the cast is safe because the form values type (`z.infer`) represents what the form produces after validation.
 
+### Gotcha 90: Drizzle `relations()` must be defined for RQB `with: {}` queries — runtime crash if missing (Critical — 2026-07-12 fix)
+
+**Symptom:** `TRPCError: Cannot read properties of undefined (reading 'referencedTable')` on any route using `db.query.*.findFirst({ with: { ... } })`.
+
+**Root cause:** Drizzle ORM v0.45 requires `relations()` from `drizzle-orm` to be called for every FK relationship. Without these, the Relational Query Builder cannot resolve nested `with: {}` targets at runtime — it throws when accessing `.referencedTable` on an undefined relation. The `relations()` definitions live in `packages/db/src/schema/relations.ts` and are exported from `schema/index.ts`.
+
+**Fix:** If you add a new FK to any schema file, you MUST add a corresponding `one()` relation in `relations.ts` (and a `many()` on the inverse side). The `roles` alias on `members` (`many(roleAssignments)`) is the ONLY duplicate-target relation — do NOT add a second `many()` to the same target without `relationName` (causes "conflict in relations definitions" at runtime).
+
+**⚠️ Do NOT remove the `as any` / `as ExpectedShape` casts in workers and routers.** Defining `relations()` fixes RUNTIME resolution but does NOT fix TypeScript type inference — Drizzle 0.45 still infers nested `with` types as `never`. The casts remain until Drizzle 1.0+ `defineRelations()` ships. See SKILL §9.9 Gotcha 27.
+
+### Gotcha 91: SSE endpoint must export `GET`, NOT `POST` (Critical — 2026-07-12 fix)
+
+**Symptom:** `useSessionAvailability` hook's `EventSource` connection fails silently; seat availability never updates; Checkly `sse-endpoint.check.ts` fails.
+
+**Root cause:** The browser `EventSource` API ONLY sends GET requests. The SSE route at `apps/web/src/app/api/schedule/stream/route.ts` originally exported `POST`, so EventSource connections received a 405 Method Not Allowed.
+
+**Fix:** The route exports `GET` (not `POST`). All internals (`request.url`, `request.signal`, `ReadableStream`) work identically in GET. The `useSessionAvailability` hook uses `new EventSource(url)` which sends GET — no POST-specific headers.
+
+### Gotcha 92: Cron-triggered workers need dedup columns to prevent duplicate sends (Critical — 2026-07-12 fix)
+
+**Symptom:** Members receive 3–8 copies of the same reminder email per session.
+
+**Root cause:** The cron fan-out window (22h–24h for 24h reminders, 50–65min for 1h reminders) is wider than the cron cadence (15min / 5min), so each session is captured multiple times. Without a dedup mechanism, every capture sends emails to all enrollees.
+
+**Fix:** The `enrollments` table has `reminder24hSentAt` + `reminder1hSentAt` columns (migration `0004`). Workers filter `isNull(reminderXhSentAt)` in the query and set it atomically after a successful send via `UPDATE ... WHERE reminder_xh_sent_at IS NULL`. Failed sends are NOT marked, so the next cron run retries. If you add a new reminder type, add a corresponding `reminderXxSentAt` column + filter + atomic set.
+
+### Gotcha 93: `BETTER_AUTH_SECRET` must NOT have a placeholder fallback (Critical security — 2026-07-12 fix)
+
+**Symptom:** If `BETTER_AUTH_SECRET` is unset in production, the app silently uses a hardcoded, publicly-known, version-controlled secret — allowing session cookie forgery.
+
+**Root cause:** `packages/auth/src/config.ts` previously had `?? 'placeholder-secret-at-least-32-characters-long'` fallback that bypassed `env.ts` `superRefine` validation (because `config.ts` reads `process.env` directly per SKILL §3.4).
+
+**Fix:** The fallback is removed. The config throws at module load if `BETTER_AUTH_SECRET` is unset in non-build context (mirrors `db/src/index.ts` guard pattern). Build/test contexts (`NEXT_PHASE=phase-production-build`, `NODE_ENV=test`) are exempt. Generate a real secret with `openssl rand -base64 32`.
+
+### Gotcha 94: `.env.local` must NOT be tracked by git (Critical security — 2026-07-12 fix)
+
+**Symptom:** Future devs who add real secrets to `.env.local` accidentally commit them to git history.
+
+**Root cause:** `.env.local` was committed before `.gitignore` was added. Git ignores `.gitignore` for already-tracked files.
+
+**Fix:** `git rm --cached .env.local` untracked the file (it stays on disk for local dev). A pre-commit hook at `scripts/pre-commit-check.sh` blocks future accidental commits of `.env*.local` files. Install: `ln -s ../../scripts/pre-commit-check.sh .git/hooks/pre-commit`.
+
 ---
 
 ## Troubleshooting Quick Reference
@@ -1877,6 +1919,14 @@ See `apps/web/src/components/ui/calendar.tsx` for the full v10 implementation.
 | `pnpm build` warning: `styled-components (^6.1.13) is not compatible with sanity (^6.1.15)` | False alarm — Sanity's build tooling compares declared range text, not the actual resolved version. The installed version (6.4.3) satisfies both `^6.1.13` and `^6.1.15` | Safe to ignore. To silence: bump `styled-components` in `apps/studio/package.json` to `^6.1.15`. Not required — runtime is healthy. |
 | `pnpm build` warning: `no output files found for task @stillwater/X#build` (8 packages) | `turbo.json` `build.outputs` only listed `.next/**` — library packages produce `dist/` (`.d.ts` via `emitDeclarationOnly`) which wasn't cached | ✅ FIXED — added `"dist/**"` + `".tsbuildinfo"` to `turbo.json` `build.outputs`. Subsequent builds now show `FULL TURBO` (cached). |
 | `turbo` update available `v2.10.3 ≫ v2.10.4` | Minor patch release available | ✅ UPDATED — `pnpm update turbo` bumped to 2.10.4. `^2.10.3` in `package.json` allows it. |
+| `TRPCError: Cannot read properties of undefined (reading 'referencedTable')` (2026-07-12 fix) | Drizzle `relations()` not defined — RQB can't resolve nested `with: {}` at runtime | ✅ FIXED — `packages/db/src/schema/relations.ts` now defines all FK relations. See Gotcha 90. |
+| `SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string` (2026-07-12 fix) | `DATABASE_URL` unset → placeholder URL has no password → pg Pool passes `undefined` | ✅ FIXED — `packages/db/src/index.ts` throws a clear error when `DATABASE_URL` is missing at runtime. Create `apps/web/.env.local` with real values. |
+| SSE seat availability never updates; `EventSource` fails silently (2026-07-12 fix) | SSE route exported `POST` but `EventSource` API only sends GET | ✅ FIXED — route now exports `GET`. See Gotcha 91. |
+| Members receive duplicate reminder emails (3–8 copies per session) (2026-07-12 fix) | Cron fan-out window wider than cadence; no dedup mechanism | ✅ FIXED — `reminder24hSentAt` + `reminder1hSentAt` columns on `enrollments` (migration `0004`). See Gotcha 92. |
+| `BETTER_AUTH_SECRET` unset in production → session forgery (2026-07-12 fix) | `config.ts` had `?? 'placeholder-secret-...'` fallback bypassing env validation | ✅ FIXED — fallback removed; throws at module load if unset. See Gotcha 93. |
+| `.env.local` accidentally committed with real secrets (2026-07-12 fix) | `.env.local` was tracked by git before `.gitignore` was added | ✅ FIXED — `git rm --cached .env.local` + pre-commit hook at `scripts/pre-commit-check.sh`. See Gotcha 94. |
+| `class.name` renders `undefined` on schedule/dashboard/history pages (2026-07-12 fix) | `classes` table has `title`, not `name` — 5 files still referenced `class.name` | ✅ FIXED — swept all 9 occurrences across 8 files + fixed test mock. |
+| `pnpm build` fails on `/about` or `/blog` with "Sanity Unauthorized" | `SANITY_API_TOKEN` is placeholder in this env | Expected — real deployments with valid Sanity credentials build successfully. Use `NEXT_PUBLIC_SANITY_PROJECT_ID` + `SANITY_API_TOKEN` from your Sanity project. |
 
 ---
 

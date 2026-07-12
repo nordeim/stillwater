@@ -65,7 +65,7 @@ Now — implementing the full document:
 
 ---
 
-> **Document Status:** `ACTIVE — v1.18.0`
+> **Document Status:** `ACTIVE — v1.19.0`
 > **Classification:** Internal Engineering Reference
 > **Audience:** Engineers, Architects, Technical Leads, DevOps
 > **Owner:** Engineering Lead
@@ -97,6 +97,7 @@ Now — implementing the full document:
 | 1.16.0  | 2026-07-10 | Super Z / Phase 12 | Active | Phase 12 complete — Landing page port (mockup → production Next.js). 19 marketing components (Hero, HeroNextClass, ClassMarquee, Philosophy, ScheduleSection, ScheduleGrid, InstructorsSection, InstructorRow, MembershipSection, StudioSpaceSection, StudioSpaceSVG, CtaBand, Footer, MarketingNav, MobileNavDrawer, ScrollProgressBar, SectionHeader, MarqueeItem, NewsletterForm). 3 hooks (useScrollProgress, useScrollReveal, useNavScrollHide). All D25-D35 token conflicts resolved. Self-hosted fonts via `@font-face` + CSS variables. |
 | 1.17.0  | 2026-07-10 | Super Z / Post-Deploy | Active | Post-deploy remediation — resolved 101 errors from pnpm_log.txt (1 TS2339 + 100 ESLint). Fixed `paymentEvents.amountCents` (column doesn't exist — amount in `payload` jsonb), workers ESLint `projectService` for test files, scoped `no-explicit-any` override for Drizzle 0.45 `as any` casts (Gotcha 64), `require-await` on no-op stubs, `restrict-template-expressions` on number. 4 new gotchas (81-84). |
 | 1.18.0  | 2026-07-11 | Super Z / Quality Gate Remediation | Active | All quality gates green: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 warnings), `pnpm test` ✅ (643/643), `pnpm build` ✅ (9/9 packages, 16 static pages). Fixed 48 TS errors (react-day-picker v10 API rewrite, PostHog `capture_pageview` singular, `server-only` in tests, `zodResolver` generic cast, `override` modifiers, `RefObject<T \| null>`, focus-utils null guard, sanity client import fix, RHF resolver casts, `exactOptionalPropertyTypes` spread-conditionals, `notFound` import from `next/navigation`, unknown indexing casts). Fixed 52 ESLint errors (restrict-template-expressions, no-deprecated z.uuid()/z.url(), no-unsafe-* with SanityClient.fetch<T>(), no-confusing-void-expression, require-await, no-empty-function, import/order, no-empty-object-type, react/no-unknown-property, react-compiler/set-state-in-effect). Fixed 13 test failures (admin.test.ts caller.admin.X→caller.X 5 tests, KpiCard.test.tsx jest-dom setup 7 tests, logger.test.ts server-only mock 1 test). Installed `@testing-library/jest-dom` + `dotenv` at root. Added `test/empty-server-only.ts` stub. Added `apps/web/src/vitest-setup.d.ts` type augmentation. 5 new gotchas (85-89). 643 tests (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers). |
+| 1.19.0  | 2026-07-12 | Super Z / Post-Review Remediation | Active | Fixed 5 Critical findings from comprehensive Six-Axis + OWASP code review audit. **C1**: Cron duplicate email sends — added `reminder24hSentAt` + `reminder1hSentAt` columns to `enrollments` (migration `0004_huge_hawkeye.sql`); workers filter `isNull(reminderXhSentAt)` and set atomically after send. **C2**: Ambiguous duplicate `many()` in `relations.ts` — removed unused `roleAssignments: many()` (kept only `roles` alias). **C3**: Incomplete `class.name→class.title` sweep — fixed 9 remaining occurrences across 8 files + fixed test mock. **C4**: `BETTER_AUTH_SECRET` placeholder fallback — removed fallback; throws at module load if unset in non-build context. **C5**: `.env.local` tracked by git — `git rm --cached .env.local` + pre-commit hook at `scripts/pre-commit-check.sh`. **C6**: 4 critical test gaps — added 8 new cron fan-out tests (4 per worker). 5 new gotchas (90-94). 651 tests (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 41 workers). `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 warnings), `pnpm test` ✅ (651/651). |
 
 ### How to Maintain This Document
 
@@ -846,6 +847,8 @@ erDiagram
     timestamp checkedInAt
     text cancellationReason
     uuid packageCreditId FK
+    timestamp reminder24hSentAt "C1 dedup — null until 24h reminder sent"
+    timestamp reminder1hSentAt "C1 dedup — null until 1h reminder sent"
   }
 
   WAITLIST_ENTRY {

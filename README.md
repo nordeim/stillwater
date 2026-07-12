@@ -579,7 +579,10 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 10    | Observability + performance hardening              | ✅ Complete   | 3         |
 | 11    | WCAG AAA audit + SEO + OG images                   | ✅ Complete   | 3         |
 | 12    | Landing page port (mockup → production Next.js)    | ✅ Complete   | 4         |
+| —     | **Post-deploy remediation (2026-07-12)**           | ✅ Complete   | —         |
 | **Total** |                                                | **100% complete** | **~54 days** |
+
+> **2026-07-12 Remediation**: Fixed 5 Critical findings from comprehensive code review audit — Drizzle `relations()` definitions (RQB runtime crash), SSE POST→GET fix (EventSource API), cron dedup columns (duplicate emails), `BETTER_AUTH_SECRET` fail-fast guard (session forgery), `.env.local` untracked (secret leakage). 8 new cron fan-out tests added. **651 tests passing** (was 643). See [`CLAUDE.md`](./CLAUDE.md) Gotchas 90–94.
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -635,6 +638,12 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | ~70 `no-explicit-any` + `no-unsafe-*` errors in workers | `db.query.X as any` casts (Gotcha 64). Scoped ESLint override in `services/workers/eslint.config.mjs`. |
 | `require-await` on worker `async run()` | Remove `async` from no-op stubs: `run: () =>`. |
 | `restrict-template-expressions` on number in template literal | Wrap with `String()`: `${String(diffMin)}`. |
+| `TRPCError: Cannot read properties of undefined (reading 'referencedTable')` (2026-07-12) | Drizzle `relations()` not defined. ✅ FIXED — `packages/db/src/schema/relations.ts` now defines all FK relations. See CLAUDE.md Gotcha 90. |
+| `SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string` (2026-07-12) | `DATABASE_URL` unset → placeholder URL has no password. ✅ FIXED — `packages/db/src/index.ts` throws clear error. Create `apps/web/.env.local` with real values. |
+| SSE seat availability never updates (2026-07-12) | SSE route exported `POST` but `EventSource` API only sends GET. ✅ FIXED — route now exports `GET`. See CLAUDE.md Gotcha 91. |
+| Members receive duplicate reminder emails (2026-07-12) | Cron fan-out window wider than cadence; no dedup. ✅ FIXED — `reminder24hSentAt` + `reminder1hSentAt` columns (migration `0004`). See CLAUDE.md Gotcha 92. |
+| `class.name` renders `undefined` on schedule/dashboard (2026-07-12) | `classes` table has `title`, not `name`. ✅ FIXED — swept all 9 occurrences across 8 files + fixed test mock. |
+| `pnpm build` fails on `/about` or `/blog` with "Sanity Unauthorized" | `SANITY_API_TOKEN` is placeholder. Set real `NEXT_PUBLIC_SANITY_PROJECT_ID` + `SANITY_API_TOKEN` from your Sanity project. |
 
 ---
 
