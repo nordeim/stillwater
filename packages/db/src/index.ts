@@ -26,9 +26,34 @@ import * as schema from './schema';
 // Use process.env directly with fallback — env module throws in build context
 // In production, DATABASE_URL is always set (Vercel/Neon inject it).
 // In test/build, the placeholder is harmless (no queries are executed).
-const connectionString =
-  process.env['DATABASE_URL'] ??
-  'postgresql://placeholder@localhost:5432/placeholder';
+const rawConnectionString = process.env['DATABASE_URL'];
+
+// Detect build/test context where DATABASE_URL may legitimately be unset.
+// In these contexts, return a placeholder so module import succeeds without
+// throwing — actual queries are never executed during build/test.
+const isBuildContext =
+  process.env['NEXT_PHASE'] === 'phase-production-build' ||
+  process.env['NODE_ENV'] === 'test';
+
+const PLACEHOLDER_URL =
+  'postgresql://placeholder:placeholder@localhost:5432/placeholder';
+
+const connectionString = rawConnectionString ?? PLACEHOLDER_URL;
+
+// Runtime guard: if DATABASE_URL is unset OR is the placeholder, AND we're
+// NOT in a build/test context, throw a clear actionable error. Without this,
+// the cryptic "SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a
+// string" error surfaces from the pg Pool when it tries to authenticate
+// with an undefined password (parsed from the placeholder URL).
+if (
+  !isBuildContext &&
+  (!rawConnectionString || rawConnectionString === PLACEHOLDER_URL)
+) {
+  throw new Error(
+    'DATABASE_URL is not set. Copy .env.example to apps/web/.env.local ' +
+      'and fill in real values. See docs/db_howto.md for local Docker Postgres setup.',
+  );
+}
 
 // Detect whether the target is Neon (production) or local Postgres (dev)
 const isNeonUrl = connectionString.includes('neon.tech');
