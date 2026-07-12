@@ -65,7 +65,7 @@ The architecture is documented in three layered sources: [`PAD.md`](./PAD.md) is
 | Background Jobs  | Trigger.dev                 | v4 platform | 11 durable tasks; SDK import is `@trigger.dev/sdk` (root import — v4 SDK; NEVER `/v3` deprecated, NEVER `/v4` which doesn't exist) |
 | Monorepo         | Turborepo                   | 2.10.0      | Task graph + remote caching                                     |
 | Package Manager  | pnpm                        | 11.9.0      | Workspace protocol; `customConditions` for source linking; v9 is EOL |
-| CMS              | Sanity                      | v3          | Marketing content only (ADR-005); hosted at stillwater.sanity.studio (Q4) |
+| CMS              | Sanity                      | v6 (Studio) + v7 (client) | Marketing content only (ADR-005); hosted at stillwater.sanity.studio (Q4) |
 | Payments         | Stripe                      | 22.3.0      | "Dahlia" API (2026-06-24); subscriptions + credit packs + idempotent webhooks |
 | Email Templates  | React Email                | 6.6.6       | v6 unified package (April 2026); 13 templates, single-column 600px, CAN-SPAM |
 | Email Delivery   | Resend                      | 6.17.1      | 2,400 emails/day free tier; Native Templates API available     |
@@ -569,7 +569,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | 0     | Monorepo scaffold + tooling + Docker + fixes       | ✅ Complete   | 2         |
 | 1     | DB schema, Drizzle migrations, seed data           | ✅ Complete   | 3         |
 | 2     | Better Auth + RBAC + `proxy.ts` (2-layer auth)     | ✅ Complete   | 3         |
-| 3     | tRPC v11 routers (10 routers, ~30 procedures)      | ✅ Complete   | 5         |
+| 3     | tRPC v11 routers (10 routers, ~42 procedures)      | ✅ Complete   | 5         |
 | 4     | Marketing surface with Sanity CMS                  | ✅ Complete   | 4         |
 | 5     | Booking flow + SSE real-time seats                 | ✅ Complete   | 5         |
 | 6     | Member dashboard + membership management           | ✅ Complete   | 4         |
@@ -800,7 +800,7 @@ Every PR must complete the [Architecture Validation Checklist](./.github/PULL_RE
 
 | Change | Details |
 |---|---|
-| 10 tRPC routers implemented (~30 procedures) | `packages/api/src/routers/` — schedule, classes, sessions, bookings, waitlist, members, instructors, memberships, payments, admin |
+| 10 tRPC routers implemented (~42 procedures) | `packages/api/src/routers/` — schedule, classes, sessions, bookings, waitlist, members, instructors, memberships, payments, admin |
 | 4 procedure access tiers | `publicProcedure`, `protectedProcedure`, `staffProcedure`, `ownerProcedure` in `packages/api/src/trpc.ts` |
 | Booking router with advisory lock (ADR-004) | `pg_advisory_xact_lock` inside transaction; capacity check + waitlist auto-join; discriminated union return |
 | Rate limiting on bookings.book | Upstash sliding window (10/min per user) via `packages/api/src/middleware/rateLimit.ts` |

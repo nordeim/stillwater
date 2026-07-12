@@ -289,7 +289,7 @@ C4Container
   }
 
   Container_Boundary(content, "Content Layer") {
-    Container(sanity, "Sanity Studio", "Sanity v3", "CMS for marketing content: blog, instructors, pricing copy, FAQs")
+    Container(sanity, "Sanity Studio", "Sanity v6 (Studio) + v7 (client)", "CMS for marketing content: blog, instructors, pricing copy, FAQs")
   }
 
   Rel(user, nextjs, "Visits", "HTTPS")
@@ -371,7 +371,7 @@ sequenceDiagram
 | **Cache / Rate Limit** | Upstash Redis | latest | Serverless Redis, per-request billing, edge-compatible | Redis Cloud (needs VPC), Memcached (no sorted sets) |
 | **Auth** | Better Auth | v1.6.23 | Type-safe, framework-agnostic, Drizzle adapter, magic link + OAuth, server-component native; stable v1.x line (Auth.js v5 still beta at 5.0.0-beta.31) | Auth.js v5 (still beta, maintenance handover to Better Auth team Sept 2025), Clerk (vendor lock-in, cost), NextAuth v4 (legacy) |
 | **Background Jobs** | Trigger.dev | **v4** | Durable execution, retries, scheduling, excellent DX. **v3 is deprecated — new v3 deploys stop working April 1, 2026; v4 reached GA August 2025.** | Inngest (similar but fewer features), BullMQ (self-hosted complexity) |
-| **CMS** | Sanity | v3 | GROQ queries, real-time collaborative editing, webhook-driven ISR | Contentful (expensive), Payload CMS (self-hosted complexity) |
+| **CMS** | Sanity | v6 (Studio) + v7 (client) | GROQ queries, real-time collaborative editing, webhook-driven ISR | Contentful (expensive), Payload CMS (self-hosted complexity) |
 | **Payments** | Stripe | `^22.3.0` | Industry standard, Billing API, webhooks, tax support. ⚠️ **"Dahlia" API (2026-06-24)** pinned by SDK v22; `current_period_end` moved to `items.data[0].current_period_end` (introduced in Basil 2025-03-31, carried forward). SDK exposes **snake_case** to match API wire format (NOT camelCase — use `current_period_end`, not `currentPeriodEnd`). | Paddle (US restrictions), Braintree (complex) |
 | **Email Templates** | React Email | `^6.6.6` | JSX email templates, unified package (v6.0.0 paradigm shift April 16, 2026 — `@react-email/components` is deprecated; all imports from `react-email` root. `@react-email/render` remains active but unified root import is recommended). ⚠️ v6 bundle is 1.8MB (514KB gzipped) — pulls `prismjs`, `marked`, `tailwindcss` compiler at runtime. See `react_email_suggestion.md` Alternative A (Resend Native Templates) to protect Trigger.dev CPU budgets. | MJML (XML, not TypeScript), Handlebars (no type safety) |
 | **Email Delivery** | Resend | `^6.17.1` | Built for developers, React Email native integration, generous free tier (2,400 emails/day). Supports Resend Native Templates (template ID + variables API) as zero-runtime-rendering alternative to local JSX rendering — recommended for Trigger.dev workers to avoid 1.8MB React Email v6 bundle bloat. | SendGrid (complex API), Postmark (no React Email native) |
@@ -2919,7 +2919,7 @@ Unknown error                  "Something unexpected happened. We've been
 
 **Context:** Studio owners need to update marketing content (copy, blog, bios, FAQs) without engineering involvement. Studio operational data (schedules, bookings) must remain in the application database.
 
-**Decision:** Sanity v3 for marketing content; PostgreSQL for all operational data.
+**Decision:** Sanity v6 (Studio) + v7 (client) for marketing content; PostgreSQL for all operational data.
 
 **Rationale:**
 - Clear boundary prevents content editors from accidentally modifying operational data.

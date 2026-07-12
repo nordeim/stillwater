@@ -314,15 +314,15 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 | 6     | Member dashboard + membership mgmt                     | 3, 7      | 4         | ~12   | ✅ COMPLETE    |
 | 7     | Stripe integration (subscriptions + credit packs)      | 3         | 4         | ~12   | ✅ COMPLETE    |
 | 8     | Background jobs (11 Trigger.dev tasks)                 | 3, 7      | 3         | ~15   | ✅ COMPLETE    |
-| 9     | Admin surface (RBAC-gated)                             | 3         | 5         | ~18   | ⬜ PENDING     |
-| 10    | Observability + performance hardening                  | all prev  | 3         | ~12   | ⬜ PENDING     |
-| 11    | WCAG AAA audit + SEO + OG images                       | 4, 5, 6, 9| 3         | ~10   | ⬜ PENDING     |
-| 12    | Landing page port (mockup → Next.js production)        | 4, 11     | 4         | ~25   | ⬜ PENDING     |
+| 9     | Admin surface (RBAC-gated)                             | 3         | 5         | ~18   | ✅ COMPLETE    |
+| 10    | Observability + performance hardening                  | all prev  | 3         | ~12   | ✅ COMPLETE    |
+| 11    | WCAG AAA audit + SEO + OG images                       | 4, 5, 6, 9| 3         | ~10   | ✅ COMPLETE    |
+| 12    | Landing page port (mockup → Next.js production)        | 4, 11     | 4         | ~25   | ✅ COMPLETE    |
 | **Total** |                                                    |           | **50**    | **~260** |               |
 
 > **Note on parallelism:** Phases 5, 7, and 9 can be parallelised once Phase 3 is complete. Phases 6 and 8 depend on Phase 7. Phase 12 depends on Phase 11 (for SEO/OG) and Phase 4 (for Sanity content). With 3 engineers, critical path is ~28 calendar days.
 >
-> **Note on status:** As of 2026-07-09, Phases 0–8 are COMPLETE (see [Current Status](#current-status-as-of-2026-07-09)). Phases 9–12 remain PENDING per this plan.
+> **Note on status (updated 2026-07-12):** All 13 phases (0–12) are COMPLETE. See [Current Status](#current-status-as-of-2026-07-09). The plan is now in maintenance — runtime fixes (Drizzle relations, SSE GET/POST, booking reminder scheduling, DB URL guard, auth activeSubscription wiring, Sentry wrapper) were applied in the 2026-07-12 remediation session.
 
 ### Phase ordering rationale
 - Phase 0 first because every other phase imports from `@stillwater/*` packages
