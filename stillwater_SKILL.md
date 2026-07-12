@@ -166,7 +166,7 @@ The page-level rule: **at most one filled (Tier 3) CTA per visible section.** A 
 | Observability | Sentry + PostHog + Axiom + Checkly | latest | Errors, 18 product analytics events, structured logs, uptime synthetics |
 | Deployment | Vercel + Neon | latest | Preview deploys per PR; production on `main` merge |
 | Testing | Vitest + Playwright | latest | TDD mandatory; 90% coverage on `packages/api/routers/*` |
-| Validation | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs; Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https:$/ })` (v4 native) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()` |
+| Validation | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs; Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https$/ })` (v4 native — note: NO colon in the regex, it matches the scheme name only) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()` |
 
 ### 2.2 Runtime Requirements
 
@@ -1973,7 +1973,7 @@ const STATUS_CLASSES = {
 
 #### Bug: `forwardRef` (Medium)
 **Symptom:** Unnecessary boilerplate.
-**Root cause:** React 19 allows `ref` as regular prop.
+**Root cause:** React 19 allows `ref` as regular prop. `forwardRef` is soft-deprecated (docs banner on react.dev/reference/react/forwardRef) but still works without runtime warnings — formal runtime deprecation is reserved for a future release. New code should use ref-as-prop; existing `forwardRef` components do not need immediate migration.
 **Fix:** Drop `forwardRef`:
 ```typescript
 // ❌ WRONG (React 18 pattern)
@@ -2442,9 +2442,9 @@ Error messages, stack traces, and log output from external sources (Stripe, Trig
 | 3 | Tests + coverage | `pnpm test:coverage` | 0 failures + thresholds met (api 90 / payments 95 / db 80 / web 70 / workers 85) |
 | 4 | Build | `pnpm build` | Exit 0 |
 | 5 | E2E | `pnpm test:e2e` | 0 failures across all ~20 E2E specs |
-| 6 | Accessibility | `pnpm lighthouse ci` | Lighthouse A11y = 100 |
-| 7 | Bundle size | `pnpm bundle-size` | marketing < 80kb / booking < 200kb / admin < 400kb gzipped |
-| 8 | Security audit | `pnpm audit --audit-level=high` | 0 high/critical vulnerabilities |
+| 6 | Accessibility | `pnpm lighthouse ci` | Lighthouse A11y = 100 — ⚠️ **ASPIRATIONAL**: no `lighthouse` script in root `package.json` yet (Phase 13+); run `npx @lhci/cli autorun` manually for now |
+| 7 | Bundle size | `pnpm bundle-size` | marketing < 80kb / booking < 200kb / admin < 400kb gzipped — ⚠️ **ASPIRATIONAL**: no `bundle-size` script in root `package.json` yet (Phase 13+); run `ANALYZE=true pnpm build` and inspect `.next/analyze` manually for now |
+| 8 | Security audit | `pnpm audit --audit-level=high` | 0 high/critical vulnerabilities — ⚠️ **ASPIRATIONAL**: no `audit` script in root `package.json` yet (Phase 13+); run `pnpm audit --audit-level=high` manually for now |
 
 > 🔴 **THE IRON LAW:** No completion claims without fresh verification evidence. Passing one gate is NOT evidence for any other gate. Run the command, read the raw output, then claim.
 >
@@ -3433,7 +3433,7 @@ After adding placeholder `src/index.ts` files (which fixed TS18003), the cascade
 
 **Context:** `pnpm lint` crashed with `Error: ENOENT: no such file or directory, open '.../apps/web/src/style.css'` — even though the actual CSS file is `src/app/globals.css`.
 
-**Root cause:** `eslint-plugin-tailwindcss@4.0.6` has a bug where it defaults to `src/style.css` regardless of the `cssFiles` setting in ESLint config. The plugin's Tailwind v4 integration (`TailwindUtils.loadConfigV4`) hardcodes the path.
+**Root cause:** `eslint-plugin-tailwindcss@4.0.6` has a bug where it defaults to `src/style.css` regardless of the `cssConfigPath` setting in ESLint config. The plugin's Tailwind v4 integration (`TailwindUtils.loadConfigV4`) hardcodes the path. (Note: the setting name is `cssConfigPath`, NOT `cssFiles` — the latter is a different plugin's setting name.)
 
 **What to do differently:**
 - Disable the affected rules in `tooling/eslint/index.js`:
@@ -4065,7 +4065,7 @@ const COLORS = { clay400: '#C4856A' };
 - `cmdk` is the engine behind the shadcn `Command` component (combobox/searchable select). It's listed in shadcn's documentation but not auto-installed.
 - Run `pnpm --filter @stillwater/web add cmdk` to add it.
 
-**Fix references:** `apps/web/src/components/ui/command.tsx`, `apps/web/package.json` (`"cmdk": "^1.0.4"`). See `CLAUDE.md` Gotcha 68, `AGENTS.md` Gotcha 61.
+**Fix references:** `apps/web/src/components/ui/command.tsx`, `apps/web/package.json` (`"cmdk": "^1.1.1"` — npm latest as of 2026-07-12; was `^1.0.4` which is outdated). See `CLAUDE.md` Gotcha 68, `AGENTS.md` Gotcha 61.
 
 ### Lesson 77: `bookings.checkIn` takes `{ sessionId, memberId }`, NOT `{ enrollmentId }` (Phase 9)
 
@@ -4762,26 +4762,33 @@ Source: `security-and-hardening/SKILL.md` §5 Security Misconfiguration + `vulne
 Configure in `next.config.ts` via the `headers()` function:
 
 ```typescript
-// apps/web/next.config.ts
+// apps/web/next.config.ts — ACTUAL production CSP (synced 2026-07-12)
+// This is the canonical CSP. Do NOT weaken it by adding 'unsafe-eval'
+// or broadening img-src to https: without explicit justification.
 const securityHeaders = [
   {
     key: 'Content-Security-Policy',
-    // Tighten scriptSrc to remove 'unsafe-inline' once React 19 + React Compiler stabilizes
-    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.stripe.com https://*.posthog.com https://*.sentry.io wss:; frame-src https://js.stripe.com https://hooks.stripe.com; base-uri 'self'; form-action 'self';",
+    value: [
+      "default-src 'self'",
+      "script-src 'self' https://js.stripe.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://imagedelivery.net https://cdn.sanity.io",
+      "font-src 'self'",
+      "connect-src 'self' https://api.stripe.com wss: https://*.sentry.io https://*.posthog.com",
+      "frame-src https://js.stripe.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join('; "),
   },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' }, // Clickjacking — DENY because Stillwater has no iframe embeds
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' }, // FLoC opt-out + disable unused APIs
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
 ];
-
-module.exports = {
-  async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }];
-  },
-};
 ```
 
 **Header purposes (source: `vulnerability-scanner/checklists.md` §Security Headers):**
@@ -4795,7 +4802,7 @@ module.exports = {
 | Referrer-Policy | Control referrer leakage (`strict-origin-when-cross-origin`) |
 | Permissions-Policy | Disable unused browser APIs (camera, mic, geo, FLoC) |
 
-**CSP note:** `'unsafe-eval'` is currently required for Sentry + PostHog in dev. Remove in production once both libraries ship CSP-compliant builds. `'unsafe-inline'` for scripts is required by Next.js 16 inline runtime — React Compiler + Next.js 16 strict CSP is a Phase 10+ goal.
+**CSP note (corrected 2026-07-12):** The production CSP ships **NEITHER** `'unsafe-eval'` **NOR** `'unsafe-inline'` in `script-src` — Next.js 16 + React Compiler eliminate the need for both. PostHog's "hedgehog mode" (toolbar) auto-disables when `'unsafe-eval'` is absent, which is acceptable. Sentry does NOT require `'unsafe-eval'` — it only needs `script-src` allow-listing of the SDK URL + `connect-src` for the ingestion endpoint + `worker-src` for Session Replay. The previous version of this section incorrectly claimed both directives were required; that was stale guidance from before React Compiler was enabled.
 
 #### 14.6.4 XSS Prevention Rules
 
@@ -6771,7 +6778,9 @@ export async function POST(request: Request): Promise<Response> {
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch {
-    // STRIPE-004: Invalid signature — 400 (Stripe won't retry)
+    // STRIPE-004: Invalid signature — 400 (Stripe WILL retry for 3 days,
+    // but retrying is harmless since the signature will still be invalid.
+    // Returning 400 here is for truthfulness — the event is NOT processed.)
     return Response.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
@@ -6789,7 +6798,7 @@ export async function POST(request: Request): Promise<Response> {
 
 **Key points:**
 - `await request.text()` — NOT `request.json()` (Lesson 68: signature verification needs raw body)
-- 400 on bad signature (Stripe won't retry) vs 500 on handler error (Stripe retries)
+- 400 on bad signature (Stripe WILL retry for 3 days, but retrying is harmless — the signature will still be invalid) vs 500 on handler error (Stripe retries — handler may succeed on retry)
 - `runtime: 'nodejs'` — needs `pg` for advisory lock, NOT Edge runtime
 - `dynamic: 'force-dynamic'` — webhook must always be fresh, never cached
 - Same pattern as Sanity webhook (`apps/web/src/app/api/sanity/webhook/route.ts`)
@@ -7935,9 +7944,10 @@ try {
 #### Bug: Returning 200 on handler error instead of 500 (Medium)
 **Symptom:** Stripe doesn't retry failed webhook processing; data inconsistency.
 **Root cause:** Returning 200 tells Stripe the webhook was processed successfully. If the handler threw an error (DB connection failure, etc.), Stripe should retry.
-**Fix:** Return 500 on handler errors so Stripe retries; return 200 only on success or idempotent already-processed:
+**Fix:** Return 500 on handler errors so Stripe retries; return 200 only on success or idempotent already-processed.
+**⚠️ Critical correction (2026-07-12):** Stripe retries on ALL non-2xx responses (3xx, 4xx, AND 5xx) for up to 3 days. The previous version of this section incorrectly stated "Stripe won't retry on 4xx" — that was factually wrong (verified against docs.stripe.com/webhooks). Returning 400 on a bad signature is still correct (the event is genuinely unprocessable), but returning 400 on a handler error would trigger a 3-day retry loop. Always return 200 only after the event is recorded or successfully processed; return 500 on transient handler errors so Stripe retries (the handler may succeed on retry).
 ```typescript
-// ❌ WRONG (Stripe won't retry):
+// ❌ WRONG (hides the error — Stripe won't retry because 200 = success):
 try {
   await handleStripeWebhook(event, db);
   return Response.json({ received: true });
