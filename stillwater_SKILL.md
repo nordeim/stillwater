@@ -7,10 +7,10 @@ description: >
   code quality + security/hardening + accessibility + CI/CD) into a single
   source of truth for any AI agent working on the Stillwater codebase.
   Read this BEFORE touching any file in the monorepo.
-version: 2.9.0
+version: 3.0.0
 project_type: nextjs-monorepo
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia), Trigger.dev v4, React Email 6.6, Resend 6.17"
-last_updated: 2026-07-11
+last_updated: 2026-07-12
 ---
 
 # Stillwater — Project Skill File
@@ -4404,6 +4404,93 @@ createMutation.mutate({ ...data, startsAt, endsAt });
 
 **Fix references:** `apps/web/src/components/admin/SessionForm.tsx`, `apps/web/src/components/admin/ClassForm.tsx`. See `CLAUDE.md` Gotcha 89.
 
+### Lesson 94: Drizzle `relations()` MUST be defined for RQB `with: {}` queries — runtime crash if missing (Post-Review Remediation)
+
+**Context:** `error.txt` showed `TRPCError: Cannot read properties of undefined (reading 'referencedTable')` on every route using `db.query.*.findFirst({ with: { ... } })` — including `memberships.getMySubscription`, `bookings.book`, `schedule.getWeek`, `schedule.getSession`, `admin.listMembers`, `admin.getMemberDetail`, and all 11 Trigger.dev workers.
+
+**Root cause:** Drizzle ORM v0.45 requires `relations()` from `drizzle-orm` to be called for every FK relationship. Without these definitions, the Relational Query Builder (RQB) cannot resolve nested `with: {}` targets at runtime — it throws when accessing `.referencedTable` on an undefined relation. The `relations()` definitions live in `packages/db/src/schema/relations.ts` and are exported from `schema/index.ts`.
+
+**What to do differently:**
+- When you add a new FK to any schema file (`*.references(() => ...)`)`, you MUST add a corresponding `one()` relation in `relations.ts` (and a `many()` on the inverse side).
+- The `roles` alias on `members` (`many(roleAssignments)`) is the ONLY duplicate-target relation — do NOT add a second `many()` to the same target without `relationName` (causes "There is a conflict in the relations definitions" at runtime).
+- **⚠️ Do NOT remove the `as any` / `as ExpectedShape` casts in workers and routers.** Defining `relations()` fixes RUNTIME resolution but does NOT fix TypeScript type inference — Drizzle 0.45 still infers nested `with` types as `never`. The casts remain until Drizzle 1.0+ `defineRelations()` ships. See §9.9 Gotcha 27.
+- Add an integration test (Testcontainers Postgres) that calls `db.query.*.findFirst({ with: { ... } })` against a real DB to catch relation-graph errors that mocked tests miss.
+
+**Fix references:** `packages/db/src/schema/relations.ts` (new file, 14 `one()` + 18 `many()`), `packages/db/src/schema/index.ts` (re-exports). See `CLAUDE.md` Gotcha 90.
+
+### Lesson 95: SSE endpoint MUST export `GET`, NOT `POST` — EventSource API is GET-only (Post-Review Remediation)
+
+**Context:** The `useSessionAvailability` hook's `EventSource` connection failed silently; seat availability never updated; Checkly `sse-endpoint.check.ts` failed.
+
+**Root cause:** The browser `EventSource` API ONLY sends GET requests. The SSE route at `apps/web/src/app/api/schedule/stream/route.ts` originally exported `POST`, so EventSource connections received a 405 Method Not Allowed (silently — `EventSource.onerror` fires but with no status code).
+
+**What to do differently:**
+- SSE endpoints in Next.js App Router MUST export `GET` (not `POST`) because the browser `EventSource` API is GET-only.
+- All route internals (`request.url`, `request.signal`, `ReadableStream`, `controller.enqueue`, `controller.close`) work identically in GET.
+- If you need to pass parameters (like `sessionId`), use query string (`?sessionId=...`) — `EventSource` doesn't support request bodies.
+- Test: add an assertion that `POST` is NOT exported, to catch regressions: `expect((mod as Record<string, unknown>).POST).toBeUndefined();`
+
+**Fix references:** `apps/web/src/app/api/schedule/stream/route.ts` (POST→GET), `apps/web/src/app/api/schedule/stream/route.test.ts`. See `CLAUDE.md` Gotcha 91.
+
+### Lesson 96: Cron-triggered workers MUST have dedup columns — window math prevents duplicate sends (Post-Review Remediation)
+
+**Context:** Members received 3–8 copies of the same reminder email per session. The SKILL's own doc comment falsely claimed "Idempotent" and "captured exactly once".
+
+**Root cause:** The cron fan-out window (22h–24h for 24h reminders, 50–65min for 1h reminders) is wider than the cron cadence (15min / 5min). This means each session is captured multiple times:
+- 24h: 2h window / 15min cadence = ~8 captures per session
+- 1h: 15min window / 5min cadence = ~3 captures per session
+
+Without a dedup mechanism, every capture sends emails to all enrollees.
+
+**What to do differently:**
+- **Window math:** If the cron cadence is C minutes and the query window is W minutes wide, each session is captured `W/C` times. To capture exactly once, set `W = C` (e.g., 15min window for 15min cron). But this is fragile (cron timing drift can miss sessions). The robust solution is a dedup column.
+- **Dedup column pattern:** Add a `reminderXxSentAt: timestamp` column to the enrollments table (nullable, defaults to null). In the worker:
+  1. Filter `isNull(reminderXhSentAt)` in the query `where` clause (DB-level dedup — only fetch unsent enrollments).
+  2. After a successful send, atomically set it: `UPDATE ... SET reminder_xh_sent_at = NOW() WHERE id = $1 AND reminder_xh_sent_at IS NULL`.
+  3. If the email fails, do NOT mark it — the next cron run retries.
+- **Atomic check-and-set:** The `WHERE ... IS NULL` in the UPDATE prevents race conditions if two cron runs overlap.
+- **Migration:** Add the column via `ALTER TABLE enrollments ADD COLUMN reminder_xh_sent_at timestamp;` (migration `0004`).
+
+**Fix references:** `packages/db/src/schema/enrollments.ts` (new columns), `services/workers/src/class-reminder-24h.ts` + `class-reminder-1h.ts` (dedup filter + atomic set). See `CLAUDE.md` Gotcha 92.
+
+### Lesson 97: `BETTER_AUTH_SECRET` MUST NOT have a placeholder fallback — session forgery risk (Post-Review Remediation)
+
+**Context:** `packages/auth/src/config.ts` had `?? 'placeholder-secret-at-least-32-characters-long'` fallback. If `BETTER_AUTH_SECRET` was unset in production, the app silently used a hardcoded, publicly-known, version-controlled secret — allowing session cookie forgery for any user, including owner-tier accounts.
+
+**Root cause:** `config.ts` reads `process.env` directly (per SKILL §3.4 "infrastructure clients use process.env"), which bypasses the `env.ts` `superRefine` validation that blocks secrets containing `'placeholder-secret'`. The fallback was intended for build/test contexts but applied to ALL contexts.
+
+**What to do differently:**
+- **Never use a hardcoded string fallback for signing secrets.** If the env var is unset in production, the app MUST fail fast.
+- **Guard pattern (mirror `db/src/index.ts`):**
+  ```typescript
+  const isBuildContext =
+    process.env['NEXT_PHASE'] === 'phase-production-build' ||
+    process.env['NODE_ENV'] === 'test';
+  const secret = process.env['BETTER_AUTH_SECRET'];
+  if (!secret && !isBuildContext) {
+    throw new Error('BETTER_AUTH_SECRET is not set. Generate with: openssl rand -base64 32');
+  }
+  ```
+- **Build/test contexts are exempt** — no queries/signing executes there.
+- **Audit ALL `process.env` reads with `??` fallbacks** — any secret used for signing/encryption MUST fail fast, not fall back to a placeholder.
+
+**Fix references:** `packages/auth/src/config.ts` (removed fallback, added guard). See `CLAUDE.md` Gotcha 93.
+
+### Lesson 98: `.env.local` MUST NOT be tracked by git — secret leakage risk (Post-Review Remediation)
+
+**Context:** `.env.local` was committed to git before `.gitignore` was added. Git ignores `.gitignore` for already-tracked files. Future devs who add real secrets to `.env.local` would accidentally commit them to git history.
+
+**Root cause:** The file was tracked before the `.gitignore` rule existed. `git rm --cached` untracks it while keeping it on disk.
+
+**What to do differently:**
+- **Check tracking:** `git ls-files | grep .env` — if `.env.local` appears, it's tracked despite being in `.gitignore`.
+- **Untrack:** `git rm --cached .env.local` (keeps the file on disk, removes from git index).
+- **Pre-commit hook:** Add `scripts/pre-commit-check.sh` that blocks `.env*.local` files from being staged. Install: `ln -s ../../scripts/pre-commit-check.sh .git/hooks/pre-commit`.
+- **Rotate secrets if previously committed:** If real secrets were ever in git history, they MUST be rotated (GitHub's secret scanning + `git filter-repo` to purge history).
+- **CI gate:** Add a CI step that fails if `git diff --cached --name-only | grep -E '^\.env\.local$'` returns any results.
+
+**Fix references:** `scripts/pre-commit-check.sh` (new file). See `CLAUDE.md` Gotcha 94.
+
 ---
 
 ## §13. Pitfalls to Avoid
@@ -7336,6 +7423,149 @@ run: () => Promise.resolve({ success: true }),
 
 **Source:** Post-deploy remediation. Lessons 85-88. See `CLAUDE.md` Gotchas 81-84, `AGENTS.md` Gotchas 74-77.
 
+### 15.25 Pattern: Post-Review Remediation — Critical Fixes from Six-Axis Audit (2026-07-12)
+
+#### 15.25.1 Drizzle RQB Relations Definition Pattern
+
+When using Drizzle ORM v0.45's Relational Query Builder (`db.query.*.findFirst({ with: { ... } })`), you MUST define `relations()` for every FK relationship. Without these, the RQB throws `Cannot read properties of undefined (reading 'referencedTable')` at runtime.
+
+```typescript
+// packages/db/src/schema/relations.ts
+import { relations } from 'drizzle-orm';
+import { members, users, enrollments, classSessions, /* ...all tables */ } from './index';
+
+export const membersRelations = relations(members, ({ one, many }) => ({
+  user: one(users, { fields: [members.userId], references: [users.id] }),
+  enrollments: many(enrollments),
+  // ...other relations
+}));
+
+// Alias pattern: if UI code uses `with: { roles: true }` but the table is
+// `roleAssignments`, define a single `many()` with the alias name.
+// Do NOT define two `many()` to the same target without `relationName`.
+roles: many(roleAssignments),  // alias — UI uses member.roles.map(...)
+```
+
+Export from `schema/index.ts`: `export * from './relations';`
+
+**⚠️ The `as any` / `as ExpectedShape` casts in workers/routers are STILL NEEDED.** `relations()` fixes runtime resolution but NOT TypeScript type inference — Drizzle 0.45 infers nested `with` types as `never` until 1.0+ `defineRelations()`.
+
+#### 15.25.2 SSE Endpoint Pattern (GET, not POST)
+
+```typescript
+// apps/web/src/app/api/schedule/stream/route.ts
+export const maxDuration = 300; // 5 min (Vercel Fluid Compute)
+
+// MUST be GET — EventSource API is GET-only
+export async function GET(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const sessionId = url.searchParams.get('sessionId'); // query string, not body
+  // ...validate, poll DB, stream events
+  const stream = new ReadableStream({
+    start(controller) {
+      const interval = setInterval(() => { /* poll + enqueue */ }, 10_000);
+      request.signal.addEventListener('abort', () => {
+        clearInterval(interval);
+        controller.close();
+      });
+    },
+  });
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', /* ... */ },
+  });
+}
+```
+
+**Regression test:** Assert `POST` is NOT exported: `expect((mod as Record<string, unknown>).POST).toBeUndefined();`
+
+#### 15.25.3 Cron Worker Dedup Pattern
+
+```typescript
+// services/workers/src/class-reminder-24h.ts
+import { sql } from 'drizzle-orm';
+
+export const classReminder24h = task({
+  id: 'class-reminder-24h',
+  maxDuration: 30,
+  run: async (_payload = {}) => {
+    // Cron fan-out: query sessions in window, filter enrollments where
+    // reminder hasn't been sent yet (DB-level dedup)
+    const sessions = await (db.query.classSessions as any).findMany({
+      where: (s, { and, eq, gte, lte }) => and(
+        eq(s.status, 'scheduled'),
+        gte(s.startsAt, windowStart),
+        lte(s.startsAt, windowEnd),
+      ),
+      with: {
+        class: true, instructor: true, room: true,
+        enrollments: {
+          where: (e, { and, eq, isNull }) => and(
+            eq(e.status, 'confirmed'),
+            isNull(e.reminder24hSentAt),  // dedup filter
+          ),
+          with: { member: { with: { user: true } } },
+        },
+      },
+    });
+
+    for (const session of sessions) {
+      for (const enrollment of session.enrollments) {
+        try {
+          await sendClassReminder24h({...});
+          // Atomic mark-as-sent (only updates if still null — race-safe)
+          await db.update(enrollments)
+            .set({ reminder24hSentAt: new Date() })
+            .where(sql`${enrollments.id} = ${enrollment.id} AND ${enrollments.reminder24hSentAt} IS NULL` as any);
+        } catch {
+          // Don't mark as sent — next cron run retries
+        }
+      }
+    }
+  },
+});
+```
+
+**Window math rule:** captures per session = `windowWidth / cronCadence`. Use a dedup column when `windowWidth > cronCadence`.
+
+#### 15.25.4 Fail-Fast Secret Guard Pattern
+
+```typescript
+// packages/auth/src/config.ts — NO placeholder fallback for signing secrets
+const isBuildContext =
+  process.env['NEXT_PHASE'] === 'phase-production-build' ||
+  process.env['NODE_ENV'] === 'test';
+
+const secret = process.env['BETTER_AUTH_SECRET'];
+if (!secret && !isBuildContext) {
+  throw new Error(
+    'BETTER_AUTH_SECRET is not set. Generate with: openssl rand -base64 32'
+  );
+}
+```
+
+**Rule:** Any `process.env` read used for signing/encryption MUST fail fast in non-build context. Never use `?? 'placeholder-...'` fallbacks for secrets.
+
+#### 15.25.5 Git Secret Leakage Prevention Pattern
+
+```bash
+# Check if .env.local is tracked (git ignores .gitignore for tracked files)
+git ls-files | grep .env.local
+
+# Untrack (keeps file on disk)
+git rm --cached .env.local
+
+# Pre-commit hook: scripts/pre-commit-check.sh
+#!/bin/sh
+if git diff --cached --name-only | grep -qE '^\.env\.local$'; then
+  echo "❌ BLOCKED: .env.local is staged for commit."
+  exit 1
+fi
+```
+
+**Install:** `ln -s ../../scripts/pre-commit-check.sh .git/hooks/pre-commit`
+
+**Source:** Post-review remediation (2026-07-12). Lessons 94-98. See `CLAUDE.md` Gotchas 90-94, `AGENTS.md` Gotchas 78-83.
+
 ---
 
 ## §16. Coding Anti-Patterns
@@ -8581,6 +8811,95 @@ export const ANALYTICS_EVENTS = {
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];
 ```
 
+### 16.14 Post-Review Remediation Anti-Patterns (2026-07-12 fixes)
+
+#### Bug: Missing `relations()` definitions — RQB runtime crash (Critical)
+**Symptom:** `TRPCError: Cannot read properties of undefined (reading 'referencedTable')` on any `db.query.*.findFirst({ with: { ... } })`.
+**Root cause:** Drizzle ORM v0.45 requires `relations()` to be called for every FK. Without them, the RQB cannot resolve nested `with` targets at runtime.
+**Fix:** Define all FK relations in `packages/db/src/schema/relations.ts` + export from `schema/index.ts`. Do NOT define duplicate `many()` to the same target without `relationName`.
+```typescript
+// ❌ WRONG: two many() to same target, no relationName
+roleAssignments: many(roleAssignments),
+roles: many(roleAssignments),  // conflict!
+
+// ✅ CORRECT: single many() with alias name
+roles: many(roleAssignments),  // only relation, no conflict
+```
+
+#### Bug: SSE endpoint exports `POST` instead of `GET` (Critical)
+**Symptom:** `EventSource` connection fails silently; seat availability never updates.
+**Root cause:** Browser `EventSource` API ONLY sends GET. POST endpoint returns 405.
+**Fix:** Export `GET` (not `POST`). All internals work identically.
+```typescript
+// ❌ WRONG: EventSource can't connect
+export async function POST(request: Request) { ... }
+
+// ✅ CORRECT: EventSource sends GET
+export async function GET(request: Request) { ... }
+```
+
+#### Bug: Cron worker without dedup — duplicate emails (Critical)
+**Symptom:** Members receive 3–8 copies of the same reminder email per session.
+**Root cause:** Cron window wider than cadence (2h / 15min = 8 captures). No dedup mechanism.
+**Fix:** Add `reminderXhSentAt` column. Filter `isNull()` in query. Set atomically after send.
+```typescript
+// ❌ WRONG: no dedup, sends every cron run
+const enrollments = await db.query.enrollments.findMany({
+  where: eq(enrollments.status, 'confirmed'),
+});
+
+// ✅ CORRECT: dedup filter + atomic set
+const enrollments = await db.query.enrollments.findMany({
+  where: and(eq(enrollments.status, 'confirmed'), isNull(enrollments.reminder24hSentAt)),
+});
+// ...after successful send:
+await db.update(enrollments)
+  .set({ reminder24hSentAt: new Date() })
+  .where(sql`${enrollments.id} = ${id} AND ${enrollments.reminder24hSentAt} IS NULL` as any);
+```
+
+#### Bug: `BETTER_AUTH_SECRET` placeholder fallback — session forgery (Critical security)
+**Symptom:** If env var unset in production, app uses hardcoded publicly-known secret.
+**Root cause:** `?? 'placeholder-secret-...'` fallback bypasses env validation.
+**Fix:** Remove fallback. Throw at module load if unset in non-build context.
+```typescript
+// ❌ WRONG: silent insecure fallback
+const secret = process.env['BETTER_AUTH_SECRET'] ?? 'placeholder-secret-...';
+
+// ✅ CORRECT: fail fast
+const secret = process.env['BETTER_AUTH_SECRET'];
+if (!secret && !isBuildContext) {
+  throw new Error('BETTER_AUTH_SECRET is not set. Generate: openssl rand -base64 32');
+}
+```
+
+#### Bug: `.env.local` tracked by git — secret leakage (Critical security)
+**Symptom:** Future devs commit real secrets to git history.
+**Root cause:** File committed before `.gitignore` was added. Git ignores `.gitignore` for tracked files.
+**Fix:** `git rm --cached .env.local` + pre-commit hook.
+```bash
+# ❌ WRONG: .env.local in git history
+git add .env.local && git commit
+
+# ✅ CORRECT: untrack + pre-commit hook
+git rm --cached .env.local
+ln -s ../../scripts/pre-commit-check.sh .git/hooks/pre-commit
+```
+
+#### Bug: `class.name` instead of `class.title` — renders `undefined` (Critical)
+**Symptom:** Schedule/dashboard/history pages show empty `<h3>` elements.
+**Root cause:** `classes` table has `title`, not `name`. Type casts masked the bug.
+**Fix:** Use `class.title` everywhere. Update test mocks to match.
+```typescript
+// ❌ WRONG: classes table has no `name` column
+{session.class.name}  // renders undefined
+
+// ✅ CORRECT: use title
+{session.class.title}
+```
+
+**Source:** Post-review remediation (2026-07-12). Lessons 94-98. See `CLAUDE.md` Gotchas 90-94.
+
 ---
 
 ## Appendix A: ADRs
@@ -8960,6 +9279,25 @@ export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EV
 | 5 email templates missing from scaffolding tree | Medium | All 13 files documented in Phase 8 |
 | `members.stripeCustomerId` column missing from schema | High | Added in Phase 1 (D6) — pending Phase 1 implementation |
 | Refund workflow undefined in PAD | Medium | D12 updated in v1.4.0: v1 uses Stripe Dashboard only; in-app refund UI deferred to v2 (MEP §9 Q5+Q8 resolved) |
+
+### v3.0.0 (2026-07-12) — Post-Review Remediation: 5 Critical Findings Fixed
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| Drizzle `relations()` not defined — RQB `with: {}` runtime crash (`referencedTable` undefined) | Critical | ✅ Fixed — Lesson 94, CLAUDE.md Gotcha 90. Fix: created `packages/db/src/schema/relations.ts` with 14 `one()` + 18 `many()` relations; exported from `schema/index.ts`. Removed unused duplicate `roleAssignments: many()` (kept only `roles` alias). The `as any` casts remain — `relations()` fixes runtime, not TS type inference (Drizzle 0.45 infers nested `with` as `never` until 1.0+ `defineRelations()`). |
+| SSE endpoint exported `POST` — `EventSource` API is GET-only, seat availability never updated | Critical | ✅ Fixed — Lesson 95, CLAUDE.md Gotcha 91. Fix: changed `export async function POST` → `GET` in `apps/web/src/app/api/schedule/stream/route.ts`. All internals work identically in GET. Added regression assertion: `expect((mod as Record<string, unknown>).POST).toBeUndefined();` |
+| Cron fan-out sends 3–8× duplicate reminder emails (2h window / 15min cadence = 8 captures) | Critical | ✅ Fixed — Lesson 96, CLAUDE.md Gotcha 92. Fix: added `reminder24hSentAt` + `reminder1hSentAt` columns to `enrollments` (migration `0004`). Workers filter `isNull(reminderXhSentAt)` in query + atomic `UPDATE ... WHERE IS NULL` after send. Failed sends NOT marked (retried next cron). +8 new cron fan-out tests. |
+| `BETTER_AUTH_SECRET` placeholder fallback — session forgery if unset in production | Critical | ✅ Fixed — Lesson 97, CLAUDE.md Gotcha 93. Fix: removed `?? 'placeholder-secret-...'` fallback in `packages/auth/src/config.ts`. Throws at module load if unset in non-build context. Build/test contexts exempt (`NEXT_PHASE=phase-production-build`, `NODE_ENV=test`). |
+| `.env.local` tracked by git — secret leakage risk for future devs | Critical | ✅ Fixed — Lesson 98, CLAUDE.md Gotcha 94. Fix: `git rm --cached .env.local` (untracks, keeps on disk). Added `scripts/pre-commit-check.sh` that blocks `.env*.local` files from being staged. Install: `ln -s ../../scripts/pre-commit-check.sh .git/hooks/pre-commit`. |
+| `class.name` renders `undefined` on 5 UI pages (classes table has `title`, not `name`) | Critical | ✅ Fixed — swept all 9 occurrences across 8 files: `ScheduleGrid.tsx`, `ScheduleSection.tsx`, `UpcomingClassesWidget.tsx`, `EnrollmentHistoryTable.tsx`, `admin/members/[id]/page.tsx`, `(marketing)/schedule/page.tsx`, `(studio)/dashboard/page.tsx`, `(studio)/history/page.tsx`. Fixed `ScheduleGrid.test.tsx` mock (was masking the bug). |
+| Ambiguous duplicate `many()` in `relations.ts` — Drizzle RQB conflict risk | Critical | ✅ Fixed — removed unused `roleAssignments: many()` relation (zero consumers use `with: { roleAssignments: true }`). Kept only `roles` alias. |
+| `cmdk` version `^1.0.4` outdated (npm latest 1.1.1) | Minor | ✅ Fixed — bumped to `^1.1.1` in `apps/web/package.json`. |
+| SKILL §14.6.3 CSP example weaker than actual `next.config.ts` | Major | ✅ Fixed (v2.9.0) — replaced CSP example with actual production CSP (no `'unsafe-eval'`, no `'unsafe-inline'` in `script-src`). |
+| SKILL §16.5 Stripe retry semantics — "Stripe won't retry on 4xx" was factually wrong | Critical | ✅ Fixed (v2.9.0) — Stripe retries on ALL non-2xx (3xx/4xx/5xx) for up to 3 days. Corrected commentary. |
+
+**Quality gates (2026-07-12):** `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (651/651 — was 643, +8 new cron fan-out tests). `pnpm build` ✅ (9/9 packages, 16 static pages — requires real Sanity credentials).
+
+**Total tests:** 651 (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 41 workers).
 
 ---
 
