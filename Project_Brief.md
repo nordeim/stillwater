@@ -1,6 +1,6 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-11 (post-Phase 12)
+> **Updated:** 2026-07-12 (post-Phase 12 + 2026-07-12 remediation)
 > Status: Phases 0–12 ✅ complete
 
 ## What it is
@@ -12,7 +12,7 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 **All 13 phases (0–12) are complete and green.**
 
 - **Phase 0 (Scaffold):** Complete. Turborepo + pnpm workspaces, 7 shared packages, 11 tooling configs, Docker Compose setup, and the full design system (self-hosted fonts, CSS tokens).
-- **Phase 1 (Database):** Complete. 18 tables (15 domain + 3 Better Auth) Drizzle schema, 8 enums, 12 indexes (8 standard + 4 unique; the 5 Phase 1 'critical' indexes are a labelled subset), 4 migrations (`0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql`), idempotent seed, dynamic driver selection.
+- **Phase 1 (Database):** Complete. 18 tables (15 domain + 3 Better Auth) Drizzle schema, 8 enums, 12 indexes (8 standard + 4 unique; the 5 Phase 1 'critical' indexes are a labelled subset), 5 migrations (`0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql` + `0004_huge_hawkeye.sql`), idempotent seed, dynamic driver selection.
 - **Phase 2 (Auth & RBAC):** Complete. Better Auth v1.6.23 with Google OAuth, Magic Link, `customSession` plugin. RBAC matrix (13×6). 2-layer auth (proxy.ts + layout guards).
 - **Phase 3 (API / tRPC):** Complete. 10 routers, ~42 procedures, 4 access tiers, advisory lock booking, rate limiting, full web integration.
 - **Phase 4 (Marketing):** Complete. Sanity CMS client + 8 content type schemas, Sanity Studio app (`apps/studio/`), GROQ query registry with `published == true` filter, Zod response validation, Cloudflare Images signer, webhook→ISR revalidation with HMAC verification, 8 ISR-backed marketing pages (home, schedule, instructors list + detail, pricing, blog list + detail, about), MarketingNav + Footer with Editorial Calm design, skip-to-content link, error/loading boundaries, 11 shadcn/ui components with anti-generic patches (no shadows, `--radius: 0`).
@@ -23,7 +23,7 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 
 **Phase 7 (Payments):** Complete. `@stillwater/payments` package (8 source files: client, types, subscriptions, webhooks, invoices, credit-packs, refunds, index) with 43 tests; Stripe webhook route `/api/webhooks/stripe/route.ts` (body as TEXT, HMAC verification, idempotent via `pg_advisory_xact_lock`); `CheckoutButton` component + `lib/stripe/utils.ts`; tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`); `payments.refund` retained as D12 stub; ADR-010 accepted (Resend Native Templates for email).
 
-**Phase 8 (Background Jobs & Email):** Complete. `@stillwater/workers` package — 11 Trigger.dev v4 task files (`attendance-summary`, `booking-confirmation`, `class-cancellation-notify`, `class-reminder-1h`, `class-reminder-24h`, `membership-credit-grant`, `membership-expiry-warn`, `payment-failed-notify`, `waitlist-expiry`, `waitlist-promotion`, `weekly-digest`), `trigger.config.ts` (root `@trigger.dev/sdk` import, `machine: "micro"`, `build.external` without `build.env`), 33 tests. `@stillwater/email` package — 13 React Email v6 templates + 3 shared components (`EmailLayout`, `EmailButton`, `EmailFooter`), dual-path `send.ts` (`sendEmail` for Server Components, `sendEmailNative` for workers per ADR-010), `template-ids.ts`, `send-helpers.ts`, 71 tests. Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` unset), `bookings.book` triggers `booking-confirmation` + class reminders fire-and-forget, `bookings.cancel` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe `invoice.payment_failed` → `payment-failed-notify` post-commit.
+**Phase 8 (Background Jobs & Email):** Complete. `@stillwater/workers` package — 11 Trigger.dev v4 task files (`attendance-summary`, `booking-confirmation`, `class-cancellation-notify`, `class-reminder-1h`, `class-reminder-24h`, `membership-credit-grant`, `membership-expiry-warn`, `payment-failed-notify`, `waitlist-expiry`, `waitlist-promotion`, `weekly-digest`), `trigger.config.ts` (root `@trigger.dev/sdk` import, `machine: "micro"`, `build.external` without `build.env`), 33 tests. `@stillwater/email` package — 13 React Email v6 templates + 3 shared components (`EmailLayout`, `EmailButton`, `EmailFooter`), dual-path `send.ts` (`sendEmail` for Server Components, `sendEmailNative` for workers per ADR-010), `template-ids.ts`, `send-helpers.ts`, 71 tests. Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` unset), `bookings.book` triggers `booking-confirmation` (fire-and-forget); `class-reminder-24h`/`class-reminder-1h` run as **cron jobs** (every 15min / 5min) with idempotent dedup via `reminder24hSentAt`/`reminder1hSentAt`, `bookings.cancel` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe `invoice.payment_failed` → `payment-failed-notify` post-commit.
 
 **Phase 9 (Admin Surface):** ✅ Complete. 11 admin pages, 9 admin components, 12 admin tRPC procedures; `audit_log` table (migration `0003_audit_log_phase9.sql`) with 3 indexes; 7 additional shadcn/ui components (table, form, input, textarea, checkbox, calendar, command) — 18 total; `cmdk` dependency; 5 admin E2E specs.
 
@@ -61,8 +61,9 @@ These are the files you can actually `cat` and `test` today:
 
 ### Database & Schema
 - `packages/db/src/schema/*.ts` — 18 Drizzle tables across 16 schema files: `users`, `members`, `instructors`, `classStyles`, `classes`, `rooms`, `classSessions`, `enrollments`, `waitlistEntries`, `memberSubscriptions`, `membershipPlans`, `classPackages`, `paymentEvents`, `roleAssignments`, `auditLog`, `account`, `session`, `verification`. **Note:** PAD.md / SKILL.md / AGENTS.md / CLAUDE.md now cite **18 tables** (corrected from the earlier 14-table undercount); verified via `pgTable` declarations — migration `0000_dear_dagger.sql` contains all 18 `CREATE TABLE` statements.
+- `packages/db/src/schema/relations.ts` — Drizzle Relational Query Builder (RQB) `relations()` definitions for all FK pairs (one/many); wired into `drizzle(..., { schema })`. Enables nested `with: { class: true, instructor: true, ... }` queries (used by admin/book pages) and removes the `referencedTable` runtime error. Added in the 2026-07-12 remediation.
 - `packages/db/src/schema/enums.ts` — 8 enums (class level, membership status, seat status, etc.).
-- `packages/db/drizzle/migrations/` — 4 migrations: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table). Regenerated after `ALTER COLUMN` silent-failure fix (Phase 1–2 remediation). All four applied successfully via `pnpm db:migrate`.
+- `packages/db/drizzle/migrations/` — 5 migrations: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup). Regenerated after `ALTER COLUMN` silent-failure fix (Phase 1–2 remediation). All five applied successfully via `pnpm db:migrate`.
 - `packages/db/src/seed/index.ts` + `seed/env.ts` — Idempotent seed script loading synthetic demo data (5 users, 5 members, 3 instructors, 4 class styles, 4 classes, 2 rooms, 7 sessions, 3 membership plans). Loads `.env.local` before importing `db`.
 - `packages/db/src/index.ts` — Dynamic driver: `pg.Pool` for local Docker, `neon-http` for Neon URLs.
 - `packages/db/src/index.test.ts` + `schema/*.test.ts` — 17 test files, 117 tests.
@@ -122,7 +123,7 @@ These are the files you can actually `cat` and `test` today:
 
 ---
 
-## Live quality gates (2026-07-11)
+## Live quality gates (2026-07-12)
 
 Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 
@@ -131,7 +132,9 @@ Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 | `pnpm check-types` | **9/9 successful** ✅ |
 | `pnpm lint` | **2/2 successful** ✅ (0 errors, 9 intentional warnings) |
 | `pnpm test` | **643 tests passing** ✅ |
-| `pnpm build` | **✅ 9/9 packages, 16 static pages** (verified 2026-07-11) ✅ |
+| `pnpm build` | **✅ 9/9 packages, 16 static pages** (verified 2026-07-12) ✅ |
+
+> ⚠️ **Lint flake note:** `pnpm lint` (default parallel turborepo run) can intermittently fail with *"not found by the project service"* parsing errors on test files. This is a typescript-eslint `projectService` concurrency collision (two ESLint language-service instances racing), **not a code defect** — confirmed by running lint serially (`pnpm turbo run lint --concurrency=1` → 2/2 green) or per-package. Code is correct.
 
 Test breakdown:
 - `packages/db` — 17 test files / **117 tests**
@@ -142,7 +145,7 @@ Test breakdown:
 - `packages/email` — 16 test files (13 template + 3 component) / **71 tests**
 - `services/workers` — 11 test files / **33 tests**
 
-Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). ISR revalidate times: `/about` = 1d, `/blog` = 1h, `/` = 5min. (`pnpm build` verified 2026-07-11: 9/9 packages, 16 static pages, 0 errors.)
+Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). ISR revalidate times: `/about` = 1d, `/blog` = 1h. (Home `/` exports `revalidate = 3600` in source but renders dynamic (ƒ) in the observed build — likely opted into on-demand rendering; verify in CI.) (`pnpm build` verified 2026-07-12: 9/9 packages, 16 static pages, 0 errors.)
 
 ---
 
@@ -155,6 +158,7 @@ Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog
 | RBAC permission matrix (13 × 6 roles) | ✅ Implemented | `packages/auth/src/rbac.ts` |
 | Zod at every boundary | ✅ Implemented | `env.ts`, tRPC `input` schemas, rate-limit middleware |
 | React Compiler | ✅ Enabled | `apps/web/next.config.ts` — `reactCompiler: true` |
+| Sentry source maps | ✅ Enabled | `apps/web/next.config.ts` — `withSentryConfig` wrapper (upload in CI; no-op locally when `SENTRY_AUTH_TOKEN` unset) |
 | Library discipline (Radix/shadcn only) | ✅ Enforced | `packages/ui` imports from `@radix-ui/*` |
 | Self-hosted fonts (zero FOUT) | ✅ Enforced | `packages/ui/src/fonts/` |
 | Idempotent Stripe webhooks | ✅ Implemented | `packages/payments/src/webhooks.ts` + `/api/webhooks/stripe` (Phase 7; `pg_advisory_xact_lock`) |
@@ -174,7 +178,7 @@ Known intentional stub (not a gap): `payments.refund` remains a thin D12 wrapper
 
 ## Things worth flagging
 
-- **`app_start_log.txt`** — Leftover working artifact from early Phase 0 sessions; not project source. Safe to remove. (`diff_output.txt` already cleaned up.)
-- **Docs aligned through Phase 12 (2026-07-11).** Implementation matches AGENTS.md v2.9.0 / CLAUDE.md v2.9.0 / MEP v1.7.0. All 13 phases complete. Verify against the live test suite (643 tests ✅), not just the docs.
-- **Migrations are canonical.** Four migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table). The two-migration sequence (`0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql`) referenced in older PAD callouts was historical and deleted during Phase 1–2 remediation. All four current migrations apply successfully via `pnpm db:migrate`.
+- **Stray `error.txt` (resolved).** A `error.txt` build/`pnpm start` log was committed to the repo root via an "Add files via upload" commit by a non-agent author during the 2026-07-12 window. It has since been **removed and gitignored** (`error.txt` added to `.gitignore`). The earlier `app_start_log.txt` / `diff_output.txt` artifacts are not present in the current tree.
+- **Docs aligned through Phase 12; refreshed 2026-07-12 after remediation.** Implementation matches AGENTS.md v2.9.0 / CLAUDE.md v2.9.0 / MEP v1.7.0. All 13 phases complete. Verify against the live test suite (643 tests ✅), not just the docs.
+- **Migrations are canonical.** Five migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup). The two-migration sequence (`0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql`) referenced in older PAD callouts was historical and deleted during Phase 1–2 remediation. All five current migrations apply successfully via `pnpm db:migrate`.
 
