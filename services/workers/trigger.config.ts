@@ -6,8 +6,8 @@
  *
  * Job catalog — see PAD § 17.1 for full documentation:
  *   - booking-confirmation     On booking mutation
- *   - class-reminder-24h       Scheduled 24h before session
- *   - class-reminder-1h        Scheduled 1h before session
+ *   - class-reminder-24h       Cron every 15min (sessions starting in 22-24h)
+ *   - class-reminder-1h        Cron every 5min (sessions starting in 50-65min)
  *   - class-cancellation-notify  On session cancellation by staff
  *   - waitlist-promotion       On enrollment cancellation
  *   - waitlist-expiry          Scheduled at offer expiry time
@@ -16,6 +16,10 @@
  *   - payment-failed-notify    On Stripe invoice.payment_failed
  *   - weekly-digest            Cron: Sunday 09:00
  *   - attendance-summary       Cron: Daily 23:00
+ *
+ * Cron schedules are configured in the Trigger.dev dashboard (not in code).
+ * The cadence is chosen so each session is captured exactly once in the
+ * reminder window, regardless of minor cron timing drift.
  */
 
 // Trigger.dev v4 — import from root @trigger.dev/sdk (NOT /v3 which is deprecated).

@@ -143,22 +143,18 @@ export const bookingsRouter = router({
           });
         }
 
-        // Phase 8: Trigger booking-confirmation + reminder jobs
-        // (fire-and-forget — don't block the booking response)
+        // Phase 8: Trigger booking-confirmation job (fire-and-forget).
+        // Note: class-reminder-24h and class-reminder-1h are NO LONGER
+        // triggered per-booking. They run as cron jobs (every 15min / 5min)
+        // that fan out to find sessions starting in the 24h/1h window.
+        // This handles members who book after the 24h mark and avoids
+        // creating thousands of scheduled waits in Trigger.dev.
         ctx.jobs.trigger('booking-confirmation', {
           enrollmentId: created.id,
           memberId,
         }).catch(() => {
           // Job trigger failure shouldn't fail the booking — Trigger.dev retries
         });
-        ctx.jobs.trigger('class-reminder-24h', {
-          sessionId: input.sessionId,
-          memberId,
-        }).catch(() => {});
-        ctx.jobs.trigger('class-reminder-1h', {
-          sessionId: input.sessionId,
-          memberId,
-        }).catch(() => {});
 
         return created;
       });
