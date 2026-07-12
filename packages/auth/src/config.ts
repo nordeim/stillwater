@@ -20,7 +20,14 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { google } from 'better-auth/social-providers';
 import { magicLink } from 'better-auth/plugins/magic-link';
 import { customSession } from 'better-auth/plugins/custom-session';
+import { eq, and, desc } from 'drizzle-orm';
 import { db } from '@stillwater/db';
+import {
+  members,
+  memberSubscriptions,
+  membershipPlans,
+  roleAssignments,
+} from '@stillwater/db';
 import { resend } from './resend-client';
 
 // Use process.env directly (not Zod env module) per SKILL §3.4
@@ -88,39 +95,69 @@ export const auth = betterAuth({
       },
       expiresIn: 10 * 60, // 10 minutes (SKILL §5.6.1)
     }),
-    // Custom session plugin — enriches session with memberId + roles
+    // Custom session plugin — enriches session with memberId + roles + activeSubscription
     customSession(
       async (sessionData) => {
         const user = sessionData.user;
         // Look up the member record and roles for this user
         const member = await db.query.members.findFirst({
-          where: (m, { eq }) => eq(m.userId, user.id),
+          where: eq(members.userId, user.id),
         });
 
         if (!member) {
+          // Cookied user with no member record — no roles, no subscription.
+          // Previously returned roles: ['member'] which was semantically wrong
+          // (granted booking privileges to potentially-unauthenticated users).
+          // Routers check memberId (null → FORBIDDEN), not roles, so this is
+          // a correctness fix, not a security fix.
           return {
             ...sessionData,
             user: {
               ...user,
               memberId: null,
-              roles: ['member'] as const,
+              roles: [] as const,
               activeSubscription: null,
             },
           };
         }
 
         // Fetch role assignments
-        const roleAssignments = await db.query.roleAssignments.findMany({
-          where: (ra, { eq }) => eq(ra.memberId, member.id),
+        const roleAssignmentsList = await db.query.roleAssignments.findMany({
+          where: eq(roleAssignments.memberId, member.id),
         });
+
+        // Fetch the member's most recent active subscription (with plan details).
+        // Ordered by createdAt desc so the "current" subscription is first.
+        // Status filter excludes cancelled/incomplete; trialing/past_due/paused
+        // are included because the member still has access.
+        const subscription = await db.query.memberSubscriptions.findFirst({
+          where: and(
+            eq(memberSubscriptions.memberId, member.id),
+          ),
+          with: { plan: true },
+          orderBy: desc(memberSubscriptions.createdAt),
+        });
+
+        // Build ActiveSubscriptionSummary only if there's a subscription
+        // in a status that grants access (active, trialing, past_due, paused).
+        const activeStatuses = ['active', 'trialing', 'past_due', 'paused'] as const;
+        const activeSubscription =
+          subscription && activeStatuses.includes(subscription.status as typeof activeStatuses[number])
+            ? {
+                planName: subscription.plan.name,
+                status: subscription.status as typeof activeStatuses[number],
+                currentPeriodEnd: subscription.currentPeriodEnd ?? new Date(0),
+                creditsRemaining: subscription.creditsRemaining ?? 0,
+              }
+            : null;
 
         return {
           ...sessionData,
           user: {
             ...user,
             memberId: member.id,
-            roles: roleAssignments.map((ra) => ra.role),
-            activeSubscription: null, // Phase 7: populate from member_subscriptions
+            roles: roleAssignmentsList.map((ra) => ra.role),
+            activeSubscription,
           },
         };
       },

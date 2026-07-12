@@ -27,6 +27,7 @@
     "@stillwater/config": "workspace:*",
     "@stillwater/db": "workspace:*",
     "better-auth": "^1.6.23",
+    "drizzle-orm": "^0.45.2",
     "resend": "^6.17.1",
     "zod": "^4.4.3"
   },
