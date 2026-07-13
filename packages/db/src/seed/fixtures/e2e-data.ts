@@ -186,6 +186,14 @@ export function generateE2ESessions(): NewSession[] {
     hour: 12,
   };
 
+  // Counter-based UUID suffix — guarantees 12-char last segment (valid PostgreSQL uuid).
+  // Format: 00000000-0000-4eee-f000-{counter:012d}
+  let sessionCounter = 0;
+  const nextSessionId = (): string => {
+    sessionCounter++;
+    return `00000000-0000-4eee-f000-${String(sessionCounter).padStart(12, '0')}`;
+  };
+
   const now = new Date();
 
   for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
@@ -199,9 +207,8 @@ export function generateE2ESessions(): NewSession[] {
       const startsAt = new Date(date);
       startsAt.setHours(tmpl.hour, 0, 0, 0);
       const endsAt = new Date(startsAt.getTime() + tmpl.durationMin * 60_000);
-      const idx = dayOffset * 4 + 1;
       sessions.push({
-        id: `00000000-0000-4eee-f000-${String(dayOffset).padStart(3, '0')}${String(tmpl.hour).padStart(2, '0')}01`,
+        id: nextSessionId(),
         classId: tmpl.classId,
         instructorId: instructorIds[tmpl.instructorIdx]!,
         roomId: tmpl.roomId,
@@ -211,7 +218,6 @@ export function generateE2ESessions(): NewSession[] {
         overrideCapacity: tmpl.overrideCapacity ?? null,
         isVirtual: false,
       });
-      void idx;
     }
 
     // Evening sessions (every day)
@@ -220,7 +226,7 @@ export function generateE2ESessions(): NewSession[] {
       startsAt.setHours(tmpl.hour, 0, 0, 0);
       const endsAt = new Date(startsAt.getTime() + tmpl.durationMin * 60_000);
       sessions.push({
-        id: `00000000-0000-4eee-f000-${String(dayOffset).padStart(3, '0')}${String(tmpl.hour).padStart(2, '0')}01`,
+        id: nextSessionId(),
         classId: tmpl.classId,
         instructorId: instructorIds[tmpl.instructorIdx]!,
         roomId: tmpl.roomId,
@@ -238,7 +244,7 @@ export function generateE2ESessions(): NewSession[] {
       startsAt.setHours(afternoonTemplate.hour, 0, 0, 0);
       const endsAt = new Date(startsAt.getTime() + afternoonTemplate.durationMin * 60_000);
       sessions.push({
-        id: `00000000-0000-4eee-f000-${String(dayOffset).padStart(3, '0')}12001`,
+        id: nextSessionId(),
         classId: afternoonTemplate.classId,
         instructorId: instructorIds[afternoonTemplate.instructorIdx]!,
         roomId: afternoonTemplate.roomId,
@@ -254,6 +260,27 @@ export function generateE2ESessions(): NewSession[] {
   return sessions;
 }
 
+// ─── Exported session lookups (for enrollment + waitlist references) ──
+// These find specific sessions by dayOffset + class + hour so enrollments
+// and waitlist entries can reference them without hardcoding UUIDs.
+export function findE2ESession(
+  dayOffset: number,
+  classId: string,
+  hour: number,
+): NewSession | undefined {
+  return e2eSessions.find((s) => {
+    if (s.classId !== classId) return false;
+    if (s.startsAt.getHours() !== hour) return false;
+    const now = new Date();
+    const sessionDay = new Date(now);
+    sessionDay.setDate(now.getDate() + dayOffset);
+    sessionDay.setHours(0, 0, 0, 0);
+    const sessionDate = new Date(s.startsAt);
+    sessionDate.setHours(0, 0, 0, 0);
+    return sessionDate.getTime() === sessionDay.getTime();
+  });
+}
+
 export const e2eSessions: NewSession[] = generateE2ESessions();
 
 // ─── E2E Pre-existing Enrollments ───────────────────────────────────
@@ -266,9 +293,11 @@ export function generateE2EEnrollments(): NewEnrollment[] {
   const e2eCancelMemberId = '00000000-0000-4eee-a000-000000000014';
   const e2eHistoryMemberId = '00000000-0000-4eee-a000-000000000015';
 
-  // Find tomorrow's morning Vinyasa session (dayOffset=0, hour=7)
-  const tomorrowVinyasa = e2eSessions.find(
-    (s) => s.id === '00000000-0000-4eee-f000-0000701',
+  // Find tomorrow's morning Vinyasa session (dayOffset=0, hour=7, Vinyasa class)
+  const tomorrowVinyasa = findE2ESession(
+    0,
+    '00000000-0000-4000-d000-000000000001', // Morning Vinyasa Flow
+    7,
   );
 
   // E2E Booker is enrolled in tomorrow's Vinyasa
@@ -283,8 +312,10 @@ export function generateE2EEnrollments(): NewEnrollment[] {
   }
 
   // E2E Cancel is enrolled in tomorrow's Yin (so they can cancel it)
-  const tomorrowYin = e2eSessions.find(
-    (s) => s.id === '00000000-0000-4eee-f000-0000901',
+  const tomorrowYin = findE2ESession(
+    0,
+    '00000000-0000-4000-d000-000000000003', // Yin & Meditation
+    9,
   );
   if (tomorrowYin) {
     result.push({
@@ -328,13 +359,15 @@ export function generateE2EWaitlistEntries(): NewWaitlistEntry[] {
   const e2eWaitlistMemberId = '00000000-0000-4eee-a000-000000000013';
 
   // Find tomorrow's evening Ashtanga (overrideCapacity=0, so it's "full")
-  const tomorrowAshtanga = e2eSessions.find(
-    (s) => s.id === '00000000-0000-4eee-f000-0000181',
+  const tomorrowAshtanga = findE2ESession(
+    0,
+    '00000000-0000-4000-d000-000000000002', // Ashtanga Primary Series
+    18,
   );
 
   if (tomorrowAshtanga) {
     result.push({
-      id: '00000000-0000-4eee-w000-000000000001',
+      id: '00000000-0000-4eee-e001-000000000001',
       sessionId: tomorrowAshtanga.id!,
       memberId: e2eWaitlistMemberId,
       position: 1,
