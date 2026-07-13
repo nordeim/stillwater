@@ -8,7 +8,7 @@ import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { TRPCProvider } from '@/lib/trpc/client';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://stillwater.jesspete.shop'),
   title: {
     default: 'Stillwater Yoga Studio',
     template: '%s — Stillwater Yoga',

@@ -13,7 +13,7 @@ import { getSanityClient } from '@/lib/sanity/client';
 import { apiCaller } from '@/lib/trpc/server';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://stillwater.jesspete.shop';
 
   // Static routes
   const staticRoutes: MetadataRoute.Sitemap = [
