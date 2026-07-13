@@ -83,6 +83,9 @@
       "cache": false,
       "dependsOn": ["db:migrate"]
     },
+    "db:seed:e2e": {
+      "cache": false
+    },
     "db:studio": {
       "cache": false,
       "persistent": true

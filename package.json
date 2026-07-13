@@ -21,6 +21,7 @@
     "test:coverage": "turbo test --coverage",
     "clean": "turbo clean && rm -rf node_modules",
     "db:generate": "turbo db:generate --filter=@stillwater/db",
+    "db:setup": "bash scripts/db-setup.sh",
     "db:migrate": "turbo db:migrate --filter=@stillwater/db",
     "db:push": "turbo db:push --filter=@stillwater/db",
     "db:seed": "turbo db:seed --filter=@stillwater/db",

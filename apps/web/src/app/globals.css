@@ -61,6 +61,17 @@
   --font-body: var(--font-body);
   --font-mono: var(--font-mono);
 
+  /* Type scale (9 fluid tokens — mapped so text-display-xl etc. generate utilities) */
+  --text-display-2xl: var(--text-display-2xl);
+  --text-display-xl: var(--text-display-xl);
+  --text-display-lg: var(--text-display-lg);
+  --text-heading-lg: var(--text-heading-lg);
+  --text-heading-md: var(--text-heading-md);
+  --text-body-lg: var(--text-body-lg);
+  --text-body-md: var(--text-body-md);
+  --text-body-sm: var(--text-body-sm);
+  --text-caption: var(--text-caption);
+
   /* Spacing (4px base) */
   --spacing-1: var(--space-1);
   --spacing-2: var(--space-2);

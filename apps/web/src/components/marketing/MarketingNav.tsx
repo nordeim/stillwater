@@ -1,11 +1,13 @@
 import Link from 'next/link';
 
+import { MobileNavDrawer } from './MobileNavDrawer';
+
 /**
  * Marketing navigation — single-line rule nav, flush wordmark left, CTA flush right.
  * Per SKILL §1.3: NO sticky nav with logo left, links center, CTA right (anti-generic).
  * Per SKILL §1.5: At most one filled (Tier 3) CTA per visible section.
  *
- * Mobile drawer is a stub per MEP Open Question #6 — full Radix Dialog wired in Phase 12 F12-12.
+ * Mobile nav uses Radix Dialog drawer (MobileNavDrawer) — accessible, focus-trapped.
  */
 export function MarketingNav() {
   return (
@@ -23,7 +25,7 @@ export function MarketingNav() {
         Stillwater
       </Link>
 
-      {/* Desktop nav links */}
+      {/* Desktop nav links (hidden on mobile) */}
       <div className="hidden items-center gap-8 md:flex">
         <Link
           href="/schedule"
@@ -60,13 +62,13 @@ export function MarketingNav() {
       {/* CTA — flush right (Tier 3: filled button, max 1 per section) */}
       <Link
         href="/schedule"
-        className="bg-clay-500 px-6 py-2 text-sm font-medium text-sand-100 transition-colors hover:bg-clay-600"
+        className="hidden bg-clay-500 px-6 py-2 text-sm font-medium text-sand-100 transition-colors hover:bg-clay-600 md:inline-block"
       >
         Book
       </Link>
 
-      {/* Mobile drawer stub — Phase 12 F12-12 wires full Radix Dialog */}
-      <span className="sr-only">Menu</span>
+      {/* Mobile nav drawer (hidden on desktop) — replaces former sr-only stub */}
+      <MobileNavDrawer />
     </nav>
   );
 }
