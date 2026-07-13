@@ -57,6 +57,10 @@ Please meticulously review and validate the attached (v2) pnpm execution log the
 
 ---
 
+please meticulously review the attached agent execution session log and extract out key events, changes, issues and their resolution (or still outstanding), key guides (steps), instructions for users. Meaning extract essential details or compacting the log's content as organized sequential events.
+
+---
+
 Please meticulously review and validate the attached pnpm execution log the errors against the codebase to identify the root causes and optimal fixes. Then meticulously plan to create a comprehensive remediation plan and a detailed ToDo list to apply the validated optimal fixes, include any previously identified issues and bugs that are still outstanding. Next, review and validate the remediation plan against the codebase again to ensure alignment for executing meticulously. use TDD approach to make changes.
 
 ---

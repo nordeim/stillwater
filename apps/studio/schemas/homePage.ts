@@ -27,12 +27,6 @@ export const homePage = defineType({
     defineField({ name: 'heroSubheadline', title: 'Hero Subheadline', type: 'string' }),
     defineField({ name: 'heroImage', title: 'Hero Image', type: 'image' }),
     defineField({ name: 'philosophyText', title: 'Philosophy Text', type: 'text' }),
-    defineField({
-      name: 'featuredClasses',
-      title: 'Featured Classes',
-      type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'class' }] }],
-    }),
     defineField({ name: 'ctaText', title: 'CTA Text', type: 'string' }),
     defineField({ name: 'ctaHref', title: 'CTA URL', type: 'string' }),
   ],

@@ -17,7 +17,7 @@ import { revalidatePath } from 'next/cache';
  *
  * Setup:
  *   In Sanity Cloud dashboard → API → Webhooks:
- *     URL: https://stillwater.studio/api/sanity/webhook
+ *     URL: https://stillwater.jesspete.shop/api/sanity/webhook
  *     Project: (your project ID)
  *     Dataset: production
  *     HTTP method: POST

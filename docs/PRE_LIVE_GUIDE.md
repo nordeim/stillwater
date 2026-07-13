@@ -64,24 +64,36 @@ The server-side Sanity client uses a read token to fetch content during SSR/ISR.
 4. Permissions: **Viewer** (read-only)
 5. Copy the token (starts with `sk` — e.g., `skSlrWJK1...`)
 6. Store it as `SANITY_API_TOKEN` in your `.env.local` and Vercel env vars
+7. **Security:** if a `SANITY_API_TOKEN` already exists in a *tracked* `apps/web/.env.local`, treat it as compromised (it was committed to git) — revoke the old token in Sanity Cloud → API → Tokens and use only the freshly minted value.
 
 ### 1.4 Deploy Sanity Studio
 
 Sanity Studio is the content editing interface. It runs as a standalone app at `stillwater.sanity.studio`.
 
-```bash
-# From the repo root:
-cd apps/studio
+> **Prerequisites**
+> - Authenticate the CLI once: `cd apps/studio && ./node_modules/.bin/sanity login` (opens a browser; creates a `~/.sanity/` session). There is no `sanity whoami` — check `~/.sanity/` to confirm a session.
+> - Studio reads `SANITY_STUDIO_PROJECT_ID` / `SANITY_STUDIO_DATASET` (from `sanity.cli.ts` + `sanity.config.ts`). Export them before the commands below.
+> - Use the **local binary** (`./node_modules/.bin/sanity`), not `pnpm exec sanity` — the latter triggers an esbuild install-guard (Gotcha G4).
 
-# Set the project ID + dataset (or use env vars)
+**Step 1 — Deploy the schema first (Content Lake).** This is required *before* the Studio UI and validates every reference target. The `featuredClasses` / `classesTeaching` fields that referenced a non-existent `class` type have been removed (classes live in PostgreSQL per ADR-005).
+
+```bash
+cd apps/studio
 export SANITY_STUDIO_PROJECT_ID=v2gzd4bc
 export SANITY_STUDIO_DATASET=production
-
-# Deploy to Sanity Cloud
-pnpm deploy
+./node_modules/.bin/sanity schema deploy      # → deploys the 8 types; must report 0 errors
+./node_modules/.bin/sanity schema list        # → confirm 8 deployed types
 ```
 
-This deploys Studio to `https://stillwater.sanity.studio` (or your project name). Content editors access this URL to manage all marketing content.
+**Step 2 — Deploy the Studio UI.**
+
+```bash
+./node_modules/.bin/sanity deploy --url=stillwater --title "Stillwater" --yes
+```
+
+On success, Sanity prints an `appId`. **Pin it** in `apps/studio/sanity.cli.ts` under `deployment: { autoUpdates: true, appId: '...' }` so future deploys don't re-prompt. If `stillwater` is taken, use `stillwater-studio` and update the URLs cited in §1.8.
+
+This deploys Studio to `https://stillwater.sanity.studio` (or your chosen hostname). Content editors access this URL to manage all marketing content.
 
 **Alternative — run Studio locally:**
 ```bash
@@ -92,6 +104,8 @@ pnpm --filter @stillwater/studio dev
 ### 1.5 Create Initial Content
 
 After deploying Studio, create at least these documents so the marketing pages aren't empty:
+
+> ⚠️ The Home Page no longer has a **Featured Classes** field and Instructor Bios no longer have **Classes Teaching** — those referenced a `class` type that does not exist in Sanity (classes are PostgreSQL data, ADR-005). Do not expect those fields; the home page's featured-classes section (if needed) must be sourced from the API, not Sanity.
 
 1. **Site Settings** (singleton) — studio name, tagline, contact email/phone, address, social links, nav items
 2. **Home Page** (singleton) — hero headline, hero subheadline, philosophy text, CTA text/href, featured classes. Set `published = true`.
@@ -126,7 +140,7 @@ When content is published/updated in Sanity, a webhook fires to the Next.js app 
 
 ### 1.7 Environment Variables Summary
 
-Add these to `.env.local` (local dev) and Vercel → Settings → Environment Variables (production):
+Add these to **`apps/web/.env.local`** for local dev (the Next.js app reads `.env.local` from its own directory, *not* the repo root) and to Vercel → Settings → Environment Variables (production). Mirror to the repo root `.env.local` for safety. (`SANITY_STUDIO_PROJECT_ID` / `SANITY_STUDIO_DATASET` are deploy-time only and are *not* needed in the web app env.)
 
 | Variable | Value | Scope | Notes |
 |---|---|---|---|

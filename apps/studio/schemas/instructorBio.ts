@@ -40,11 +40,5 @@ export const instructorBio = defineType({
       type: 'array',
       of: [{ type: 'string' }],
     }),
-    defineField({
-      name: 'classesTeaching',
-      title: 'Classes Teaching',
-      type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'class' }] }],
-    }),
   ],
 });
