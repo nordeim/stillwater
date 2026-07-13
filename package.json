@@ -24,6 +24,7 @@
     "db:migrate": "turbo db:migrate --filter=@stillwater/db",
     "db:push": "turbo db:push --filter=@stillwater/db",
     "db:seed": "turbo db:seed --filter=@stillwater/db",
+    "db:seed:e2e": "turbo db:seed:e2e --filter=@stillwater/db",
     "db:studio": "turbo db:studio --filter=@stillwater/db",
     "db:reset": "turbo db:reset --filter=@stillwater/db",
     "jobs:dev": "turbo dev --filter=@stillwater/workers",
