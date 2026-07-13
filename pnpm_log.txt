@@ -1,12 +1,149 @@
 $ pnpm install
 Scope: all 14 workspace projects
-Already up to date
-Done in 684ms using pnpm v11.9.0
+✓ Lockfile passes supply-chain policies (1876 entries in 2m 9s)
+Lockfile is up to date, resolution step is skipped
+Packages: +3 -2
++++--
+[WARN] Request took 12057ms: https://registry.npmjs.org/@asamuzakjp%2Fcss-color
+[WARN] Request took 18186ms: https://registry.npmjs.org/@asamuzakjp%2Fdom-selector
+Progress: resolved 3, reused 3, downloaded 0, added 0, done
+[WARN] Request took 10335ms: https://registry.npmjs.org/@upstash%2Fratelimit
+[WARN] Request took 24207ms: https://registry.npmjs.org/caniuse-lite
+[WARN] Request took 58913ms: https://registry.npmjs.org/@next%2Fswc-linux-x64-gnu
+[WARN] 23 other warnings
+[WARN] GET https://registry.npmjs.org/@next%2Fenv error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@next%2Fbundle-analyzer error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@next%2Fswc-darwin-x64 error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@next%2Feslint-plugin-next error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@next%2Fswc-linux-x64-musl error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@next%2Fswc-linux-arm64-gnu error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@next%2Fswc-linux-arm64-musl error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@next%2Fswc-darwin-arm64 error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@next%2Fswc-win32-x64-msvc error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@playwright%2Ftest error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@typescript-eslint%2Ftype-utils error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@typescript-eslint%2Fparser error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@typescript-eslint%2Fscope-manager error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@typescript-eslint%2Feslint-plugin error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@typescript-eslint%2Ftypescript-estree error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@typescript-eslint%2Futils error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@typescript-eslint%2Ftypes error (23). Will retry in 10 seconds. 2 retries left.
+[WARN] GET https://registry.npmjs.org/@typescript-eslint%2Fvisitor-keys error (23). Will retry in 10 seconds. 2 retries left.
+. prepare$ ln -sf ../../scripts/pre-commit-check.sh .git/hooks/pre-commit 2>/dev/null || true
+└─ Done in 68ms
+Done in 2m 15s using pnpm v11.9.0
 (venv) pete@pop-os:/home/project/stillwater
-$ pnpm install
-Scope: all 14 workspace projects
-Already up to date
-Done in 677ms using pnpm v11.9.0
+$ pnpm db:migrate
+$ turbo db:migrate --filter=@stillwater/db
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/db
+   • Running db:migrate in 1 packages
+   • Remote caching disabled
+
+@stillwater/db:db:migrate: cache bypass, force executing 5c8201f9c9d0c99c
+@stillwater/db:db:migrate: $ drizzle-kit migrate
+@stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
+@stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
+@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ◈ encrypted .env [www.dotenvx.com]
+@stillwater/db:db:migrate: Using 'pg' driver for database querying
+[✓] migrations applied successfully!
+
+ Tasks:    1 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    1.829s 
+
+(venv) pete@pop-os:/home/project/stillwater
+$ pnpm db:seed
+$ turbo db:seed --filter=@stillwater/db
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/db
+   • Running db:seed in 1 packages
+   • Remote caching disabled
+
+@stillwater/db:db:migrate: cache bypass, force executing 5c8201f9c9d0c99c
+@stillwater/db:db:migrate: $ drizzle-kit migrate
+@stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
+@stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
+@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ override existing { override: true }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+@stillwater/db:db:migrate: Using 'pg' driver for database querying
+[✓] migrations applied successfully!
+@stillwater/db:db:seed: cache bypass, force executing 109c9ad1aae9bfde
+@stillwater/db:db:seed: $ tsx src/seed/index.ts
+@stillwater/db:db:seed: ◇ injected env (31) from ../../.env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+@stillwater/db:db:seed: 🌱 Seeding Stillwater development data...
+@stillwater/db:db:seed: 
+@stillwater/db:db:seed:   Inserting 5 users...
+@stillwater/db:db:seed:   Inserting 5 members...
+@stillwater/db:db:seed:   Inserting role assignments...
+@stillwater/db:db:seed:   Inserting 3 instructors...
+@stillwater/db:db:seed:   Inserting 4 class styles...
+@stillwater/db:db:seed:   Inserting 4 classes...
+@stillwater/db:db:seed:   Inserting 2 rooms...
+@stillwater/db:db:seed:   Inserting 7 sessions (one per day for the next week)...
+@stillwater/db:db:seed:   Inserting 3 membership plans...
+@stillwater/db:db:seed: 
+@stillwater/db:db:seed: ✅ Seed complete. Summary:
+@stillwater/db:db:seed:      5 members, 3 instructors, 4 class styles, 4 classes,
+@stillwater/db:db:seed:      2 rooms, 7 sessions, 3 membership plans
+@stillwater/db:db:seed: 
+@stillwater/db:db:seed:   Demo login emails:
+@stillwater/db:db:seed:      maya.chen@stillwater.test — roles: member
+@stillwater/db:db:seed:      mei.tanaka@stillwater.test — roles: member, instructor
+@stillwater/db:db:seed:      james.harlow@stillwater.test — roles: member, instructor
+@stillwater/db:db:seed:      aiko.mori@stillwater.test — roles: member, instructor
+@stillwater/db:db:seed:      alex.rivera@stillwater.test — roles: member, staff, manager, owner
+@stillwater/db:db:seed: 
+@stillwater/db:db:seed: 🌱 Seed script finished successfully.
+
+ Tasks:    2 successful, 2 total
+Cached:    0 cached, 2 total
+  Time:    3.443s 
+
+(venv) pete@pop-os:/home/project/stillwater
+$ pnpm db:seed:e2e
+$ turbo db:seed:e2e --filter=@stillwater/db
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/db
+   • Running db:seed:e2e in 1 packages
+   • Remote caching disabled
+
+@stillwater/db:db:seed:e2e: cache bypass, force executing 3dcb81580872c999
+@stillwater/db:db:seed:e2e: $ tsx src/seed/e2e.ts
+@stillwater/db:db:seed:e2e: ◇ injected env (31) from ../../.env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+@stillwater/db:db:seed:e2e: 🌱 Seeding E2E test data (layers on top of base seed)...
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e:   Inserting 5 E2E test users...
+@stillwater/db:db:seed:e2e:   Inserting 5 E2E test members...
+@stillwater/db:db:seed:e2e:   Inserting role assignments...
+@stillwater/db:db:seed:e2e:   Inserting 60 E2E sessions (14 days)...
+@stillwater/db:db:seed:e2e:   Inserting 5 pre-existing enrollments...
+@stillwater/db:db:seed:e2e:   Inserting 1 pre-existing waitlist entry...
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e: ✅ E2E seed complete. Summary:
+@stillwater/db:db:seed:e2e:      5 E2E members, 60 sessions,
+@stillwater/db:db:seed:e2e:      5 enrollments, 1 waitlist entries
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e:   E2E test accounts (magic-link email login):
+@stillwater/db:db:seed:e2e:      e2e.member@stillwater.test     — Booking flow (no pre-existing data)
+@stillwater/db:db:seed:e2e:      e2e.booker@stillwater.test     — Dashboard with 1 upcoming enrollment
+@stillwater/db:db:seed:e2e:      e2e.waitlist@stillwater.test   — Waitlist page with 1 waiting entry
+@stillwater/db:db:seed:e2e:      e2e.cancel@stillwater.test     — Cancel-flow (has 1 cancellable enrollment)
+@stillwater/db:db:seed:e2e:      e2e.history@stillwater.test    — History page with 3 past attended sessions
+@stillwater/db:db:seed:e2e:      alex.rivera@stillwater.test    — Admin pages (owner role — full access)
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e:   💡 Run `pnpm db:seed` first if base data is missing.
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e: 🌱 E2E seed script finished successfully.
+
+ Tasks:    1 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    1.515s 
+
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm build
 $ turbo build
@@ -16,20 +153,8 @@ $ turbo build
    • Running build in 13 packages
    • Remote caching disabled
 
-@stillwater/studio:build: cache miss, executing 7458bae04905a978
-@stillwater/config:build: cache miss, executing bb89ded3e0230a8c
-@stillwater/db:build: cache miss, executing 54ab968937b4da67
-@stillwater/ui:build: cache miss, executing b2d132334895d47f
-@stillwater/config:build: $ tsc --build
-@stillwater/ui:build: $ tsc --build
-@stillwater/db:build: $ tsc --build
+@stillwater/studio:build: cache hit, replaying logs f673e293a676226f
 @stillwater/studio:build: $ sanity build
-@stillwater/email:build: cache miss, executing 34b9fd323e4e05dc
-@stillwater/payments:build: cache miss, executing 591d155a7750ccf1
-@stillwater/auth:build: cache miss, executing 367bda711012b759
-@stillwater/auth:build: $ tsc --build
-@stillwater/email:build: $ tsc --build
-@stillwater/payments:build: $ tsc --build
 @stillwater/studio:build: 
 @stillwater/studio:build: 
 @stillwater/studio:build:    ╭──────────────────────────────────────╮
@@ -42,12 +167,24 @@ $ turbo build
 @stillwater/studio:build: 
 @stillwater/studio:build: 
 @stillwater/studio:build:  ›   Warning: Declared version of styled-components (^6.1.13) is not compatible with the version required by sanity (^6.1.15). This might cause problems!
-✔ Clean output folder (68ms)
-@stillwater/api:build: cache miss, executing 5155d3f14ae15f69
-@stillwater/api:build: $ tsc --build
-✔ Build Sanity Studio (7577ms)
+✔ Clean output folder (40ms)
+✔ Build Sanity Studio (8411ms)
 @stillwater/studio:build: 
-@stillwater/web:build: cache miss, executing c31ccb033aa0a575
+@stillwater/ui:build: cache hit, replaying logs f73da9f34b35e025
+@stillwater/ui:build: $ tsc --build
+@stillwater/db:build: cache hit, replaying logs cd55d6a2de5d9e06
+@stillwater/db:build: $ tsc --build
+@stillwater/config:build: cache miss, executing c56c4c61aff48d90
+@stillwater/config:build: $ tsc --build
+@stillwater/auth:build: cache miss, executing ba1bf9c02ffd56a9
+@stillwater/payments:build: cache miss, executing c1421dbc7684428b
+@stillwater/email:build: cache miss, executing fefabd155ea7fb69
+@stillwater/payments:build: $ tsc --build
+@stillwater/auth:build: $ tsc --build
+@stillwater/email:build: $ tsc --build
+@stillwater/api:build: cache miss, executing 0f94c066d11465ba
+@stillwater/api:build: $ tsc --build
+@stillwater/web:build: cache miss, executing 1b466277be87ec91
 @stillwater/web:build: $ next build
 @stillwater/web:build: ▲ Next.js 16.2.10 (Turbopack)
 @stillwater/web:build: - Environments: .env.local
@@ -55,13 +192,13 @@ $ turbo build
 @stillwater/web:build:   · clientTraceMetadata
 @stillwater/web:build: 
 @stillwater/web:build:   Creating an optimized production build ...
-@stillwater/web:build: ✓ Compiled successfully in 28.3s
-✓ Completed runAfterProductionCompile in 478ms
-@stillwater/web:build: ✓ Finished TypeScript in 17.3s 
+@stillwater/web:build: ✓ Compiled successfully in 39.8s
+✓ Completed runAfterProductionCompile in 652ms
+@stillwater/web:build: ✓ Finished TypeScript in 18.8s 
 ⚠ Using edge runtime on a page currently disables static generation for that page
-@stillwater/web:build: ✓ Collecting page data using 3 workers in 4.8s 
-✓ Generating static pages using 3 workers (16/16) in 853ms
-@stillwater/web:build: ✓ Finalizing page optimization in 22ms 
+@stillwater/web:build: ✓ Collecting page data using 3 workers in 5.4s 
+✓ Generating static pages using 3 workers (16/16) in 899ms
+@stillwater/web:build: ✓ Finalizing page optimization in 37ms 
 @stillwater/web:build: 
 @stillwater/web:build: Route (app)                                     Revalidate  Expire
 @stillwater/web:build: ┌ ƒ /
@@ -113,13 +250,11 @@ $ turbo build
 @stillwater/web:build: 
 
  Tasks:    9 successful, 9 total
-Cached:    0 cached, 9 total
-  Time:    1m12.935s 
+Cached:    3 cached, 9 total
+  Time:    1m17.032s 
 
 (venv) pete@pop-os:/home/project/stillwater
-$ cd apps/web/
-(venv) pete@pop-os:/home/project/stillwater/apps/web
-$ pnpm build
+$ cd apps/web && pnpm build
 $ next build
 ▲ Next.js 16.2.10 (Turbopack)
 - Environments: .env.local
@@ -127,13 +262,13 @@ $ next build
   · clientTraceMetadata
 
   Creating an optimized production build ...
-✓ Compiled successfully in 36.8s
-✓ Completed runAfterProductionCompile in 485ms
-✓ Finished TypeScript in 43s    
+✓ Compiled successfully in 38.9s
+✓ Completed runAfterProductionCompile in 642ms
+✓ Finished TypeScript in 21.4s    
 ⚠ Using edge runtime on a page currently disables static generation for that page
-✓ Collecting page data using 3 workers in 4.7s    
-✓ Generating static pages using 3 workers (16/16) in 762ms
-✓ Finalizing page optimization in 23ms    
+✓ Collecting page data using 3 workers in 5.3s    
+✓ Generating static pages using 3 workers (16/16) in 1053ms
+✓ Finalizing page optimization in 43ms    
 
 Route (app)                                     Revalidate  Expire
 ┌ ƒ /
@@ -181,13 +316,4 @@ Route (app)                                     Revalidate  Expire
 
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
-
-(venv) pete@pop-os:/home/project/stillwater/apps/web
-$ pnpm start
-$ next start
-▲ Next.js 16.2.10
-- Local:         http://localhost:3000
-- Network:       http://192.168.2.132:3000
-✓ Ready in 180ms
-
 
