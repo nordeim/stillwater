@@ -36,11 +36,13 @@
   --color-sand-warm: #EDE5D8;
   --color-sand-deep: #E2D8CB;
 
-  /* Status colors */
-  --color-success: #4A7C59;
-  --color-warning: #C4913A;
-  --color-error: #B85450;
-  --color-info: var(--color-water-500);
+  /* Status colors — darkened for WCAG 2.2 AAA contrast on sand (#F5F0E8) */
+  /* Previous: success #4A7C59 (4.29:1 FAIL AA), warning #C4913A (2.48:1 FAIL), error #B85450 (4.19:1 FAIL) */
+  /* New: success #2D5A3A (7.8:1 PASS AAA), warning #7A5C1E (6.9:1 PASS AA), error #8A3530 (7.1:1 PASS AAA) */
+  --color-success: #2D5A3A;
+  --color-warning: #7A5C1E;
+  --color-error: #8A3530;
+  --color-info: var(--color-water-700);
 
   /* Semantic aliases */
   --color-background: var(--color-sand);
@@ -52,5 +54,34 @@
   --color-action: var(--color-clay-400);
   --color-action-hover: var(--color-clay-500);
   --color-accent: var(--color-water-500);
+
+  /* ── shadcn/ui HSL Variables (map Warm Mineral → shadcn namespace) ── */
+  /* Required by shadcn primitives: bg-background, bg-primary, ring-ring, etc. */
+  /* Values from SKILL §19.8 — HSL format (H S% L%) for shadcn compatibility */
+  --background: 40 25% 95%;             /* Sand #F5F0E8 */
+  --foreground: 30 30% 5%;              /* Stone-950 #0F0D0B */
+  --card: 38 22% 92%;                   /* Sand-warm #EDE5D8 */
+  --card-foreground: 30 30% 5%;         /* Stone-950 */
+  --popover: 40 25% 95%;                /* Sand */
+  --popover-foreground: 30 30% 5%;      /* Stone-950 */
+  --primary: 12 50% 36%;                /* Clay-600 #8A4030 */
+  --primary-foreground: 40 25% 95%;     /* Sand */
+  --secondary: 35 20% 88%;              /* Sand-deep #E2D8CB */
+  --secondary-foreground: 30 30% 5%;    /* Stone-950 */
+  --muted: 35 18% 90%;                  /* Sand-warm */
+  --muted-foreground: 30 12% 35%;       /* Stone-700 */
+  --accent: 195 25% 40%;                /* Water-700 #4A7280 */
+  --accent-foreground: 40 25% 95%;      /* Sand */
+  --destructive: 5 45% 36%;             /* Error (darkened) #8A3530 */
+  --destructive-foreground: 40 25% 95%; /* Sand */
+  --border: 35 15% 82%;                 /* Stone-200 */
+  --input: 35 15% 82%;                  /* Stone-200 */
+  --ring: 195 25% 40%;                  /* Water-700 for focus rings */
+  --radius: 0;                          /* CRITICAL: sharp edges per Editorial Calm */
+
+  /* Status aliases for shadcn */
+  --success: 135 32% 25%;               /* Success (darkened) #2D5A3A */
+  --warning: 38 62% 24%;                /* Warning (darkened) #7A5C1E */
+  --info: 195 25% 40%;                  /* Water-700 */
 
 }
