@@ -27,7 +27,7 @@ function getLimiter(limit: number, window: string): Ratelimit {
   if (!limiter) {
     limiter = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(limit, window as '1 m' | '1 h'),
+      limiter: Ratelimit.slidingWindow(limit, window as '1 m' | '5 m' | '15 m' | '1 h'),
       prefix: 'stillwater:ratelimit',
     });
     limiters.set(key, limiter);
@@ -37,7 +37,7 @@ function getLimiter(limit: number, window: string): Ratelimit {
 
 export function rateLimit(opts: {
   limit: number;
-  window: '1 m' | '1 h';
+  window: '1 m' | '5 m' | '15 m' | '1 h';
   identifier?: 'user' | 'ip';
 }) {
   const { limit, window, identifier = 'user' } = opts;
@@ -49,12 +49,27 @@ export function rateLimit(opts: {
         ? ctx.session.user.id
         : ctx.req.headers.get('x-forwarded-for') ?? 'unknown';
 
-    const { success, reset } = await limiter.limit(id);
+    // Fail-OPEN: if Redis is unreachable, allow the request through.
+    // Rationale (SKILL §15.7.5): a rate-limit outage must NOT block
+    // booking/auth. Stripe is fail-CLOSED; rate-limiting is fail-OPEN.
+    let success = true;
+    let reset = Date.now() + 60_000;
+    try {
+      const result = await limiter.limit(id);
+      success = result.success;
+      reset = result.reset;
+    } catch {
+      // Redis down — log and allow (fail-open)
+      console.error('[rateLimit] Redis unreachable, failing OPEN for', id);
+      return next({ ctx });
+    }
+
     if (!success) {
+      const retryAfter = Math.ceil((reset - Date.now()) / 1000);
       throw new TRPCError({
         code: 'TOO_MANY_REQUESTS',
         message: 'Rate limit exceeded. Please try again later.',
-        cause: { retryAfter: Math.ceil((reset - Date.now()) / 1000) },
+        cause: { retryAfter },
       });
     }
     return next({ ctx });
