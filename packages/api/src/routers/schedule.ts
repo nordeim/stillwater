@@ -20,9 +20,20 @@ export const scheduleRouter = router({
   /**
    * Get all scheduled sessions for the 7-day window starting at `weekStart`.
    * Used by the public /schedule page. Eager-loads class, instructor, room.
+   *
+   * Input: accepts weekStart as a Date object OR an ISO date string.
+   * Uses z.union() instead of z.coerce.date() because Zod v4's coerce
+   * doesn't reliably handle string→Date when the value arrives via
+   * tRPC's default JSON serialization ({"json":{"weekStart":"..."}}).
    */
   getWeek: publicProcedure
-    .input(z.object({ weekStart: z.coerce.date() }))
+    .input(z.object({
+      weekStart: z.union([
+        z.date(),
+        z.string().transform((v) => new Date(v)),
+        z.number().transform((v) => new Date(v)),
+      ]),
+    }))
     .query(async ({ ctx, input }) => {
       const weekEnd = new Date(input.weekStart);
       weekEnd.setDate(weekEnd.getDate() + 7);
