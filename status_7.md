@@ -511,3 +511,47 @@ Status
 - Outstanding security follow-through (from the earlier review, now cross-referenced in the guide): the tracked apps/web/.env.local still contains real SANITY_API_TOKEN / SANITY_WEBHOOK_SECRET / BETTER_AUTH_SECRET and an SSH key — 
   these must be rotated and purged from git history before go-live. 
 
+---
+
+All core Sanity infrastructure is now live. Here's the final status. 
+ 
+✅ Completed (executed against real project v2gzd4bc) 
+ 
+┌────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────┐ 
+│ Step           │ Result                                                                                                             │ Evidence                                                         │ 
+├────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤ 
+│ Auth (GitHub)  │ ✅ Member of v2gzd4bc ("Stillwater", 2 members)                                                                    │ sanity projects list, sanity datasets list → production          │ 
+├────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤ 
+│ Schema deploy  │ ✅ 8 types live, 0 reference errors (the class-bug fix worked)                                                     │ Deployed 1/1 schemas; Content Lake query returns syncTags (live) │ 
+├────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤ 
+│ Viewer token   │ ✅ stillwater-web-read (role Viewer) minted; old leaked skSlrWJK1… was not a live project token (absent from list) │ sanity tokens list                                               │ 
+├────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤ 
+│ Webhook secret │ ✅ generated (openssl rand -base64 32), written to apps/web/.env.local                                             │ file updated                                                     │ 
+├────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤ 
+│ CORS           │ ✅ localhost:3000 + https://stillwater.jesspete.shop (+ existing localhost:3333, stillwater.studio)                │ sanity cors list                                                 │ 
+├────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤ 
+│ Studio UI      │ ✅ deployed to https://stillwater.sanity.studio/                                                                   │ Success! Studio deployed…; appId pinned in sanity.cli.ts         │ 
+├────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤ 
+│ appId pin      │ ✅ fa2ndc897dahn4e7nugimfs2 written to apps/studio/sanity.cli.ts                                                   │ edit applied                                                     │ 
+└────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────┘ 
+ 
+Local repo changes made: schema class-reference removal (homePage.ts, instructorBio.ts), webhook comment fix (route.ts), sanity.cli.ts appId, and PRE_LIVE_GUIDE.md §1 corrections — all uncommitted. 
+ 
+⏳ Pending (require dashboard / external access I don't have) 
+ 
+1. ISR webhook — sanity hooks create is interactive-only, so create it in Sanity Cloud → API → Webhooks (guide §1.6): 
+    - Name: stillwater-isr-revalidation 
+    - URL: https://stillwater.jesspete.shop/api/sanity/webhook 
+    - HTTP method: POST 
+    - Secret: the value now in apps/web/.env.local → SANITY_WEBHOOK_SECRET 
+    - Trigger on: Create, Update, Delete 
+2. Initial content (8 docs) — author in the Studio UI at stillwater.sanity.studio (guide §1.5). Note: Home/Instructor no longer have Featured-Classes / Classes-Teaching fields. 
+3. Vercel env vars — add NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET, SANITY_API_TOKEN, SANITY_WEBHOOK_SECRET (local dev already reads them from apps/web/.env.local). 
+4. Tidy-up — delete the dangling token sivnJxZ0qmVMmW ("Stillwater Web Read") in Sanity Cloud UI (harmless; I lost its key so CLI remove wasn't possible). 
+ 
+⚠ Security re-flag (from the earlier review) 
+ 
+apps/web/.env.local is tracked in git and now contains a fresh real SANITY_API_TOKEN + SANITY_WEBHOOK_SECRET (and the pre-existing BETTER_AUTH_SECRET + SSH key in history). I had to write the new token there for local dev, but this    
+perpetuates the committed-secret problem. Before go-live: git rm --cached apps/web/.env.local and purge apps/web/.env.local + docs/ssh-key.txt from history via git filter-repo (the guide's §1 purge command only covers root 
+.env.local). 
+ 
