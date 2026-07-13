@@ -5,6 +5,10 @@ on:
     types: [opened, synchronize, reopened]
     branches: [develop, main]
 
+concurrency:
+  group: deploy-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '22'
 

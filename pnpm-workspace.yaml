@@ -32,6 +32,9 @@ overrides:
   "@opentelemetry/sdk-trace-base": "2.8.0"
   "@opentelemetry/api": "^1.9.0"
   "@opentelemetry/semantic-conventions": "^1.28.0"
+  # Fix ws high CVE (GHSA-96hv-2xvq-fx4p — memory exhaustion DoS)
+  # Transitive via @trigger.dev/sdk → socket.io → engine.io → ws
+  "ws": ">=8.21.0"
 
 # Explicitly allow postinstall scripts for native/critical binaries.
 # Resolves: ERR_PNPM_IGNORED_BUILDS

@@ -21,10 +21,12 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-none px-3",
-        lg: "h-11 rounded-none px-8",
-        icon: "h-10 w-10",
+        // WCAG 2.2 AAA §2.5.5: 44×44 CSS px minimum target size
+        // h-11 = 44px (was h-10 = 40px)
+        default: "h-11 px-4 py-2",
+        sm: "h-11 rounded-none px-3 text-xs",
+        lg: "h-12 rounded-none px-8",
+        icon: "h-11 w-11",
       },
     },
     defaultVariants: {
@@ -40,18 +42,17 @@ export interface ButtonProps
   asChild?: boolean
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
+// React 19: ref is a regular prop (no forwardRef needed)
+function Button({ className, variant, size, asChild = false, ref, ...props }: ButtonProps & { ref?: React.Ref<HTMLButtonElement> }) {
+  const Comp = asChild ? Slot : "button"
+  return (
+    <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      ref={ref}
+      {...props}
+    />
+  )
+}
 Button.displayName = "Button"
 
 export { Button, buttonVariants }

@@ -80,6 +80,21 @@ export const auth = betterAuth({
   secret: effectiveSecret,
   baseURL,
   emailAndPassword: { enabled: false },
+  // Rate limiting for auth mutations (P0-4 fix).
+  // Better Auth has built-in rate limiting that uses the database (not Redis)
+  // to track request counts per IP + email. This prevents credential-stuffing
+  // and magic-link email-bombing attacks.
+  // Per SKILL §15.7.4: signIn 10/15min, magicLink 5/15min.
+  rateLimit: {
+    window: 15 * 60, // 15 minutes (in seconds)
+    max: 10, // 10 requests per window per IP
+    // Custom limits per path (overrides the global max)
+    customRules: {
+      '/api/auth/sign-in/social': { window: 15 * 60, max: 10 },
+      '/api/auth/magic-link': { window: 15 * 60, max: 5 },
+      '/api/auth/callback/*': { window: 15 * 60, max: 15 },
+    },
+  },
   socialProviders: {
     google: {
       clientId: googleClientId,

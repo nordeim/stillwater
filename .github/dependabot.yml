@@ -1,0 +1,56 @@
+# Dependabot configuration — weekly updates for npm + GitHub Actions
+# Per SKILL §11.8: weekly, grouped (Next.js+React, Drizzle, Tailwind), GitHub Actions ecosystem
+version: 2
+
+updates:
+  # npm dependencies — weekly, grouped by ecosystem
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Group Next.js + React updates together (breaking changes often coordinated)
+      nextjs-react:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      # Group Drizzle updates
+      drizzle:
+        patterns:
+          - "drizzle-orm"
+          - "drizzle-kit"
+      # Group Tailwind updates
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "prettier-plugin-tailwindcss"
+      # Group ESLint updates
+      eslint:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-*"
+          - "typescript-eslint"
+    commit-message:
+      prefix: deps
+    labels:
+      - dependencies
+
+  # GitHub Actions — weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci
+    labels:
+      - dependencies
+      - github-actions

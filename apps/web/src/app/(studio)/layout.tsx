@@ -23,7 +23,7 @@ export default async function StudioLayout({
   const session = await requireAuth();
   return (
     <div className="studio-shell" data-session={session.user.id}>
-      {children}
+      <main id="main-content">{children}</main>
     </div>
   );
 }

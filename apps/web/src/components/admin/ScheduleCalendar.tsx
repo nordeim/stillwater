@@ -19,6 +19,7 @@ import { useState, useMemo } from 'react';
 import {
   DndContext,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -75,6 +76,8 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // WCAG 2.2 §2.5.7: keyboard alternative for drag-and-drop
+    useSensor(KeyboardSensor, {}),
   );
 
   const _updateSession = trpc.sessions.cancel.useMutation({
