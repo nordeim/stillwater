@@ -59,7 +59,7 @@ export const bookingsRouter = router({
         });
       }
 
-      return ctx.db.transaction(async (tx) => {
+      const created = await ctx.db.transaction(async (tx) => {
         // 1. Acquire advisory lock keyed by session UUID
         const lockKey = sessionUuidToLockKey(input.sessionId);
         await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
@@ -143,21 +143,23 @@ export const bookingsRouter = router({
           });
         }
 
-        // Phase 8: Trigger booking-confirmation job (fire-and-forget).
-        // Note: class-reminder-24h and class-reminder-1h are NO LONGER
-        // triggered per-booking. They run as cron jobs (every 15min / 5min)
-        // that fan out to find sessions starting in the 24h/1h window.
-        // This handles members who book after the 24h mark and avoids
-        // creating thousands of scheduled waits in Trigger.dev.
-        ctx.jobs.trigger('booking-confirmation', {
-          enrollmentId: created.id,
-          memberId,
-        }).catch(() => {
-          // Job trigger failure shouldn't fail the booking — Trigger.dev retries
-        });
-
         return created;
       });
+
+      // Phase 8: Trigger booking-confirmation job POST-COMMIT (fire-and-forget).
+      // MUST be outside the transaction — if the tx rolls back, the email
+      // should NOT be sent. This pattern mirrors webhooks.ts:88-118.
+      // Note: class-reminder-24h and class-reminder-1h are NO LONGER
+      // triggered per-booking. They run as cron jobs (every 15min / 5min)
+      // that fan out to find sessions starting in the 24h/1h window.
+      ctx.jobs.trigger('booking-confirmation', {
+        enrollmentId: created.id,
+        memberId,
+      }).catch(() => {
+        // Job trigger failure shouldn't fail the booking — Trigger.dev retries
+      });
+
+      return created;
     }),
 
   /**

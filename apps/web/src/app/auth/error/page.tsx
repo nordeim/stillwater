@@ -30,7 +30,7 @@ export default async function AuthErrorPage({ searchParams }: AuthErrorPageProps
   const errorInfo = error ? ERROR_MESSAGES[error] : null;
 
   return (
-    <main className="auth-error-page">
+    <main id="main-content" className="auth-error-page">
       <div className="auth-error-page__content">
         <h1>{errorInfo?.title ?? 'Something went wrong'}</h1>
         <p>

@@ -17,7 +17,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const { callbackUrl } = await searchParams;
 
   return (
-    <main className="sign-in-page">
+    <main id="main-content" className="sign-in-page">
       <div className="sign-in-page__brand">
         <h1>Stillwater</h1>
         <p>A sanctuary for mindful movement.</p>

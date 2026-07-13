@@ -20,6 +20,9 @@ import { apiCaller } from '@/lib/trpc/server';
 // 5 min max duration (Vercel default for Hobby/Pro)
 export const maxDuration = 300;
 
+// Force Node.js runtime (not Edge) — setInterval + streaming require Node APIs
+export const runtime = 'nodejs';
+
 // Do NOT add: export const dynamic = 'force-dynamic' (SKILL §9.1 Gotcha 7)
 
 interface SeatAvailabilityEvent {

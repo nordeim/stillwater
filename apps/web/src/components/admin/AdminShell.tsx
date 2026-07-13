@@ -118,7 +118,7 @@ export function AdminShell({ children, session }: AdminShellProps) {
         </aside>
 
         {/* Main content area */}
-        <main className="min-w-0 flex-1 bg-sand-50">
+        <main id="main-content" className="min-w-0 flex-1 bg-sand-50">
           <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
         </main>
       </div>
