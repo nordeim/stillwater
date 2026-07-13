@@ -131,7 +131,7 @@ Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 |---|---|
 | `pnpm check-types` | **9/9 successful** ✅ |
 | `pnpm lint` | **2/2 successful** ✅ (0 errors, 9 intentional warnings) |
-| `pnpm test` | **643 tests passing** ✅ |
+| `pnpm test` | **651 tests passing** ✅ |
 | `pnpm build` | **✅ 9/9 packages, 16 static pages** (verified 2026-07-12) ✅ |
 
 > ⚠️ **Lint flake note:** `pnpm lint` (default parallel turborepo run) can intermittently fail with *"not found by the project service"* parsing errors on test files. This is a typescript-eslint `projectService` concurrency collision (two ESLint language-service instances racing), **not a code defect** — confirmed by running lint serially (`pnpm turbo run lint --concurrency=1` → 2/2 green) or per-package. Code is correct.
@@ -143,7 +143,7 @@ Test breakdown:
 - `packages/payments` — 7 test files / **43 tests**
 - `apps/web` — 28 test files / **159 tests**
 - `packages/email` — 16 test files (13 template + 3 component) / **71 tests**
-- `services/workers` — 11 test files / **33 tests**
+- `services/workers` — 11 test files / **41 tests**
 
 Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). ISR revalidate times: `/about` = 1d, `/blog` = 1h. (Home `/` exports `revalidate = 3600` in source but renders dynamic (ƒ) in the observed build — likely opted into on-demand rendering; verify in CI.) (`pnpm build` verified 2026-07-12: 9/9 packages, 16 static pages, 0 errors.)
 
