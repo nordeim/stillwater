@@ -554,4 +554,43 @@ Local repo changes made: schema class-reference removal (homePage.ts, instructor
 apps/web/.env.local is tracked in git and now contains a fresh real SANITY_API_TOKEN + SANITY_WEBHOOK_SECRET (and the pre-existing BETTER_AUTH_SECRET + SSH key in history). I had to write the new token there for local dev, but this    
 perpetuates the committed-secret problem. Before go-live: git rm --cached apps/web/.env.local and purge apps/web/.env.local + docs/ssh-key.txt from history via git filter-repo (the guide's §1 purge command only covers root 
 .env.local). 
+
+---
+
+✅ Live Studio verification — PASSED 
  
+A fresh agent-browser session (no cached 404) hitting https://stillwater.sanity.studio/ is redirected to the Sanity login screen: 
+ 
+┌───────────────────┬─────────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────┐ 
+│ Check             │ Observed                                                                        │ Meaning                                         │ 
+├───────────────────┼─────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤ 
+│ Final URL         │ https://www.sanity.io/login?type=token&origin=…/studio/fa2ndc897dahn4e7nugimfs2 │ Unauthenticated Studio → Sanity auth (expected) │ 
+├───────────────────┼─────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤ 
+│ Page title        │ "Log in to Sanity"                                                              │ Real Sanity login page rendered                 │ 
+├───────────────────┼─────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────┤ 
+│ appId in redirect │ fa2ndc897dahn4e7nugimfs2                                                        │ Matches the appId we pinned in sanity.cli.ts    │ 
+└───────────────────┴─────────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────┘ 
+ 
+Per the deploy-skill's verification rule: a fresh session redirecting to the Sanity login is the definitive proof the Studio is live. (Before deploy, the same URL returns {"statusCode":404,"error":"Not Found","message":"Studio not 
+found"} — we are now past that.) 
+ 
+---
+ 
+Sanity execution — overall status 
+ 
+Fully done (verified live): 
+- ✅ Auth (GitHub account → member of v2gzd4bc) 
+- ✅ Schema deployed (8 types, class-reference bug fixed, 0 errors) 
+- ✅ Viewer token minted + webhook secret generated → written to apps/web/.env.local 
+- ✅ CORS (localhost:3000 + stillwater.jesspete.shop) 
+- ✅ Studio UI deployed + appId pinned 
+- ✅ Live Studio confirmed via fresh browser session 
+ 
+Still pending (dashboard / external access): 
+- ⏳ ISR webhook — create in Sanity Cloud UI (§1.6): URL https://stillwater.jesspete.shop/api/sanity/webhook, secret = SANITY_WEBHOOK_SECRET, triggers Create/Update/Delete 
+- ⏳ 8 content docs — author in the Studio UI (§1.5) 
+- ⏳ Vercel env vars (NEXT_PUBLIC_SANITY_*, SANITY_API_TOKEN, SANITY_WEBHOOK_SECRET) 
+- ⏳ Delete dangling token sivnJxZ0qmVMmW in Cloud UI (harmless) 
+- ⚠ Purge apps/web/.env.local + docs/ssh-key.txt from git history before go-live (committed-secret exposure) 
+ 
+Uncommitted local changes: schema fixes, sanity.cli.ts appId, route.ts comment, PRE_LIVE_GUIDE.md §1.  
