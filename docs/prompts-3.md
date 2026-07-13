@@ -42,6 +42,36 @@ Please meticulously review and validate the outstanding issues and  errors again
 
 ---
 
+please make the necessary config changes in your local codebase, then commit and push to my GitHub repo so that I can sync my live site with the changes. also copy all audit reports to `docs/audit/` folder and commit and push them
+
+---
+
+awesome meticulous job so far. please keep up the good work. now, please meticulously review and validate the attached updated pnpm execution log (v3) - check for any issue or error.
+next, meticulously plan to perform more thorough E2E testing of the live site at URL `https://stillwater.jesspete.shop/` which has been deployed with the latest codebase and seed data. use agent-browser for testing.
+verify the visual and UI/UX aesthetics against the static mockup in the repo included `static_landing_page_mockup.html` (use it for visual and aestheticc guide/reference only).
+The patched ssh wrapper script is attached here for your `git push`.
+
+---
+
+Please meticulously review and validate the attached (v2) pnpm execution log the errors against the codebase to identify the root causes and optimal fixes. Then meticulously plan to create a comprehensive remediation plan and a detailed ToDo list to apply the validated optimal fixes, include any previously identified issues and bugs that are still outstanding. Next, review and validate the remediation plan against the codebase again to ensure alignment for executing meticulously. use TDD approach to make changes.
+
+---
+
+Please meticulously review and validate the attached pnpm execution log the errors against the codebase to identify the root causes and optimal fixes. Then meticulously plan to create a comprehensive remediation plan and a detailed ToDo list to apply the validated optimal fixes, include any previously identified issues and bugs that are still outstanding. Next, review and validate the remediation plan against the codebase again to ensure alignment for executing meticulously. use TDD approach to make changes.
+
+---
+
+Awesome meticulous job so far. Please keep up the good work. Now, please create necessary (dummy) test seed data for more realistic E2E browser based testing, then commit locally and `git push` remotely.
+Make sure you have `git commit` all code changes locally and `git push` to my GitHub repo using `cd /home/z/my-project/stillwater/ && git add . && git commit -m "commit all changes" && git push`.
+Next create a tar archive of the audit reports in `/home/z/my-project/download/` for me to manually download and unpack manually to my test host.
+
+---
+
+please `git commit`  and `git push` using `docs/ssh-key.txt` and `docs/ssh_git_wrapper_v3.py`
+then, meticulously proceed with remaining remediation tasks based on your recommended next steps. ut first re-evaluate and re-validate your findings to confirm root causes and the optiomal fixes
+
+---
+
 please meticulously review the latest pnpm execution log attached . also the latest codebase has been deployed to the live site, so repeat your E2E verification tests
 
 ---
