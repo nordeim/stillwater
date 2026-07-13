@@ -27,7 +27,8 @@
     "db:studio": "turbo db:studio --filter=@stillwater/db",
     "db:reset": "turbo db:reset --filter=@stillwater/db",
     "jobs:dev": "turbo dev --filter=@stillwater/workers",
-    "jobs:deploy": "turbo deploy --filter=@stillwater/workers"
+    "jobs:deploy": "turbo deploy --filter=@stillwater/workers",
+    "prepare": "ln -sf ../../scripts/pre-commit-check.sh .git/hooks/pre-commit 2>/dev/null || true"
   },
   "devDependencies": {
     "@stillwater/eslint-config": "workspace:*",
