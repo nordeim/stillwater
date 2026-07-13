@@ -38,6 +38,10 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+Please meticulously review and validate the outstanding issues and  errors against the codebase to identify the root causes and optimal fixes. Then meticulously plan to create a comprehensive remediation plan and a detailed ToDo list to apply the validated optimal fixes, include any previously identified issues and bugs that are still outstanding. Next, review and validate the remediation plan against the codebase again to ensure alignment for executing meticulously. use TDD approach to make changes.
+
+---
+
 please meticulously review and validate the latest git commits to the current project folder to check and whether the issues identified earlier have been resolved (fixed).
 
 ---
