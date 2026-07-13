@@ -61,6 +61,11 @@ please meticulously review the attached agent execution session log and extract 
 
 ---
 
+now, please meticulously plan to distill your knowlede/know-how, expertise, experiences and lessons learnt from completing this task (sanity studio setup, configuration, deployment and verification) into a skill `sanity-io-deploy_SKILL.
+md`. make it a comprehensive and detailed guide for another coding agent to be able to accomplish similar tasks without getting hiccups.
+
+---
+
 Please meticulously review and validate the attached pnpm execution log the errors against the codebase to identify the root causes and optimal fixes. Then meticulously plan to create a comprehensive remediation plan and a detailed ToDo list to apply the validated optimal fixes, include any previously identified issues and bugs that are still outstanding. Next, review and validate the remediation plan against the codebase again to ensure alignment for executing meticulously. use TDD approach to make changes.
 
 ---
