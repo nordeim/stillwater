@@ -7,11 +7,9 @@ import { getSanityClient } from '@/lib/sanity/client';
 import { blogPostQuery } from '@/lib/sanity/queries';
 import { blogPostSchema } from '@/lib/sanity/schemas';
 
-// R3 fix v2 (2026-07-14): Use force-dynamic instead of ISR for slug pages.
-// ISR (revalidate=3600) streams the response with HTTP 200 before notFound()
-// can throw, causing soft-404s (200 status + 404 UI). force-dynamic ensures
-// the page is fully server-rendered on each request, so notFound() can set
-// the correct HTTP 404 status BEFORE any response is sent.
+// R3 fix v3 (v6, 2026-07-14): Use force-dynamic AND call notFound() from
+// generateMetadata (which runs BEFORE the page component streams). This
+// ensures the HTTP 404 status is set before any response body is sent.
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
@@ -22,15 +20,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const client = getSanityClient();
   if (!client) {
-    // R3 fix: noindex for not-found pages
-    return { title: 'Blog post not found', robots: { index: false, follow: false } };
+    // M2 fix: Call notFound() here (in generateMetadata) to set HTTP 404
+    // before streaming starts.
+    notFound();
   }
 
   const raw: unknown = await client.fetch(blogPostQuery, { slug });
   const parsed = blogPostSchema.safeParse(raw);
   if (!parsed.success) {
-    // R3 fix: noindex for not-found pages
-    return { title: 'Blog post not found', robots: { index: false, follow: false } };
+    // M2 fix: Call notFound() here for nonexistent blog posts.
+    notFound();
   }
   return {
     title: parsed.data.title,

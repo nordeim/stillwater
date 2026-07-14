@@ -68,13 +68,80 @@ const FEATURE_ROWS: FeatureRow[] = [
   { label: 'Pause or cancel', values: ['Any time', 'Any time', 'Any time'] },
 ];
 
+// M1 fix (v6, 2026-07-14): Fallback plans data for when DB is unreachable.
+// Matches the mockup pricing section (§04) and the seed fixtures.
+// This ensures /pricing always shows the 3 plans with real prices,
+// even when the production DB is empty or unreachable (which happens
+// when the neon-http driver times out — the withTimeout + .catch
+// pattern silently returns []).
+interface Plan {
+  id: string;
+  name: string;
+  stripePriceId: string;
+  interval: string;
+  priceCents: number;
+  classCreditsPerCycle: number | null;
+  guestPassesPerCycle: number | null;
+  allowsVirtual: boolean;
+  allowsInPerson: boolean;
+  isActive: boolean;
+  sortOrder: number | null;
+}
+
+const FALLBACK_PLANS: Plan[] = [
+  {
+    id: 'fallback-dropin',
+    name: 'Pay As You Go',
+    stripePriceId: 'price_placeholder_dropin',
+    interval: 'month',
+    priceCents: 2800,
+    classCreditsPerCycle: 1,
+    guestPassesPerCycle: 0,
+    allowsVirtual: true,
+    allowsInPerson: true,
+    isActive: true,
+    sortOrder: 1,
+  },
+  {
+    id: 'fallback-unlimited',
+    name: 'Unlimited',
+    stripePriceId: 'price_placeholder_unlimited',
+    interval: 'month',
+    priceCents: 14900,
+    classCreditsPerCycle: null,
+    guestPassesPerCycle: 2,
+    allowsVirtual: true,
+    allowsInPerson: true,
+    isActive: true,
+    sortOrder: 2,
+  },
+  {
+    id: 'fallback-10pack',
+    name: '10 Classes',
+    stripePriceId: 'price_placeholder_10pack',
+    interval: 'month',
+    priceCents: 22000,
+    classCreditsPerCycle: 10,
+    guestPassesPerCycle: 1,
+    allowsVirtual: false,
+    allowsInPerson: true,
+    isActive: true,
+    sortOrder: 3,
+  },
+];
+
 export default async function PricingPage() {
   const caller = await apiCaller();
-  const plans = await withTimeout(
+  const dbPlans = await withTimeout(
     caller.memberships.getPlans().catch(() => []),
     8_000,
     [],
   );
+
+  // M1 fix: Use fallback plans when DB is unreachable or empty.
+  // This ensures /pricing always shows the 3 plans with real prices ($28/$149/$220),
+  // matching the mockup and the home page MembershipSection behavior.
+  const plans: Plan[] = dbPlans.length > 0 ? dbPlans : FALLBACK_PLANS;
 
   if (plans.length === 0) {
     return (

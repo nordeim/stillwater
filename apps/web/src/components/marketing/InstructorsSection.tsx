@@ -1,7 +1,9 @@
 /**
  * F12-07 — § 03 Instructors preview section
  *
- * 3 alternating rows. "View all 8 instructors" link.
+ * 3 alternating rows. "View all N instructors" link.
+ *
+ * M3 fix (v6, 2026-07-14): Changed fallback from 8 to 3 to match seed data.
  *
  * Source: MEP Phase 12 F12-07.
  */
@@ -50,7 +52,7 @@ export function InstructorsSection({ instructors }: InstructorsSectionProps) {
             href="/instructors"
             className="text-sm font-medium text-stone-900 hover:text-clay-500"
           >
-            View all {instructors.length || 8} instructors →
+            View all {instructors.length || 3} instructors →
           </Link>
         </div>
       </div>

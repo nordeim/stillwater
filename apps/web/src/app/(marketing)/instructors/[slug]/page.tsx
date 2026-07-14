@@ -4,11 +4,12 @@ import type { Metadata } from 'next';
 
 import { apiCaller } from '@/lib/trpc/server';
 
-// R3 fix v2 (2026-07-14): Use force-dynamic instead of ISR for slug pages.
-// ISR (revalidate=86400) streams the response with HTTP 200 before notFound()
-// can throw, causing soft-404s (200 status + 404 UI). force-dynamic ensures
-// the page is fully server-rendered on each request, so notFound() can set
-// the correct HTTP 404 status BEFORE any response is sent.
+// R3 fix v3 (v6, 2026-07-14): Use force-dynamic AND call notFound() from
+// generateMetadata (which runs BEFORE the page component streams). This
+// ensures the HTTP 404 status is set before any response body is sent.
+// Previous v4/v5 approaches (force-dynamic alone, custom not-found.tsx)
+// didn't work because notFound() was called inside the page component
+// AFTER streaming had started.
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
@@ -25,11 +26,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: instructor.bio ?? `Meet ${instructor.slug.replace(/-/g, ' ')}`,
     };
   } catch {
-    // R3 fix: return a proper "not found" metadata with noindex.
-    return {
-      title: 'Instructor not found',
-      robots: { index: false, follow: false },
-    };
+    // M2 fix: Call notFound() HERE (in generateMetadata) instead of in the
+    // page component. generateMetadata runs BEFORE the page streams, so
+    // notFound() here sets the correct HTTP 404 status before any response
+    // body is committed.
+    notFound();
   }
 }
 
