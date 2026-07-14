@@ -4,13 +4,12 @@ import type { Metadata } from 'next';
 
 import { apiCaller } from '@/lib/trpc/server';
 
-// R3 fix (2026-07-14): Ensure dynamic params are always evaluated fresh.
-// Without this, ISR (revalidate=86400) can cache a 404 response as 200,
-// causing soft-404s that search engines index as valid pages.
-export const dynamicParams = true;
-
-// ISR — revalidate every 24 hours
-export const revalidate = 86400;
+// R3 fix v2 (2026-07-14): Use force-dynamic instead of ISR for slug pages.
+// ISR (revalidate=86400) streams the response with HTTP 200 before notFound()
+// can throw, causing soft-404s (200 status + 404 UI). force-dynamic ensures
+// the page is fully server-rendered on each request, so notFound() can set
+// the correct HTTP 404 status BEFORE any response is sent.
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -27,7 +26,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   } catch {
     // R3 fix: return a proper "not found" metadata with noindex.
-    // The page component will call notFound() which triggers a 404 status.
     return {
       title: 'Instructor not found',
       robots: { index: false, follow: false },

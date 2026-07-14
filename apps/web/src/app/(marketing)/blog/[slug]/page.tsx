@@ -7,13 +7,12 @@ import { getSanityClient } from '@/lib/sanity/client';
 import { blogPostQuery } from '@/lib/sanity/queries';
 import { blogPostSchema } from '@/lib/sanity/schemas';
 
-// R3 fix (2026-07-14): Ensure dynamic params are always evaluated fresh.
-// Without this, ISR (revalidate=3600) can cache a 404 response as 200,
-// causing soft-404s that search engines index as valid pages.
-export const dynamicParams = true;
-
-// ISR — revalidate every hour
-export const revalidate = 3600;
+// R3 fix v2 (2026-07-14): Use force-dynamic instead of ISR for slug pages.
+// ISR (revalidate=3600) streams the response with HTTP 200 before notFound()
+// can throw, causing soft-404s (200 status + 404 UI). force-dynamic ensures
+// the page is fully server-rendered on each request, so notFound() can set
+// the correct HTTP 404 status BEFORE any response is sent.
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
