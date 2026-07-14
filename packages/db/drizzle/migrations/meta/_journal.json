@@ -36,6 +36,13 @@
       "when": 1783820505566,
       "tag": "0004_huge_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783907000000,
+      "tag": "0005_add_price_cents",
+      "breakpoints": true
     }
   ]
 }
