@@ -16,10 +16,13 @@ export const HERO_EMPHASIS_WORD = 'returning';
 export const HERO_INTRO =
   'A sanctuary for mindful movement in the heart of Southeast Portland. Where breath meets body, and stillness meets strength.';
 
+// M2 fix (v5, 2026-07-14): Updated from aspirational mockup numbers (42+/8/3)
+// to match seed data (7/3/2). The v4 M3 fix updated FALLBACK_STATS in stats.ts
+// but Hero.tsx imports HERO_META_STATS from here. Both must be aligned.
 export const HERO_META_STATS = [
-  { label: 'Weekly Classes', value: '42+' },
-  { label: 'Instructors', value: '8' },
-  { label: 'Studio Rooms', value: '3' },
+  { label: 'Weekly Classes', value: '7' },
+  { label: 'Instructors', value: '3' },
+  { label: 'Studio Rooms', value: '2' },
 ] as const;
 
 export const HERO_CTAS = {

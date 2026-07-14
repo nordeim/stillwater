@@ -18,6 +18,7 @@
  */
 
 import './env'; // Load .env.local before db client is instantiated
+import { sql } from 'drizzle-orm';
 import { db } from '../index';
 import {
   users,
@@ -87,8 +88,29 @@ async function seed(): Promise<void> {
   await db.insert(classSessions).values(demoSessions).onConflictDoNothing();
 
   // ── Membership plans (3) ──────────────────────────────────────
+  // M1 fix (v5, 2026-07-14): Use onConflictDoUpdate instead of onConflictDoNothing.
+  // Existing rows (created before migration 0005 added price_cents) have
+  // price_cents=0 (DEFAULT). onConflictDoNothing silently skips them, leaving
+  // prices at $0. onConflictDoUpdate updates price_cents (and other fields)
+  // to the values from the fixture, ensuring the seed is truly idempotent.
   console.log('  Inserting 3 membership plans...');
-  await db.insert(membershipPlans).values(demoMembershipPlans).onConflictDoNothing();
+  await db.insert(membershipPlans)
+    .values(demoMembershipPlans)
+    .onConflictDoUpdate({
+      target: membershipPlans.id,
+      set: {
+        name: sql`excluded.name`,
+        stripePriceId: sql`excluded.stripe_price_id`,
+        interval: sql`excluded.interval`,
+        priceCents: sql`excluded.price_cents`,
+        classCreditsPerCycle: sql`excluded.class_credits_per_cycle`,
+        guestPassesPerCycle: sql`excluded.guest_passes_per_cycle`,
+        allowsVirtual: sql`excluded.allows_virtual`,
+        allowsInPerson: sql`excluded.allows_in_person`,
+        isActive: sql`excluded.is_active`,
+        sortOrder: sql`excluded.sort_order`,
+      },
+    });
 
   console.log('\n✅ Seed complete. Summary:');
   console.log('     5 members, 3 instructors, 4 class styles, 4 classes,');
