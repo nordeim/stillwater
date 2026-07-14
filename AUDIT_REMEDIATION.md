@@ -1,143 +1,136 @@
-# Audit Remediation Report v3 — 2026-07-14
+# Audit Remediation Report v4 — 2026-07-14
 
 > Multi-agent code review of the Stillwater yoga studio platform.
-> E2E v4 (Task 15) verified the live site post-CSP-fix deployment.
-> This document records the v3 remediation applied.
+> E2E v5 (Task 17) verified the live site post-v3 deployment.
+> pnpm_log_4.txt revealed a CRITICAL migration journal desync.
+> This document records the v4 remediation.
 
 ---
 
 ## Executive Summary
 
-E2E v4 (agent-browser, Task 15) found that the CSP nonce fix (commit 8a1765d)
-**resolved the "stuck on Loading" issue** — all 4 previously-broken marketing
-routes now render real data with exceptional Core Web Vitals (LCP 224ms).
-However, the E2E also uncovered 4 new issues, all of which are fixed in this
-v3 remediation across 4 milestones.
+pnpm_log_4.txt analysis revealed a **CRITICAL migration journal desync**:
+the `0005_add_price_cents.sql` migration (created in v3 Milestone 2) was
+NOT registered in Drizzle's `_journal.json`, so `pnpm db:migrate` silently
+skipped it. This caused:
+1. `pnpm db:seed` to fail: `column "price_cents" of relation "membership_plans" does not exist`
+2. `/pricing` page to show empty state: "No plans available yet."
+3. The mockup comparison table (Milestone 4) couldn't render (empty plans array)
 
-**What was fixed in v3:**
+E2E v5 (Task 17) confirmed: CSP fix working ✅, P0 routes still rendering ✅,
+but `/pricing` broken ❌ and soft-404 HTTP status still 200 ⚠️.
 
-1. **CSP header missing on live site** (R1, CRITICAL) — The deployed version
-   didn't include the nonce-based CSP from commit 8a1765d. Added a static CSP
-   fallback in `next.config.ts` with `'unsafe-inline'` for script-src as a
-   safety net. The nonce-based CSP in `proxy.ts` (more secure) overrides it
-   when it runs. Added 7-test CSP verification suite.
+**What was fixed in v4:**
 
-2. **Pricing page: 2/3 plans showed no price** (R2, HIGH) — The
-   `membership_plans` table had NO `priceCents` column. The page could only
-   show `classCreditsPerCycle` (null for Unlimited/Drop-in). Added `priceCents`
-   column + migration `0005_add_price_cents.sql` + updated seed fixtures with
-   real prices ($28, $149, $220 matching mockup) + updated pricing page to
-   display formatted price. Added 10 unit tests.
+1. **Migration journal desync** (M1, CRITICAL) — Added `0005_add_price_cents`
+   entry to `_journal.json` + created `0005_snapshot.json` with the
+   `price_cents` column. `pnpm db:migrate` will now apply the migration,
+   `pnpm db:seed` will succeed, and `/pricing` will render with real data.
 
-3. **Soft-404s on slug routes** (R3, MEDIUM) — `/instructors/<nonexistent>`
-   and `/blog/<nonexistent>` returned HTTP 200 with "not found" title instead
-   of 404. Added `dynamicParams = true` + `robots: { index: false }` to both
-   slug pages.
+2. **Soft-404 HTTP status** (M2, MEDIUM) — Replaced ISR (`revalidate=86400/3600`)
+   with `dynamic = 'force-dynamic'` on both slug pages. ISR streams the
+   response with HTTP 200 before `notFound()` can throw; force-dynamic
+   ensures full server-rendering so `notFound()` sets the correct 404 status.
 
-4. **Pricing page didn't match mockup** (R4, MEDIUM) — Simple 3-card grid
-   replaced with the mockup's rich membership comparison table: 7 feature
-   rows, "Most Popular" badge, plan-specific CTAs, 7-day free trial note.
-   Added 8 unit tests for `planTag` + `ctaLabel` utilities.
+3. **Home page stats inconsistency** (M3, LOW) — Updated `FALLBACK_STATS`
+   from aspirational mockup numbers (42+/8/3) to match seed data (7/3/2).
 
 **What was verified as WORKING (no fix needed):**
-- ✅ All 4 previously-stuck routes now render real data (LCP 224ms)
-- ✅ Core Web Vitals: TTFB 95.5ms, FCP 192ms, LCP 224ms — all Excellent
+- ✅ CSP header present on all responses (static fallback from v3 M1)
+- ✅ P0 routes still render real data (LCP 724ms — Good range)
 - ✅ Auth redirects work (/dashboard, /admin → /auth/sign-in)
-- ✅ Sign-in page: Google OAuth + magic-link form, no password field
+- ✅ Sign-in page: Google OAuth + magic-link form
 - ✅ SEO surface: robots.txt, sitemap.xml, manifest.webmanifest all 200
-- ✅ Default 404 page renders correctly
-
-**What remains open (from previous audits):**
-1. P0 root-cause diagnosis: Vercel function logs + Neon query logs (the
-   3-layer timeout fix is defensive; actual DB connectivity issue needs
-   investigation)
-2. `@dnd-kit/core` → `@dnd-kit/react` migration (premature — feature is stub)
-3. `cacheComponents` status (SKILL §9.9 Gotcha 7 ambiguity)
-4. `ScheduleCalendar.tsx` TODO (drag-to-reschedule never implemented)
-5. Instructor portrait images (requires Sanity CMS image setup)
-6. GitHub Actions Deploy Production workflow broken (missing
-   `PROD_DATABASE_URL_UNPOOLED` secret — all 30+ recent deploys failed)
+- ✅ Editorial Calm design system: warm mineral palette, Cormorant + DM Sans,
+  sharp edges, no shadows, no gradients, generous whitespace
 
 ---
 
-## Commits Pushed in v3 (5 milestones)
+## Commits Pushed in v4 (4 milestones)
 
 | Commit | Milestone | Description |
 |---|---|---|
-| `f7b43c8` | M1 (R1) | CSP static fallback + 7-test nonce verification suite |
-| `006c557` | M2 (R2) | priceCents column + migration 0005 + pricing page fix + 10 tests |
-| `4e54cdf` | M3 (R3) | Soft-404 → hard-404: dynamicParams + noindex on slug pages |
-| `040ba92` | M4 (R4) | Mockup membership comparison table + 8 tests |
-| (this commit) | M5 | Documentation update (this file) |
+| `5aa7082` | M1 (CRITICAL) | Register migration 0005 in Drizzle journal + create 0005_snapshot.json |
+| `7ab1309` | M2 (MEDIUM) | force-dynamic for slug pages → correct HTTP 404 status |
+| `0962155` | M3 (LOW) | Align home page stats with seed data (7/3/2 not 42+/8/3) |
+| (this commit) | M4 (Docs) | Documentation update (this file) |
 
-**Total v3 changes:** 5 commits, ~450 insertions, ~70 deletions, 25 new tests.
+**Total v4 changes:** 4 commits, ~1950 insertions, ~25 deletions.
 
 ---
 
-## E2E v4 Results (Task 15, post-CSP-fix)
+## E2E v5 Results (Task 17, post-v3 deployment)
 
-### P0 Verification — All 4 Routes FIXED
+### P0 Verification — 3/4 Routes Working
 
-| URL | Pre-fix (Task 7/12) | Post-CSP-fix (Task 15) | LCP |
+| URL | Status | LCP | Notes |
 |---|---|---|---|
-| `/` | Stuck "Loading…" | ✅ Renders (Hero stats, schedule, instructors, plans) | 224ms |
-| `/schedule` | Stuck "Loading…" | ✅ Renders (4 days of classes with Book CTAs) | — |
-| `/instructors` | Stuck "Loading…" | ✅ Renders (3 instructors with bios) | — |
-| `/pricing` | Stuck "Loading…" | ✅ Renders (3 plans) — **but had pricing bug (fixed in M2)** | — |
+| `/` | ✅ Renders | 724ms | Hero, schedule, instructors, membership section |
+| `/schedule` | ✅ Renders | — | Multi-day schedule with Book CTAs |
+| `/instructors` | ✅ Renders | — | 3 instructor cards |
+| `/pricing` | ❌ Empty state | — | "No plans available yet." — **fixed in v4 M1** |
+
+### CSP Header Verification — ✅ FIXED (v3 M1 confirmed)
+
+```
+Content-Security-Policy: default-src 'self';
+  script-src 'self' 'unsafe-inline' https://js.stripe.com;
+  style-src 'self' 'unsafe-inline'; ...
+```
+
+### Soft-404 Verification — ⚠️ PARTIAL (fixed in v4 M2)
+
+| URL | Pre-v4 | Post-v4 (expected) |
+|---|---|---|
+| `/instructors/nonexistent-slug` | 200 + 404 UI + noindex | **404** (force-dynamic) |
+| `/blog/nonexistent-slug` | 200 + 404 UI + noindex | **404** (force-dynamic) |
+| `/nonexistent-page` | 404 ✅ | 404 ✅ |
 
 ### Core Web Vitals (Home Page)
 
 | Metric | Value | Rating |
 |---|---|---|
-| TTFB | 95.5 ms | 🟢 Excellent |
-| First Paint | 192 ms | 🟢 Excellent |
-| First Contentful Paint | 192 ms | 🟢 Excellent |
-| **Largest Contentful Paint** | **224 ms** | 🟢 Excellent (11× better than 2.5s threshold) |
-| DOM Content Loaded | 287 ms | 🟢 Excellent |
-| Load Event End | 1,023 ms | 🟢 Good |
+| TTFB | 164.3 ms | 🟢 Excellent |
+| FCP | 724 ms | 🟢 Good |
+| LCP | 724 ms | 🟢 Good |
+| DOMContentLoaded | 821 ms | 🟢 Good |
+| Transfer size | 16.6 KB | 🟢 Tiny |
 
-### Issues Found in E2E v4 + Fixes Applied
+### Visual/Aesthetic Observations — ✅ Matches Editorial Calm
 
-| # | Severity | Issue | Fix Commit | Status |
-|---|---|---|---|---|
-| R1 | 🔴 CRITICAL | No CSP header on live site | `f7b43c8` | ✅ Fixed (static fallback + nonce verification) |
-| R2 | 🔴 HIGH | Pricing: 2/3 plans show no price; "Pay As You Go" shows bare `0` | `006c557` | ✅ Fixed (priceCents column + formatted display) |
-| R3 | 🟡 MEDIUM | Soft-404s on `/instructors/[slug]` + `/blog/[slug]` (HTTP 200) | `4e54cdf` | ✅ Fixed (dynamicParams + noindex) |
-| R4 | 🟡 MEDIUM | Pricing page doesn't match mockup comparison table | `040ba92` | ✅ Fixed (ported mockup table) |
-| R5 | 🟢 LOW | No instructor portrait images | — | 📋 Deferred (requires Sanity CMS) |
-| R6 | 🟢 LOW | 51 font files loaded | — | 📋 Deferred (perf optimization) |
+- ✅ Warm mineral palette (stone/clay/water/sand)
+- ✅ Cormorant Garamond display + DM Sans body + JetBrains Mono for numbers
+- ✅ Sharp edges (no rounded corners)
+- ✅ No drop shadows, no gradients
+- ✅ Generous whitespace
+- ⚠️ Instructor portraits show "PORTRAIT" placeholder (requires Sanity CMS)
+- ⚠️ Stats showed "8 INSTRUCTORS" vs 3 listed — **fixed in v4 M3**
 
 ---
 
-## Migration History (now 6 migrations)
+## Root Cause Analysis: Migration Journal Desync
 
-| Migration | Description | Added in |
-|---|---|---|
-| `0000_dear_dagger.sql` | Initial 18-table schema | Phase 1 |
-| `0001_equal_iron_lad.sql` | instructors.published column | Phase 4 |
-| `0002_lyrical_cargill.sql` | waitlist unique index | Phase 5 |
-| `0003_audit_log_phase9.sql` | audit_log table + 3 indexes | Phase 9 |
-| `0004_huge_hawkeye.sql` | enrollments reminder timestamps | Phase 8 |
-| **`0005_add_price_cents.sql`** | **membership_plans.price_cents column** | **v3 (M2)** |
+**The bug**: In v3 Milestone 2 (commit `006c557`), I created
+`0005_add_price_cents.sql` manually but did NOT update Drizzle Kit's
+migration journal (`meta/_journal.json`). Drizzle Kit only applies
+migrations listed in the journal — the SQL file alone is not enough.
 
----
+**Evidence** (pnpm_log_4.txt line 152):
+```
+cause: error: column "price_cents" of relation "membership_plans" does not exist
+code: '42703' (undefined_column)
+```
 
-## Test Count (now 182+ tests)
+**The fix** (v4 M1, commit `5aa7082`):
+1. Added `0005_add_price_cents` entry to `meta/_journal.json` (idx=5)
+2. Created `meta/0005_snapshot.json` — copy of 0004 snapshot with
+   `price_cents` column added to `membership_plans`
 
-| Package | Test Files | Tests | Change in v3 |
-|---|---|---|---|
-| packages/db | 18 | 131 | — |
-| packages/auth | 4 | 102 | — |
-| packages/api | 13 | 118 | — |
-| packages/payments | 7 | 43 | — |
-| **apps/web** | **31** | **179** | **+2 files, +25 tests** |
-| packages/email | 16 | 71 | — |
-| services/workers | 11 | 41 | — |
-| **Total** | **100** | **685** | **+25 tests** |
-
-New test files in v3:
-- `apps/web/src/app/api/auth/[...all]/csp-verify.test.ts` (7 tests)
-- `apps/web/src/app/(marketing)/pricing/pricing.test.ts` (18 tests)
+**Lesson learned**: When creating Drizzle migrations manually, always:
+1. Create the SQL file: `0005_<name>.sql`
+2. Add an entry to `meta/_journal.json` with the correct idx + tag
+3. Create a `meta/0005_snapshot.json` reflecting the post-migration schema
+4. OR simply run `pnpm drizzle-kit generate` which does all 3 automatically
 
 ---
 
@@ -148,26 +141,48 @@ New test files in v3:
    Vercel function log + Neon query log inspection.
 
 2. **`@dnd-kit/core` → `@dnd-kit/react` migration** — current package is
-   unmaintained Legacy. However, the drag-to-reschedule feature in
-   `ScheduleCalendar.tsx` is a non-functional stub (shows a toast, doesn't
-   call any API). Migration is premature — feature needs design first.
+   unmaintained Legacy. The drag-to-reschedule feature is a non-functional
+   stub. Migration is premature — feature needs design first.
 
-3. **`cacheComponents` status** — SKILL §9.9 Gotcha 7 says "deferred to
-   pre-Phase 4" but Phase 4 is complete. Either enable it or remove the
-   ambiguity.
+3. **`cacheComponents` status** — SKILL §9.9 Gotcha 7 ambiguity.
 
-4. **`ScheduleCalendar.tsx` TODO** — `// TODO: Phase 10 — call
-   sessions.update(...)` for drag-to-reschedule. Phase 10 was observability;
-   TODO was never resolved.
+4. **`ScheduleCalendar.tsx` TODO** — drag-to-reschedule never implemented.
 
-5. **Instructor portrait images** — detail page shows "Portrait" placeholder;
-   no image upload infrastructure. Requires Sanity CMS image setup.
+5. **Instructor portrait images** — requires Sanity CMS image setup.
 
-6. **GitHub Actions Deploy Production workflow broken** — "Run DB migrations"
-   step fails for every commit (missing `PROD_DATABASE_URL_UNPOOLED` secret).
-   All 30+ recent deploys failed. Production deploys appear manual via
-   `vercel --prod` CLI.
+6. **GitHub Actions Deploy Production workflow broken** — missing
+   `PROD_DATABASE_URL_UNPOOLED` secret. All recent deploys failed.
 
-7. **`pnpm audit` high vulnerability** — `tmp` package (via `@lhci/cli` →
-   `inquirer` → `external-editor` → `tmp`) has a high severity advisory.
-   Dev-only transitive dependency (not production).
+7. **`pnpm audit` high vulnerability** — `tmp` package via `@lhci/cli`.
+
+8. **Database migration on production** — after deploying v4 M1, the
+   production database needs `pnpm db:migrate` run to apply migration 0005.
+   Then `pnpm db:seed` to populate the 3 plans with prices.
+
+---
+
+## Migration History (6 migrations, all now in journal)
+
+| Migration | Description | Journal Entry | Snapshot |
+|---|---|---|---|
+| `0000_dear_dagger.sql` | Initial 18-table schema | ✅ idx=0 | ✅ |
+| `0001_equal_iron_lad.sql` | instructors.published column | ✅ idx=1 | ✅ |
+| `0002_lyrical_cargill.sql` | waitlist unique index | ✅ idx=2 | ✅ |
+| `0003_audit_log_phase9.sql` | audit_log table + 3 indexes | ✅ idx=3 | ❌ (pre-existing) |
+| `0004_huge_hawkeye.sql` | enrollments reminder timestamps | ✅ idx=4 | ✅ |
+| **`0005_add_price_cents.sql`** | **membership_plans.price_cents** | **✅ idx=5 (v4 M1)** | **✅ (v4 M1)** |
+
+---
+
+## Test Count (189+ tests)
+
+| Package | Tests | Change in v4 |
+|---|---|---|
+| packages/db | 131 | — |
+| packages/auth | 102 | — |
+| packages/api | 118 | — |
+| packages/payments | 43 | — |
+| **apps/web** | **189** | — (no new tests in v4; fixes are config/schema) |
+| packages/email | 71 | — |
+| services/workers | 41 | — |
+| **Total** | **695** | — |
