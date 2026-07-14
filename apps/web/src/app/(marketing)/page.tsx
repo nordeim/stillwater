@@ -19,6 +19,7 @@ import { ScheduleSection } from '@/components/marketing/ScheduleSection';
 import { ScrollProgressBar } from '@/components/marketing/ScrollProgressBar';
 import { StudioSpaceSection } from '@/components/marketing/StudioSpaceSection';
 import { JsonLd } from '@/components/seo/JsonLd';
+import { withTimeout } from '@/lib/async/withTimeout';
 import { yogaStudioSchema } from '@/lib/seo/schemas';
 import { apiCaller } from '@/lib/trpc/server';
 
@@ -35,11 +36,14 @@ export const revalidate = 3600;
 export default async function HomePage() {
   const caller = await apiCaller();
 
-  // Parallel fetch: schedule + instructors + membership plans
+  // Parallel fetch: schedule + instructors + membership plans.
+  // withTimeout (8s) prevents stuck Suspense fallbacks when the neon-http
+  // driver hangs on a cold Neon compute endpoint or network stall. The
+  // .catch() handles rejection; withTimeout handles indefinite hang.
   const [sessions, instructors, membershipPlans] = await Promise.all([
-    caller.schedule.getWeek({ weekStart: getWeekStart() }).catch(() => []),
-    caller.instructors.list().catch(() => []),
-    caller.memberships.getPlans().catch(() => []),
+    withTimeout(caller.schedule.getWeek({ weekStart: getWeekStart() }).catch(() => []), 8_000, []),
+    withTimeout(caller.instructors.list().catch(() => []), 8_000, []),
+    withTimeout(caller.memberships.getPlans().catch(() => []), 8_000, []),
   ]);
 
   return (

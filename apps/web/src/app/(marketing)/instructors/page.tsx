@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import type { Metadata } from 'next';
 
+import { withTimeout } from '@/lib/async/withTimeout';
 import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
@@ -14,7 +15,12 @@ export const revalidate = 86400;
 
 export default async function InstructorsPage() {
   const caller = await apiCaller();
-  const instructors = await caller.instructors.list();
+  // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
+  const instructors = await withTimeout(
+    caller.instructors.list().catch(() => []),
+    8_000,
+    [],
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-16">

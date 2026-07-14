@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { ScheduleGrid } from '@/components/marketing/ScheduleGrid';
+import { withTimeout } from '@/lib/async/withTimeout';
 import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
@@ -19,7 +20,12 @@ export default async function SchedulePage() {
   weekStart.setHours(0, 0, 0, 0);
 
   const caller = await apiCaller();
-  const sessions = await caller.schedule.getWeek({ weekStart });
+  // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
+  const sessions = await withTimeout(
+    caller.schedule.getWeek({ weekStart }).catch(() => []),
+    8_000,
+    [],
+  );
 
   // Group sessions by date (YYYY-MM-DD)
   // Note: Drizzle 0.45 relational query types infer as `never` for nested `with`

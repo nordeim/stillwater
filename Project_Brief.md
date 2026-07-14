@@ -131,7 +131,7 @@ Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 |---|---|
 | `pnpm check-types` | **9/9 successful** ✅ |
 | `pnpm lint` | **2/2 successful** ✅ (0 errors, 9 intentional warnings) |
-| `pnpm test` | **651 tests passing** ✅ |
+| `pnpm test` | **657 tests passing** ✅ (651 original + 6 added by 2026-07-14 audit remediation: 5 `withTimeout` unit tests + 1 reconciled web test) |
 | `pnpm build` | **✅ 9/9 packages, 16 static pages** (verified 2026-07-12) ✅ |
 
 > ⚠️ **Lint flake note:** `pnpm lint` (default parallel turborepo run) can intermittently fail with *"not found by the project service"* parsing errors on test files. This is a typescript-eslint `projectService` concurrency collision (two ESLint language-service instances racing), **not a code defect** — confirmed by running lint serially (`pnpm turbo run lint --concurrency=1` → 2/2 green) or per-package. Code is correct.
@@ -141,7 +141,7 @@ Test breakdown:
 - `packages/auth` — 4 test files / **102 tests**
 - `packages/api` — 13 test files / **118 tests**
 - `packages/payments` — 7 test files / **43 tests**
-- `apps/web` — 28 test files / **159 tests**
+- `apps/web` — 29 test files / **164 tests**
 - `packages/email` — 16 test files (13 template + 3 component) / **71 tests**
 - `services/workers` — 11 test files / **41 tests**
 
@@ -179,6 +179,7 @@ Known intentional stub (not a gap): `payments.refund` remains a thin D12 wrapper
 ## Things worth flagging
 
 - **Stray `error.txt` (resolved).** A `error.txt` build/`pnpm start` log was committed to the repo root via an "Add files via upload" commit by a non-agent author during the 2026-07-12 window. It has since been **removed and gitignored** (`error.txt` added to `.gitignore`). The earlier `app_start_log.txt` / `diff_output.txt` artifacts are not present in the current tree.
-- **Docs aligned through Phase 12; refreshed 2026-07-12 after remediation.** Implementation matches AGENTS.md v2.9.0 / CLAUDE.md v2.9.0 / MEP v1.7.0. All 13 phases complete. Verify against the live test suite (643 tests ✅), not just the docs.
+- **Docs aligned through Phase 12; refreshed 2026-07-14 after audit remediation.** Implementation matches AGENTS.md v2.9.0 / CLAUDE.md v2.9.0 / MEP v1.7.0. All 13 phases complete. Verify against the live test suite (657 tests ✅ — 651 original + 6 added by 2026-07-14 audit: 5 `withTimeout` unit tests + 1 reconciled web test), not just the docs.
 - **Migrations are canonical.** Five migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup). The two-migration sequence (`0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql`) referenced in older PAD callouts was historical and deleted during Phase 1–2 remediation. All five current migrations apply successfully via `pnpm db:migrate`.
+- **P0 production fix (2026-07-14).** Live site at `https://stillwater.jesspete.shop/` had 4 of 8 marketing routes (`/`, `/schedule`, `/instructors`, `/pricing`) stuck on a Suspense "Loading…" fallback indefinitely. Root cause: `neon-http` DB driver uses `fetch()` which has no built-in timeout — a cold Neon compute endpoint or network stall leaves the query pending forever, which leaves the page's `<Suspense>` fallback rendered forever. Fix: added `withTimeout` utility (`apps/web/src/lib/async/withTimeout.ts`) + wrapped all 4 marketing pages' tRPC data fetches in `withTimeout(..., 8_000, [])` so pages render with empty arrays (showing the "No classes scheduled" / "No instructors yet" / "No plans available" empty state) after 8s instead of hanging. **This is defensive resilience — root-cause diagnosis (Vercel function logs + Neon query logs) still required.** See `AUDIT_REMEDIATION.md` for full details.
 

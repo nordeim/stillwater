@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { withTimeout } from '@/lib/async/withTimeout';
 import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
@@ -12,7 +13,12 @@ export const revalidate = 3600;
 
 export default async function PricingPage() {
   const caller = await apiCaller();
-  const plans = await caller.memberships.getPlans();
+  // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
+  const plans = await withTimeout(
+    caller.memberships.getPlans().catch(() => []),
+    8_000,
+    [],
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-16">
