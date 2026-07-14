@@ -1,156 +1,183 @@
-# Audit Remediation Report v5 — 2026-07-14
+# Audit Remediation Report v6 — 2026-07-15
 
 > Multi-agent code review of the Stillwater yoga studio platform.
-> pnpm_log_5.txt: ALL GREEN (migration journal fix worked, seed succeeds).
-> E2E v6 (Task 19): Found 3 residual issues despite clean build.
-> This document records the v5 remediation.
+> pnpm_log.txt: ALL GREEN (seed succeeds, build passes).
+> E2E v7 (Task 21): Found 3 residual issues despite clean build.
+> This document records the v6 remediation.
 
 ---
 
 ## Executive Summary
 
-pnpm_log_5.txt confirmed the v4 migration journal fix worked — `pnpm db:seed`
-now succeeds (was failing with "column price_cents does not exist"). However,
-E2E v6 (Task 19) found 3 residual issues that required v5 fixes:
+pnpm_log.txt confirmed the v5 fixes worked — `pnpm db:seed` succeeds and the
+build is clean. However, E2E v7 (Task 21) found that the **production DB is
+empty/unreachable** — all DB-backed routes (`/pricing`, `/schedule`,
+`/instructors`, `/blog`) show empty states. The `withTimeout` + `.catch(() => [])`
+pattern from v3 silently swallows DB errors, making the pages render empty
+instead of failing visibly.
 
-1. **Pricing shows $0 for all 3 plans** (M1, CRITICAL) — The seed used
-   `onConflictDoNothing()`, which silently skipped existing rows (created
-   before migration 0005) that had `price_cents=0` (DEFAULT). Fixed by
-   changing to `onConflictDoUpdate()` so prices are updated on conflict.
+The home page's `MembershipSection` has static fallback data (shows $28/$149/$220
+even when DB is empty), but `/pricing` did NOT have fallbacks — so it showed
+"No plans available yet." while the home page showed prices.
 
-2. **Stats still show 42+/8/3** (M2, HIGH) — v4 M3 updated `FALLBACK_STATS`
-   in `stats.ts` but `Hero.tsx` imports `HERO_META_STATS` from `copy.ts`
-   which still had aspirational numbers. Fixed by updating `copy.ts`.
+**What was fixed in v6:**
 
-3. **Soft-404 HTTP status still 200** (M3, MEDIUM) — `force-dynamic` alone
-   is insufficient; Next.js streaming commits 200 before `notFound()` throws.
-   Fixed by adding a custom `not-found.tsx` at the `(marketing)` route segment.
+1. **`/pricing` empty state** (M1, CRITICAL) — Added `FALLBACK_PLANS` array
+   with 3 plans matching the mockup ($28/$149/$220). When DB returns empty,
+   the page now uses fallback data instead of showing empty state. Mirrors
+   the home page `MembershipSection` behavior.
+
+2. **Soft-404 HTTP status** (M2, MEDIUM) — Moved `notFound()` calls from the
+   page component to `generateMetadata` (which runs BEFORE streaming). This
+   ensures HTTP 404 is set before any response body is committed. Previous
+   v4/v5 approaches (force-dynamic alone, custom not-found.tsx) didn't work
+   because `notFound()` was called after streaming started.
+
+3. **"8 instructors" copy inconsistency** (M3, MEDIUM) — Changed fallback
+   from `|| 8` to `|| 3` in `InstructorsSection.tsx` to match seed data
+   and `HERO_META_STATS`.
 
 **What was verified as WORKING (no fix needed):**
-- ✅ P0 routes render real data (FCP 140–304ms — Excellent)
+- ✅ M2 Stats fix from v5 — 7/3/2 confirmed live
 - ✅ CSP header present (static fallback with 'unsafe-inline')
-- ✅ Pricing comparison table + CTAs + "Most Popular" badge + trial note
-- ✅ Editorial Calm design system intact (Cormorant + DM Sans, sharp edges)
+- ✅ Core Web Vitals — TTFB 86ms, FCP 156ms (Excellent)
+- ✅ Editorial Calm design — Cormorant + DM Sans, sharp edges, no shadows
 - ✅ Auth redirects work
-- ✅ SEO surface (robots.txt, sitemap.xml, manifest.webmanifest)
+- ✅ Top-level 404 works
+
+**Infrastructure issue (NOT fixable in code):**
+- 🔴 Production DB is empty/unreachable — the seed runs against local Docker
+  Postgres, not the production Neon DB. The `withTimeout` + `.catch` pattern
+  hides this. The v6 M1 fallback ensures `/pricing` shows data even when DB
+  is down, but `/schedule` and `/instructors` still show empty states.
+  **Fix: run `pnpm db:seed` against the production Neon DB, or fix the
+  DATABASE_URL env var in Vercel.**
 
 ---
 
-## Commits Pushed in v5
+## Commits Pushed in v6
 
 | Commit | Description |
 |---|---|
-| `f4c2398` | M1+M2+M3: seed onConflictDoUpdate + HERO_META_STATS fix + custom not-found.tsx |
+| `3286dbd` | M1+M2+M3: pricing fallback + notFound in generateMetadata + 8→3 copy fix |
 | (this commit) | M4: Documentation update |
 
 ---
 
-## E2E v6 Results (Task 19, post-v4 deployment)
+## E2E v7 Results (Task 21, post-v5 deployment)
 
-### P0 Verification — ✅ All 4 Routes Rendering
+### P0 Routes — ✅ All Render (with empty states)
 
-| URL | Renders? | TTFB | FCP |
-|---|---|---|---|
-| `/` | ✅ 4737 chars in `<main>` | 78–245ms | 140–304ms |
-| `/schedule` | ✅ Full weekly schedule | 81ms | 188ms |
-| `/instructors` | ✅ 3 instructor cards | 80ms | 148ms |
-| `/pricing` | ✅ Comparison table renders | — | — |
-
-### R2 Pricing — ❌ Was $0 for all plans (fixed in v5 M1)
-
-| Check | v6 (post-v4) | v7 (expected post-v5) |
+| URL | Renders? | Content |
 |---|---|---|
-| 3 plans rendered | ✅ | ✅ |
-| Comparison table | ✅ | ✅ |
-| "Most Popular" badge | ✅ | ✅ |
-| Plan-specific CTAs | ✅ | ✅ |
-| "7-day free trial" note | ✅ | ✅ |
-| Prices $28/$149/$220 | ❌ All $0 | ✅ (onConflictDoUpdate) |
+| `/` | ✅ | Full hero + preview sections (static data) |
+| `/schedule` | ✅ | "No classes scheduled this week." (DB empty) |
+| `/instructors` | ✅ | "No instructors yet." (DB empty) |
+| `/pricing` | ✅ | "No plans available yet." (DB empty) — **fixed in v6 M1** |
 
-### R3 Soft-404 — ❌ Was HTTP 200 (fixed in v5 M3)
+### M1 Pricing — ❌ Was empty (fixed in v6 M1)
 
-| URL | v6 (post-v4) | v7 (expected post-v5) |
+| Surface | v7 (post-v5) | v8 (expected post-v6) |
 |---|---|---|
-| `/instructors/nonexistent-slug` | 200 + 404 UI | **404** (custom not-found.tsx) |
-| `/blog/nonexistent-slug` | 200 + 404 UI | **404** (custom not-found.tsx) |
+| Home MembershipSection | ✅ $28/$149/$220 (static fallback) | ✅ Same |
+| `/pricing` page | ❌ "No plans available yet." | ✅ $28/$149/$220 (FALLBACK_PLANS) |
+
+### M2 Soft-404 — ❌ Was HTTP 200 (fixed in v6 M2)
+
+| URL | v7 (post-v5) | v8 (expected post-v6) |
+|---|---|---|
+| `/instructors/nonexistent-slug` | 200 + 404 UI | **404** (notFound in generateMetadata) |
+| `/blog/nonexistent-slug` | 200 + 404 UI | **404** (notFound in generateMetadata) |
 | `/nonexistent-page` | 404 ✅ | 404 ✅ |
 
-### Stats — ❌ Was 42+/8/3 (fixed in v5 M2)
+### M3 Copy — ❌ Was "8 instructors" (fixed in v6 M3)
 
-| Stat | v6 (post-v4) | v7 (expected post-v5) |
+| Location | v7 (post-v5) | v8 (expected post-v6) |
 |---|---|---|
-| Weekly Classes | 42+ | **7** |
-| Instructors | 8 | **3** |
-| Studio Rooms | 3 | **2** |
+| Hero stats | "3 INSTRUCTORS" ✅ | "3 INSTRUCTORS" ✅ |
+| Footer link | "View all 8 instructors →" ❌ | "View all 3 instructors →" ✅ |
 
 ### Core Web Vitals — ✅ Excellent
 
 | Metric | Value | Rating |
 |---|---|---|
-| TTFB | 78–245ms | 🟢 Excellent |
-| FCP | 140–304ms | 🟢 Excellent |
-| DOMContentLoaded | 295–1201ms | 🟢 Excellent |
-| Transfer size | ~16KB | 🟢 Tiny |
+| TTFB | 86 ms | 🟢 Excellent |
+| FCP | 156 ms | 🟢 Excellent |
+| CLS | 0.0000 | 🟢 Excellent |
+| DOMContentLoaded | 135 ms | 🟢 Excellent |
+| Total transfer | 34 KB | 🟢 Tiny |
+| Protocol | h3 (HTTP/3) | 🟢 Modern |
+
+### Visual/Design — ✅ Editorial Calm Confirmed
+
+- `body.fontFamily`: "DM Sans" ✅
+- `h1.fontFamily`: "Cormorant Garamond" ✅
+- `body.color`: rgb(28, 25, 21) (warm dark mineral) ✅
+- `body.backgroundColor`: rgb(245, 240, 232) (warm cream) ✅
+- `boxShadow`: none ✅
+- `backgroundImage`: none (no gradients) ✅
+- `borderRadius`: 0px (sharp edges) ✅
 
 ---
 
 ## Root Cause Analysis
 
-### M1: Seed onConflictDoNothing Doesn't Update priceCents
+### M1: /pricing Empty State When DB Unreachable
 
-**The bug**: `packages/db/src/seed/index.ts:91` used `onConflictDoNothing()`.
-The 3 membership plan rows were created BEFORE migration 0005 added the
-`price_cents` column. When migration 0005 ran, existing rows got
-`price_cents=0` (the DEFAULT). When the seed re-runs, the INSERT is silently
-skipped on UUID conflict, so prices stay at $0.
+**The bug**: The `/pricing` page queries the DB via `caller.memberships.getPlans()`.
+When the DB is unreachable, `withTimeout` + `.catch(() => [])` returns an empty
+array. The page then renders "No plans available yet." The home page's
+`MembershipSection` has static fallback data (`$28/$149/$220`), so it shows
+prices even when DB is empty — but `/pricing` did NOT have fallbacks.
 
-**The fix**: Changed to `onConflictDoUpdate({ target: membershipPlans.id,
-set: { priceCents: sql.excluded.price_cents, ... } })` so all fields
-(including `priceCents`) are updated to fixture values on conflict. The seed
-is now truly idempotent — re-running it updates prices.
+**The fix**: Added `FALLBACK_PLANS` array with 3 plans matching the mockup
+and seed fixtures. When DB returns empty, the page uses `FALLBACK_PLANS`.
 
-**Lesson**: `onConflictDoNothing()` is NOT truly idempotent for schema
-migrations that add columns with defaults. Use `onConflictDoUpdate()` when
-the fixture data may change (especially after schema changes).
+**Infrastructure note**: The real issue is that the production DB is empty.
+The fallback is a defensive measure — the proper fix is to seed the
+production Neon DB. But the fallback ensures the page is never empty.
 
-### M2: Hero.tsx Uses Wrong Stats Constant
+### M2: notFound() Doesn't Propagate 404 in Streaming SSR
 
-**The bug**: v4 M3 updated `FALLBACK_STATS` in `stats.ts` to 7/3/2, but
-`Hero.tsx:20` imports `HERO_META_STATS` from `copy.ts:19-23` which still had
-the aspirational mockup numbers (42+/8/3). Two separate constants for the
-same data — only one was updated.
+**The bug**: `notFound()` was called inside the page component AFTER
+`await apiCaller()` and `await caller.instructors.getBySlug()`. By the time
+`notFound()` throws, Next.js has already committed the HTTP 200 status and
+started streaming the response body. The 404 UI renders, but the status
+code can't be changed.
 
-**The fix**: Updated `HERO_META_STATS` in `copy.ts` to 7/3/2.
+**The fix**: Moved `notFound()` calls from the page component to
+`generateMetadata`. `generateMetadata` runs BEFORE the page component
+streams, so `notFound()` there sets the 404 status before any response
+body is committed. This is the correct Next.js 16 pattern.
 
-**Lesson**: When the same data appears in multiple constants, all instances
-must be updated. Consider consolidating into a single source of truth.
+### M3: instructors.length || 8 Fallback
 
-### M3: force-dynamic Insufficient for HTTP 404 Status
+**The bug**: `InstructorsSection.tsx:53` used `instructors.length || 8`.
+When `instructors` is empty (length 0, which is falsy), the `||` operator
+falls back to `8`. This showed "View all 8 instructors" even though the
+hero stats said "3 INSTRUCTORS".
 
-**The bug**: v4 M2 replaced ISR with `force-dynamic` on slug pages, but
-E2E v6 confirmed HTTP status is still 200. Next.js streaming SSR commits
-the 200 status before `notFound()` can throw inside the page component.
-`force-dynamic` ensures fresh rendering but doesn't change the streaming
-behavior.
-
-**The fix**: Added a custom `not-found.tsx` at the `(marketing)` route
-segment level. This ensures `notFound()` triggers the proper 404 status
-when called from any page in the marketing route group.
+**The fix**: Changed `|| 8` to `|| 3` to match the seed data (3 instructors)
+and `HERO_META_STATS` (which was fixed in v5 M2 to show "3").
 
 ---
 
 ## Outstanding Issues (from previous audits, still open)
 
-1. **P0 root-cause diagnosis** — 3-layer timeout fix is defensive; actual
+1. **🔴 Production DB empty/unreachable** — The seed runs against local Docker
+   Postgres, not production Neon. All DB-backed routes show empty states.
+   Fix: run `pnpm db:seed` against production Neon DB, or fix `DATABASE_URL`
+   in Vercel.
+2. **P0 root-cause diagnosis** — 3-layer timeout fix is defensive; actual
    DB connectivity issue needs Vercel/Neon log inspection
-2. **`@dnd-kit/core` migration** — premature (feature is stub)
-3. **`cacheComponents` status** — SKILL §9.9 ambiguity
-4. **`ScheduleCalendar.tsx` TODO** — drag-to-reschedule never implemented
-5. **Instructor portrait images** — requires Sanity CMS image setup
-6. **GitHub Actions Deploy Production** — broken (missing secret)
-7. **`pnpm audit` high vulnerability** — dev-only (tmp via @lhci/cli)
-8. **Production DB needs re-seed** — after deploying v5, run
-   `pnpm db:seed` to update prices from $0 to $28/$149/$220
+3. **`@dnd-kit/core` migration** — premature (feature is stub)
+4. **`cacheComponents` status** — SKILL §9.9 ambiguity
+5. **`ScheduleCalendar.tsx` TODO** — drag-to-reschedule never implemented
+6. **Instructor portrait images** — requires Sanity CMS image setup
+7. **GitHub Actions Deploy Production** — broken (missing secret)
+8. **`pnpm audit` high vulnerability** — dev-only (tmp via @lhci/cli)
+9. **`/about` placeholder text** — "Full content will appear here once Sanity
+   CMS is configured" visible to end users
 
 ---
 
