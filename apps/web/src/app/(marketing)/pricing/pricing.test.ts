@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-// Test the formatPrice logic extracted from the pricing page.
-// We test the pure function rather than the full RSC page component
+// Test the pricing page utility functions.
+// We test the pure functions rather than the full RSC page component
 // because the page requires a tRPC caller + DB context.
 
 function formatPrice(cents: number): string {
@@ -13,6 +13,20 @@ function periodLabel(plan: { name: string; interval: string }): string {
   if (plan.name === 'Pay As You Go') return 'per class';
   if (plan.name === '10 Classes') return 'use within 90 days';
   return plan.interval === 'year' ? 'per year' : 'per month';
+}
+
+function planTag(plan: { name: string }): string {
+  if (plan.name === 'Pay As You Go') return 'Drop-in';
+  if (plan.name === 'Unlimited') return 'Monthly Membership';
+  if (plan.name === '10 Classes') return 'Class Pack';
+  return 'Membership';
+}
+
+function ctaLabel(plan: { name: string }): string {
+  if (plan.name === 'Pay As You Go') return 'Book Single Class';
+  if (plan.name === 'Unlimited') return 'Start Membership';
+  if (plan.name === '10 Classes') return 'Buy Class Pack';
+  return 'Get Started';
 }
 
 describe('Pricing page — formatPrice (Milestone 2, R2)', () => {
@@ -56,5 +70,41 @@ describe('Pricing page — periodLabel (Milestone 2, R2)', () => {
 
   it('returns "per year" for annual plans', () => {
     expect(periodLabel({ name: 'Unlimited', interval: 'year' })).toBe('per year');
+  });
+});
+
+describe('Pricing page — planTag (Milestone 4, R4)', () => {
+  it('returns "Drop-in" for Pay As You Go', () => {
+    expect(planTag({ name: 'Pay As You Go' })).toBe('Drop-in');
+  });
+
+  it('returns "Monthly Membership" for Unlimited', () => {
+    expect(planTag({ name: 'Unlimited' })).toBe('Monthly Membership');
+  });
+
+  it('returns "Class Pack" for 10 Classes', () => {
+    expect(planTag({ name: '10 Classes' })).toBe('Class Pack');
+  });
+
+  it('returns "Membership" as fallback', () => {
+    expect(planTag({ name: 'Custom Plan' })).toBe('Membership');
+  });
+});
+
+describe('Pricing page — ctaLabel (Milestone 4, R4)', () => {
+  it('returns "Book Single Class" for Pay As You Go', () => {
+    expect(ctaLabel({ name: 'Pay As You Go' })).toBe('Book Single Class');
+  });
+
+  it('returns "Start Membership" for Unlimited', () => {
+    expect(ctaLabel({ name: 'Unlimited' })).toBe('Start Membership');
+  });
+
+  it('returns "Buy Class Pack" for 10 Classes', () => {
+    expect(ctaLabel({ name: '10 Classes' })).toBe('Buy Class Pack');
+  });
+
+  it('returns "Get Started" as fallback', () => {
+    expect(ctaLabel({ name: 'Custom Plan' })).toBe('Get Started');
   });
 });

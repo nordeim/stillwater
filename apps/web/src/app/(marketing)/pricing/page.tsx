@@ -30,14 +30,74 @@ function periodLabel(plan: { name: string; interval: string }): string {
   return plan.interval === 'year' ? 'per year' : 'per month';
 }
 
+/**
+ * Plan tag (short descriptor above the plan name).
+ * Per mockup: "Drop-in", "Monthly Membership", "Class Pack".
+ */
+function planTag(plan: { name: string }): string {
+  if (plan.name === 'Pay As You Go') return 'Drop-in';
+  if (plan.name === 'Unlimited') return 'Monthly Membership';
+  if (plan.name === '10 Classes') return 'Class Pack';
+  return 'Membership';
+}
+
+/**
+ * CTA label per plan.
+ * Per mockup: "Book Single Class", "Start Membership", "Buy Class Pack".
+ */
+function ctaLabel(plan: { name: string }): string {
+  if (plan.name === 'Pay As You Go') return 'Book Single Class';
+  if (plan.name === 'Unlimited') return 'Start Membership';
+  if (plan.name === '10 Classes') return 'Buy Class Pack';
+  return 'Get Started';
+}
+
+// Feature matrix per mockup §04 membership comparison table
+interface FeatureRow {
+  label: string;
+  values: [string, string, string]; // [dropin, unlimited, 10pack]
+}
+
+const FEATURE_ROWS: FeatureRow[] = [
+  { label: 'Unlimited classes', values: ['—', '✓', '—'] },
+  { label: 'Class credits', values: ['1 per class', 'Unlimited', '10 credits'] },
+  { label: 'Guest passes / month', values: ['—', '2 / month', '—'] },
+  { label: 'Workshop discounts', values: ['—', '15% off', '10% off'] },
+  { label: 'Online classes', values: ['✓', '✓', '✓'] },
+  { label: 'Priority booking', values: ['—', '✓', '—'] },
+  { label: 'Pause or cancel', values: ['Any time', 'Any time', 'Any time'] },
+];
+
 export default async function PricingPage() {
   const caller = await apiCaller();
-  // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
   const plans = await withTimeout(
     caller.memberships.getPlans().catch(() => []),
     8_000,
     [],
   );
+
+  if (plans.length === 0) {
+    return (
+      <div className="mx-auto max-w-7xl px-6 py-16">
+        <header className="mb-16 text-center">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
+            Membership
+          </p>
+          <h1
+            className="mt-2 text-5xl font-light text-stone-900"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            Choose your practice
+          </h1>
+        </header>
+        <p className="text-center text-stone-600">No plans available yet.</p>
+      </div>
+    );
+  }
+
+  // Sort plans by sortOrder (1=Drop-in, 2=Unlimited, 3=10-pack)
+  const sortedPlans = [...plans].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const featuredIndex = sortedPlans.findIndex((p) => p.name === 'Unlimited');
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-16">
@@ -56,62 +116,127 @@ export default async function PricingPage() {
         </p>
       </header>
 
-      {plans.length === 0 ? (
-        <p className="text-center text-stone-600">No plans available yet.</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {plans.map((plan, index) => (
-            <div
-              key={plan.id}
-              className={`border p-8 ${
-                index === 1
-                  ? 'border-stone-900 bg-stone-900 text-sand-50'
-                  : 'border-stone-200 bg-sand-50'
+      {/* Membership comparison table — matches static_landing_page_mockup.html §04 */}
+      <div
+        className="grid grid-cols-1 overflow-hidden border border-stone-200 md:grid-cols-[220px_repeat(3,1fr)]"
+        role="region"
+        aria-label="Membership plan comparison"
+      >
+        {/* Header row */}
+        <div className="hidden border-r border-b border-stone-200 bg-sand-warm p-6 md:flex md:items-end">
+          <span className="text-xs uppercase tracking-[0.15em] text-stone-400">
+            What&apos;s included
+          </span>
+        </div>
+
+        {sortedPlans.map((plan, i) => (
+          <div
+            key={plan.id}
+            className={`border-b border-stone-200 p-6 ${
+              i === featuredIndex
+                ? 'bg-stone-900 text-sand-50'
+                : 'bg-sand-warm'
+            } ${i < sortedPlans.length - 1 ? 'md:border-r md:border-stone-200' : ''}`}
+          >
+            {i === featuredIndex && (
+              <span className="mb-4 inline-block border border-clay-600 px-2 py-0.5 text-xs uppercase tracking-[0.15em] text-clay-300">
+                Most Popular
+              </span>
+            )}
+            <p className={`text-xs uppercase tracking-[0.1em] ${i === featuredIndex ? 'text-clay-300' : 'text-clay-400'}`}>
+              {planTag(plan)}
+            </p>
+            <h2
+              className="mt-4 text-2xl font-normal"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              {plan.name}
+            </h2>
+            <p className="mt-2 text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+              <sup className="text-base font-normal" style={{ fontFamily: 'var(--font-body)' }}>$</sup>
+              {formatPrice(plan.priceCents)}
+            </p>
+            <p className={`mt-1 text-sm ${i === featuredIndex ? 'text-stone-400' : 'text-stone-400'}`}>
+              {periodLabel(plan)}
+            </p>
+          </div>
+        ))}
+
+        {/* Feature rows */}
+        {FEATURE_ROWS.map((row, rowIdx) => (
+          <FeatureRow key={row.label} row={row} featuredIndex={featuredIndex} rowIdx={rowIdx} />
+        ))}
+
+        {/* CTA footer row */}
+        <div className="hidden border-r border-b border-stone-200 bg-sand-warm p-6 md:block" />
+        {sortedPlans.map((plan, i) => (
+          <div
+            key={`cta-${plan.id}`}
+            className={`border-b border-stone-200 p-6 ${
+              i === featuredIndex ? 'bg-stone-900' : 'bg-sand-warm'
+            } ${i < sortedPlans.length - 1 ? 'md:border-r md:border-stone-200' : ''}`}
+          >
+            <a
+              href="/schedule"
+              className={`inline-block px-6 py-3 text-sm font-medium transition-colors ${
+                i === featuredIndex
+                  ? 'bg-clay-500 text-sand-50 hover:bg-clay-600'
+                  : 'border border-stone-400 text-stone-900 hover:bg-sand-50'
               }`}
             >
-              <h2
-                className="text-2xl font-medium"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                {plan.name}
-              </h2>
-              <p className="mt-4 text-sm text-stone-600">
-                {plan.interval === 'year' ? 'Annual' : 'Monthly'} plan
-              </p>
-              {/* R2 fix: display formatted price from priceCents (was missing —
-                  only showed classCreditsPerCycle which is null for Unlimited/Drop-in) */}
-              <p className="mt-2 text-3xl font-light">
-                <span className="text-sm align-super">$</span>
-                {formatPrice(plan.priceCents)}
-                <span className="text-sm text-stone-500"> {periodLabel(plan)}</span>
-              </p>
-              {plan.classCreditsPerCycle !== null && (
-                <p className="mt-2 text-sm text-stone-500">
-                  {plan.classCreditsPerCycle} classes/{plan.interval}
-                </p>
-              )}
-              {plan.guestPassesPerCycle && plan.guestPassesPerCycle > 0 && (
-                <p className="mt-2 text-xs text-stone-500">
-                  +{plan.guestPassesPerCycle} guest passes
-                </p>
-              )}
-              <div className="mt-8">
-                <a
-                  href="/schedule"
-                  className={`inline-block px-6 py-3 text-sm font-medium ${
-                    index === 1
-                      ? 'bg-clay-500 text-sand-50 hover:bg-clay-600'
-                      : 'border border-stone-400 text-stone-900 hover:bg-sand-warm'
-                  }`}
-                >
-                  Get started
-                </a>
-              </div>
-              {/* Note: Phase 7 wires real Stripe Checkout using plan.stripePriceId */}
-            </div>
-          ))}
-        </div>
-      )}
+              {ctaLabel(plan)}
+            </a>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-8 pl-4 text-sm text-stone-500" style={{ borderLeft: '2px solid var(--clay-400, #C4856A)' }}>
+        All memberships include a 7-day free trial for new members. No credit card required to start.
+      </p>
     </div>
+  );
+}
+
+/**
+ * Feature row: label cell + 3 value cells.
+ * On mobile, renders as a stacked card; on desktop, a grid row.
+ */
+function FeatureRow({
+  row,
+  featuredIndex,
+  rowIdx,
+}: {
+  row: FeatureRow;
+  featuredIndex: number;
+  rowIdx: number;
+}) {
+  return (
+    <>
+      <div
+        className={`border-b border-stone-200 bg-sand-50 p-4 md:p-6 ${
+          rowIdx < FEATURE_ROWS.length - 1 ? 'md:border-r md:border-stone-200' : 'md:border-r md:border-stone-200'
+        }`}
+      >
+        <span className="text-sm font-medium text-stone-700">{row.label}</span>
+      </div>
+      {row.values.map((value, i) => (
+        <div
+          key={i}
+          className={`border-b border-stone-200 p-4 text-center md:p-6 ${
+            i === featuredIndex ? 'bg-stone-900 text-sand-50' : 'bg-sand-50'
+          } ${i < 2 ? 'md:border-r md:border-stone-200' : ''}`}
+        >
+          {value === '✓' ? (
+            <span className="text-clay-400" aria-label="included">✓</span>
+          ) : value === '—' ? (
+            <span className="text-stone-300" aria-label="not included">—</span>
+          ) : (
+            <span className={`text-sm ${i === featuredIndex ? 'text-sand-100' : 'text-stone-600'}`}>
+              {value}
+            </span>
+          )}
+        </div>
+      ))}
+    </>
   );
 }
