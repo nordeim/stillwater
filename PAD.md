@@ -86,7 +86,7 @@ Now — implementing the full document:
 | 1.6.0   | 2026-07-07 | Claw Code / Phase 2 | Active | Phase 2 complete — Better Auth v1.6.23 fully configured (Google OAuth + Magic Link plugin + customSession plugin for memberId/roles enrichment); 3 Better Auth schema tables added (`session`, `account`, `verification` in `packages/db/src/schema/auth-tables.ts`); `users.emailVerified` changed from `timestamp` to `boolean` (Better Auth requirement); RBAC permission matrix (13 permissions × 6 roles) in `packages/auth/src/rbac.ts`; server-side auth helpers (`getSession`/`requireAuth`/`requireRole`) in `apps/web/src/lib/auth.ts`; 2-layer auth pattern verified (cookie-only `proxy.ts` + 4 layout guards); Better Auth route handler at `/api/auth/[...all]/route.ts`; sign-in page (Google + Magic Link) + sign-out route + error page; migration `0001_supreme_sabretooth.sql`; 220 tests (102 auth + 107 db + 11 web) |
 | 1.7.0   | 2026-07-07 | Claw Code / Phase 3 | Active | Phase 3 complete — 10 tRPC routers (~30 procedures) in `packages/api/src/routers/`; 4 procedure access tiers (public/protected/staff/owner) in `packages/api/src/trpc.ts`; booking router uses advisory lock (`pg_advisory_xact_lock`) per ADR-004; rate limiting on `bookings.book` (10/min via Upstash); root router merging all 10 routers in `packages/api/src/root.ts`; web tRPC integration (HTTP handler + RSC server caller + React client + query key factory); `pg` driver added to `packages/db` devDeps for local Postgres migrations (drizzle-kit driver selection fix); Phase 7 procedures stubbed with `PRECONDITION_FAILED`; 326 tests (104 api + 102 auth + 107 db + 13 web) |
 | 1.8.0   | 2026-07-07 | Claw Code / Remediation | Active | Phase 1–2 remediation — migration regeneration fix: single clean migration `0000_dear_dagger.sql` (17 CREATE TABLE + 8 CREATE TYPE + 8 CREATE INDEX + 17 ALTER TABLE); `ALTER COLUMN ... SET DATA TYPE` failure documented; database driver auto-selection (`pg` for local, `neon-http` for Neon) in `packages/db/src/index.ts`; seed script env loading (`seed/env.ts`) to fix `DATABASE_URL` missing at import time; Zod v4 UUID fixture validation fix (variant `g` → `a` in 3 membership plan fixtures); `pg` moved from `devDependencies` to `dependencies` in `packages/db/package.json`; 326+ tests passing; `pnpm db:migrate` and `pnpm db:seed` both green |
-| 1.9.0   | 2026-07-08 | Claw Code / Phase 4 | Active | Phase 4 complete — Sanity CMS integration (client + GROQ queries + Zod schemas + 8 content types + Studio app at `apps/studio/`); webhook→ISR revalidation with HMAC-SHA256 at `/api/sanity/webhook/`; Cloudflare Images URL signer (`server-only`); 9 ISR marketing pages (`/`, `/schedule`, `/instructors` + `/[slug]`, `/pricing`, `/blog` + `/[slug]`, `/about`); MarketingNav + Footer with Editorial Calm design; 11 shadcn/ui components (anti-generic patched); `instructors.published` column added (migration `0001_equal_iron_lad.sql`) — `instructors.list` + `getBySlug` filter `published == true` (SKILL §7.5.1); GROQ queries in §14.3 updated with `published == true` filter; ADR-011 added (transpilePackages + source exports build fix); `turbo.json` optimized (removed `dist/**` outputs + `^build` deps from check-types/test); SPECIFICATIONS.md retired (was 7 PAD versions behind); 377 tests (108 db + 102 auth + 106 api + 61 web); `pnpm build` green (12/12 static pages) |
+| 1.9.0   | 2026-07-08 | Claw Code / Phase 4 | Active | Phase 4 complete — Sanity CMS integration (client + GROQ queries + Zod schemas + 8 content types + Studio app at `apps/studio/`); webhook→ISR revalidation with HMAC-SHA256 at `/api/sanity/webhook/`; Cloudflare Images URL signer (`server-only`); 8 ISR marketing pages (`/`, `/schedule`, `/instructors` + `/[slug]`, `/pricing`, `/blog` + `/[slug]`, `/about`); MarketingNav + Footer with Editorial Calm design; 11 shadcn/ui components (anti-generic patched); `instructors.published` column added (migration `0001_equal_iron_lad.sql`) — `instructors.list` + `getBySlug` filter `published == true` (SKILL §7.5.1); GROQ queries in §14.3 updated with `published == true` filter; ADR-011 added (transpilePackages + source exports build fix); `turbo.json` optimized (removed `dist/**` outputs + `^build` deps from check-types/test); SPECIFICATIONS.md retired (was 7 PAD versions behind); 377 tests (108 db + 102 auth + 106 api + 61 web); `pnpm build` green (12/12 static pages) |
 | 1.9.1   | 2026-07-08 | Claw Code / Phase 5 | Active | Phase 5 complete — SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling, NO force-dynamic); `useSessionAvailability` hook (3 reconnection attempts, exponential backoff 1s→2s→4s); 6 booking UI components (SeatAvailability with role=img aria-label, BookingButton with 44x44px target, BookingConfirmation Radix Dialog, WaitlistButton, BookingFlow orchestrator, useBookingMutation hook); `(studio)/book/[sessionId]` page (Server Component + BookingFlow client); ScheduleGrid extracted from inline /schedule page with Book CTA; Toaster mounted in root layout; waitlist unique index `idx_waitlist_session_member` (migration `0002_lyrical_cargill.sql`); E2E specs (BOOK-001 to BOOK-004); integration test placeholder (BOOK-006 concurrent); 422 tests (109 db + 102 auth + 106 api + 105 web); `pnpm build` green (all routes including `/api/schedule/stream` + `/book/[sessionId]`) |
 | 1.10.0  | 2026-07-08 | Claw Code / Phase 6 | Active | Phase 6 complete — Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`); 7 dashboard components (MembershipStatusCard, CreditUsageWidget, UpcomingClassesWidget, ProfileSummaryCard, ProfileEditForm with react-hook-form+Zod, ManageMembershipPanel with disabled Phase 7 stubs, EnrollmentHistoryTable with CSV export); CSV export utility (`apps/web/src/lib/export/csv.ts`, RFC 4180 compliant, 6 tests); `memberships.getMySubscription` enhanced with `with: { plan: true }` join; `memberships.resume` stub added (Phase 7 dependency); `/dashboard` route unblocks 7 redirect callsites; 429 tests (109 db + 102 auth + 107 api + 111 web); `pnpm build` green (13/13 pages including /dashboard, /profile, /membership, /history) |
 | 1.11.0  | 2026-07-09 | Super Z / Phase 7 | Active | Phase 7 complete — Stripe payment integration fully wired. `@stillwater/payments` package built (7 source files, 43 tests): `client.ts` (Stripe SDK singleton, Dahlia API `2026-06-24.dahlia`, null fallback per SKILL §15.20), `types.ts` (7-event discriminated union + `StripeWebhookResult`), `subscriptions.ts` (5 lifecycle helpers: `createCheckoutSession`, `createCustomerPortalSession`, `pauseSubscription`, `resumeSubscription`, `cancelAtPeriodEnd`), `webhooks.ts` (⭐ idempotent handler with `pg_advisory_xact_lock` per ADR-004 + 7 event handlers + race condition handling via unique index on `stripe_event_id`), `invoices.ts` (cursor-based pagination + DTO transformation), `credit-packs.ts` (one-off `mode: 'payment'` checkout), `refunds.ts` (D12 reduced scope — thin wrapper, v1 uses Stripe Dashboard). Stripe webhook route at `/api/webhooks/stripe/route.ts` (body as TEXT for signature verification, 400/500/200 status codes, `runtime: 'nodejs'`, `dynamic: 'force-dynamic'`). tRPC procedures unstubbed: `memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices` (all previously threw `PRECONDITION_FAILED`). `payments.refund` retained as D12 stub (v1 uses Stripe Dashboard). ADR-010 accepted (Resend Native Templates for Trigger.dev workers). 5 STRIPE acceptance tests passing (STRIPE-001 through STRIPE-005). `CheckoutButton` component + `lib/stripe/utils.ts` (formatStripeAmount + stripeEventToWebhookLog). `drizzle-orm` added as dependency to `@stillwater/payments`. 499 tests (109 db + 102 auth + 113 api + 43 payments + 132 web); `pnpm check-types` / `pnpm lint` / `pnpm test` / `pnpm build` all green |
@@ -360,13 +360,13 @@ sequenceDiagram
 
 | Layer | Technology | Version | Rationale | Rejected Alternatives |
 |-------|-----------|---------|-----------|----------------------|
-| **Frontend Framework** | Next.js | `^16.2.0` | App Router, Turbopack stable, React Compiler (opt-in via `reactCompiler: true` — NOT default; requires `babel-plugin-react-compiler` devDependency installed separately), `proxy.ts` (replaces `middleware.ts` — can run on Edge or Node.js runtime; Next.js 16 docs are inconsistent on the default), streaming, ISR, top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16) | Remix (less ecosystem), Nuxt (different team skills) |
+| **Frontend Framework** | Next.js | `^16.2.10` | App Router, Turbopack stable, React Compiler (opt-in via `reactCompiler: true` — NOT default; requires `babel-plugin-react-compiler` devDependency installed separately), `proxy.ts` (replaces `middleware.ts` — can run on Edge or Node.js runtime; Next.js 16 docs are inconsistent on the default), streaming, ISR, top-level `cacheComponents: true` (moved out of `experimental` in Next.js 16); top-level `serverExternalPackages` (moved from `experimental` in Next.js 15, not 16) | Remix (less ecosystem), Nuxt (different team skills) |
 | **UI Library** | React | `^19.2.7` | Concurrent features, `use()`, Server Components. ⚠️ **2025 RSC CVE batch floor** (CVE-2025-55182 "React2Shell" RCE CVSS 10.0 patched at 19.2.1 + CVE-2025-55184/55183/67779 patched at 19.2.3) — never downgrade below 19.2.3 to cover all 2025 RSC vulnerabilities. | — |
 | **Language** | TypeScript | `^5.9.0` | Strict mode end-to-end; `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `verbatimModuleSyntax: true` (requires `import type`), `erasableSyntaxOnly: true` (FORBIDS `enum` and `namespace`) | — |
-| **Styling** | Tailwind CSS | `^4.3.0` | Utility-first, zero dead CSS in production, v4's CSS-first `@theme`, `@source` directives for monorepo content scanning; `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) | CSS Modules (verbose), styled-components (runtime cost) |
+| **Styling** | Tailwind CSS | `^4.3.2` | Utility-first, zero dead CSS in production, v4's CSS-first `@theme`, `@source` directives for monorepo content scanning; `outline-hidden` replaces v3 `outline-none` (v4 `outline-none` now sets `outline-style: none` — different semantics) | CSS Modules (verbose), styled-components (runtime cost) |
 | **Component Primitives** | Radix UI | latest | Fully accessible, unstyled, composable | Headless UI (fewer components), Ark UI (less mature) |
-| **API Layer** | tRPC | v11 | End-to-end type safety, no code generation, integrates natively with Next.js | REST (no type safety bridge), GraphQL (overkill, complex) |
-| **ORM** | Drizzle ORM | `^0.45.0` | Type-safe SQL, zero magic, excellent PostgreSQL support, fast. `db.$count` requires ≥0.34; relational query API v1 (`db.query.*`) since 0.28; v2 (`defineRelations()`) requires ≥1.0.0-beta. | Prisma (slower, heavier, type gen required), Kysely (more verbose) |
+| **API Layer** | tRPC | `^11.18.0` | End-to-end type safety, no code generation, integrates natively with Next.js | REST (no type safety bridge), GraphQL (overkill, complex) |
+| **ORM** | Drizzle ORM | `^0.45.2` | Type-safe SQL, zero magic, excellent PostgreSQL support, fast. `db.$count` requires ≥0.34; relational query API v1 (`db.query.*`) since 0.28; v2 (`defineRelations()`) requires ≥1.0.0-beta. | Prisma (slower, heavier, type gen required), Kysely (more verbose) |
 | **Database** | PostgreSQL | 17 | Advisory locks for bookings, JSONB for metadata, proven at scale | MySQL (weaker advisory lock support), SQLite (not for prod) |
 | **Database Host** | Neon | latest | Serverless PostgreSQL, branching for preview envs, zero cold starts | Supabase (more opinionated), RDS (heavy setup) |
 | **Cache / Rate Limit** | Upstash Redis | latest | Serverless Redis, per-request billing, edge-compatible | Redis Cloud (needs VPC), Memcached (no sorted sets) |
@@ -379,7 +379,7 @@ sequenceDiagram
 | **Monorepo** | Turborepo | `^2.10.0` | Incremental builds, task caching, excellent pnpm support; graceful shutdown + deferred input hashing (2.10+) | Nx (heavier), Lerna (legacy) |
 | **Package Manager** | pnpm | `^11.0.0` | Workspace support, fast, disk-efficient. `custom-conditions=@stillwater/source` in `.npmrc`. pnpm 9.x is EOL — use 11.x+. | npm (slow workspaces), yarn (inconsistent behavior) |
 | **Testing: Unit/Integration** | Vitest | latest | Fast, ESM native, compatible with Vite ecosystem | Jest (slower, ESM friction) |
-| **Validation** | Zod | `^4.4.0` | Env module, Server Action inputs, tRPC procedure inputs. Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https:$/ })` (v4 native) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()`. | yup (less TypeScript-native), Joi (older) |
+| **Validation** | Zod | `^4.4.3` | Env module, Server Action inputs, tRPC procedure inputs. Zod v4 `z.string().url()` accepts any scheme → use `z.url({ protocol: /^https:$/ })` (v4 native) or `.refine()` for protocol restriction; enum errors use unified `{ error }` param (string or function) — `{ errorMap }` removed, `{ message }` deprecated; `z.ZodIssueCode` deprecated in v4 → use string literal `'custom'` in `ctx.addIssue()`. | yup (less TypeScript-native), Joi (older) |
 | **Testing: E2E** | Playwright | latest | Cross-browser, reliable, component testing support | Cypress (slower, no Firefox) |
 | **Analytics** | PostHog | latest | Self-hostable, GDPR-friendly, feature flags, funnels | Mixpanel (cost), Amplitude (cost), GA4 (privacy concerns) |
 | **Logging** | Axiom | latest | Structured logs, fast queries, Next.js native integration | Datadog (cost), Papertrail (limited) |
@@ -643,13 +643,18 @@ stillwater/                              # Repository root
 ├── services/
 │   └── workers/                        # Trigger.dev job definitions
 │       ├── src/
+│       │   ├── attendance-summary.ts
 │       │   ├── booking-confirmation.ts
-│       │   ├── class-reminder.ts
-│       │   ├── waitlist-processor.ts
+│       │   ├── class-cancellation-notify.ts
+│       │   ├── class-reminder-1h.ts
+│       │   ├── class-reminder-24h.ts
+│       │   ├── membership-credit-grant.ts
+│       │   ├── membership-expiry-warn.ts
+│       │   ├── payment-failed-notify.ts
 │       │   ├── waitlist-expiry.ts
-│       │   ├── membership-renewal.ts
-│       │   ├── membership-expiry.ts
-│       │   └── weekly-digest.ts
+│       │   ├── waitlist-promotion.ts
+│       │   ├── weekly-digest.ts
+│       │   └── index.ts                # barrel export
 │       ├── trigger.config.ts
 │       └── package.json
 │
@@ -984,6 +989,28 @@ CREATE UNIQUE INDEX idx_payment_events_stripe_id
 -- Phase 5: Prevent duplicate waitlist entries (same member + session)
 CREATE UNIQUE INDEX idx_waitlist_session_member
   ON waitlist_entries (session_id, member_id);
+
+-- Stripe customer lookup on members table (migration 0000)
+CREATE INDEX idx_members_stripe_customer_id
+  ON members (stripe_customer_id);
+
+-- Prevent duplicate enrollments (same member + session) — migration 0000
+CREATE UNIQUE INDEX idx_enrollments_session_member
+  ON enrollments (session_id, member_id);
+
+-- Prevent duplicate role assignments (same member + role) — migration 0000
+CREATE UNIQUE INDEX idx_role_assignments_member_role
+  ON role_assignments (member_id, role);
+
+-- Phase 9: audit_log viewer queries (migration 0003_audit_log_phase9.sql)
+CREATE INDEX idx_audit_log_staff_created
+  ON audit_log (staff_member_id, created_at);
+
+CREATE INDEX idx_audit_log_action
+  ON audit_log (action);
+
+CREATE INDEX idx_audit_log_entity
+  ON audit_log (entity_type, entity_id);
 ```
 
 ### 7.4 Migration Strategy
@@ -1015,7 +1042,13 @@ For **fresh databases** (no production data), the cleanest fix is to:
 
 For **databases with data**, add a `USING` clause manually to the migration SQL before applying.
 
-**Current Migration:** Single clean migration `0000_dear_dagger.sql` (consolidated from the corrupted `0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql` pair) — contains no `ALTER COLUMN ... SET DATA TYPE` statements.
+**Current Migrations:** Five migrations in `packages/db/drizzle/migrations/`:
+
+- `0000_dear_dagger.sql` — initial 18-table schema (consolidated from the corrupted `0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql` pair; contains no `ALTER COLUMN ... SET DATA TYPE` statements).
+- `0001_equal_iron_lad.sql` — `instructors.published` column (Phase 4: filter published instructors in `instructors.list` + `getBySlug`).
+- `0002_lyrical_cargill.sql` — `idx_waitlist_session_member` unique index on `waitlist_entries (session_id, member_id)` (Phase 5: prevents duplicate waitlist entries).
+- `0003_audit_log_phase9.sql` — `audit_log` table + 3 indexes (`idx_audit_log_staff_created`, `idx_audit_log_action`, `idx_audit_log_entity`) (Phase 9 F9-19/F9-20: admin mutation audit trail).
+- `0004_huge_hawkeye.sql` — `enrollments.reminder_24h_sent_at` + `enrollments.reminder_1h_sent_at` columns (C1 fix: cron reminder dedup — prevents duplicate emails when the 24h/1h reminder cron fires multiple times within its window).
 
 ### 7.5 Database Client Driver Selection
 
@@ -1101,7 +1134,7 @@ export type AppRouter = typeof appRouter;
 ```typescript
 // packages/api/src/trpc.ts
 
-// Three procedure tiers — not two:
+// Four procedure tiers — not two:
 export const publicProcedure    = t.procedure;
 export const protectedProcedure = t.procedure.use(enforceIsAuthed);
 export const staffProcedure     = t.procedure.use(enforceIsAuthed).use(enforceIsStaff);

@@ -19,7 +19,7 @@
 
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
-import { neon } from '@neondatabase/serverless';
+import { neon, neonConfig } from '@neondatabase/serverless';
 import { Pool } from 'pg';
 import * as schema from './schema';
 
@@ -64,9 +64,28 @@ let sql: ReturnType<typeof neon> | Pool;
 
 try {
   if (isNeonUrl) {
+    // P0 fix (2026-07-14): override neonConfig.fetchFunction to add a 10s
+    // per-query timeout. The neon-http driver uses fetch() which has NO
+    // default timeout — a cold Neon compute endpoint or network stall can
+    // leave a query pending forever, which leaves the page's <Suspense>
+    // fallback rendered forever.
+    // AbortSignal.timeout() is available in Node 18+ and all Edge runtimes.
+    // Each fetch() call gets a FRESH signal (AbortSignal.timeout() starts
+    // counting at creation), so queries are independently bounded.
+    const QUERY_TIMEOUT_MS = 10_000;
+    neonConfig.fetchFunction = (url: string | URL | Request, init?: RequestInit) =>
+      fetch(url, {
+        ...init,
+        signal: init?.signal ?? AbortSignal.timeout(QUERY_TIMEOUT_MS),
+      });
     sql = neon(connectionString);
   } else {
-    sql = new Pool({ connectionString });
+    sql = new Pool({
+      connectionString,
+      // Local dev: 10s query timeout matches the Neon production path.
+      query_timeout: 10_000,
+      connectionTimeoutMillis: 10_000,
+    });
   }
 } catch {
   // Fallback: return a no-op SQL function for test/build contexts.

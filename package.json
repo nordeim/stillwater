@@ -30,9 +30,14 @@
     "db:reset": "turbo db:reset --filter=@stillwater/db",
     "jobs:dev": "turbo dev --filter=@stillwater/workers",
     "jobs:deploy": "turbo deploy --filter=@stillwater/workers",
+    "lighthouse": "lhci",
+    "lighthouse:ci": "lhci autorun",
+    "bundle-size": "ANALYZE=true pnpm --filter=@stillwater/web build",
+    "audit": "pnpm audit --audit-level=high",
     "prepare": "ln -sf ../../scripts/pre-commit-check.sh .git/hooks/pre-commit 2>/dev/null || true"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@stillwater/eslint-config": "workspace:*",
     "@stillwater/typescript-config": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",

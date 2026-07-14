@@ -14,7 +14,7 @@
 
 | Field       | Value                                                              |
 |-------------|--------------------------------------------------------------------|
-| Version     | 1.7.0                                                              |
+| Version     | 1.8.0                                                              |
 | Status      | ACTIVE — LIVING PLAN (Phases 0–12 COMPLETE per PAD v1.19.0 / SKILL v3.0.0; re-validated 2026-07-13) |
 | Date        | 2026-07-11                                                         |
 | Author      | Claw Code (Frontend Architect & Avant-Garde UI Designer)          |
@@ -34,6 +34,7 @@
 | 1.5.0   | 2026-07-09 | Claw Code / Sync | Re-synced plan to codebase through Phase 7. Marked Phase 7 ✅ COMPLETE (per AGENTS.md / CLAUDE.md v2.2.0); updated §5 phase table + Current Status (Phase 7 ✅, test counts api 107→113 / web 111→132 / payments +43; total 429→499); refreshed stack pin (Tailwind ^4.3.0→^4.3.2); corrected D20 resolution to `eslint-plugin-tailwindcss: ^4.0.6`. |
 | 1.6.0   | 2026-07-09 | Claw Code / Sync | Re-synced plan to codebase through Phase 8. Marked Phase 8 ✅ COMPLETE (per AGENTS.md v2.3.0 / CLAUDE.md v2.1.0 / verified against codebase 2026-07-09): `@stillwater/workers` (11 Trigger.dev v4 tasks, 33 tests) + `@stillwater/email` (13 React Email v6 templates + 3 shared components, 71 tests) implemented; D3/D4 resolved to "implemented"; updated §5 phase table + Current Status (Phase 8 ✅, +71 email +33 workers tests; total 499→603); refreshed Quality Gates test total to 603 (109 db + 102 auth + 113 api + 43 payments + 132 web + 71 email + 33 workers). | |
 | 1.7.0   | 2026-07-11 | Claw Code / Sync | Re-synced plan metadata to codebase 2026-07-11 (AGENTS.md/CLAUDE.md v2.9.0). Body already marks Phases 9–12 ✅ COMPLETE; this entry corrects header (v1.6.0→v1.7.0, Status Phases 0–8→0–12), §5 source-of-truth (PAD v1.12.0→v1.18.0, SKILL v2.3.0→v2.9.0), Quality Gates test total 603→643 (db 117, api 118, web 159) + lint warnings 2→9, and per-phase counts (Phase 1 109→117, Phase 3 113→118, Phase 6 132→159). Validated live: check-types 9/9, lint 0 err/9 warn, test 643/643. Also corrected tRPC procedure count ~30→~42 (5 occurrences) verified against 42 actual procedures. | |
+| 1.8.0   | 2026-07-14 | Claw Code / Doc-sync | Re-synced test counts (651→657), Phase 1 DB counts (14→18 tables, 5→12 indexes), added 4 missing migration names, tightened stack pins to match package.json. | |
 
 ### Source Document Map
 
@@ -107,8 +108,8 @@ The demographic skews 35–65 years, with high representation of visual impairme
 | Decision                                    | Choice                                 | ADR    |
 |---------------------------------------------|----------------------------------------|--------|
 | Monorepo                                    | Turborepo + pnpm workspaces            | ADR-001 |
-| API layer                                   | tRPC v11                               | ADR-002 |
-| ORM                                         | Drizzle ORM ^0.45.0                    | ADR-003 |
+| API layer                                   | tRPC ^11.18.0                           | ADR-002 |
+| ORM                                         | Drizzle ORM ^0.45.2                    | ADR-003 |
 | Booking concurrency                         | PostgreSQL advisory locks              | ADR-004 |
 | Marketing CMS                               | Sanity v3 (marketing content only)     | ADR-005 |
 | Real-time seat availability                 | SSE via Next.js streaming              | ADR-006 |
@@ -359,7 +360,7 @@ const getMockMember = (overrides?: Partial<Member>): Member => ({
 **Quality gates (verified 2026-07-11):**
 - `pnpm check-types` — ✅ Green (9/9 packages)
 - `pnpm lint` — ✅ Green (0 errors, 9 intentional warnings)
-- `pnpm test` — ✅ Green (**643 tests:** 117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 33 workers)
+- `pnpm test` — ✅ Green (**657 tests:** 117 db + 102 auth + 118 api + 43 payments + 164 web + 71 email + 41 workers)
 - `pnpm build` — ✅ Green (9/9 packages, 16 static pages; verified 2026-07-11)
 
 **Key confirmations:**
@@ -851,7 +852,7 @@ curl http://localhost:3000                  # 200 + "Stillwater" in body
 
 ### Phase 1 — Database Schema, Drizzle Migrations, Seed Data ✅ COMPLETE (PAD v1.5.0)
 
-**Goal:** All 14 tables + 8 enums + 5 indexes created via Drizzle migrations; seed data fixtures load 5 demo members, 3 instructors, 4 classes, 7 days of sessions.
+**Goal:** All 18 tables (15 domain + 3 Better Auth) + 8 enums + 12 indexes (8 standard + 4 unique) created via Drizzle migrations; seed data fixtures load 5 demo members, 3 instructors, 4 classes, 7 days of sessions.
 
 **Dependencies:** Phase 0 (drizzle-kit installed, `DATABASE_URL_UNPOOLED` available).
 
@@ -861,7 +862,7 @@ curl http://localhost:3000                  # 200 + "Stillwater" in body
 - [ ] `pnpm db:generate` produces migration SQL with no warnings
 - [ ] `pnpm db:migrate` applies cleanly to a fresh Postgres
 - [ ] `pnpm db:seed` populates demo data
-- [ ] `psql -c '\dt'` lists all 14 tables
+- [ ] `psql -c '\dt'` lists all 18 tables
 - [ ] `psql -c '\dT'` lists all 8 enums
 - [ ] ERD round-trips with PAD §7.3
 - [ ] All schema unit tests pass (constraint enforcement, FK cascades)
@@ -1020,7 +1021,7 @@ curl http://localhost:3000                  # 200 + "Stillwater" in body
 - **Interface:** `export * from './users'; export * from './members'; ...` for all 13 schema files.
 - **TDD test file:** n/a.
 - **Checklist:**
-  - [ ] All 14 tables exported
+  - [ ] All 18 tables exported
   - [ ] All 8 enums re-exported from `./enums`
   - [ ] `drizzle.config.ts` schema path resolves correctly
 
@@ -1101,9 +1102,9 @@ curl http://localhost:3000                  # 200 + "Stillwater" in body
 
 #### Phase 1 acceptance test
 ```bash
-pnpm db:generate              # produces 0000_dear_dagger.sql (consolidated single migration per PAD v1.8.0)
+pnpm db:generate              # produces 5 migrations: 0000_dear_dagger.sql (initial 18-table schema), 0001_equal_iron_lad.sql (instructors.published column), 0002_lyrical_cargill.sql (waitlist unique index), 0003_audit_log_phase9.sql (audit_log table — Phase 9), 0004_huge_hawkeye.sql (enrollments reminder timestamps — Phase 8 cron dedup)
 pnpm db:migrate               # applies migration
-psql -c '\dt'                 # 14 tables listed
+psql -c '\dt'                 # 18 tables listed
 psql -c '\dT'                 # 8 enums listed
 pnpm db:seed                  # loads demo data
 psql -c 'SELECT count(*) FROM users;'         # 5

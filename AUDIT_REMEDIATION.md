@@ -15,46 +15,54 @@ applied and the remaining open items.
 
 **What was fixed in this remediation:**
 
-1. **P0 production fix** — 4 of 8 live marketing routes were stuck on Suspense
-   "Loading…" forever. Added `withTimeout` utility + wrapped all 4 pages' tRPC
-   data fetches so they render with empty arrays after 8s instead of hanging.
+1. **P0 production fix (3-layer timeout)** — 4 of 8 live marketing routes were
+   stuck on Suspense "Loading…" forever because the `neon-http` DB driver uses
+   `fetch()` with no default timeout. Fixed at 3 layers:
+   - **DB driver level** (`packages/db/src/index.ts`): `neonConfig.fetchFunction`
+     wraps each `fetch()` with `AbortSignal.timeout(10_000)` — protects ALL queries.
+   - **Context level** (`packages/api/src/context.ts`): `auth.api.getSession()`
+     wrapped in 5s timeout — prevents `apiCaller()` from hanging.
+   - **Page level** (`apps/web/src/app/(marketing)/*.tsx`): `withTimeout(8_000, [])`
+     renders empty-state UI as last line of defense.
 2. **Doc hygiene** — `Project_Brief.md` internal inconsistencies resolved
    (643→657 tests, 33→41 workers, 28→29 web test files, 159→164 web tests).
-3. **5 new unit tests** for `withTimeout` utility (all passing).
+3. **PAD.md doc-sync** — 6 discrepancies fixed: §5.1 stack pins tightened,
+   §7.3 index list expanded (6→12), §7.4 migration list updated (1→5),
+   §8.3 "Three"→"Four" procedure tiers, §6.1 worker names refreshed (7→11),
+   v1.9.0 changelog "9→8 ISR pages".
+4. **MEP.md doc-sync** — 5 discrepancies fixed: test count 643→657, Phase 1
+   counts 14→18 tables + 5→12 indexes, migration list expanded, stack pins
+   tightened, version bumped 1.7.0→1.8.0 with changelog entry.
+5. **3 CI gates implemented** — `pnpm lighthouse`, `pnpm bundle-size`,
+   `pnpm audit` scripts added to root `package.json` (were aspirational
+   references in SKILL §11.1 with no scripts). `@lhci/cli` installed as
+   dev dependency. `lighthouserc.js` already existed with proper config.
+6. **5 new unit tests** for `withTimeout` utility (all passing).
 
 **What remains open (prioritized):**
 
-1. **P0 root-cause diagnosis** — the `withTimeout` fix is defensive resilience.
-   The actual DB connectivity issue in production still needs Vercel function
-   log + Neon query log inspection. Likely causes: missing `DATABASE_URL` env
-   var in production, Neon free-tier cold-start > 8s, or connection pool
-   exhaustion.
+1. **P0 root-cause diagnosis** — the 3-layer timeout fix is defensive
+   resilience. The actual DB connectivity issue in production still needs
+   Vercel function log + Neon query log inspection. Likely causes: missing
+   `DATABASE_URL` env var in production, Neon free-tier cold-start > 10s, or
+   connection pool exhaustion.
 2. **`@dnd-kit/core` → `@dnd-kit/react` migration** — current `@dnd-kit/core`
    v6.3.1 is unmaintained (~2 years since last publish), predates React 19,
-   and is labelled "Legacy" by its own maintainers at dndkit.com. Should
-   migrate to the experimental `@dnd-kit/react` rewrite.
-3. **MEP v1.7.0 → v1.8.0 re-sync** — MEP still cites 643 tests / 33 workers;
-   should be updated to 657 / 41 to match PAD v1.19.0.
-4. **PAD §5.1 stack pins** — loosen pins (`^16.2.0`, `^0.45.0`, "v11") should
-   be tightened to match `apps/web/package.json` (`^16.2.10`, `^0.45.2`,
-   `^11.18.0`).
-5. **PAD §6.1 stale worker names** — lists 7 stale file names (`class-reminder.ts`,
-   `waitlist-processor.ts`, etc.); should match §17.1 catalog (11 hyphenated names).
-6. **PAD §7.4 "Single clean migration"** — stale; should list all 5 migrations.
-7. **PAD §7.3 incomplete index list** — lists 6 of 12 indexes; should list all
-   12 (8 standard + 4 unique).
-8. **PAD §8.3 internal contradiction** — comment says "Three procedure tiers"
-   but code block lists 4 (public/protected/staff/owner). Fix comment to "Four".
-9. **3 aspirational CI gates** — `pnpm lighthouse ci`, `pnpm bundle-size`,
-   `pnpm audit --audit-level=high` are referenced in SKILL §11.1 but have no
-   scripts in root `package.json`. Either implement them or remove the
-   references.
-10. **`cacheComponents` status** — SKILL §9.9 Gotcha 7 says "deferred to
-    pre-Phase 4" but Phase 4 is complete. Either enable it or remove the
-    ambiguity.
-11. **`ScheduleCalendar.tsx` TODO** — has a `TODO: Phase 10 — call
-    sessions.update(...)` for drag-to-reschedule. Phase 10 was observability;
-    TODO was never resolved. Either implement or remove.
+   and is labelled "Legacy" by its own maintainers at dndkit.com. However,
+   the drag-to-reschedule feature in `ScheduleCalendar.tsx` is a non-functional
+   stub (shows a toast, doesn't call any API — `// TODO: Phase 10`). Migration
+   to `@dnd-kit/react` is premature — the feature needs to be designed first.
+3. **`cacheComponents` status** — SKILL §9.9 Gotcha 7 says "deferred to
+   pre-Phase 4" but Phase 4 is complete. Either enable it or remove the
+   ambiguity.
+4. **`ScheduleCalendar.tsx` TODO** — has a `TODO: Phase 10 — call
+   sessions.update(...)` for drag-to-reschedule. Phase 10 was observability;
+   TODO was never resolved. Either implement or remove.
+5. **`pnpm audit` high vulnerability** — `tmp` package (via `@lhci/cli` →
+   `inquirer` → `external-editor` → `tmp`) has a high severity advisory.
+   This is a dev-only transitive dependency (not production). Mitigate by
+   upgrading `@lhci/cli` when a fixed version is available, or by using
+   `pnpm overrides` to force a newer `tmp`.
 
 ---
 
