@@ -23,6 +23,7 @@ export const demoMembershipPlans: NewPlan[] = [
     name: 'Pay As You Go',
     stripePriceId: 'price_placeholder_dropin_0001',
     interval: 'month', // Drop-in uses month interval but 1 credit per cycle
+    priceCents: 2800, // $28.00 per class (matches mockup)
     classCreditsPerCycle: 1,
     guestPassesPerCycle: 0,
     allowsVirtual: true,
@@ -35,6 +36,7 @@ export const demoMembershipPlans: NewPlan[] = [
     name: 'Unlimited',
     stripePriceId: 'price_placeholder_unlimited_0001',
     interval: 'month',
+    priceCents: 14900, // $149.00 per month (matches mockup)
     classCreditsPerCycle: null, // null = unlimited
     guestPassesPerCycle: 2,
     allowsVirtual: true,
@@ -47,6 +49,7 @@ export const demoMembershipPlans: NewPlan[] = [
     name: '10 Classes',
     stripePriceId: 'price_placeholder_10pack_0001',
     interval: 'month',
+    priceCents: 22000, // $220.00 per pack (matches mockup)
     classCreditsPerCycle: 10,
     guestPassesPerCycle: 1,
     allowsVirtual: false,

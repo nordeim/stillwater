@@ -11,6 +11,25 @@ export const metadata: Metadata = {
 // ISR — revalidate every hour
 export const revalidate = 3600;
 
+/**
+ * Format a price in cents as a USD string: 2800 → "$28", 14900 → "$149"
+ * Per mockup: prices shown without decimals, with $ superscript.
+ */
+function formatPrice(cents: number): string {
+  const dollars = Math.floor(cents / 100);
+  return dollars.toLocaleString('en-US');
+}
+
+/**
+ * Human-readable period label for the plan interval.
+ * Per mockup: "per class" (Drop-in), "per month" (Unlimited), "use within 90 days" (10-pack).
+ */
+function periodLabel(plan: { name: string; interval: string }): string {
+  if (plan.name === 'Pay As You Go') return 'per class';
+  if (plan.name === '10 Classes') return 'use within 90 days';
+  return plan.interval === 'year' ? 'per year' : 'per month';
+}
+
 export default async function PricingPage() {
   const caller = await apiCaller();
   // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
@@ -59,10 +78,16 @@ export default async function PricingPage() {
               <p className="mt-4 text-sm text-stone-600">
                 {plan.interval === 'year' ? 'Annual' : 'Monthly'} plan
               </p>
+              {/* R2 fix: display formatted price from priceCents (was missing —
+                  only showed classCreditsPerCycle which is null for Unlimited/Drop-in) */}
+              <p className="mt-2 text-3xl font-light">
+                <span className="text-sm align-super">$</span>
+                {formatPrice(plan.priceCents)}
+                <span className="text-sm text-stone-500"> {periodLabel(plan)}</span>
+              </p>
               {plan.classCreditsPerCycle !== null && (
-                <p className="mt-2 text-3xl font-light">
-                  {plan.classCreditsPerCycle}
-                  <span className="text-sm text-stone-500"> classes/{plan.interval}</span>
+                <p className="mt-2 text-sm text-stone-500">
+                  {plan.classCreditsPerCycle} classes/{plan.interval}
                 </p>
               )}
               {plan.guestPassesPerCycle && plan.guestPassesPerCycle > 0 && (

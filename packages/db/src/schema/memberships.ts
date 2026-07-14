@@ -22,6 +22,12 @@ export const membershipPlans = pgTable('membership_plans', {
   name: text('name').notNull(),
   stripePriceId: text('stripe_price_id').notNull().unique(),
   interval: billingIntervalEnum('interval').notNull(),
+  // R2 fix (2026-07-14): priceCents stores the display price in cents
+  // (e.g., 2800 = $28.00). Previously the schema had NO price column —
+  // the pricing page could only show classCreditsPerCycle (null for
+  // Unlimited/Drop-in), causing 2/3 plans to show no price.
+  // Prices match the static mockup: $28, $149, $220.
+  priceCents: integer('price_cents').notNull().default(0),
   classCreditsPerCycle: integer('class_credits_per_cycle'), // null = unlimited
   guestPassesPerCycle: integer('guest_passes_per_cycle').default(0),
   allowsVirtual: boolean('allows_virtual').default(true).notNull(),
