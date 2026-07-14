@@ -7,6 +7,11 @@ import { getSanityClient } from '@/lib/sanity/client';
 import { blogPostQuery } from '@/lib/sanity/queries';
 import { blogPostSchema } from '@/lib/sanity/schemas';
 
+// R3 fix (2026-07-14): Ensure dynamic params are always evaluated fresh.
+// Without this, ISR (revalidate=3600) can cache a 404 response as 200,
+// causing soft-404s that search engines index as valid pages.
+export const dynamicParams = true;
+
 // ISR — revalidate every hour
 export const revalidate = 3600;
 
@@ -17,12 +22,16 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const client = getSanityClient();
-  if (!client) return { title: 'Blog post not found' };
+  if (!client) {
+    // R3 fix: noindex for not-found pages
+    return { title: 'Blog post not found', robots: { index: false, follow: false } };
+  }
 
   const raw: unknown = await client.fetch(blogPostQuery, { slug });
   const parsed = blogPostSchema.safeParse(raw);
   if (!parsed.success) {
-    return { title: 'Blog post not found' };
+    // R3 fix: noindex for not-found pages
+    return { title: 'Blog post not found', robots: { index: false, follow: false } };
   }
   return {
     title: parsed.data.title,

@@ -4,6 +4,11 @@ import type { Metadata } from 'next';
 
 import { apiCaller } from '@/lib/trpc/server';
 
+// R3 fix (2026-07-14): Ensure dynamic params are always evaluated fresh.
+// Without this, ISR (revalidate=86400) can cache a 404 response as 200,
+// causing soft-404s that search engines index as valid pages.
+export const dynamicParams = true;
+
 // ISR — revalidate every 24 hours
 export const revalidate = 86400;
 
@@ -21,7 +26,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: instructor.bio ?? `Meet ${instructor.slug.replace(/-/g, ' ')}`,
     };
   } catch {
-    return { title: 'Instructor not found' };
+    // R3 fix: return a proper "not found" metadata with noindex.
+    // The page component will call notFound() which triggers a 404 status.
+    return {
+      title: 'Instructor not found',
+      robots: { index: false, follow: false },
+    };
   }
 }
 
@@ -33,6 +43,9 @@ export default async function InstructorDetailPage({ params }: PageProps) {
   try {
     instructor = await caller.instructors.getBySlug({ slug });
   } catch {
+    // R3 fix: notFound() throws NEXT_NOT_FOUND which Next.js catches and
+    // renders the 404 page with HTTP 404 status. The generateMetadata
+    // catch block above returns noindex metadata for this case.
     notFound();
   }
 
