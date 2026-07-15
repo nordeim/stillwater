@@ -4,12 +4,13 @@ import type { Metadata } from 'next';
 
 import { apiCaller } from '@/lib/trpc/server';
 
-// R3 fix v3 (v6, 2026-07-14): Use force-dynamic AND call notFound() from
-// generateMetadata (which runs BEFORE the page component streams). This
-// ensures the HTTP 404 status is set before any response body is sent.
-// Previous v4/v5 approaches (force-dynamic alone, custom not-found.tsx)
-// didn't work because notFound() was called inside the page component
-// AFTER streaming had started.
+// M1 fix v4 (v7, 2026-07-15): Disable PPR for this route so notFound()
+// can set the HTTP 404 status BEFORE the response body is committed.
+// PPR (Partial Prerendering) streams a 200 shell before notFound() fires.
+// Setting experimental.ppr = false for this route segment ensures the
+// full response is generated server-side before being sent, so notFound()
+// in generateMetadata correctly sets 404.
+export const experimental_ppr = false;
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
@@ -26,10 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: instructor.bio ?? `Meet ${instructor.slug.replace(/-/g, ' ')}`,
     };
   } catch {
-    // M2 fix: Call notFound() HERE (in generateMetadata) instead of in the
-    // page component. generateMetadata runs BEFORE the page streams, so
-    // notFound() here sets the correct HTTP 404 status before any response
-    // body is committed.
+    // notFound() here sets HTTP 404 before any response body is committed.
     notFound();
   }
 }

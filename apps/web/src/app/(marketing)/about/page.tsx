@@ -92,9 +92,13 @@ export default async function AboutPage() {
             about presence.
           </p>
           <p className="text-base leading-[1.65] text-stone-600">
-            Full content will appear here once Sanity CMS is configured. For now,
-            visit our <a href="/schedule" className="text-clay-500 underline-offset-4 hover:underline">schedule</a> or{' '}
-            <a href="/instructors" className="text-clay-500 underline-offset-4 hover:underline">meet our instructors</a>.
+            Whether you&apos;re new to yoga or deepening an established practice,
+            we offer a space to slow down, breathe, and return to yourself.
+            Explore our{' '}
+            <a href="/schedule" className="text-clay-500 underline-offset-4 hover:underline">class schedule</a>{' '}
+            or{' '}
+            <a href="/instructors" className="text-clay-500 underline-offset-4 hover:underline">meet our instructors</a>{' '}
+            to find the practice that meets you where you are.
           </p>
         </div>
       )}

@@ -7,9 +7,9 @@ import { getSanityClient } from '@/lib/sanity/client';
 import { blogPostQuery } from '@/lib/sanity/queries';
 import { blogPostSchema } from '@/lib/sanity/schemas';
 
-// R3 fix v3 (v6, 2026-07-14): Use force-dynamic AND call notFound() from
-// generateMetadata (which runs BEFORE the page component streams). This
-// ensures the HTTP 404 status is set before any response body is sent.
+// M1 fix v4 (v7, 2026-07-15): Disable PPR for this route so notFound()
+// can set the HTTP 404 status BEFORE the response body is committed.
+export const experimental_ppr = false;
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
