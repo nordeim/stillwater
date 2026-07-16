@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import { apiCaller } from '@/lib/trpc/server';
 
 /**
@@ -32,8 +34,14 @@ interface SeatAvailabilityEvent {
   isFull: boolean;
 }
 
+// v8 S3 fix: Use Zod v4 z.uuid() for UUID validation instead of a hand-rolled
+// regex. Same semantics, consistent with the rest of the codebase (tRPC input
+// validation, env schema, etc.). Note: z.string().uuid() is deprecated in
+// Zod v4 in favor of z.uuid().
+const uuidSchema = z.uuid();
+
 function isValidUUID(uuid: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
+  return uuidSchema.safeParse(uuid).success;
 }
 
 async function getSeatAvailability(sessionId: string): Promise<SeatAvailabilityEvent | null> {
@@ -65,7 +73,16 @@ async function getSeatAvailability(sessionId: string): Promise<SeatAvailabilityE
       available,
       isFull: enrolled >= capacity,
     };
-  } catch {
+  } catch (error) {
+    // v8 A1 fix: Log the error so it's visible in Sentry / Vercel logs.
+    // Previously this catch block silently returned null, making DB
+    // connectivity issues affecting the SSE endpoint invisible.
+    // Include the sessionId for triage; the error message is logged
+    // separately to preserve the stack trace.
+    console.error(
+      `[SSE getSeatAvailability] failed for session ${sessionId}:`,
+      error,
+    );
     return null;
   }
 }

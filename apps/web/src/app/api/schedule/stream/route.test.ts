@@ -100,4 +100,24 @@ describe('SSE schedule stream endpoint', () => {
 
     expect(res.status).toBe(404);
   });
+
+  // v8 A1 fix: getSeatAvailability must log errors instead of silently
+  // swallowing them. Without this, a DB connectivity issue affecting the
+  // SSE endpoint would be invisible in Sentry.
+  it('v8 A1 fix: logs errors when getSeatAvailability fails (does not silently swallow)', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockGetSession.mockRejectedValue(new Error('DB unreachable'));
+
+    const { GET } = await import('./route');
+    const req = new Request('http://localhost:3000/api/schedule/stream?sessionId=00000000-0000-4000-8000-000000000001');
+    await GET(req);
+
+    // console.error should have been called with the SSE error context
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const callArgs = consoleErrorSpy.mock.calls[0];
+    // noUncheckedIndexedAccess: callArgs may be undefined — guard with ?
+    // First arg should mention SSE + getSeatAvailability for Sentry triage
+    expect(String(callArgs?.[0] ?? '')).toMatch(/SSE|getSeatAvailability|seat/i);
+    consoleErrorSpy.mockRestore();
+  });
 });

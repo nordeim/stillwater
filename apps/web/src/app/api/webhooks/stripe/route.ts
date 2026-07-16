@@ -13,12 +13,17 @@
  * Runtime: 'nodejs' (needs pg for advisory lock — NOT Edge)
  * Dynamic: 'force-dynamic' (webhook must always be fresh, never cached)
  *
+ * v8 S2 fix: STRIPE_WEBHOOK_SECRET is now read via the t3-env Zod-validated
+ * env() helper (not process.env directly) for consistency with the rest of
+ * the codebase. This ensures the secret is validated at startup and typed.
+ *
  * The route delegates to handleStripeWebhook (F7-04) which implements
  * the idempotent pg_advisory_xact_lock pattern per ADR-004.
  *
- * Source: MEP F7-09, PAD §15.3, ADR-004.
+ * Source: MEP F7-09, PAD §15.3, ADR-004, Stillwater Audit Report v1.0 §5 S2.
  */
 
+import { env } from '@stillwater/config';
 import { db } from '@stillwater/db';
 import { handleStripeWebhook } from '@stillwater/payments';
 import { getStripeClient } from '@stillwater/payments/client';
@@ -32,17 +37,12 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: Request): Promise<Response> {
-  // 1. Check STRIPE_WEBHOOK_SECRET is configured
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.error('STRIPE_WEBHOOK_SECRET is not set — cannot verify webhook');
-    return Response.json(
-      { error: 'Webhook secret not configured' },
-      { status: 500 },
-    );
-  }
+  // 1. v8 S2 fix: Read STRIPE_WEBHOOK_SECRET via t3-env Zod-validated env()
+  //    (was: process.env.STRIPE_WEBHOOK_SECRET — bypassed validation)
+  const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
 
-  // 2. Get the Stripe client
+  // 2. Get the Stripe client (getStripeClient reads STRIPE_SECRET_KEY via env()
+  //    internally — see packages/payments/src/client.ts)
   const stripe = getStripeClient();
   if (!stripe) {
     console.error('STRIPE_SECRET_KEY is not set — Stripe client unavailable');

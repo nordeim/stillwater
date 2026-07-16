@@ -95,8 +95,10 @@ export const bookingsRouter = router({
         }
 
         // 4. Compute capacity & count confirmed enrollments
-        // Cast to access nested relation fields (Drizzle relational query types
-        // require defineRelations() for proper inference — not yet called)
+        // v8 R2 fix (comment clarity): Drizzle 0.45 relational query types
+        // infer as `never` for nested fields without defineRelations() (which
+        // requires Drizzle ≥1.0.0-beta). Cast to the expected shape as a
+        // workaround. Remove cast when migrating to Drizzle 1.0 stable.
         const sessionData = session as {
           overrideCapacity: number | null;
           class: { maxCapacity: number | null } | null;
@@ -167,7 +169,18 @@ export const bookingsRouter = router({
    * where clause (memberId match), so a missing/foreign enrollment returns
    * NOT_FOUND rather than revealing the row's existence.
    *
-   * Triggers a waitlist promotion job on success.
+   * v8 audit remediation (C1+C2+C3):
+   *   - C1: Wrapped in a transaction with pg_advisory_xact_lock on the
+   *     sessionId to serialize concurrent cancel + waitlist-promotion.
+   *     Matches the bookings.book pattern per ADR-004.
+   *   - C2: Triggers BOTH waitlist-promotion AND booking-cancellation
+   *     (new worker task). The BookingCancellation email template existed
+   *     but was never sent before this fix.
+   *   - C3: Job triggers use fire-and-forget pattern (.catch(() => {}))
+   *     matching bookings.book — so a Trigger.dev outage doesn't fail
+   *     the cancellation.
+   *
+   * Source: Stillwater Audit Report v1.0 §5 C1/C2/C3; ADR-004.
    */
   cancel: protectedProcedure
     .input(z.object({ enrollmentId: z.string().uuid() }))
@@ -180,31 +193,72 @@ export const bookingsRouter = router({
         });
       }
 
-      const [updated] = await ctx.db
-        .update(enrollments)
-        .set({
-          status: 'cancelled' as const,
-          cancelledAt: new Date(),
-        })
-        .where(
-          and(
+      const updated = await ctx.db.transaction(async (tx) => {
+        // C1 fix: Acquire advisory lock keyed by session UUID.
+        // We don't know the sessionId until AFTER the update, but the lock
+        // must serialize concurrent cancellations against the same session.
+        // Approach: fetch the enrollment's sessionId FIRST (within the
+        // transaction), acquire the lock, then perform the update.
+        // Ownership is enforced by the where clause on the update.
+        const existing = await tx.query.enrollments.findFirst({
+          where: and(
             eq(enrollments.id, input.enrollmentId),
             eq(enrollments.memberId, memberId),
           ),
-        )
-        .returning();
-
-      if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Enrollment not found',
+          columns: { id: true, sessionId: true },
         });
-      }
 
-      // Phase 8: Trigger waitlist-promotion job (hyphenated ID per PAD §17.1)
-      await ctx.jobs.trigger('waitlist-promotion', {
+        if (!existing) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Enrollment not found',
+          });
+        }
+
+        // C1 fix: Acquire advisory lock on the session.
+        const lockKey = sessionUuidToLockKey(existing.sessionId);
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
+
+        const [result] = await tx
+          .update(enrollments)
+          .set({
+            status: 'cancelled' as const,
+            cancelledAt: new Date(),
+          })
+          .where(
+            and(
+              eq(enrollments.id, input.enrollmentId),
+              eq(enrollments.memberId, memberId),
+            ),
+          )
+          .returning();
+
+        // noUncheckedIndexedAccess: result may be undefined if the row was
+        // deleted between the findFirst and the update. Treat as NOT_FOUND.
+        if (!result) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Enrollment not found',
+          });
+        }
+
+        return result;
+      });
+
+      // C2+C3 fix: Trigger both jobs POST-COMMIT (fire-and-forget per C3).
+      // If Trigger.dev is unreachable, the cancellation still succeeds —
+      // Trigger.dev retries handle the rest.
+      ctx.jobs.trigger('waitlist-promotion', {
         sessionId: updated.sessionId,
         cancelledEnrollmentId: updated.id,
+      }).catch(() => {
+        // C3: Job trigger failure shouldn't fail the cancellation — Trigger.dev retries
+      });
+      ctx.jobs.trigger('booking-cancellation', {
+        enrollmentId: updated.id,
+        memberId,
+      }).catch(() => {
+        // C3: Job trigger failure shouldn't fail the cancellation — Trigger.dev retries
       });
 
       return updated;
