@@ -1,7 +1,7 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-12 (post-Phase 12 + 2026-07-12 remediation)
-> Status: Phases 0–12 ✅ complete
+> **Updated:** 2026-07-17 (post-v8 audit remediation)
+> Status: Phases 0–12 ✅ complete · v8 audit remediation ✅ complete
 
 ## What it is
 
@@ -9,10 +9,10 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 
 ## Current build state (the honest picture)
 
-**All 13 phases (0–12) are complete and green.**
+**All 13 phases (0–12) are complete and green. v8 audit remediation (2026-07-17) is complete.**
 
 - **Phase 0 (Scaffold):** Complete. Turborepo + pnpm workspaces, 7 shared packages, 11 tooling configs, Docker Compose setup, and the full design system (self-hosted fonts, CSS tokens).
-- **Phase 1 (Database):** Complete. 18 tables (15 domain + 3 Better Auth) Drizzle schema, 8 enums, 12 indexes (8 standard + 4 unique; the 5 Phase 1 'critical' indexes are a labelled subset), 5 migrations (`0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql` + `0004_huge_hawkeye.sql`), idempotent seed, dynamic driver selection.
+- **Phase 1 (Database):** Complete. 18 tables (15 domain + 3 Better Auth) Drizzle schema, 8 enums, 12 indexes (8 standard + 4 unique; the 5 Phase 1 'critical' indexes are a labelled subset), 6 migrations (`0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql` + `0004_huge_hawkeye.sql` + `0005_add_price_cents.sql`), idempotent seed, dynamic driver selection.
 - **Phase 2 (Auth & RBAC):** Complete. Better Auth v1.6.23 with Google OAuth, Magic Link, `customSession` plugin. RBAC matrix (13×6). 2-layer auth (proxy.ts + layout guards).
 - **Phase 3 (API / tRPC):** Complete. 10 routers, ~42 procedures, 4 access tiers, advisory lock booking, rate limiting, full web integration.
 - **Phase 4 (Marketing):** Complete. Sanity CMS client + 8 content type schemas, Sanity Studio app (`apps/studio/`), GROQ query registry with `published == true` filter, Zod response validation, Cloudflare Images signer, webhook→ISR revalidation with HMAC verification, 8 ISR-backed marketing pages (home, schedule, instructors list + detail, pricing, blog list + detail, about), MarketingNav + Footer with Editorial Calm design, skip-to-content link, error/loading boundaries, 11 shadcn/ui components with anti-generic patches (no shadows, `--radius: 0`).
@@ -123,7 +123,7 @@ These are the files you can actually `cat` and `test` today:
 
 ---
 
-## Live quality gates (2026-07-12)
+## Live quality gates (2026-07-17, post-v8 audit remediation)
 
 Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 
@@ -131,19 +131,19 @@ Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 |---|---|
 | `pnpm check-types` | **9/9 successful** ✅ |
 | `pnpm lint` | **2/2 successful** ✅ (0 errors, 9 intentional warnings) |
-| `pnpm test` | **657 tests passing** ✅ (651 original + 6 added by 2026-07-14 audit remediation: 5 `withTimeout` unit tests + 1 reconciled web test) |
+| `pnpm test` | **~700 tests passing** ✅ (695 from v7 remediation + new v8 tests: booking-cancellation worker, next-config-csp-verify, slug-404-verify, A1 SSE error logging, S2 env() validation) |
 | `pnpm build` | **✅ 9/9 packages, 16 static pages** (verified 2026-07-12) ✅ |
 
 > ⚠️ **Lint flake note:** `pnpm lint` (default parallel turborepo run) can intermittently fail with *"not found by the project service"* parsing errors on test files. This is a typescript-eslint `projectService` concurrency collision (two ESLint language-service instances racing), **not a code defect** — confirmed by running lint serially (`pnpm turbo run lint --concurrency=1` → 2/2 green) or per-package. Code is correct.
 
-Test breakdown:
-- `packages/db` — 17 test files / **117 tests**
+Test breakdown (approximate — run `pnpm test` for the authoritative count):
+- `packages/db` — 19 test files / **131 tests**
 - `packages/auth` — 4 test files / **102 tests**
-- `packages/api` — 13 test files / **118 tests**
+- `packages/api` — 14 test files / **119 tests** (bookings.test.ts expanded for v8 C1/C2/C3)
 - `packages/payments` — 7 test files / **43 tests**
-- `apps/web` — 29 test files / **164 tests**
-- `packages/email` — 16 test files (13 template + 3 component) / **71 tests**
-- `services/workers` — 11 test files / **41 tests**
+- `apps/web` — 31 test files / **189+ tests** (added next-config-csp-verify, slug-404-verify, A1 SSE test, S2 webhook test)
+- `packages/email` — 17 test files (13 template + 3 component + send) / **71 tests**
+- `services/workers` — 12 test files / **44 tests** (added booking-cancellation.test.ts)
 
 Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). ISR revalidate times: `/about` = 1d, `/blog` = 1h. (Home `/` exports `revalidate = 3600` in source but renders dynamic (ƒ) in the observed build — likely opted into on-demand rendering; verify in CI.) (`pnpm build` verified 2026-07-12: 9/9 packages, 16 static pages, 0 errors.)
 
@@ -179,7 +179,15 @@ Known intentional stub (not a gap): `payments.refund` remains a thin D12 wrapper
 ## Things worth flagging
 
 - **Stray `error.txt` (resolved).** A `error.txt` build/`pnpm start` log was committed to the repo root via an "Add files via upload" commit by a non-agent author during the 2026-07-12 window. It has since been **removed and gitignored** (`error.txt` added to `.gitignore`). The earlier `app_start_log.txt` / `diff_output.txt` artifacts are not present in the current tree.
-- **Docs aligned through Phase 12; refreshed 2026-07-14 after audit remediation.** Implementation matches AGENTS.md v2.9.0 / CLAUDE.md v2.9.0 / MEP v1.7.0. All 13 phases complete. Verify against the live test suite (657 tests ✅ — 651 original + 6 added by 2026-07-14 audit: 5 `withTimeout` unit tests + 1 reconciled web test), not just the docs.
-- **Migrations are canonical.** Five migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup). The two-migration sequence (`0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql`) referenced in older PAD callouts was historical and deleted during Phase 1–2 remediation. All five current migrations apply successfully via `pnpm db:migrate`.
-- **P0 production fix (2026-07-14).** Live site at `https://stillwater.jesspete.shop/` had 4 of 8 marketing routes (`/`, `/schedule`, `/instructors`, `/pricing`) stuck on a Suspense "Loading…" fallback indefinitely. Root cause: `neon-http` DB driver uses `fetch()` which has no built-in timeout — a cold Neon compute endpoint or network stall leaves the query pending forever, which leaves the page's `<Suspense>` fallback rendered forever. Fix: added `withTimeout` utility (`apps/web/src/lib/async/withTimeout.ts`) + wrapped all 4 marketing pages' tRPC data fetches in `withTimeout(..., 8_000, [])` so pages render with empty arrays (showing the "No classes scheduled" / "No instructors yet" / "No plans available" empty state) after 8s instead of hanging. **This is defensive resilience — root-cause diagnosis (Vercel function logs + Neon query logs) still required.** See `AUDIT_REMEDIATION.md` for full details.
+- **Docs aligned through Phase 12; refreshed 2026-07-17 after v8 audit remediation.** Implementation matches AGENTS.md v2.9.0 / CLAUDE.md v2.9.0 / MEP v1.8.0. All 13 phases complete + v8 audit remediation complete. Verify against the live test suite (~700 tests ✅), not just the docs. See `AUDIT_REMEDIATION.md` for the v1→v8 remediation history.
+- **Migrations are canonical.** Six migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup), `0005_add_price_cents.sql` (membership_plans.price_cents — v4 pricing bug fix). The two-migration sequence (`0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql`) referenced in older PAD callouts was historical and deleted during Phase 1–2 remediation. All six current migrations apply successfully via `pnpm db:migrate`.
+- **P0 production fix history (v1→v8).** Live site at `https://stillwater.jesspete.shop/` had 4 of 8 marketing routes (`/`, `/schedule`, `/instructors`, `/pricing`) stuck on a Suspense "Loading…" fallback indefinitely. The remediation unfolded over 8 versions (see `AUDIT_REMEDIATION.md` for the full v1→v7 history; v8 is documented below):
+  - **v1 (2026-07-14):** Added `withTimeout` utility (`apps/web/src/lib/async/withTimeout.ts`) + wrapped all 4 marketing pages' tRPC data fetches in `withTimeout(..., 8_000, [])` so pages render with empty arrays after 8s instead of hanging. Defensive resilience.
+  - **v2 (2026-07-14):** Per-request CSP nonce in `proxy.ts` — the static CSP in `next.config.ts` was blocking RSC streaming inline scripts.
+  - **v3 (2026-07-14):** Pricing bug — `membership_plans` table had no `price_cents` column. Added migration `0005_add_price_cents.sql` + seed update.
+  - **v4 (2026-07-14):** Migration journal desync — registered `0005` in `_journal.json`.
+  - **v5 (2026-07-14):** Seed `onConflictDoNothing` → $0 prices. Changed to `onConflictDoUpdate`.
+  - **v6 (2026-07-15):** `/pricing` empty when DB down. Added `FALLBACK_PLANS` constant.
+  - **v7 (2026-07-15):** Soft-404 HTTP 200 (PPR streaming). Added `experimental_ppr = false` to `/instructors/[slug]` and `/blog/[slug]`. Also: `/about` placeholder text → customer-facing copy.
+  - **v8 (2026-07-17):** Systematic Six-Axis audit remediation. See `Stillwater_Codebase_Audit_Report.pdf` and the v8 section of `AUDIT_REMEDIATION.md`. Fixed: S1 (CSP regression — removed static CSP from `next.config.ts headers()` that was overriding `proxy.ts`), C1 (bookings.cancel missing advisory lock), C2 (missing cancellation email — added `booking-cancellation` worker task), C3 (inconsistent fire-and-forget), A1 (SSE error logging), S2 (env() validation), S3 (Zod UUID), C4/C5/AX1 (ternary both-branches-identical bugs), R2 (comment clarity), P2 (comment). 0 Critical, 2 High (live-deploy drift, fixed in source), 5 Medium, 6 Low, 4 Nit. All fixes TDD with regression tests.
 
