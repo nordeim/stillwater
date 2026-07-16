@@ -53,12 +53,12 @@ function ctaLabel(plan: { name: string }): string {
 }
 
 // Feature matrix per mockup §04 membership comparison table
-interface FeatureRow {
+interface FeatureRowType {
   label: string;
   values: [string, string, string]; // [dropin, unlimited, 10pack]
 }
 
-const FEATURE_ROWS: FeatureRow[] = [
+const FEATURE_ROWS: FeatureRowType[] = [
   { label: 'Unlimited classes', values: ['—', '✓', '—'] },
   { label: 'Class credits', values: ['1 per class', 'Unlimited', '10 credits'] },
   { label: 'Guest passes / month', values: ['—', '2 / month', '—'] },
@@ -132,6 +132,14 @@ const FALLBACK_PLANS: Plan[] = [
 
 export default async function PricingPage() {
   const caller = await apiCaller();
+  // v8 P2 fix: .catch(() => []) is applied BEFORE withTimeout so that fast DB
+  // errors (e.g., connection refused) return [] immediately without waiting
+  // for the 8s timeout. withTimeout then handles the slow-but-not-erroring
+  // case (e.g., cold Neon compute endpoint). The order is intentional:
+  //   1. caller.memberships.getPlans() — the tRPC query (may throw or hang)
+  //   2. .catch(() => []) — converts thrown errors to empty array (fast-fail)
+  //   3. withTimeout(..., 8_000, []) — races against 8s timeout (slow-fail)
+  // If the order were reversed, a fast DB error would wait 8s before returning.
   const dbPlans = await withTimeout(
     caller.memberships.getPlans().catch(() => []),
     8_000,
@@ -223,15 +231,15 @@ export default async function PricingPage() {
               <sup className="text-base font-normal" style={{ fontFamily: 'var(--font-body)' }}>$</sup>
               {formatPrice(plan.priceCents)}
             </p>
-            <p className={`mt-1 text-sm ${i === featuredIndex ? 'text-stone-400' : 'text-stone-400'}`}>
+            <p className={`mt-1 text-sm ${i === featuredIndex ? 'text-sand-100' : 'text-stone-400'}`}>
               {periodLabel(plan)}
             </p>
           </div>
         ))}
 
         {/* Feature rows */}
-        {FEATURE_ROWS.map((row, rowIdx) => (
-          <FeatureRow key={row.label} row={row} featuredIndex={featuredIndex} rowIdx={rowIdx} />
+        {FEATURE_ROWS.map((row) => (
+          <FeatureRow key={row.label} row={row} featuredIndex={featuredIndex} />
         ))}
 
         {/* CTA footer row */}
@@ -271,18 +279,14 @@ export default async function PricingPage() {
 function FeatureRow({
   row,
   featuredIndex,
-  rowIdx,
 }: {
-  row: FeatureRow;
+  row: FeatureRowType;
   featuredIndex: number;
-  rowIdx: number;
 }) {
   return (
     <>
       <div
-        className={`border-b border-stone-200 bg-sand-50 p-4 md:p-6 ${
-          rowIdx < FEATURE_ROWS.length - 1 ? 'md:border-r md:border-stone-200' : 'md:border-r md:border-stone-200'
-        }`}
+        className="border-b border-r border-stone-200 bg-sand-50 p-4 md:p-6"
       >
         <span className="text-sm font-medium text-stone-700">{row.label}</span>
       </div>

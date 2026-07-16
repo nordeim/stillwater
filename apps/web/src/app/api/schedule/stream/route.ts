@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import { apiCaller } from '@/lib/trpc/server';
 
 /**
@@ -32,8 +34,13 @@ interface SeatAvailabilityEvent {
   isFull: boolean;
 }
 
+// v8 S3 fix: Use Zod v4 z.string().uuid() for UUID validation instead of a
+// hand-rolled regex. Same semantics, consistent with the rest of the codebase
+// (tRPC input validation, env schema, etc.).
+const uuidSchema = z.string().uuid();
+
 function isValidUUID(uuid: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
+  return uuidSchema.safeParse(uuid).success;
 }
 
 async function getSeatAvailability(sessionId: string): Promise<SeatAvailabilityEvent | null> {

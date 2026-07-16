@@ -115,8 +115,9 @@ describe('SSE schedule stream endpoint', () => {
     // console.error should have been called with the SSE error context
     expect(consoleErrorSpy).toHaveBeenCalled();
     const callArgs = consoleErrorSpy.mock.calls[0];
+    // noUncheckedIndexedAccess: callArgs may be undefined — guard with ?
     // First arg should mention SSE + getSeatAvailability for Sentry triage
-    expect(String(callArgs[0])).toMatch(/SSE|getSeatAvailability|seat/i);
+    expect(String(callArgs?.[0] ?? '')).toMatch(/SSE|getSeatAvailability|seat/i);
     consoleErrorSpy.mockRestore();
   });
 });

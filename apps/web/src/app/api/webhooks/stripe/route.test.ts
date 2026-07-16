@@ -48,6 +48,16 @@ vi.mock('@stillwater/db', () => ({
   db: { transaction: vi.fn() },
 }));
 
+// v8 S2 fix: Mock @stillwater/config so env returns a controlled value.
+// The route now reads STRIPE_WEBHOOK_SECRET via env (t3-env Zod-validated
+// constant object) instead of process.env directly.
+vi.mock('@stillwater/config', () => ({
+  env: {
+    STRIPE_WEBHOOK_SECRET: 'whsec_test_secret',
+    STRIPE_SECRET_KEY: 'sk_test_fake_key',
+  },
+}));
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function createWebhookRequest(
@@ -132,13 +142,20 @@ describe('Stripe webhook route handler', () => {
     expect(mockHandleStripeWebhook).not.toHaveBeenCalled();
   });
 
-  it('returns 500 when STRIPE_WEBHOOK_SECRET is not configured', async () => {
-    delete process.env.STRIPE_WEBHOOK_SECRET;
+  it('v8 S2 fix: reads STRIPE_WEBHOOK_SECRET via env (not process.env directly)', async () => {
+    // The route now uses env.STRIPE_WEBHOOK_SECRET (t3-env Zod-validated
+    // constant object) instead of process.env.STRIPE_WEBHOOK_SECRET. This
+    // test verifies constructEvent receives the env-derived secret value.
+    // In test context, env returns 'whsec_test_secret' (mocked above).
     const { POST } = await import('./route');
     const req = createWebhookRequest('{"fake":"body"}', 't=123,v1=sig');
-    const res = await POST(req);
-    expect(res.status).toBe(500);
-    expect(mockConstructEvent).not.toHaveBeenCalled();
+    await POST(req);
+    // constructEvent is called with the env-derived secret (not process.env)
+    expect(mockConstructEvent).toHaveBeenCalledWith(
+      '{"fake":"body"}',
+      't=123,v1=sig',
+      'whsec_test_secret',
+    );
   });
 
   it('returns 500 when handler throws (Stripe will retry)', async () => {

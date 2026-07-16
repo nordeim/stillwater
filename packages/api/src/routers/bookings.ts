@@ -95,8 +95,10 @@ export const bookingsRouter = router({
         }
 
         // 4. Compute capacity & count confirmed enrollments
-        // Cast to access nested relation fields (Drizzle relational query types
-        // require defineRelations() for proper inference — not yet called)
+        // v8 R2 fix (comment clarity): Drizzle 0.45 relational query types
+        // infer as `never` for nested fields without defineRelations() (which
+        // requires Drizzle ≥1.0.0-beta). Cast to the expected shape as a
+        // workaround. Remove cast when migrating to Drizzle 1.0 stable.
         const sessionData = session as {
           overrideCapacity: number | null;
           class: { maxCapacity: number | null } | null;
@@ -230,6 +232,15 @@ export const bookingsRouter = router({
             ),
           )
           .returning();
+
+        // noUncheckedIndexedAccess: result may be undefined if the row was
+        // deleted between the findFirst and the update. Treat as NOT_FOUND.
+        if (!result) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Enrollment not found',
+          });
+        }
 
         return result;
       });
