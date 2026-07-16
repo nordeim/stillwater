@@ -8,3 +8,6 @@ Then meticulously plan to create a comprehensive remediation plan with a detaile
 
 Remember to commit all code and document changes locally and then push to my GitHub repo at each milestone.
 
+---
+
+$ cd /home/z/my-project/stillwater 2>/dev/null && git log --oneline -2 || (cd /home/z/my-project && git clone https://github.com/nordeim/stillwater.git 2>&1 | tail -2)
