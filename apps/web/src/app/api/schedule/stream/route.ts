@@ -34,10 +34,11 @@ interface SeatAvailabilityEvent {
   isFull: boolean;
 }
 
-// v8 S3 fix: Use Zod v4 z.string().uuid() for UUID validation instead of a
-// hand-rolled regex. Same semantics, consistent with the rest of the codebase
-// (tRPC input validation, env schema, etc.).
-const uuidSchema = z.string().uuid();
+// v8 S3 fix: Use Zod v4 z.uuid() for UUID validation instead of a hand-rolled
+// regex. Same semantics, consistent with the rest of the codebase (tRPC input
+// validation, env schema, etc.). Note: z.string().uuid() is deprecated in
+// Zod v4 in favor of z.uuid().
+const uuidSchema = z.uuid();
 
 function isValidUUID(uuid: string): boolean {
   return uuidSchema.safeParse(uuid).success;

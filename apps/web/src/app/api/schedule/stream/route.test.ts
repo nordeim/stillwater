@@ -105,7 +105,7 @@ describe('SSE schedule stream endpoint', () => {
   // swallowing them. Without this, a DB connectivity issue affecting the
   // SSE endpoint would be invisible in Sentry.
   it('v8 A1 fix: logs errors when getSeatAvailability fails (does not silently swallow)', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mockGetSession.mockRejectedValue(new Error('DB unreachable'));
 
     const { GET } = await import('./route');
