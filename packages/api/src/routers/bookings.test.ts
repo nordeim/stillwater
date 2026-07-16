@@ -87,18 +87,29 @@ const enrollmentFixture = {
 };
 
 /**
- * Build a mock `tx` (or `db`) with all the methods the book mutation touches.
- * Each behavior is configurable via the `overrides` arg.
+ * Build a mock `tx` (or `db`) with all the methods the book/cancel/checkIn
+ * mutations touch. Each behavior is configurable via the `overrides` arg.
  */
 function makeTx(overrides: {
   session?: unknown;
   existingEnrollment?: unknown;
   enrolledCount?: number;
   createdEnrollment?: unknown;
+  // v8 C1 fix: cancel mutation fetches enrollment before locking.
+  // Set existingEnrollmentForCancel to control the cancel-path findFirst.
+  existingEnrollmentForCancel?: unknown;
+  // v8 C2 fix: cancel mutation returns the updated enrollment.
+  updatedEnrollment?: unknown;
 } = {}) {
   const execute = vi.fn().mockResolvedValue([{ pg_advisory_xact_lock: '' }]);
   const findFirstSession = vi.fn().mockResolvedValue(overrides.session === undefined ? sessionFixture : overrides.session);
-  const findFirstEnrollment = vi.fn().mockResolvedValue(overrides.existingEnrollment ?? undefined);
+  // For book's double-booking check + cancel's pre-lock fetch
+  const findFirstEnrollment = vi.fn().mockImplementation(() => {
+    if (overrides.existingEnrollmentForCancel !== undefined) {
+      return Promise.resolve(overrides.existingEnrollmentForCancel);
+    }
+    return Promise.resolve(overrides.existingEnrollment ?? undefined);
+  });
   const where = vi.fn().mockResolvedValue([{ count: overrides.enrolledCount ?? 0 }]);
   const from = vi.fn().mockReturnValue({ where });
   const select = vi.fn().mockReturnValue({ from });
@@ -107,6 +118,16 @@ function makeTx(overrides: {
   );
   const values = vi.fn().mockReturnValue({ returning: returningInsert });
   const insert = vi.fn().mockReturnValue({ values });
+
+  // v8 C1+C2 fix: cancel mutation uses update().set().where().returning()
+  const returningUpdate = vi.fn().mockResolvedValue(
+    overrides.updatedEnrollment === undefined
+      ? [{ ...enrollmentFixture, status: 'cancelled', cancelledAt: new Date() }]
+      : (overrides.updatedEnrollment === null ? [] : [overrides.updatedEnrollment]),
+  );
+  const whereUpdate = vi.fn().mockReturnValue({ returning: returningUpdate });
+  const setUpdate = vi.fn().mockReturnValue({ where: whereUpdate });
+  const update = vi.fn().mockReturnValue({ set: setUpdate });
 
   return {
     tx: {
@@ -117,6 +138,7 @@ function makeTx(overrides: {
       },
       select,
       insert,
+      update,
     },
     spies: {
       execute,
@@ -128,6 +150,10 @@ function makeTx(overrides: {
       insert,
       values,
       returningInsert,
+      update,
+      setUpdate,
+      whereUpdate,
+      returningUpdate,
     },
   };
 }
@@ -267,36 +293,65 @@ describe('bookingsRouter.cancel', () => {
     vi.clearAllMocks();
   });
 
-  it('cancels the caller own enrollment and triggers waitlist-promotion', async () => {
-    const updated = { ...enrollmentFixture, status: 'cancelled', cancelledAt: new Date() };
-    const returning = vi.fn().mockResolvedValue([updated]);
-    const where = vi.fn().mockReturnValue({ returning });
-    const set = vi.fn().mockReturnValue({ where });
-    const update = vi.fn().mockReturnValue({ set });
-    const ctx = makeCtx({ update } as never);
+  it('cancels the caller own enrollment, acquires advisory lock, and triggers waitlist-promotion + booking-cancellation (v8 C1+C2+C3 fix)', async () => {
+    // Pre-lock findFirst returns the enrollment (with sessionId for the lock key)
+    const { tx, spies } = makeTx({
+      existingEnrollmentForCancel: { id: ENROLLMENT_ID, sessionId: SESSION_ID },
+      updatedEnrollment: { ...enrollmentFixture, status: 'cancelled', cancelledAt: new Date() },
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
     const caller = bookingsRouter.createCaller(ctx);
 
     const result = await caller.cancel({ enrollmentId: ENROLLMENT_ID });
 
     expect(result.status).toBe('cancelled');
-    // Ownership is enforced: where clause includes memberId
-    expect(set).toHaveBeenCalledTimes(1);
-    expect(set.mock.calls[0][0]).toMatchObject({ status: 'cancelled' });
-    expect(set.mock.calls[0][0]).toHaveProperty('cancelledAt');
-    // Waitlist promotion job triggered
-    expect(ctx.jobs.trigger).toHaveBeenCalledTimes(1);
+    // C1 fix: advisory lock acquired inside transaction
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(spies.execute).toHaveBeenCalledTimes(1);
+    // Pre-lock findFirst to get sessionId
+    expect(spies.findFirstEnrollment).toHaveBeenCalledTimes(1);
+    // Update called once
+    expect(spies.update).toHaveBeenCalledTimes(1);
+    expect(spies.setUpdate.mock.calls[0][0]).toMatchObject({ status: 'cancelled' });
+    expect(spies.setUpdate.mock.calls[0][0]).toHaveProperty('cancelledAt');
+    // C2 fix: both waitlist-promotion AND booking-cancellation triggered
+    expect(ctx.jobs.trigger).toHaveBeenCalledTimes(2);
     expect(ctx.jobs.trigger).toHaveBeenCalledWith('waitlist-promotion', {
       sessionId: SESSION_ID,
       cancelledEnrollmentId: ENROLLMENT_ID,
     });
+    expect(ctx.jobs.trigger).toHaveBeenCalledWith('booking-cancellation', {
+      enrollmentId: ENROLLMENT_ID,
+      memberId: MEMBER_ID,
+    });
+  });
+
+  it('C3 fix: job triggers are fire-and-forget (do not throw if Trigger.dev is unreachable)', async () => {
+    const { tx } = makeTx({
+      existingEnrollmentForCancel: { id: ENROLLMENT_ID, sessionId: SESSION_ID },
+      updatedEnrollment: { ...enrollmentFixture, status: 'cancelled', cancelledAt: new Date() },
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
+    // jobs.trigger rejects (simulating Trigger.dev unreachable)
+    (ctx.jobs.trigger as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('Trigger.dev unreachable'),
+    );
+    const caller = bookingsRouter.createCaller(ctx);
+
+    // Cancel should NOT throw despite Trigger.dev being unreachable
+    const result = await caller.cancel({ enrollmentId: ENROLLMENT_ID });
+    expect(result.status).toBe('cancelled');
   });
 
   it('throws NOT_FOUND when enrollment does not exist (or not owned)', async () => {
-    const returning = vi.fn().mockResolvedValue([]);
-    const where = vi.fn().mockReturnValue({ returning });
-    const set = vi.fn().mockReturnValue({ where });
-    const update = vi.fn().mockReturnValue({ set });
-    const ctx = makeCtx({ update } as never);
+    // Pre-lock findFirst returns undefined (no enrollment found)
+    const { tx } = makeTx({
+      existingEnrollmentForCancel: undefined,
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
     const caller = bookingsRouter.createCaller(ctx);
     await expect(
       caller.cancel({ enrollmentId: '00000000-0000-0000-0000-000000000000' }),
@@ -306,13 +361,13 @@ describe('bookingsRouter.cancel', () => {
   });
 
   it('throws FORBIDDEN when caller has no memberId', async () => {
-    const update = vi.fn();
-    const ctx = makeCtx({ update } as never, { memberId: null });
+    const transaction = vi.fn();
+    const ctx = makeCtx({ transaction } as never, { memberId: null });
     const caller = bookingsRouter.createCaller(ctx);
     await expect(
       caller.cancel({ enrollmentId: ENROLLMENT_ID }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
-    expect(update).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
   });
 });
 
