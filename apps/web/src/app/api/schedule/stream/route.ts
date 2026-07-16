@@ -65,7 +65,16 @@ async function getSeatAvailability(sessionId: string): Promise<SeatAvailabilityE
       available,
       isFull: enrolled >= capacity,
     };
-  } catch {
+  } catch (error) {
+    // v8 A1 fix: Log the error so it's visible in Sentry / Vercel logs.
+    // Previously this catch block silently returned null, making DB
+    // connectivity issues affecting the SSE endpoint invisible.
+    // Include the sessionId for triage; the error message is logged
+    // separately to preserve the stack trace.
+    console.error(
+      `[SSE getSeatAvailability] failed for session ${sessionId}:`,
+      error,
+    );
     return null;
   }
 }
