@@ -4674,6 +4674,57 @@ Combined: removing CSP from `next.config.ts` left NO CSP on the live site.
 
 ---
 
+### v10 Audit Remediation Lessons (2026-07-17)
+
+### Lesson 109: `generateStaticParams` MUST NOT use `apiCaller()` — query the DB directly (v10 V10-1)
+
+**Context:** v9 V9-3 added `generateStaticParams` to `/instructors/[slug]` using `apiCaller()` to fetch valid slugs. The build succeeded locally but the live site returned HTTP 500 on ALL valid instructor slug routes (mei-tanaka, james-harlow, aiko-mori).
+
+**Root cause:** `apiCaller()` calls `headers()` from `next/headers` which is request-scoped. During build-time static generation (when `generateStaticParams` runs), there is no request context → `headers()` throws `DynamicServerError`. The build appeared to succeed locally because `headers()` returned empty headers in the local build environment, but on Vercel's build environment it fails → pages not prerendered → on-demand rendering at runtime → 500.
+
+**What to do differently:**
+- **`generateStaticParams` MUST query the DB directly** via `import { db } from '@stillwater/db'` — NOT via `apiCaller()` or any function that calls `headers()`, `cookies()`, or `draftMode()`.
+- **Use Drizzle RQB callback syntax** for `where` clauses to avoid importing `eq` from `drizzle-orm` (which may not be a direct dependency of `apps/web`):
+  ```typescript
+  export async function generateStaticParams() {
+    const items = await db.query.instructors.findMany({
+      where: (instructors, { eq, and }) =>
+        and(eq(instructors.isActive, true), eq(instructors.published, true)),
+      columns: { slug: true },
+    });
+    return items.map((i) => ({ slug: i.slug }));
+  }
+  ```
+- **Wrap in try/catch** — if the DB is unreachable at build time, return `[]` (all slugs will 404, which is correct).
+- **Regression test:** Add a test that asserts `generateStaticParams` does NOT call `apiCaller` + imports `db` from `@stillwater/db`.
+
+**Fix references:** `apps/web/src/app/(marketing)/instructors/[slug]/page.tsx` (generateStaticParams rewritten to use db directly); `apps/web/src/app/api/auth/[...all]/slug-404-verify.test.ts` (12 tests). Source: Stillwater Audit Report v10 §V10-1.
+
+---
+
+### Lesson 110: `dynamicParams = false` is the definitive fix for soft-404 on SSG slug routes (v10 V10-1)
+
+**Context:** The soft-404 issue (non-existent slugs returning HTTP 200 instead of 404) persisted through v7, v8, and v9 despite multiple fix attempts. Each fix addressed a layer of the problem but didn't fully resolve it.
+
+**Root cause:** Without `dynamicParams = false`, Next.js renders unknown slugs (not in `generateStaticParams` output) on-demand. On-demand rendering = streaming = HTTP 200 (per Next.js docs: "200 for streamed responses, 404 for non-streamed"). Even with `notFound()` in the page body, the 200 status is already committed before `notFound()` fires.
+
+**What to do differently:**
+- **ALWAYS set `export const dynamicParams = false` on slug routes** that use `generateStaticParams`. This makes Next.js return 404 at the routing layer for any slug NOT in the `generateStaticParams` output — before streaming starts.
+- **This is the definitive fix.** Combined with `generateStaticParams` (Lesson 109), this resolves the soft-404 issue completely:
+  - Valid slugs (in generateStaticParams) → SSG → 200 ✅
+  - Invalid slugs (not in generateStaticParams) → routing-layer 404 ✅
+- **Pattern:**
+  ```typescript
+  export const experimental_ppr = false;
+  export const dynamicParams = false;
+
+  export async function generateStaticParams() { ... }
+  ```
+
+**Fix references:** Both slug pages (`instructors/[slug]` + `blog/[slug]`) now have `dynamicParams = false`. Source: Stillwater Audit Report v10 §V10-1; https://nextjs.org/docs/app/api-reference/file-conventions/not-found
+
+---
+
 ## §13. Pitfalls to Avoid
 
 ### 13.1 Architecture Pitfalls

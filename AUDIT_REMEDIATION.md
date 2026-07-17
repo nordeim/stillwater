@@ -1,4 +1,96 @@
-# Audit Remediation Report v9 — 2026-07-17
+# Audit Remediation Report v10 — 2026-07-17
+
+> Post-deploy re-audit of the live site at https://stillwater.jesspete.shop/
+> after the v9 remediation was deployed. The v9 deploy fixed the CSP (V9-2)
+> but introduced a CRITICAL regression: valid instructor slug routes returned
+> HTTP 500 (V10-1). The blog soft-404 also persisted (V10-2). This document
+> records the v10 remediation. For the v9 history, see below.
+
+---
+
+## v10 Executive Summary
+
+After the v9 remediation was deployed to production, a live-site re-audit
+via agent-browser + curl revealed:
+
+1. **V9-2 CSP: ✅ FIXED** — Live site now serves the CSP header:
+   `script-src 'self' 'unsafe-inline' 'strict-dynamic' https://js.stripe.com`
+
+2. **V9-3 Soft-404: ❌ CRITICAL REGRESSION** — The v9 generateStaticParams
+   fix used `apiCaller()` which calls `headers()` (request-scoped). This
+   fails during build-time SSG on Vercel → ALL valid instructor slug routes
+   returned HTTP 500 (mei-tanaka, james-harlow, aiko-mori).
+
+3. **Blog soft-404: ❌ STILL 200** — `/blog/nonexistent-post` still returned
+   200 because blog has no posts → generateStaticParams returns [] → all
+   slugs rendered on-demand → streaming → 200.
+
+v10 verdict: **1 CRITICAL fix (V10-1) + 1 HIGH fix (V10-2, same fix).**
+All TDD with regression tests.
+
+---
+
+## v10 Fixes
+
+### V10-1 (CRITICAL) — Valid instructor slug routes return HTTP 500
+
+**Root cause:** v9 V9-3's `generateStaticParams` called `apiCaller()` to
+fetch valid instructor slugs. `apiCaller()` uses `headers()` from
+`next/headers` which is request-scoped and throws `DynamicServerError`
+when called during build-time static generation (no request context).
+The build succeeded locally (headers() returned empty) but failed on
+Vercel's build environment → pages not prerendered → on-demand rendering
+→ 500 at runtime.
+
+**Fix:**
+1. `generateStaticParams` now queries the DB DIRECTLY via
+   `import { db, instructors } from '@stillwater/db'` + Drizzle RQB
+   callback syntax (no apiCaller, no headers(), no drizzle-orm import).
+2. Added `export const dynamicParams = false` to BOTH slug pages — forces
+   Next.js to return 404 for slugs NOT in generateStaticParams output
+   (instead of rendering on-demand → streaming → 200). This is the
+   definitive fix for the soft-404 issue (v7→v8→v9→v10).
+
+**Tests:** Rewrote `slug-404-verify.test.ts` (12 tests) — now asserts
+generateStaticParams does NOT use apiCaller, imports db directly, and
+exports `dynamicParams = false`.
+
+### V10-2 (HIGH) — Blog soft-404 persists
+
+**Root cause:** Blog has no posts (no Sanity CMS content) →
+generateStaticParams returns [] → all slugs rendered on-demand →
+streaming → 200.
+
+**Fix:** Added `export const dynamicParams = false` to blog/[slug]/page.tsx.
+Now unknown slugs 404 at the routing layer (no on-demand rendering).
+
+---
+
+## v10 Test Count
+
+| Package | Test files | Tests (approx) |
+|---|---|---|
+| packages/db | 19 | 131 |
+| packages/auth | 4 | 102 |
+| packages/api | 14 | 123 |
+| packages/payments | 7 | 43 |
+| apps/web | 31 | ~205 (slug-404-verify rewritten with 12 tests) |
+| packages/email | 17 | 71 |
+| services/workers | 12 | 44 |
+| **Total** | **104** | **~720** |
+
+---
+
+## v10 Commits (on main branch)
+
+| Commit | Description |
+|---|---|
+| `fix(critical,v10): generateStaticParams must use db directly, not apiCaller (V10-1)` | V10-1 + V10-2 fix |
+| `docs(v10): update AUDIT_REMEDIATION.md + SKILL.md lessons + Project_Brief.md` | Documentation |
+
+---
+
+# Audit Remediation Report v9 — 2026-07-17 (HISTORICAL)
 
 > Post-deploy re-audit of the live site at https://stillwater.jesspete.shop/
 > after the v8 remediation was deployed. The v8 deploy revealed that 2 HIGH
