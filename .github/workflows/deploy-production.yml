@@ -53,7 +53,7 @@ jobs:
       # Step 3: Smoke test production
       - name: Smoke test
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://stillwater.studio)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://stillwater.jesspete.shop)
           if [ "$STATUS" != "200" ]; then
             echo "❌ Production smoke test failed: HTTP $STATUS"
             exit 1
@@ -68,6 +68,6 @@ jobs:
           slack-message: |
             ${{ job.status == 'success' && '✅' || '❌' }} Stillwater deployed to production: ${{ job.status }}
             Commit: ${{ github.event.head_commit.message }}
-            URL: https://stillwater.studio
+            URL: https://stillwater.jesspete.shop
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
