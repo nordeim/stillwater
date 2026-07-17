@@ -1,22 +1,25 @@
 /**
- * next.config.ts CSP ownership verification (v8 audit remediation, S1 fix)
+ * next.config.ts CSP verification (v9 audit remediation, V9-2 fix)
  *
- * Verifies that next.config.ts does NOT set a Content-Security-Policy header
- * in its `headers()` config. Per Next.js docs:
- *   "If two headers match the same path and set the same header key,
- *    the last header key will override the first."
- * `next.config.ts headers()` runs AFTER proxy.ts, so any CSP set in
- * next.config.ts would OVERRIDE the per-request nonce-based CSP generated
- * by proxy.ts. This was the root cause of audit finding S1 (CSP regression
- * on live site — served `'unsafe-inline'` instead of nonce-based CSP).
+ * Verifies that next.config.ts DOES set a Content-Security-Policy header
+ * in its `headers()` config. This is the v9 correction of the v8 S1 fix.
  *
- * The fix: proxy.ts is the SOLE source of the Content-Security-Policy header.
- * next.config.ts retains all other security headers (HSTS, X-Frame-Options,
- * X-Content-Type-Options, Referrer-Policy, Permissions-Policy,
- * X-DNS-Prefetch-Control) — only CSP is removed.
+ * v8 S1 fix removed CSP from next.config.ts expecting proxy.ts to provide
+ * it via per-request nonce. However, live-site E2E testing revealed that
+ * proxy.ts response headers do NOT reach production responses on Vercel +
+ * Next.js 16.2.10 (per GitHub issues #85711, #86303 — proxy.ts headers
+ * dropped in production). The result was a live site with NO CSP at all,
+ * which is worse than the v7 state ('unsafe-inline').
  *
- * Source: Stillwater Audit Report v1.0 §7.2 + §8.3 (S1 finding);
- *         Next.js docs https://nextjs.org/docs/pages/api-reference/config/next-config-js/headers
+ * v9 V9-2 fix: Restore a working CSP in next.config.ts headers() using
+ * 'self' 'unsafe-inline' 'strict-dynamic' for script-src. This is weaker
+ * than the nonce-based target state but provides real XSS protection.
+ * The nonce-based CSP in proxy.ts is retained for the future when the
+ * Vercel/Next.js production proxy.ts header issue is resolved.
+ *
+ * Source: Stillwater Audit Report v9 §V9-2;
+ *         GitHub vercel/next.js#85711, vercel/next.js#86303;
+ *         Next.js CSP guide https://nextjs.org/docs/app/guides/content-security-policy
  */
 
 import { readFileSync } from 'node:fs';
@@ -29,17 +32,46 @@ const nextConfigContent = readFileSync(
   'utf-8',
 );
 
-describe('next.config.ts CSP ownership (v8 S1 fix)', () => {
-  it('does NOT set Content-Security-Policy in headers() config', () => {
-    // Extract the headers() function body and verify it has no CSP entry.
-    // We look for the literal string "Content-Security-Policy" appearing
-    // inside a `key:` property assignment (which is the headers() pattern).
+describe('next.config.ts CSP verification (v9 V9-2 fix)', () => {
+  it('DOES set Content-Security-Policy in headers() config (v9 restoration)', () => {
+    // v9: CSP MUST be present in next.config.ts headers() because proxy.ts
+    // response headers don't reach production on Vercel + Next.js 16.2.
     const cspKeyPattern = /key:\s*["']Content-Security-Policy["']/;
-    expect(cspKeyPattern.test(nextConfigContent)).toBe(false);
+    expect(cspKeyPattern.test(nextConfigContent)).toBe(true);
+  });
+
+  it('CSP includes script-src with self + strict-dynamic', () => {
+    // 'strict-dynamic' allows dynamically loaded chunks to execute.
+    // 'self' allows same-origin scripts.
+    expect(nextConfigContent).toContain("script-src");
+    expect(nextConfigContent).toContain("'self'");
+    expect(nextConfigContent).toContain("'strict-dynamic'");
+  });
+
+  it('CSP includes https://js.stripe.com for Stripe checkout', () => {
+    expect(nextConfigContent).toContain('https://js.stripe.com');
+  });
+
+  it('CSP includes img-src with Cloudflare + Sanity CDNs', () => {
+    expect(nextConfigContent).toContain('img-src');
+    expect(nextConfigContent).toContain('https://imagedelivery.net');
+    expect(nextConfigContent).toContain('https://cdn.sanity.io');
+  });
+
+  it('CSP includes object-src none (blocks Flash/plugin XSS)', () => {
+    expect(nextConfigContent).toContain("object-src 'none'");
+  });
+
+  it('CSP includes base-uri self + form-action self', () => {
+    expect(nextConfigContent).toContain("base-uri 'self'");
+    expect(nextConfigContent).toContain("form-action 'self'");
+  });
+
+  it('CSP includes upgrade-insecure-requests', () => {
+    expect(nextConfigContent).toContain('upgrade-insecure-requests');
   });
 
   it('retains other security headers in headers() config', () => {
-    // These headers don't conflict with proxy.ts, so they're safe to keep.
     expect(nextConfigContent).toContain('X-Frame-Options');
     expect(nextConfigContent).toContain('X-Content-Type-Options');
     expect(nextConfigContent).toContain('Referrer-Policy');
@@ -48,12 +80,10 @@ describe('next.config.ts CSP ownership (v8 S1 fix)', () => {
     expect(nextConfigContent).toContain('X-DNS-Prefetch-Control');
   });
 
-  it('does NOT claim that proxy.ts overrides next.config.ts headers (misleading comment removed)', () => {
-    // The old comment "The per-request nonce-based CSP in proxy.ts
-    // (commit 8a1765d) will OVERRIDE this with a stricter version" was
-    // incorrect — next.config.ts headers() overrides proxy.ts, not the
-    // other way around. The comment must be removed to prevent confusion.
-    expect(nextConfigContent).not.toContain('will OVERRIDE this');
-    expect(nextConfigContent).not.toContain('SAFETY NET');
+  it('documents the v9 rationale (proxy.ts CSP not reaching production)', () => {
+    // The comment must explain WHY CSP is in next.config.ts despite
+    // proxy.ts also generating a nonce-based CSP.
+    expect(nextConfigContent).toContain('V9-2');
+    expect(nextConfigContent).toContain('proxy.ts');
   });
 });
