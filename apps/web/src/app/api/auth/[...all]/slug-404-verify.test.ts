@@ -1,30 +1,26 @@
 /**
- * Slug route 404 status verification (v9 audit remediation, V9-3 fix)
+ * Slug route 404 status verification (v10 audit remediation, V10-1 fix)
  *
  * Verifies that the dynamic slug routes (`/instructors/[slug]` and
- * `/blog/[slug]`) return HTTP 404 for non-existent slugs.
+ * `/blog/[slug]`) return HTTP 404 for non-existent slugs AND HTTP 200
+ * for valid slugs (no 500 errors).
  *
  * History:
- *   v7 M1: Added experimental_ppr = false + dynamic = 'force-dynamic' +
- *       notFound() in generateMetadata + page body. DID NOT WORK on live
- *       site — still returned HTTP 200.
- *   v8 F1: Added this regression test verifying the v7 M1 fix is in source.
- *       Test passed but live site still returned 200.
- *   v9 V9-3: Root cause found — per Next.js docs: "Next.js will return a
- *       200 HTTP status code for streamed responses, and 404 for non-
- *       streamed responses." Dynamic pages are streamed → always 200.
- *       Fix: add generateStaticParams to enumerate valid slugs at build
- *       time. Unknown slugs 404 at the routing layer (before streaming).
+ *   v7 M1: experimental_ppr = false + force-dynamic + notFound(). DID NOT
+ *       WORK — live site returned 200 (streamed responses always 200).
+ *   v8 F1: Added regression test. Test passed but live site still 200.
+ *   v9 V9-3: Removed force-dynamic. Added generateStaticParams using
+ *       apiCaller(). Build succeeded locally but live site returned 500
+ *       on ALL valid instructor slugs (mei-tanaka, james-harlow, aiko-mori).
+ *   v10 V10-1: Root cause — apiCaller() uses headers() from next/headers
+ *       which is request-scoped and fails during build-time SSG on Vercel.
+ *       Fix: generateStaticParams queries the DB directly via db import,
+ *       NOT via apiCaller(). Also add dynamicParams = false to force 404
+ *       for unknown slugs (prevents on-demand rendering → streaming → 200).
  *
- * The v9 fix:
- *   1. KEEP experimental_ppr = false (defensive — may help in future Next.js versions)
- *   2. REMOVE dynamic = 'force-dynamic' (was forcing streaming → 200)
- *   3. ADD generateStaticParams returning valid slugs from the DB/CMS
- *   4. KEEP notFound() in generateMetadata + page body (defense-in-depth)
- *
- * Source: Stillwater Audit Report v9 §V9-3;
- *         Next.js not-found.js docs https://nextjs.org/docs/app/api-reference/file-conventions/not-found
- *         Next.js generateStaticParams docs https://nextjs.org/docs/app/api-reference/functions/generate-static-params
+ * Source: Stillwater Audit Report v10 §V10-1;
+ *         Next.js generateStaticParams docs;
+ *         Next.js dynamicParams docs.
  */
 
 import { readFileSync } from 'node:fs';
@@ -45,17 +41,36 @@ const blogSlugPage = readFileSync(
   'utf-8',
 );
 
-describe('V9-3: slug routes must return HTTP 404 for non-existent slugs', () => {
+describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs', () => {
   describe('instructors/[slug]/page.tsx', () => {
-    it('exports generateStaticParams (v9 V9-3 fix)', () => {
-      // generateStaticParams enumerates valid slugs at build time.
-      // Unknown slugs 404 at the routing layer (before streaming).
+    it('exports generateStaticParams', () => {
       expect(instructorSlugPage).toContain('generateStaticParams');
     });
 
-    it('does NOT force dynamic rendering (v9 V9-3 — removed force-dynamic)', () => {
-      // force-dynamic causes streaming → always returns 200.
-      // Removing it allows generateStaticParams to take effect.
+    it('v10 V10-1: generateStaticParams does NOT use apiCaller (fails in SSG)', () => {
+      // apiCaller() uses headers() which is request-scoped → fails during
+      // build-time static generation on Vercel → 500 error on valid slugs.
+      // generateStaticParams must query the DB directly via the db import.
+      const generateStaticParamsBlock = instructorSlugPage.match(
+        /export async function generateStaticParams[\s\S]*?\n\}/,
+      );
+      expect(generateStaticParamsBlock).not.toBeNull();
+      expect(generateStaticParamsBlock![0]).not.toContain('apiCaller');
+    });
+
+    it('v10 V10-1: imports db from @stillwater/db (direct DB access)', () => {
+      // Direct DB import (not via apiCaller) for build-time SSG compatibility.
+      expect(instructorSlugPage).toContain("from '@stillwater/db'");
+      expect(instructorSlugPage).toMatch(/import\s*\{[^}]*\bdb\b[^}]*\}\s*from\s*['"]@stillwater\/db['"]/);
+    });
+
+    it('v10 V10-1: exports dynamicParams = false (force 404 for unknown slugs)', () => {
+      // dynamicParams = false makes Next.js return 404 for slugs NOT in
+      // generateStaticParams output, instead of rendering on-demand.
+      expect(instructorSlugPage).toContain('export const dynamicParams = false');
+    });
+
+    it('does NOT force dynamic rendering', () => {
       expect(instructorSlugPage).not.toContain("export const dynamic = 'force-dynamic'");
     });
 
@@ -71,19 +86,18 @@ describe('V9-3: slug routes must return HTTP 404 for non-existent slugs', () => 
       expect(matches).not.toBeNull();
       expect(matches!.length).toBeGreaterThanOrEqual(2);
     });
-
-    it('imports notFound from next/navigation', () => {
-      expect(instructorSlugPage).toContain("from 'next/navigation'");
-      expect(instructorSlugPage).toContain('notFound');
-    });
   });
 
   describe('blog/[slug]/page.tsx', () => {
-    it('exports generateStaticParams (v9 V9-3 fix)', () => {
+    it('exports generateStaticParams', () => {
       expect(blogSlugPage).toContain('generateStaticParams');
     });
 
-    it('does NOT force dynamic rendering (v9 V9-3 — removed force-dynamic)', () => {
+    it('v10 V10-1: exports dynamicParams = false (force 404 for unknown slugs)', () => {
+      expect(blogSlugPage).toContain('export const dynamicParams = false');
+    });
+
+    it('does NOT force dynamic rendering', () => {
       expect(blogSlugPage).not.toContain("export const dynamic = 'force-dynamic'");
     });
 
@@ -96,11 +110,6 @@ describe('V9-3: slug routes must return HTTP 404 for non-existent slugs', () => 
       const matches = blogSlugPage.match(/notFound\(\)/g);
       expect(matches).not.toBeNull();
       expect(matches!.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('imports notFound from next/navigation', () => {
-      expect(blogSlugPage).toContain("from 'next/navigation'");
-      expect(blogSlugPage).toContain('notFound');
     });
   });
 });

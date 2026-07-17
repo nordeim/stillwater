@@ -7,24 +7,24 @@ import { getSanityClient } from '@/lib/sanity/client';
 import { blogPostListQuery, blogPostQuery } from '@/lib/sanity/queries';
 import { blogPostListSchema, blogPostSchema } from '@/lib/sanity/schemas';
 
-// v9 V9-3 fix: Per Next.js docs, "Next.js will return a 200 HTTP status
-// code for streamed responses, and 404 for non-streamed responses."
-// Dynamic pages (force-dynamic) are streamed → always 200, even when
-// notFound() is called. The fix: use generateStaticParams to enumerate
-// valid slugs at build time. Unknown slugs 404 at the routing layer
-// (before streaming starts).
+// v10 V10-1 fix: Added dynamicParams = false to force 404 for unknown slugs.
+// Without this, unknown slugs trigger on-demand rendering → streaming → 200.
+// With dynamicParams = false, unknown slugs 404 at the routing layer.
 //
 // History:
-//   v7 M1: experimental_ppr = false + dynamic = 'force-dynamic' + notFound()
-//       in generateMetadata. DID NOT WORK — live site still returned 200.
-//   v8 F1: Added regression test verifying v7 M1 fix in source. Test passed
-//       but live site still returned 200.
-//   v9 V9-3: Removed force-dynamic. Added generateStaticParams. Kept
-//       experimental_ppr = false (defensive) + notFound() (defense-in-depth).
+//   v7 M1: experimental_ppr = false + force-dynamic + notFound(). 200 (streamed).
+//   v8 F1: Regression test added. Still 200.
+//   v9 V9-3: Removed force-dynamic. Added generateStaticParams. Still 200
+//       because blog has no posts → generateStaticParams returns [] →
+//       all slugs rendered on-demand → streaming → 200.
+//   v10 V10-1: Added dynamicParams = false. Now unknown slugs 404 at the
+//       routing layer (no on-demand rendering). Kept experimental_ppr = false
+//       + notFound() (defense-in-depth).
 //
-// Source: Stillwater Audit Report v9 §V9-3;
+// Source: Stillwater Audit Report v10 §V10-1;
 //         https://nextjs.org/docs/app/api-reference/file-conventions/not-found
 export const experimental_ppr = false;
+export const dynamicParams = false;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
