@@ -35,6 +35,10 @@ overrides:
   # Fix ws high CVE (GHSA-96hv-2xvq-fx4p — memory exhaustion DoS)
   # Transitive via @trigger.dev/sdk → socket.io → engine.io → ws
   "ws": ">=8.21.0"
+  # v9 V9-5 fix: Fix tmp high CVE (GHSA-pxg6-pf52-xh8x — path traversal)
+  # Transitive via @lhci/cli → inquirer → external-editor → tmp (dev-only)
+  # Also fixes tmp low CVE (arbitrary temp file write).
+  "tmp": "^0.2.6"
 
 # Explicitly allow postinstall scripts for native/critical binaries.
 # Resolves: ERR_PNPM_IGNORED_BUILDS
