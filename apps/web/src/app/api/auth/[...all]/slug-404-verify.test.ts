@@ -105,6 +105,31 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
       expect(matches).not.toBeNull();
       expect(matches!.length).toBeGreaterThanOrEqual(2);
     });
+
+    it('v12 V12-1: page body does NOT use apiCaller (uses db directly)', () => {
+      // v11 used apiCaller() in the page body → headers() → dynamic →
+      // streaming → 200 even for notFound(). v12 rewrites the page body
+      // to query the DB directly (no headers() → static → 404 works).
+      // Check that the page body function doesn't contain apiCaller CALLS
+      // (comments mentioning apiCaller are OK).
+      const pageBodyMatch = instructorSlugPage.match(
+        /export default async function InstructorDetailPage[\s\S]*?^}/m,
+      );
+      expect(pageBodyMatch).not.toBeNull();
+      // Remove comment lines before checking
+      const bodyWithoutComments = pageBodyMatch![0]
+        .replace(/\/\/.*$/gm, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(bodyWithoutComments).not.toContain('apiCaller');
+    });
+
+    it('v12 V12-1: page body uses withTimeout for DB query (resilience)', () => {
+      const pageBodyMatch = instructorSlugPage.match(
+        /export default async function InstructorDetailPage[\s\S]*?^}/m,
+      );
+      expect(pageBodyMatch).not.toBeNull();
+      expect(pageBodyMatch![0]).toContain('withTimeout');
+    });
   });
 
   describe('blog/[slug]/page.tsx', () => {

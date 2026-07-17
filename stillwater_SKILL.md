@@ -4756,6 +4756,34 @@ Combined: removing CSP from `next.config.ts` left NO CSP on the live site.
 
 ---
 
+### Lesson 112: Page body MUST NOT use apiCaller() on SSG slug routes — query DB directly (v12 V12-1)
+
+**Context:** v10/v11 fixed generateStaticParams to use db directly, but the page BODY (generateMetadata + page component) still used apiCaller(). The instructor soft-404 persisted: /instructors/nonexistent-slug returned 200.
+
+**Root cause:** apiCaller() calls headers() from next/headers. headers() is a dynamic API → any page that calls it becomes dynamic (streamed). Streamed pages always return HTTP 200, even when notFound() is called. The 200 status is committed before the page body executes.
+
+**What to do differently:**
+- **On SSG slug routes, the page body + generateMetadata MUST NOT use apiCaller().** Query the DB directly via db.query.* + withTimeout.
+- **apiCaller is for request-scoped pages only** (pages that need the user's session, headers, etc.). Slug routes that render public content don't need request-scoped data.
+- **Pattern:**
+  ```typescript
+  // ✅ CORRECT: db directly + withTimeout
+  const instructor = await withTimeout(
+    db.query.instructors.findFirst({ where: ... }),
+    8_000,
+    null,
+  );
+  if (!instructor) notFound();
+
+  // ❌ WRONG: apiCaller (uses headers() → dynamic → streamed → 200)
+  const caller = await apiCaller();
+  const instructor = await caller.instructors.getBySlug({ slug });
+  ```
+
+**Fix references:** apps/web/src/app/(marketing)/instructors/[slug]/page.tsx (page body + generateMetadata rewritten). Source: Stillwater Audit Report v12 §V12-1.
+
+---
+
 ## §13. Pitfalls to Avoid
 
 ### 13.1 Architecture Pitfalls

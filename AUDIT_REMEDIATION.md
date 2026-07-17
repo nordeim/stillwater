@@ -1,4 +1,54 @@
-# Audit Remediation Report v11 — 2026-07-17
+# Audit Remediation Report v12 — 2026-07-17
+
+> Post-deploy re-audit after v11. The v11 fix (withTimeout + console.error in
+> generateStaticParams) did NOT resolve the instructor soft-404. Root cause
+> found: the page BODY still used apiCaller() which calls headers() → dynamic
+> → streaming → HTTP 200 even for notFound(). v12 rewrites the page body +
+> generateMetadata to query the DB directly (no headers() → static → 404).
+
+---
+
+## v12 Executive Summary
+
+After v11 deploy, /instructors/nonexistent-slug still returned 200. Deep
+investigation revealed: the page BODY (not just generateStaticParams) was
+using apiCaller() which calls headers() from next/headers. This makes the
+page dynamic (streamed) → HTTP 200 is committed before notFound() fires.
+
+v12 fix: Rewrote generateMetadata + page body to query the DB directly via
+db.query.instructors.findFirst() + withTimeout. No apiCaller → no headers()
+→ page can be static → notFound() sets correct HTTP 404.
+
+---
+
+## v12 Fixes
+
+### V12-1 (HIGH) — Instructor soft-404: page body used apiCaller (headers → dynamic → 200)
+
+**Root cause:** v10/v11 fixed generateStaticParams to use db directly, but
+the page BODY (generateMetadata + InstructorDetailPage) still used apiCaller().
+apiCaller() calls headers() which is a dynamic API → makes the page dynamic
+→ streamed → HTTP 200 committed before notFound() fires.
+
+**Fix:** Rewrote generateMetadata + page body to use db.query.instructors.findFirst()
+directly + withTimeout (8s). Removed the apiCaller import entirely. Now the
+page has NO dynamic API calls → can be fully static → notFound() sets 404.
+
+**Tests:** 16 tests in slug-404-verify.test.ts (added 2 v12 assertions:
+page body does NOT use apiCaller, page body uses withTimeout).
+
+---
+
+## v12 Commits
+
+| Commit | Description |
+|---|---|
+| fix(instructors,v12): page body queries DB directly, not apiCaller (V12-1) | V12-1 fix |
+| docs(v12): update AUDIT_REMEDIATION.md + SKILL.md lesson 112 + Project_Brief.md | Documentation |
+
+---
+
+# Audit Remediation Report v11 — 2026-07-17 (HISTORICAL)
 
 > Post-deploy re-audit after v10. The v10 fix resolved the CRITICAL 500
 > regression on valid instructor slugs (V10-1 ✅) + blog soft-404 (V10-2 ✅),

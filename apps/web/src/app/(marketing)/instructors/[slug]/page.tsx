@@ -5,37 +5,24 @@ import type { Metadata } from 'next';
 import { db, instructors } from '@stillwater/db';
 
 import { withTimeout } from '@/lib/async/withTimeout';
-import { apiCaller } from '@/lib/trpc/server';
 
-// v10 V10-1 fix: generateStaticParams must query the DB DIRECTLY (not via
-// apiCaller). apiCaller() uses headers() from next/headers which is request-
-// scoped and fails during build-time SSG on Vercel → 500 error on valid slugs.
-//
-// v10 V10-1: Added dynamicParams = false to force 404 for unknown slugs.
-// Without this, unknown slugs trigger on-demand rendering → streaming → 200.
-// With dynamicParams = false, unknown slugs 404 at the routing layer.
-//
-// v11 V11-1: Removed try/catch from generateStaticParams. The v10 try/catch
-// returned [] when DB was unreachable → dynamicParams=false had no slugs to
-// match → Next.js fell back to on-demand rendering → streaming → 200 for
-// non-existent slugs. Without try/catch, if DB is unreachable at build, the
-// build fails visibly (correct behavior — DATABASE_URL must be set in Vercel
-// build environment variables).
+// v10 V10-1: generateStaticParams queries DB directly (not via apiCaller).
+// v10 V10-1: dynamicParams = false forces 404 for unknown slugs.
+// v11 V11-1: withTimeout + console.error in generateStaticParams (build resilience).
+// v12 V12-1: Page body + generateMetadata now query DB directly (not via
+//   apiCaller). apiCaller uses headers() which makes the page dynamic (streamed)
+//   → HTTP 200 even for notFound(). By using db.query directly, the page
+//   doesn't need headers() → can be static → notFound() sets correct 404.
 //
 // History:
 //   v7 M1: experimental_ppr = false + force-dynamic + notFound(). 200 (streamed).
 //   v8 F1: Regression test added. Still 200.
-//   v9 V9-3: Removed force-dynamic. Added generateStaticParams via apiCaller().
-//       Build succeeded locally but live site returned 500 on valid slugs.
-//   v10 V10-1: Fixed generateStaticParams to use db directly. Added dynamicParams
-//       = false. Kept experimental_ppr = false + notFound() (defense-in-depth).
-//       Valid slugs returned 200 ✅ but invalid slugs still 200 (try/catch
-//       returned [] → dynamicParams=false ineffective).
-//   v11 V11-1: Removed try/catch. Now generateStaticParams either returns
-//       valid slugs (→ dynamicParams=false 404s unknown) OR build fails
-//       visibly (→ developer fixes DATABASE_URL).
+//   v9 V9-3: generateStaticParams via apiCaller(). 500 on valid slugs (headers() fails in SSG).
+//   v10 V10-1: generateStaticParams via db directly. dynamicParams=false. Valid slugs 200 ✅, invalid 200 (empty list).
+//   v11 V11-1: withTimeout + console.error. Invalid still 200 (apiCaller in page body → dynamic → streamed).
+//   v12 V12-1: Page body + generateMetadata via db directly + withTimeout. No apiCaller → static → 404 works.
 //
-// Source: Stillwater Audit Report v10 §V10-1 + v11 §V11-1;
+// Source: Stillwater Audit Report v10 §V10-1 + v11 §V11-1 + v12 §V12-1;
 //         https://nextjs.org/docs/app/api-reference/functions/generate-static-params
 //         https://nextjs.org/docs/app/api-reference/file-conventions/not-found
 export const experimental_ppr = false;
@@ -89,28 +76,56 @@ export async function generateStaticParams() {
   }
 }
 
+// v12 V12-1 fix: generateMetadata + page body now query the DB DIRECTLY
+// (not via apiCaller). apiCaller uses headers() which makes the page dynamic
+// (streamed) → HTTP 200 even for notFound(). By querying the DB directly,
+// the page doesn't need headers() → can be static → notFound() sets 404.
+// withTimeout (8s) prevents hanging on cold Neon compute.
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  try {
-    const caller = await apiCaller();
-    const instructor = await caller.instructors.getBySlug({ slug });
-    return {
-      title: instructor.slug.replace(/-/g, ' '),
-      description: instructor.bio ?? `Meet ${instructor.slug.replace(/-/g, ' ')}`,
-    };
-  } catch {
+  const instructor = await withTimeout(
+    db.query.instructors.findFirst({
+      where: (instructors, { eq, and }) =>
+        and(
+          eq(instructors.slug, slug),
+          eq(instructors.isActive, true),
+          eq(instructors.published, true),
+        ),
+    }),
+    8_000,
+    null,
+  );
+
+  if (!instructor) {
     notFound();
   }
+
+  return {
+    title: instructor.slug.replace(/-/g, ' '),
+    description: instructor.bio ?? `Meet ${instructor.slug.replace(/-/g, ' ')}`,
+  };
 }
 
 export default async function InstructorDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const caller = await apiCaller();
 
-  let instructor;
-  try {
-    instructor = await caller.instructors.getBySlug({ slug });
-  } catch {
+  // v12 V12-1: Query DB directly (not via apiCaller) + withTimeout.
+  // This avoids headers() → page can be static → notFound() sets 404.
+  const instructor = await withTimeout(
+    db.query.instructors.findFirst({
+      where: (instructors, { eq, and }) =>
+        and(
+          eq(instructors.slug, slug),
+          eq(instructors.isActive, true),
+          eq(instructors.published, true),
+        ),
+    }),
+    8_000,
+    null,
+  );
+
+  if (!instructor) {
     notFound();
   }
 
