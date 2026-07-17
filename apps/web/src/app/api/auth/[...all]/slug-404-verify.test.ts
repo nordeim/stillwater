@@ -48,9 +48,6 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
     });
 
     it('v10 V10-1: generateStaticParams does NOT use apiCaller (fails in SSG)', () => {
-      // apiCaller() uses headers() which is request-scoped → fails during
-      // build-time static generation on Vercel → 500 error on valid slugs.
-      // generateStaticParams must query the DB directly via the db import.
       const generateStaticParamsBlock = instructorSlugPage.match(
         /export async function generateStaticParams[\s\S]*?\n\}/,
       );
@@ -58,8 +55,30 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
       expect(generateStaticParamsBlock![0]).not.toContain('apiCaller');
     });
 
+    it('v11 V11-1: generateStaticParams logs errors (does NOT silently swallow)', () => {
+      // v10 had a try/catch that SILENTLY returned [] when DB was unreachable.
+      // This made dynamicParams=false ineffective + impossible to debug.
+      // v11 keeps the try/catch (needed for build resilience) BUT adds a
+      // console.error so the build log shows WHY [] was returned.
+      const generateStaticParamsBlock = instructorSlugPage.match(
+        /export async function generateStaticParams[\s\S]*?\n\}/,
+      );
+      expect(generateStaticParamsBlock).not.toBeNull();
+      expect(generateStaticParamsBlock![0]).toContain('console.error');
+      expect(generateStaticParamsBlock![0]).toContain('generateStaticParams');
+    });
+
+    it('v11 V11-1: generateStaticParams uses withTimeout (build resilience)', () => {
+      // v11 wraps the DB query in withTimeout to avoid hanging on cold
+      // Neon compute during build. Same pattern as the marketing pages.
+      const generateStaticParamsBlock = instructorSlugPage.match(
+        /export async function generateStaticParams[\s\S]*?\n\}/,
+      );
+      expect(generateStaticParamsBlock).not.toBeNull();
+      expect(generateStaticParamsBlock![0]).toContain('withTimeout');
+    });
+
     it('v10 V10-1: imports db from @stillwater/db (direct DB access)', () => {
-      // Direct DB import (not via apiCaller) for build-time SSG compatibility.
       expect(instructorSlugPage).toContain("from '@stillwater/db'");
       expect(instructorSlugPage).toMatch(/import\s*\{[^}]*\bdb\b[^}]*\}\s*from\s*['"]@stillwater\/db['"]/);
     });
