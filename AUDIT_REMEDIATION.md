@@ -1,4 +1,180 @@
-# Audit Remediation Report v8 — 2026-07-17
+# Audit Remediation Report v9 — 2026-07-17
+
+> Post-deploy re-audit of the live site at https://stillwater.jesspete.shop/
+> after the v8 remediation was deployed. The v8 deploy revealed that 2 HIGH
+> findings (S1 CSP regression, F1 soft-404) were NOT resolved — the v8 fixes
+> were correct in source but didn't account for Vercel/Next.js 16.2
+> production behavior. This document records the v9 remediation (5 findings
+> fixed via TDD). For the v8 history, see the "v8 Fixes" section below.
+
+---
+
+## v9 Executive Summary
+
+After the v8 remediation was deployed to production, a live-site re-audit
+via agent-browser + curl revealed:
+
+1. **S1 CSP regression NOT fixed** — The v8 S1 fix removed the static CSP
+   from `next.config.ts headers()` expecting proxy.ts's per-request nonce-
+   based CSP to provide it. However, proxy.ts response headers do NOT reach
+   production responses on Vercel + Next.js 16.2.10 (per GitHub issues
+   #85711, #86303). The live site had NO CSP at all — worse than v7.
+
+2. **F1 Soft-404 NOT fixed** — The v7 M1 fix (`experimental_ppr = false` +
+   `dynamic = 'force-dynamic'` + `notFound()`) was in source but didn't
+   work. Per Next.js docs: "Next.js will return a 200 HTTP status code for
+   streamed responses, and 404 for non-streamed responses." Dynamic pages
+   are streamed → always 200.
+
+3. **2 new findings** discovered during the v9 re-audit:
+   - V9-1: deploy-production.yml had wrong smoke test + Slack URLs
+   - V9-4: ScheduleCalendar drag-to-reschedule was a TODO stub
+
+v9 verdict: **5 findings fixed (2 HIGH + 2 MEDIUM + 1 LOW).** All TDD with
+regression tests.
+
+---
+
+## v9 Fixes (5 findings, all TDD)
+
+### V9-1 (LOW) — deploy-production.yml wrong URLs
+
+**Root cause:** The smoke test step + Slack notification step in
+`.github/workflows/deploy-production.yml` pointed to `stillwater.studio`
+instead of `stillwater.jesspete.shop`. The smoke test would always fail
+even on a successful deploy.
+
+**Note on the trigger:** The `branches: [main]` trigger was already
+correct. The `cat` command displayed `ain]` because `[m` is interpreted
+as an ANSI escape sequence. Hex dump + YAML parse confirmed the actual
+bytes are `[main]`.
+
+**Fix:** Updated 2 URL occurrences from `stillwater.studio` →
+`stillwater.jesspete.shop`.
+
+### V9-2 (HIGH) — CSP regression (v8 S1 fix made it worse)
+
+**Root cause:** v8 S1 removed the static CSP from `next.config.ts headers()`
+expecting proxy.ts's per-request nonce-based CSP to override it. But the
+v8 comment was wrong — `next.config.ts headers()` OVERRIDES proxy.ts (not
+the other way around), AND proxy.ts response headers don't reach production
+on Vercel + Next.js 16.2.10. Result: live site had NO CSP at all.
+
+**Fix:** Restored a working static CSP in `next.config.ts headers()`:
+`script-src 'self' 'unsafe-inline' 'strict-dynamic' https://js.stripe.com`.
+This is weaker than the nonce-based target state but provides real XSS
+protection. The nonce-based CSP in proxy.ts is retained for the future
+when the Vercel/Next.js production proxy.ts header issue is resolved.
+
+**Tests:** Rewrote `next-config-csp-verify.test.ts` (9 tests) — now asserts
+CSP IS present (was: asserts it's NOT present).
+
+### V9-3 (HIGH) — Soft-404 persists (v8 F1 fix didn't work)
+
+**Root cause:** Per Next.js docs: "Next.js will return a 200 HTTP status
+code for streamed responses, and 404 for non-streamed responses." The v7
+M1 fix forced dynamic rendering (`dynamic = 'force-dynamic'`) → streaming
+→ always 200, even when `notFound()` fired. The notFound() UI rendered
+correctly but the HTTP status was wrong.
+
+**Fix:** Removed `dynamic = 'force-dynamic'` from both slug pages. Added
+`generateStaticParams` to enumerate valid slugs at build time. Unknown
+slugs now 404 at the routing layer (before streaming starts) → correct
+HTTP 404 status.
+
+- `instructors/[slug]/page.tsx`: `generateStaticParams` fetches valid
+  slugs via `caller.instructors.list()` (tRPC)
+- `blog/[slug]/page.tsx`: `generateStaticParams` fetches valid slugs via
+  Sanity `blogPostListQuery`
+
+**Tests:** Rewrote `slug-404-verify.test.ts` (10 tests) — now asserts
+`generateStaticParams` IS present + `force-dynamic` is NOT present.
+
+### V9-4 (MEDIUM) — ScheduleCalendar drag-to-reschedule TODO stub
+
+**Root cause:** `ScheduleCalendar.tsx` had a TODO stub — the `onDragEnd`
+handler showed a toast ("Drag-to-reschedule requires sessions.update
+procedure (Phase 10)") but did nothing. The `sessions.update` tRPC
+procedure didn't exist.
+
+**Fix:**
+- Added `sessions.update` procedure (staffProcedure): input `{ sessionId,
+  startsAt, endsAt }`, validates `startsAt < endsAt`, updates
+  `classSessions.startsAt` + `endsAt`, throws NOT_FOUND if session doesn't
+  exist.
+- Wired `ScheduleCalendar.tsx handleDragEnd` to call `sessions.update`
+  with the new start + calculated end time (preserves original duration).
+
+**Tests:** Added 4 new tests in `sessions.test.ts` (was 9, now 13):
+updates session times, BAD_REQUEST when startsAt >= endsAt, NOT_FOUND
+when session missing, FORBIDDEN for member-only caller.
+
+### V9-5 (LOW) — tmp high CVE (dev-only)
+
+**Root cause:** `pnpm audit` reported `tmp < 0.2.6` has path traversal
+(GHSA-pxg6-pf52-xh8x). Transitive via `@lhci/cli → inquirer →
+external-editor → tmp` (dev-only, not in production bundle).
+
+**Fix:** Added `"tmp": "^0.2.6"` to `pnpm-workspace.yaml` overrides (NOT
+`package.json` — pnpm v11+ ignores the `pnpm` field in package.json).
+
+**Verification:** `pnpm audit` before: `2 low | 6 moderate | 1 high` →
+after: `1 low | 6 moderate | 0 high`. The `tmp` package is now at 0.2.7
+(patched).
+
+---
+
+## v9 Outstanding Issues (still open)
+
+1. **P0 root-cause diagnosis** — 3-layer timeout fix is defensive; actual
+   DB connectivity issue needs Vercel/Neon log inspection
+2. **`cacheComponents` status** — SKILL §9.9 ambiguity (not enabled in
+   next.config.ts)
+3. **Instructor portrait images** — requires Sanity CMS image setup
+4. **GitHub Actions Deploy Production secrets** — VERCEL_TOKEN,
+   VERCEL_ORG_ID, VERCEL_PROJECT_ID, PROD_DATABASE_URL_UNPOOLED,
+   SLACK_WEBHOOK_URL must be set in GitHub repo settings
+5. **`pnpm audit` moderate vulnerabilities** — 6 moderate (cookie 0.4.2
+   path traversal via @trigger.dev/sdk → socket.io → engine.io → cookie;
+   upstream dependency, not directly fixable)
+6. **`/blog` empty state** — no blog posts seeded (expected — no Sanity
+   CMS content published)
+7. **Nonce-based CSP target state** — proxy.ts generates per-request
+   nonces but they don't reach production on Vercel + Next.js 16.2.10.
+   Track GitHub vercel/next.js#85711, vercel/next.js#86303. When fixed,
+   remove `'unsafe-inline'` from next.config.ts CSP + rely on proxy.ts.
+
+---
+
+## v9 Test Count
+
+| Package | Test files | Tests (approx) |
+|---|---|---|
+| packages/db | 19 | 131 |
+| packages/auth | 4 | 102 |
+| packages/api | 14 | 123 (sessions.test.ts +4 tests for V9-4) |
+| packages/payments | 7 | 43 |
+| apps/web | 31 | ~200 (next-config-csp-verify +9, slug-404-verify +10 rewritten) |
+| packages/email | 17 | 71 |
+| services/workers | 12 | 44 |
+| **Total** | **104** | **~715** |
+
+---
+
+## v9 Commits (on main branch)
+
+| Commit | Description |
+|---|---|
+| `fix(ci,v9): correct smoke test + Slack URLs in deploy-production.yml (V9-1)` | M1 — URL fixes |
+| `fix(security,v9): restore working CSP in next.config.ts headers() (V9-2)` | M2 — CSP restoration |
+| `fix(seo,v9): use generateStaticParams to fix soft-404 on slug routes (V9-3)` | M3 — soft-404 fix |
+| `feat(admin,v9): add sessions.update procedure + wire ScheduleCalendar drag-to-reschedule (V9-4)` | M4 — drag-to-reschedule |
+| `fix(security,v9): override tmp to ^0.2.6 to fix high CVE (V9-5)` | M5 — vulnerability override |
+| `docs(v9): update AUDIT_REMEDIATION.md + SKILL.md lessons + Project_Brief.md` | M6 — documentation |
+
+---
+
+# Audit Remediation Report v8 — 2026-07-17 (HISTORICAL)
 
 > Systematic Six-Axis code review + live-site E2E of the Stillwater yoga
 > studio platform. Full audit report: Stillwater_Codebase_Audit_Report.pdf

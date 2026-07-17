@@ -4589,6 +4589,91 @@ Without a dedup mechanism, every capture sends emails to all enrollees.
 
 ---
 
+### v9 Audit Remediation Lessons (2026-07-17)
+
+### Lesson 105: `proxy.ts` response headers do NOT reach production on Vercel + Next.js 16.2 — set CSP in `next.config.ts headers()` instead (v9 V9-2)
+
+**Context:** The v8 S1 fix removed the static CSP from `next.config.ts headers()` expecting proxy.ts's per-request nonce-based CSP to provide it. After deploying v8, the live site had NO Content-Security-Policy header at all — worse than the v7 state.
+
+**Root cause:** Per GitHub issues vercel/next.js#85711 and vercel/next.js#86303, proxy.ts response headers (set via `response.headers.set(...)`) do not reliably reach production responses on Vercel + Next.js 16.2.10. The proxy.ts function DOES execute (auth redirects work), but response headers are dropped. This is a platform bug, not a code defect.
+
+**What to do differently:**
+- **NEVER rely solely on proxy.ts for security-critical response headers.** Use `next.config.ts headers()` for any header that MUST reach production (CSP, HSTS, X-Frame-Options, etc.).
+- **proxy.ts is for request-time logic only** — auth redirects, request header manipulation (e.g., setting `x-nonce` on the request for Next.js to read). Don't use it for response headers.
+- **CSP with `'unsafe-inline'` is weaker than nonce-based but better than no CSP.** Use `'self' 'unsafe-inline' 'strict-dynamic'` in `next.config.ts headers()`. When the Vercel/Next.js proxy.ts header bug is fixed, switch to nonce-based.
+- **Verify live:** `curl -I https://stillwater.jesspete.shop/ | grep -i content-security-policy` — must show a CSP header.
+
+**Fix references:** `apps/web/next.config.ts` (CSP restored in `headers()`); `apps/web/src/app/api/auth/[...all]/next-config-csp-verify.test.ts` (9 tests). Source: Stillwater Audit Report v9 §V9-2; GitHub vercel/next.js#85711, vercel/next.js#86303.
+
+---
+
+### Lesson 106: `notFound()` returns HTTP 200 for streamed (dynamic) pages — use `generateStaticParams` for correct 404 status (v9 V9-3)
+
+**Context:** The v7 M1 fix added `experimental_ppr = false` + `dynamic = 'force-dynamic'` + `notFound()` in `generateMetadata` + page body to fix soft-404s on `/instructors/[slug]` and `/blog/[slug]`. The notFound() UI rendered correctly but the HTTP status was still 200.
+
+**Root cause:** Per Next.js docs: "Next.js will return a 200 HTTP status code for streamed responses, and 404 for non-streamed responses." Dynamic pages (`dynamic = 'force-dynamic'`) are streamed → always 200, even when `notFound()` fires. The `experimental_ppr = false` flag doesn't change this — it only disables PPR shell prerendering, not the streaming behavior.
+
+**What to do differently:**
+- **For slug routes that need correct HTTP 404 status:** Use `generateStaticParams` to enumerate valid slugs at build time. Unknown slugs (not in the list) 404 at the routing layer BEFORE streaming starts → correct HTTP 404.
+- **Do NOT use `dynamic = 'force-dynamic'` on slug routes** — it forces streaming → always 200.
+- **Keep `notFound()` in `generateMetadata` + page body as defense-in-depth** — handles the case where a slug was valid at build time but is deleted before the request.
+- **`experimental_ppr = false` is harmless** — keep it as defensive; may help in future Next.js versions.
+- **Pattern:**
+  ```typescript
+  export const experimental_ppr = false;
+  // NO: export const dynamic = 'force-dynamic';
+
+  export async function generateStaticParams() {
+    const items = await fetchAllSlugs();
+    return items.map((i) => ({ slug: i.slug }));
+  }
+  ```
+
+**Fix references:** `apps/web/src/app/(marketing)/instructors/[slug]/page.tsx` (generateStaticParams via tRPC); `apps/web/src/app/(marketing)/blog/[slug]/page.tsx` (generateStaticParams via Sanity); `apps/web/src/app/api/auth/[...all]/slug-404-verify.test.ts` (10 tests). Source: Stillwater Audit Report v9 §V9-3; https://nextjs.org/docs/app/api-reference/file-conventions/not-found
+
+---
+
+### Lesson 107: pnpm v11+ reads overrides from `pnpm-workspace.yaml`, NOT `package.json` (v9 V9-5)
+
+**Context:** Tried to add a `tmp` vulnerability override via the `pnpm.overrides` field in `package.json`. pnpm printed a warning: "The pnpm field in package.json is no longer read by pnpm. The following keys were ignored: pnpm.overrides."
+
+**Root cause:** pnpm v11+ moved all non-auth settings from `package.json` to `pnpm-workspace.yaml`. This includes `overrides`, `customConditions`, `allowBuilds`, etc.
+
+**What to do differently:**
+- **ALWAYS put overrides in `pnpm-workspace.yaml`**, not `package.json`.
+- **Pattern:**
+  ```yaml
+  # pnpm-workspace.yaml
+  overrides:
+    "tmp": "^0.2.6"
+    "ws": ">=8.21.0"
+  ```
+- **Verify the override took effect:** `pnpm why <package>` — should show the overridden version.
+- **Verify the vulnerability is resolved:** `pnpm audit` — should show 0 high/critical.
+
+**Fix references:** `pnpm-workspace.yaml` (added `"tmp": "^0.2.6"` to overrides); `package.json` (removed the ignored `pnpm` field). Source: Stillwater Audit Report v9 §V9-5; https://pnpm.io/settings
+
+---
+
+### Lesson 108: `next.config.ts headers()` overrides `proxy.ts` response headers — and proxy.ts headers don't reach production anyway (v9 V9-2 supersedes v8 Lesson 99)
+
+**Context:** v8 Lesson 99 documented that `next.config.ts headers()` overrides `proxy.ts` response headers, and recommended removing CSP from `next.config.ts` so proxy.ts could provide it. This was correct in theory but wrong in practice — proxy.ts response headers don't reach production on Vercel + Next.js 16.2.10.
+
+**Root cause:** Two compounding issues:
+1. `next.config.ts headers()` overrides proxy.ts response headers (per Next.js docs).
+2. proxy.ts response headers don't reach production on Vercel + Next.js 16.2.10 (per GitHub #85711, #86303).
+
+Combined: removing CSP from `next.config.ts` left NO CSP on the live site.
+
+**What to do differently:**
+- **v8 Lesson 99 was WRONG.** The recommendation to remove CSP from `next.config.ts` was based on the assumption that proxy.ts CSP would work in production. It doesn't.
+- **Correct pattern (v9):** Set CSP in `next.config.ts headers()` (the ONLY reliable source in production). Keep proxy.ts's nonce-based CSP as a no-op for the future when the platform bug is fixed.
+- **When the Vercel/Next.js proxy.ts header bug is fixed:** Remove CSP from `next.config.ts headers()` + rely on proxy.ts's nonce-based CSP. Until then, `'unsafe-inline'` is the pragmatic choice.
+
+**Fix references:** Same as Lesson 105. Source: Stillwater Audit Report v9 §V9-2; supersedes v8 Lesson 99.
+
+---
+
 ## §13. Pitfalls to Avoid
 
 ### 13.1 Architecture Pitfalls

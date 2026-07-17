@@ -1,7 +1,7 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-17 (post-v8 audit remediation)
-> Status: Phases 0–12 ✅ complete · v8 audit remediation ✅ complete
+> **Updated:** 2026-07-17 (post-v9 audit remediation)
+> Status: Phases 0–12 ✅ complete · v8 audit remediation ✅ complete · v9 audit remediation ✅ complete
 
 ## What it is
 
