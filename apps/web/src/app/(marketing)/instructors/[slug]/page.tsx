@@ -4,17 +4,48 @@ import type { Metadata } from 'next';
 
 import { apiCaller } from '@/lib/trpc/server';
 
-// M1 fix v4 (v7, 2026-07-15): Disable PPR for this route so notFound()
-// can set the HTTP 404 status BEFORE the response body is committed.
-// PPR (Partial Prerendering) streams a 200 shell before notFound() fires.
-// Setting experimental.ppr = false for this route segment ensures the
-// full response is generated server-side before being sent, so notFound()
-// in generateMetadata correctly sets 404.
+// v9 V9-3 fix: Per Next.js docs, "Next.js will return a 200 HTTP status
+// code for streamed responses, and 404 for non-streamed responses."
+// Dynamic pages (force-dynamic) are streamed → always 200, even when
+// notFound() is called. The fix: use generateStaticParams to enumerate
+// valid slugs at build time. Unknown slugs 404 at the routing layer
+// (before streaming starts).
+//
+// History:
+//   v7 M1: experimental_ppr = false + dynamic = 'force-dynamic' + notFound()
+//       in generateMetadata. DID NOT WORK — live site still returned 200.
+//   v8 F1: Added regression test verifying v7 M1 fix in source. Test passed
+//       but live site still returned 200.
+//   v9 V9-3: Removed force-dynamic. Added generateStaticParams. Kept
+//       experimental_ppr = false (defensive) + notFound() (defense-in-depth).
+//
+// Source: Stillwater Audit Report v9 §V9-3;
+//         https://nextjs.org/docs/app/api-reference/file-conventions/not-found
 export const experimental_ppr = false;
-export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+/**
+ * v9 V9-3 fix: Enumerate valid instructor slugs at build time.
+ * Unknown slugs (not in this list) will 404 at the routing layer
+ * before streaming starts, ensuring the correct HTTP 404 status.
+ *
+ * Uses the tRPC instructors.list procedure (public) to fetch slugs.
+ * If the DB is unreachable at build time, returns an empty array —
+ * pages will be rendered on-demand (and notFound() will fire for
+ * missing instructors).
+ */
+export async function generateStaticParams() {
+  try {
+    const caller = await apiCaller();
+    const allInstructors = await caller.instructors.list();
+    return allInstructors.map((i) => ({ slug: i.slug }));
+  } catch {
+    // DB unreachable at build time — return empty, render on-demand.
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -27,7 +58,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: instructor.bio ?? `Meet ${instructor.slug.replace(/-/g, ' ')}`,
     };
   } catch {
-    // notFound() here sets HTTP 404 before any response body is committed.
     notFound();
   }
 }
@@ -40,9 +70,6 @@ export default async function InstructorDetailPage({ params }: PageProps) {
   try {
     instructor = await caller.instructors.getBySlug({ slug });
   } catch {
-    // R3 fix: notFound() throws NEXT_NOT_FOUND which Next.js catches and
-    // renders the 404 page with HTTP 404 status. The generateMetadata
-    // catch block above returns noindex metadata for this case.
     notFound();
   }
 

@@ -4,31 +4,69 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { getSanityClient } from '@/lib/sanity/client';
-import { blogPostQuery } from '@/lib/sanity/queries';
-import { blogPostSchema } from '@/lib/sanity/schemas';
+import { blogPostListQuery, blogPostQuery } from '@/lib/sanity/queries';
+import { blogPostListSchema, blogPostSchema } from '@/lib/sanity/schemas';
 
-// M1 fix v4 (v7, 2026-07-15): Disable PPR for this route so notFound()
-// can set the HTTP 404 status BEFORE the response body is committed.
+// v9 V9-3 fix: Per Next.js docs, "Next.js will return a 200 HTTP status
+// code for streamed responses, and 404 for non-streamed responses."
+// Dynamic pages (force-dynamic) are streamed → always 200, even when
+// notFound() is called. The fix: use generateStaticParams to enumerate
+// valid slugs at build time. Unknown slugs 404 at the routing layer
+// (before streaming starts).
+//
+// History:
+//   v7 M1: experimental_ppr = false + dynamic = 'force-dynamic' + notFound()
+//       in generateMetadata. DID NOT WORK — live site still returned 200.
+//   v8 F1: Added regression test verifying v7 M1 fix in source. Test passed
+//       but live site still returned 200.
+//   v9 V9-3: Removed force-dynamic. Added generateStaticParams. Kept
+//       experimental_ppr = false (defensive) + notFound() (defense-in-depth).
+//
+// Source: Stillwater Audit Report v9 §V9-3;
+//         https://nextjs.org/docs/app/api-reference/file-conventions/not-found
 export const experimental_ppr = false;
-export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+/**
+ * v9 V9-3 fix: Enumerate valid blog post slugs at build time.
+ * Unknown slugs (not in this list) will 404 at the routing layer
+ * before streaming starts, ensuring the correct HTTP 404 status.
+ *
+ * If Sanity CMS is not configured (no client), return an empty array —
+ * all blog slug routes will 404, which is correct (no posts exist).
+ */
+export async function generateStaticParams() {
+  const client = getSanityClient();
+  if (!client) {
+    return [];
+  }
+  try {
+    const raw: unknown = await client.fetch(blogPostListQuery);
+    const parsed = blogPostListSchema.safeParse(raw);
+    if (!parsed.success) {
+      return [];
+    }
+    return parsed.data.map((post) => ({ slug: post.slug.current }));
+  } catch {
+    // If Sanity fetch fails at build time, return empty — pages will
+    // be rendered on-demand (and notFound() will fire for missing posts).
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const client = getSanityClient();
   if (!client) {
-    // M2 fix: Call notFound() here (in generateMetadata) to set HTTP 404
-    // before streaming starts.
     notFound();
   }
 
   const raw: unknown = await client.fetch(blogPostQuery, { slug });
   const parsed = blogPostSchema.safeParse(raw);
   if (!parsed.success) {
-    // M2 fix: Call notFound() here for nonexistent blog posts.
     notFound();
   }
   return {
