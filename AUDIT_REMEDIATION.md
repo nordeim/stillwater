@@ -1,4 +1,67 @@
-# Audit Remediation Report v10 — 2026-07-17
+# Audit Remediation Report v11 — 2026-07-17
+
+> Post-deploy re-audit after v10. The v10 fix resolved the CRITICAL 500
+> regression on valid instructor slugs (V10-1 ✅) + blog soft-404 (V10-2 ✅),
+> but /instructors/nonexistent-slug still returned 200 (soft-404 persisted).
+> This document records the v11 remediation.
+
+---
+
+## v11 Executive Summary
+
+After the v10 remediation was deployed, a live-site re-audit revealed:
+
+1. **V10-1 CRITICAL 500: ✅ FIXED** — Valid instructor slugs (mei-tanaka,
+   james-harlow, aiko-mori) now return 200.
+2. **V10-2 Blog soft-404: ✅ FIXED** — /blog/nonexistent-post returns 404.
+3. **V9-2 CSP: ✅ STILL FIXED** — CSP header present.
+4. **Instructor soft-404: ❌ PERSISTS** — /instructors/nonexistent-slug
+   still returns 200. Root cause: v10's generateStaticParams had a SILENT
+   try/catch that returned [] when DB was unreachable → dynamicParams=false
+   ineffective (Next.js falls back to on-demand → streaming → 200).
+
+v11 verdict: **1 fix (V11-1).** The generateStaticParams now uses
+withTimeout + console.error for build resilience + debuggability.
+
+---
+
+## v11 Fixes
+
+### V11-1 (HIGH) — Instructor soft-404 persists (silent try/catch)
+
+**Root cause:** v10's `generateStaticParams` had a `try/catch` that
+SILENTLY returned `[]` when the DB was unreachable. Next.js doesn't
+honor `dynamicParams = false` when `generateStaticParams` returns `[]`
+— it falls back to on-demand rendering → streaming → 200. The silent
+catch made it impossible to debug.
+
+**Fix:**
+- Wrapped the DB query in `withTimeout` (8s) — same pattern as the
+  marketing pages. Avoids hanging on cold Neon compute.
+- Kept the `try/catch` (needed for build resilience) BUT added
+  `console.error('[generateStaticParams instructors] DB unreachable:', error)`
+  so the build log shows WHY `[]` was returned.
+- On Vercel (DB reachable): returns 3 valid slugs → `dynamicParams=false`
+  404s unknown slugs → correct HTTP 404.
+- Locally (no Postgres): `withTimeout` catches `ECONNREFUSED` → logs
+  error → returns `[]` → build succeeds.
+
+**Tests:** Updated `slug-404-verify.test.ts` (14 tests) — v11 assertions:
+- `generateStaticParams` logs errors (`console.error` present)
+- `generateStaticParams` uses `withTimeout`
+
+---
+
+## v11 Commits (on main branch)
+
+| Commit | Description |
+|---|---|
+| `fix(instructors,v11): withTimeout + console.error in generateStaticParams (V11-1)` | V11-1 fix |
+| `docs(v11): update AUDIT_REMEDIATION.md + SKILL.md lessons + Project_Brief.md` | Documentation |
+
+---
+
+# Audit Remediation Report v10 — 2026-07-17 (HISTORICAL)
 
 > Post-deploy re-audit of the live site at https://stillwater.jesspete.shop/
 > after the v9 remediation was deployed. The v9 deploy fixed the CSP (V9-2)

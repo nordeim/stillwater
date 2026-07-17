@@ -4725,6 +4725,37 @@ Combined: removing CSP from `next.config.ts` left NO CSP on the live site.
 
 ---
 
+### Lesson 111: `generateStaticParams` returning `[]` makes `dynamicParams = false` ineffective — use withTimeout + console.error (v11 V11-1)
+
+**Context:** v10 added `dynamicParams = false` to force 404 for unknown slugs. But `/instructors/nonexistent-slug` still returned 200. The blog page (which also has `dynamicParams = false`) correctly returned 404.
+
+**Root cause:** v10's `generateStaticParams` had a SILENT `try/catch` that returned `[]` when the DB was unreachable. Next.js doesn't honor `dynamicParams = false` when `generateStaticParams` returns `[]` — it falls back to on-demand rendering → streaming → 200. The blog page worked because its `generateStaticParams` ALWAYS returns `[]` (no Sanity content) → all slugs are "not in the list" → 404. But the instructor page's `generateStaticParams` was SUPPOSED to return 3 valid slugs — when the DB was unreachable, the silent catch returned `[]` → Next.js treated it as "no params generated" → on-demand for all.
+
+**What to do differently:**
+- **NEVER silently catch errors in `generateStaticParams`.** If you must catch (for build resilience), ALWAYS log the error with a context prefix so the build log shows WHY `[]` was returned.
+- **Use `withTimeout`** to avoid hanging on cold Neon compute during build. Same pattern as the marketing pages.
+- **Pattern:**
+  ```typescript
+  export async function generateStaticParams() {
+    try {
+      const items = await withTimeout(
+        db.query.instructors.findMany({ ... }),
+        8_000,
+        [],
+      );
+      return items.map((i) => ({ slug: i.slug }));
+    } catch (error) {
+      console.error('[generateStaticParams instructors] DB unreachable:', error);
+      return [];
+    }
+  }
+  ```
+- **Verify on Vercel:** Check the Vercel build logs for the `[generateStaticParams instructors]` prefix. If it appears, the DB was unreachable at build time → `dynamicParams = false` will be ineffective → all slugs will 200. Fix the `DATABASE_URL` in Vercel build environment variables.
+
+**Fix references:** `apps/web/src/app/(marketing)/instructors/[slug]/page.tsx` (withTimeout + console.error); `apps/web/src/app/api/auth/[...all]/slug-404-verify.test.ts` (14 tests). Source: Stillwater Audit Report v11 §V11-1.
+
+---
+
 ## §13. Pitfalls to Avoid
 
 ### 13.1 Architecture Pitfalls

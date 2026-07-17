@@ -1,7 +1,7 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-17 (post-v10 audit remediation)
-> Status: Phases 0–12 ✅ complete · v8 ✅ · v9 ✅ · v10 ✅ (critical regression fix)
+> **Updated:** 2026-07-17 (post-v11 audit remediation)
+> Status: Phases 0–12 ✅ complete · v8 ✅ · v9 ✅ · v10 ✅ · v11 ✅ (instructor soft-404 fix)
 
 ## What it is
 
