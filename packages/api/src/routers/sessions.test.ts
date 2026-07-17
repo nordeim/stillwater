@@ -215,3 +215,78 @@ describe('sessionsRouter.checkIn', () => {
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
+
+// v9 V9-4 fix: sessions.update procedure for drag-to-reschedule
+describe('sessionsRouter.update (v9 V9-4 — drag-to-reschedule)', () => {
+  it('updates session startsAt + endsAt when caller is staff', async () => {
+    const newStart = new Date('2026-07-08T14:00:00Z');
+    const newEnd = new Date('2026-07-08T15:00:00Z');
+    const updated = {
+      ...sessionFixture,
+      startsAt: newStart,
+      endsAt: newEnd,
+    };
+    const returning = vi.fn().mockResolvedValue([updated]);
+    const where = vi.fn().mockReturnValue({ returning });
+    const set = vi.fn().mockReturnValue({ where });
+    const update = vi.fn().mockReturnValue({ set });
+    const ctx = makeCtx({ update } as never, ['staff']);
+    const caller = sessionsRouter.createCaller(ctx);
+
+    const result = await caller.update({
+      sessionId: SESSION_ID,
+      startsAt: newStart,
+      endsAt: newEnd,
+    });
+
+    expect(result.startsAt).toEqual(newStart);
+    expect(result.endsAt).toEqual(newEnd);
+    expect(set.mock.calls[0][0]).toMatchObject({
+      startsAt: newStart,
+      endsAt: newEnd,
+    });
+  });
+
+  it('throws BAD_REQUEST when startsAt >= endsAt', async () => {
+    const update = vi.fn();
+    const ctx = makeCtx({ update } as never, ['staff']);
+    const caller = sessionsRouter.createCaller(ctx);
+    await expect(
+      caller.update({
+        sessionId: SESSION_ID,
+        startsAt: new Date('2026-07-08T15:00:00Z'),
+        endsAt: new Date('2026-07-08T14:00:00Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('throws NOT_FOUND when session does not exist', async () => {
+    const returning = vi.fn().mockResolvedValue([]);
+    const where = vi.fn().mockReturnValue({ returning });
+    const set = vi.fn().mockReturnValue({ where });
+    const update = vi.fn().mockReturnValue({ set });
+    const ctx = makeCtx({ update } as never, ['staff']);
+    const caller = sessionsRouter.createCaller(ctx);
+    await expect(
+      caller.update({
+        sessionId: '00000000-0000-0000-0000-000000000000',
+        startsAt: new Date('2026-07-08T14:00:00Z'),
+        endsAt: new Date('2026-07-08T15:00:00Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('throws FORBIDDEN for member-only caller', async () => {
+    const update = vi.fn();
+    const ctx = makeCtx({ update } as never, ['member']);
+    const caller = sessionsRouter.createCaller(ctx);
+    await expect(
+      caller.update({
+        sessionId: SESSION_ID,
+        startsAt: new Date('2026-07-08T14:00:00Z'),
+        endsAt: new Date('2026-07-08T15:00:00Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+});

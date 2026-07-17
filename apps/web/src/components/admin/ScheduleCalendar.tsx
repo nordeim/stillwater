@@ -80,10 +80,11 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
     useSensor(KeyboardSensor, {}),
   );
 
-  const _updateSession = trpc.sessions.cancel.useMutation({
-    // Reusing cancel for now — Phase 10 will add sessions.update
-    onSuccess: () => toast.success('Session updated'),
-    onError: (e) => toast.error(e.message || 'Failed to update session'),
+  // v9 V9-4 fix: Wire drag-to-reschedule to the new sessions.update procedure.
+  // Previously this was a TODO stub that only showed a toast.
+  const updateSession = trpc.sessions.update.useMutation({
+    onSuccess: () => toast.success('Session rescheduled'),
+    onError: (e) => toast.error(e.message || 'Failed to reschedule session'),
   });
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -103,13 +104,16 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
     newStart.setDate(newStart.getDate() + dayOffset);
     newStart.setHours(hour, 0, 0, 0);
 
-    // Calculate duration from original session
+    // Calculate new end time from original duration (preserves class length)
     const durationMs = new Date(session.endsAt).getTime() - new Date(session.startsAt).getTime();
-    const _durationMinutes = Math.round(durationMs / 60000);
+    const newEnd = new Date(newStart.getTime() + durationMs);
 
-    toast.info(`Drag-to-reschedule requires sessions.update procedure (Phase 10). New time would be: ${newStart.toLocaleString()}`);
-    // TODO: Phase 10 — add sessions.update mutation and call it here:
-    // updateSession.mutate({ id: sessionId, startsAt: newStart, durationMinutes })
+    // v9 V9-4: Call sessions.update with the new start + end times
+    updateSession.mutate({
+      sessionId,
+      startsAt: newStart,
+      endsAt: newEnd,
+    });
   };
 
   const handleSlotClick = (dayOffset: number, hour: number) => {

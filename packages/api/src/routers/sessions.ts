@@ -157,6 +157,52 @@ export const sessionsRouter = router({
 
       return updated;
     }),
+
+  /**
+   * Update a session's start/end times (drag-to-reschedule). Staff only.
+   * v9 V9-4 fix: Previously a TODO stub in ScheduleCalendar.tsx — the
+   * mutation didn't exist, so drag-to-reschedule showed a toast but did
+   * nothing. Now wired to this procedure.
+   *
+   * Validates startsAt < endsAt. Throws NOT_FOUND if the session doesn't
+   * exist. Returns the updated session.
+   *
+   * Source: Stillwater Audit Report v9 §V9-4; ScheduleCalendar.tsx TODO.
+   */
+  update: staffProcedure
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        startsAt: z.coerce.date(),
+        endsAt: z.coerce.date(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.startsAt >= input.endsAt) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'startsAt must be before endsAt',
+        });
+      }
+
+      const [updated] = await ctx.db
+        .update(classSessions)
+        .set({
+          startsAt: input.startsAt,
+          endsAt: input.endsAt,
+        })
+        .where(eq(classSessions.id, input.sessionId))
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Session not found',
+        });
+      }
+
+      return updated;
+    }),
 });
 
 // Re-export status values for downstream consumers (test files, root router)
