@@ -29,18 +29,18 @@ $ turbo db:migrate --filter=@stillwater/db
    • Running db:migrate in 1 packages
    • Remote caching disabled
 
-@stillwater/db:db:migrate: cache bypass, force executing b85a3b33c3b5d531
+@stillwater/db:db:migrate: cache bypass, force executing d1480a5716587e1c
 @stillwater/db:db:migrate: $ drizzle-kit migrate
 @stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
 @stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
-@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ enable debugging { debug: true }
-@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ◈ encrypted .env [www.dotenvx.com]
 @stillwater/db:db:migrate: Using 'pg' driver for database querying
 [✓] migrations applied successfully!
 
  Tasks:    1 successful, 1 total
 Cached:    0 cached, 1 total
-  Time:    1.789s 
+  Time:    3.185s 
 
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm db:seed
@@ -59,15 +59,15 @@ $ turbo db:seed --filter=@stillwater/db
    • Running db:seed in 1 packages
    • Remote caching disabled
 
-@stillwater/db:db:migrate: cache bypass, force executing b85a3b33c3b5d531
+@stillwater/db:db:migrate: cache bypass, force executing d1480a5716587e1c
 @stillwater/db:db:migrate: $ drizzle-kit migrate
 @stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
 @stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
 @stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
-@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ suppress logs { quiet: true }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ◈ secrets for agents [www.dotenvx.com]
 @stillwater/db:db:migrate: Using 'pg' driver for database querying
 [✓] migrations applied successfully!
-@stillwater/db:db:seed: cache bypass, force executing e99b987cd5fb7f65
+@stillwater/db:db:seed: cache bypass, force executing 693184eea05f5f55
 @stillwater/db:db:seed: $ tsx src/seed/index.ts
 @stillwater/db:db:seed: ◇ injected env (31) from ../../.env.local // tip: ◈ encrypted .env [www.dotenvx.com]
 @stillwater/db:db:seed: 🌱 Seeding Stillwater development data...
@@ -97,7 +97,7 @@ $ turbo db:seed --filter=@stillwater/db
 
  Tasks:    2 successful, 2 total
 Cached:    0 cached, 2 total
-  Time:    3.308s 
+  Time:    5.82s 
 
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm db:seed:e2e
@@ -116,9 +116,9 @@ $ turbo db:seed:e2e --filter=@stillwater/db
    • Running db:seed:e2e in 1 packages
    • Remote caching disabled
 
-@stillwater/db:db:seed:e2e: cache bypass, force executing ca95b364b8a64948
+@stillwater/db:db:seed:e2e: cache bypass, force executing ea7324442df2cd69
 @stillwater/db:db:seed:e2e: $ tsx src/seed/e2e.ts
-@stillwater/db:db:seed:e2e: ◇ injected env (31) from ../../.env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+@stillwater/db:db:seed:e2e: ◇ injected env (31) from ../../.env.local // tip: ⌘ enable debugging { debug: true }
 @stillwater/db:db:seed:e2e: 🌱 Seeding E2E test data (layers on top of base seed)...
 @stillwater/db:db:seed:e2e: 
 @stillwater/db:db:seed:e2e:   Inserting 5 E2E test users...
@@ -146,11 +146,15 @@ $ turbo db:seed:e2e --filter=@stillwater/db
 
  Tasks:    1 successful, 1 total
 Cached:    0 cached, 1 total
-  Time:    1.343s 
+  Time:    1.511s 
 
+(venv) pete@pop-os:/home/project/stillwater
 $ rm -rf .next */.next */*/.next
-pete@pop-os:/home/project/stillwater
-$  pnpm build
+(venv) pete@pop-os:/home/project/stillwater
+$ git pull
+Already up to date.
+(venv) pete@pop-os:/home/project/stillwater
+$ pnpm build
 $ turbo build
 ╭───────────────────────────────────────────────────────────────────────────╮
 │                                                                           │
@@ -166,38 +170,27 @@ $ turbo build
    • Running build in 13 packages
    • Remote caching disabled
 
-@stillwater/config:build: cache hit, replaying logs 0a43b5eecd23d1be
-@stillwater/config:build: $ tsc --build
-@stillwater/studio:build: cache hit, replaying logs 6bf159203c0fe101
+@stillwater/studio:build: cache hit, replaying logs e5bcee1d06f4c8c2
 @stillwater/studio:build: $ sanity build
-@stillwater/studio:build: 
-@stillwater/studio:build: 
-@stillwater/studio:build:    ╭──────────────────────────────────────╮
-@stillwater/studio:build:    │                                      │
-@stillwater/studio:build:    │   Update available: 6.3.0 → 6.4.0    │
-@stillwater/studio:build:    │                                      │
-@stillwater/studio:build:    │   Run pnpm update sanity to update   │
-@stillwater/studio:build:    │                                      │
-@stillwater/studio:build:    ╰──────────────────────────────────────╯
-@stillwater/studio:build: 
-@stillwater/studio:build: 
 @stillwater/studio:build:  ›   Warning: Declared version of styled-components (^6.1.13) is not compatible with the version required by sanity (^6.1.15). This might cause problems!
-✔ Clean output folder (118ms)
-✔ Build Sanity Studio (63807ms)
-@stillwater/db:build: cache hit, replaying logs 541a48a69173b3fe
+✔ Clean output folder (93ms)
+✔ Build Sanity Studio (34353ms)
 @stillwater/studio:build: 
-@stillwater/db:build: $ tsc --build
-@stillwater/email:build: cache hit, replaying logs 5710b51d527b9d47
-@stillwater/email:build: $ tsc --build
-@stillwater/ui:build: cache hit, replaying logs 99859f7bdbc7721b
+@stillwater/config:build: cache hit, replaying logs d8029a2fa30c7c8a
+@stillwater/config:build: $ tsc --build
+@stillwater/db:build: cache hit, replaying logs 051e0e938ec77ff5
+@stillwater/ui:build: cache hit, replaying logs 45b25e748632d747
 @stillwater/ui:build: $ tsc --build
-@stillwater/payments:build: cache hit, replaying logs 208c510658e4d349
-@stillwater/payments:build: $ tsc --build
-@stillwater/auth:build: cache hit, replaying logs 6c583a26bb185e05
+@stillwater/db:build: $ tsc --build
+@stillwater/email:build: cache hit, replaying logs 2464e9a3aea36392
+@stillwater/email:build: $ tsc --build
+@stillwater/auth:build: cache hit, replaying logs c86d60624bc7b03a
 @stillwater/auth:build: $ tsc --build
-@stillwater/api:build: cache hit, replaying logs 60a249ff4301a990
+@stillwater/payments:build: cache hit, replaying logs 987308366cd21819
+@stillwater/payments:build: $ tsc --build
+@stillwater/api:build: cache hit, replaying logs 832cd5cc3f7b3368
 @stillwater/api:build: $ tsc --build
-@stillwater/web:build: cache miss, executing dec612914a158cd0
+@stillwater/web:build: cache miss, executing 8fe431e718d00092
 @stillwater/web:build: $ next build
 @stillwater/web:build: ▲ Next.js 16.2.10 (Turbopack)
 @stillwater/web:build: - Environments: .env.local
@@ -205,13 +198,13 @@ $ turbo build
 @stillwater/web:build:   · clientTraceMetadata
 @stillwater/web:build: 
 @stillwater/web:build:   Creating an optimized production build ...
-@stillwater/web:build: ✓ Compiled successfully in 28.5s
-✓ Completed runAfterProductionCompile in 512ms
-@stillwater/web:build: ✓ Finished TypeScript in 38.9s 
+@stillwater/web:build: ✓ Compiled successfully in 27.8s
+✓ Completed runAfterProductionCompile in 434ms
+@stillwater/web:build: ✓ Finished TypeScript in 17.1s 
 ⚠ Using edge runtime on a page currently disables static generation for that page
-@stillwater/web:build: ✓ Collecting page data using 3 workers in 15.2s 
-✓ Generating static pages using 3 workers (16/16) in 1214ms
-@stillwater/web:build: ✓ Finalizing page optimization in 20ms 
+@stillwater/web:build: ✓ Collecting page data using 3 workers in 4.4s 
+✓ Generating static pages using 3 workers (19/19) in 802ms
+@stillwater/web:build: ✓ Finalizing page optimization in 23ms 
 @stillwater/web:build: 
 @stillwater/web:build: Route (app)                                     Revalidate  Expire
 @stillwater/web:build: ┌ ƒ /
@@ -239,7 +232,7 @@ $ turbo build
 @stillwater/web:build: ├ ƒ /auth/sign-in
 @stillwater/web:build: ├ ƒ /auth/sign-out
 @stillwater/web:build: ├ ○ /blog                                               1h      1y
-@stillwater/web:build: ├ ƒ /blog/[slug]
+@stillwater/web:build: ├ ● /blog/[slug]
 @stillwater/web:build: ├ ƒ /blog/[slug]/opengraph-image-yqks0s
 @stillwater/web:build: ├ ƒ /book/[sessionId]
 @stillwater/web:build: ├ ƒ /dashboard
@@ -258,17 +251,18 @@ $ turbo build
 @stillwater/web:build: 
 @stillwater/web:build: 
 @stillwater/web:build: ○  (Static)   prerendered as static content
+@stillwater/web:build: ●  (SSG)      prerendered as static HTML (uses generateStaticParams)
 @stillwater/web:build: ƒ  (Dynamic)  server-rendered on demand
 @stillwater/web:build: 
 @stillwater/web:build: 
 
  Tasks:    9 successful, 9 total
 Cached:    8 cached, 9 total
-  Time:    1m27.718s 
+  Time:    53.711s 
 
-pete@pop-os:/home/project/stillwater
+(venv) pete@pop-os:/home/project/stillwater
 $ cd apps/web/
-pete@pop-os:/home/project/stillwater/apps/web
+(venv) pete@pop-os:/home/project/stillwater/apps/web
 $ pnpm build
 $ next build
 ▲ Next.js 16.2.10 (Turbopack)
@@ -277,13 +271,13 @@ $ next build
   · clientTraceMetadata
 
   Creating an optimized production build ...
-✓ Compiled successfully in 62s
-✓ Completed runAfterProductionCompile in 885ms
-✓ Finished TypeScript in 20.7s    
+✓ Compiled successfully in 28.9s
+✓ Completed runAfterProductionCompile in 425ms
+✓ Finished TypeScript in 17.4s    
 ⚠ Using edge runtime on a page currently disables static generation for that page
-✓ Collecting page data using 3 workers in 4.2s    
-✓ Generating static pages using 3 workers (16/16) in 792ms
-✓ Finalizing page optimization in 19ms    
+✓ Collecting page data using 3 workers in 4.1s    
+✓ Generating static pages using 3 workers (19/19) in 796ms
+✓ Finalizing page optimization in 255ms    
 
 Route (app)                                     Revalidate  Expire
 ┌ ƒ /
@@ -311,7 +305,7 @@ Route (app)                                     Revalidate  Expire
 ├ ƒ /auth/sign-in
 ├ ƒ /auth/sign-out
 ├ ○ /blog                                               1h      1y
-├ ƒ /blog/[slug]
+├ ● /blog/[slug]
 ├ ƒ /blog/[slug]/opengraph-image-yqks0s
 ├ ƒ /book/[sessionId]
 ├ ƒ /dashboard
@@ -330,14 +324,15 @@ Route (app)                                     Revalidate  Expire
 
 
 ○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
 ƒ  (Dynamic)  server-rendered on demand
 
-pete@pop-os:/home/project/stillwater/apps/web
+(venv) pete@pop-os:/home/project/stillwater/apps/web
 $ pnpm start
 $ next start
 ▲ Next.js 16.2.10
 - Local:         http://localhost:3000
 - Network:       http://192.168.2.132:3000
-✓ Ready in 823ms
+✓ Ready in 201ms
 
 
