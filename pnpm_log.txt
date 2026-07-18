@@ -33,14 +33,14 @@ $ turbo db:migrate --filter=@stillwater/db
 @stillwater/db:db:migrate: $ drizzle-kit migrate
 @stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
 @stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
-@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ◈ secrets for agents [www.dotenvx.com]
-@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ◈ encrypted .env [www.dotenvx.com]
+@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ enable debugging { debug: true }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
 @stillwater/db:db:migrate: Using 'pg' driver for database querying
 [✓] migrations applied successfully!
 
  Tasks:    1 successful, 1 total
 Cached:    0 cached, 1 total
-  Time:    3.185s 
+  Time:    1.783s 
 
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm db:seed
@@ -63,13 +63,13 @@ $ turbo db:seed --filter=@stillwater/db
 @stillwater/db:db:migrate: $ drizzle-kit migrate
 @stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
 @stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
-@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
-@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ◈ secrets for agents [www.dotenvx.com]
+@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ suppress logs { quiet: true }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
 @stillwater/db:db:migrate: Using 'pg' driver for database querying
 [✓] migrations applied successfully!
 @stillwater/db:db:seed: cache bypass, force executing 693184eea05f5f55
 @stillwater/db:db:seed: $ tsx src/seed/index.ts
-@stillwater/db:db:seed: ◇ injected env (31) from ../../.env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+@stillwater/db:db:seed: ◇ injected env (31) from ../../.env.local // tip: ⌘ enable debugging { debug: true }
 @stillwater/db:db:seed: 🌱 Seeding Stillwater development data...
 @stillwater/db:db:seed: 
 @stillwater/db:db:seed:   Inserting 5 users...
@@ -97,7 +97,7 @@ $ turbo db:seed --filter=@stillwater/db
 
  Tasks:    2 successful, 2 total
 Cached:    0 cached, 2 total
-  Time:    5.82s 
+  Time:    3.146s 
 
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm db:seed:e2e
@@ -146,13 +146,9 @@ $ turbo db:seed:e2e --filter=@stillwater/db
 
  Tasks:    1 successful, 1 total
 Cached:    0 cached, 1 total
-  Time:    1.511s 
+  Time:    1.363s 
 
-(venv) pete@pop-os:/home/project/stillwater
 $ rm -rf .next */.next */*/.next
-(venv) pete@pop-os:/home/project/stillwater
-$ git pull
-Already up to date.
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm build
 $ turbo build
@@ -176,21 +172,21 @@ $ turbo build
 ✔ Clean output folder (93ms)
 ✔ Build Sanity Studio (34353ms)
 @stillwater/studio:build: 
-@stillwater/config:build: cache hit, replaying logs d8029a2fa30c7c8a
-@stillwater/config:build: $ tsc --build
 @stillwater/db:build: cache hit, replaying logs 051e0e938ec77ff5
+@stillwater/config:build: cache hit, replaying logs d8029a2fa30c7c8a
+@stillwater/db:build: $ tsc --build
+@stillwater/config:build: $ tsc --build
 @stillwater/ui:build: cache hit, replaying logs 45b25e748632d747
 @stillwater/ui:build: $ tsc --build
-@stillwater/db:build: $ tsc --build
-@stillwater/email:build: cache hit, replaying logs 2464e9a3aea36392
-@stillwater/email:build: $ tsc --build
 @stillwater/auth:build: cache hit, replaying logs c86d60624bc7b03a
 @stillwater/auth:build: $ tsc --build
+@stillwater/email:build: cache hit, replaying logs 2464e9a3aea36392
+@stillwater/email:build: $ tsc --build
 @stillwater/payments:build: cache hit, replaying logs 987308366cd21819
 @stillwater/payments:build: $ tsc --build
 @stillwater/api:build: cache hit, replaying logs 832cd5cc3f7b3368
 @stillwater/api:build: $ tsc --build
-@stillwater/web:build: cache miss, executing 8fe431e718d00092
+@stillwater/web:build: cache hit, replaying logs f953a8e67c9d5053
 @stillwater/web:build: $ next build
 @stillwater/web:build: ▲ Next.js 16.2.10 (Turbopack)
 @stillwater/web:build: - Environments: .env.local
@@ -198,12 +194,12 @@ $ turbo build
 @stillwater/web:build:   · clientTraceMetadata
 @stillwater/web:build: 
 @stillwater/web:build:   Creating an optimized production build ...
-@stillwater/web:build: ✓ Compiled successfully in 27.8s
-✓ Completed runAfterProductionCompile in 434ms
-@stillwater/web:build: ✓ Finished TypeScript in 17.1s 
+@stillwater/web:build: ✓ Compiled successfully in 25.1s
+✓ Completed runAfterProductionCompile in 389ms
+@stillwater/web:build: ✓ Finished TypeScript in 16.3s 
 ⚠ Using edge runtime on a page currently disables static generation for that page
-@stillwater/web:build: ✓ Collecting page data using 3 workers in 4.4s 
-✓ Generating static pages using 3 workers (19/19) in 802ms
+@stillwater/web:build: ✓ Collecting page data using 3 workers in 4.3s 
+✓ Generating static pages using 3 workers (19/19) in 732ms
 @stillwater/web:build: ✓ Finalizing page optimization in 23ms 
 @stillwater/web:build: 
 @stillwater/web:build: Route (app)                                     Revalidate  Expire
@@ -238,7 +234,10 @@ $ turbo build
 @stillwater/web:build: ├ ƒ /dashboard
 @stillwater/web:build: ├ ƒ /history
 @stillwater/web:build: ├ ƒ /instructors
-@stillwater/web:build: ├ ƒ /instructors/[slug]
+@stillwater/web:build: ├ ● /instructors/[slug]
+@stillwater/web:build: │ ├ /instructors/mei-tanaka
+@stillwater/web:build: │ ├ /instructors/james-harlow
+@stillwater/web:build: │ └ /instructors/aiko-mori
 @stillwater/web:build: ├ ƒ /instructors/[slug]/opengraph-image-dbn2vc
 @stillwater/web:build: ├ ○ /manifest.webmanifest
 @stillwater/web:build: ├ ƒ /membership
@@ -257,8 +256,8 @@ $ turbo build
 @stillwater/web:build: 
 
  Tasks:    9 successful, 9 total
-Cached:    8 cached, 9 total
-  Time:    53.711s 
+Cached:    9 cached, 9 total
+  Time:    305ms >>> FULL TURBO
 
 (venv) pete@pop-os:/home/project/stillwater
 $ cd apps/web/
@@ -271,13 +270,13 @@ $ next build
   · clientTraceMetadata
 
   Creating an optimized production build ...
-✓ Compiled successfully in 28.9s
-✓ Completed runAfterProductionCompile in 425ms
-✓ Finished TypeScript in 17.4s    
+✓ Compiled successfully in 27.0s
+✓ Completed runAfterProductionCompile in 529ms
+✓ Finished TypeScript in 17.1s    
 ⚠ Using edge runtime on a page currently disables static generation for that page
-✓ Collecting page data using 3 workers in 4.1s    
-✓ Generating static pages using 3 workers (19/19) in 796ms
-✓ Finalizing page optimization in 255ms    
+✓ Collecting page data using 3 workers in 4.3s    
+✓ Generating static pages using 3 workers (19/19) in 757ms
+✓ Finalizing page optimization in 10ms    
 
 Route (app)                                     Revalidate  Expire
 ┌ ƒ /
@@ -311,7 +310,10 @@ Route (app)                                     Revalidate  Expire
 ├ ƒ /dashboard
 ├ ƒ /history
 ├ ƒ /instructors
-├ ƒ /instructors/[slug]
+├ ● /instructors/[slug]
+│ ├ /instructors/mei-tanaka
+│ ├ /instructors/james-harlow
+│ └ /instructors/aiko-mori
 ├ ƒ /instructors/[slug]/opengraph-image-dbn2vc
 ├ ○ /manifest.webmanifest
 ├ ƒ /membership
@@ -326,13 +328,4 @@ Route (app)                                     Revalidate  Expire
 ○  (Static)   prerendered as static content
 ●  (SSG)      prerendered as static HTML (uses generateStaticParams)
 ƒ  (Dynamic)  server-rendered on demand
-
-(venv) pete@pop-os:/home/project/stillwater/apps/web
-$ pnpm start
-$ next start
-▲ Next.js 16.2.10
-- Local:         http://localhost:3000
-- Network:       http://192.168.2.132:3000
-✓ Ready in 201ms
-
 
