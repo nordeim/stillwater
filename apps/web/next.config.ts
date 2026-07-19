@@ -14,7 +14,15 @@ const nextConfig: NextConfig = {
   // Enable via --turbopack flag in dev, automatic for prod builds
 
   // ── React Compiler (stable in Next.js 16) ──────────────────────
-  reactCompiler: true,
+  // V16-2 fix (2026-07-19): Disabled React Compiler — it creates excessive
+  // nested Suspense boundaries for async DB queries in Server Components,
+  // preventing the content from resolving during streaming. The page would
+  // show "Loading…" permanently because 54 nested Suspense templates (P:1
+  // through P:35) were never resolved via $RC calls.
+  // Disabling React Compiler eliminates the nested Suspense boundaries.
+  // The page's own await Promise.all([...]) resolves all queries before
+  // rendering, so no Suspense is needed.
+  reactCompiler: false,
 
   // ── Hide X-Powered-By header (security: don't leak framework) ──
   // Audit 2026-07-19: previously leaked "X-Powered-By: Next.js" in
