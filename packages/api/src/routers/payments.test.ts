@@ -182,8 +182,11 @@ describe('paymentsRouter.getInvoices (Phase 7 — Stripe wired)', () => {
 });
 
 describe('paymentsRouter.refund (D12 — stub retained for v1)', () => {
-  it('throws PRECONDITION_FAILED when caller is staff (D12 stub)', async () => {
-    const caller = paymentsRouter.createCaller(makeCtx(['staff']));
+  // V13-4 fix: refund now requires managerProcedure (was staffProcedure).
+  // Tests updated to use ['manager'] role. Staff callers now get FORBIDDEN.
+
+  it('throws PRECONDITION_FAILED when caller is manager (D12 stub)', async () => {
+    const caller = paymentsRouter.createCaller(makeCtx(['manager']));
     await expect(
       caller.refund({
         paymentIntentId: 'pi_123',
@@ -191,6 +194,16 @@ describe('paymentsRouter.refund (D12 — stub retained for v1)', () => {
         reason: 'requested_by_customer',
       }),
     ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
+  });
+
+  it('V13-4: throws FORBIDDEN when caller is staff (was allowed before fix)', async () => {
+    // Staff should NOT be able to initiate refunds per RBAC matrix (PAD §9.2).
+    // Before V13-4, this used staffProcedure and returned PRECONDITION_FAILED.
+    // Now it returns FORBIDDEN at the tier check (before reaching the stub).
+    const caller = paymentsRouter.createCaller(makeCtx(['staff']));
+    await expect(
+      caller.refund({ paymentIntentId: 'pi_123' }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
   it('throws FORBIDDEN when caller is only a member', async () => {
@@ -208,7 +221,7 @@ describe('paymentsRouter.refund (D12 — stub retained for v1)', () => {
   });
 
   it('rejects invalid input (missing paymentIntentId)', async () => {
-    const caller = paymentsRouter.createCaller(makeCtx(['staff']));
+    const caller = paymentsRouter.createCaller(makeCtx(['manager']));
     await expect(
       caller.refund({ paymentIntentId: '' } as never),
     ).rejects.toBeDefined();

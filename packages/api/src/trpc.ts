@@ -1,13 +1,21 @@
 /**
- * F3-01 — tRPC router factory, context type, and 4 procedure tiers.
+ * F3-01 — tRPC router factory, context type, and 5 procedure tiers.
  *
- * Per PAD §8.3, there are 4 access tiers:
+ * Per PAD §8.3, there are 5 access tiers:
  *   publicProcedure    — no auth required
  *   protectedProcedure — any authenticated user
  *   staffProcedure     — staff, manager, or owner
+ *   managerProcedure   — manager or owner (V13-4 fix, 2026-07-19)
  *   ownerProcedure     — owner only
  *
- * Source: MEP Phase 3 F3-01, PAD §8.3 + §8.5, SKILL §5.8.
+ * V13-4 fix (2026-07-19, Phase B audit I1/E1):
+ *   Added managerProcedure tier. The RBAC matrix (PAD §9.2) requires
+ *   manager+ for: View revenue reports, Manage memberships/pricing,
+ *   View audit log. Previously these procedures used staffProcedure,
+ *   allowing staff to bypass the layout guard (which is correctly
+ *   manager+) by calling the tRPC procedure directly.
+ *
+ * Source: MEP Phase 3 F3-01, PAD §8.3 + §8.5 + §9.2, SKILL §5.8.
  */
 
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -56,6 +64,19 @@ export const staffProcedure = protectedProcedure.use(async ({ ctx, next }) => {
     (r: string) => ['staff', 'manager', 'owner'].includes(r),
   );
   if (!hasStaff) throw new TRPCError({ code: 'FORBIDDEN' });
+  return next();
+});
+
+// Tier 3.5: Manager — manager or owner (V13-4 fix, 2026-07-19)
+// Used for procedures that the RBAC matrix (PAD §9.2) restricts to manager+:
+// View revenue reports, View audit log, Manage memberships/pricing.
+// Staff bypassed this by calling the tRPC procedure directly instead of
+// going through the (correctly manager+-gated) layout.
+export const managerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const hasManager = ctx.session.user.roles.some(
+    (r: string) => ['manager', 'owner'].includes(r),
+  );
+  if (!hasManager) throw new TRPCError({ code: 'FORBIDDEN' });
   return next();
 });
 

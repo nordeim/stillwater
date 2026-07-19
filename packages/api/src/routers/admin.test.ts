@@ -42,16 +42,20 @@ function makeCtx(
  * Builds a chained mock for `db.select(...).from(...).where(...)` that resolves
  * to `result`. Each step returns the next, so call order matters: select → from
  * → (optional where) → await result.
+ *
+ * V13-4 fix: Added crossJoin support for getRevenueDetails (attendance query).
  */
 function makeSelectChain(result: unknown) {
   const where = vi.fn().mockResolvedValue(result);
+  const crossJoin = vi.fn().mockResolvedValue(result);
   // from() must return something that:
-  //   1. Is awaitable (thenable) for queries without .where()
+  //   1. Is awaitable (thenable) for queries without .where()/.crossJoin()
   //   2. Has a .where() method for queries with .where()
-  const fromResult = Object.assign(Promise.resolve(result), { where });
+  //   3. Has a .crossJoin() method for getRevenueDetails attendance query
+  const fromResult = Object.assign(Promise.resolve(result), { where, crossJoin });
   const from = vi.fn().mockReturnValue(fromResult);
   const select = vi.fn().mockReturnValue({ from });
-  return { select, from, where };
+  return { select, from, where, crossJoin };
 }
 
 describe('adminRouter.getDashboard', () => {
@@ -115,9 +119,11 @@ describe('adminRouter.getDashboard', () => {
 });
 
 describe('adminRouter.getRevenue', () => {
+  // V13-4 fix: getRevenue now requires managerProcedure (was staffProcedure).
+  // Existing tests updated to use ['manager'] role.
   it('returns window + 0 totals + payment count in range', async () => {
     const chain = makeSelectChain([{ count: 12 }]);
-    const ctx = makeCtx({ select: chain.select } as never, ['staff']);
+    const ctx = makeCtx({ select: chain.select } as never, ['manager']);
     const caller = adminRouter.createCaller(ctx);
 
     const start = new Date('2026-07-01');
@@ -134,7 +140,7 @@ describe('adminRouter.getRevenue', () => {
 
   it('returns 0 counts when start > end without querying', async () => {
     const chain = makeSelectChain([{ count: 99 }]);
-    const ctx = makeCtx({ select: chain.select } as never, ['staff']);
+    const ctx = makeCtx({ select: chain.select } as never, ['manager']);
     const caller = adminRouter.createCaller(ctx);
 
     const result = await caller.getRevenue({
@@ -298,5 +304,116 @@ describe('adminRouter.deleteClass (Phase 9 F9-04)', () => {
     const insertCall = insert.mock.calls[0];
     // The first argument is the table (auditLog), verify values were passed
     expect(insertCall).toBeDefined();
+  });
+});
+
+/**
+ * V13-4 (2026-07-19, Phase B audit I1/E1 fix): RBAC tier violations.
+ *
+ * The following procedures were using staffProcedure but the RBAC matrix
+ * (PAD §9.2 + packages/auth/src/rbac.ts) requires manager+:
+ *   - admin.getRevenue       (View revenue reports — manager+)
+ *   - admin.getRevenueDetails (View revenue reports — manager+)
+ *   - admin.listAuditLog     (View audit log — manager+)
+ *
+ * Staff could bypass the layout guard (which is correctly manager+) by
+ * calling the tRPC procedure directly. This is a privilege escalation.
+ *
+ * Fix: add a managerProcedure tier to packages/api/src/trpc.ts and apply
+ * it to these 3 procedures. (payments.refund is the 4th violator but it's
+ * a D12 stub that throws PRECONDITION_FAILED regardless of tier.)
+ */
+describe('V13-4: RBAC tier enforcement — manager+ procedures reject staff callers', () => {
+  it('getRevenue throws FORBIDDEN for staff-only caller', async () => {
+    const chain = makeSelectChain([{ count: 0 }]);
+    const ctx = makeCtx({ select: chain.select } as never, ['staff']);
+    const caller = adminRouter.createCaller(ctx);
+
+    await expect(
+      caller.getRevenue({ start: new Date('2026-07-01'), end: new Date('2026-07-31') }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    // DB query must NOT have been called (tier check fails first)
+    expect(chain.select).not.toHaveBeenCalled();
+  });
+
+  it('getRevenue succeeds for manager caller', async () => {
+    const chain = makeSelectChain([{ count: 5 }]);
+    const ctx = makeCtx({ select: chain.select } as never, ['manager']);
+    const caller = adminRouter.createCaller(ctx);
+
+    const result = await caller.getRevenue({
+      start: new Date('2026-07-01'),
+      end: new Date('2026-07-31'),
+    });
+    expect(result.paymentCount).toBe(5);
+  });
+
+  it('getRevenue succeeds for owner caller', async () => {
+    const chain = makeSelectChain([{ count: 5 }]);
+    const ctx = makeCtx({ select: chain.select } as never, ['owner']);
+    const caller = adminRouter.createCaller(ctx);
+
+    const result = await caller.getRevenue({
+      start: new Date('2026-07-01'),
+      end: new Date('2026-07-31'),
+    });
+    expect(result.paymentCount).toBe(5);
+  });
+
+  it('getRevenueDetails throws FORBIDDEN for staff-only caller', async () => {
+    // getRevenueDetails uses 3 select chains (mrrRows, churnRows, attendanceRows)
+    const chain = makeSelectChain([{ totalCents: 0, count: 0 }]);
+    const ctx = makeCtx({ select: chain.select } as never, ['staff']);
+    const caller = adminRouter.createCaller(ctx);
+
+    await expect(
+      caller.getRevenueDetails({ start: new Date('2026-07-01'), end: new Date('2026-07-31') }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(chain.select).not.toHaveBeenCalled();
+  });
+
+  it('getRevenueDetails succeeds for manager caller', async () => {
+    const chain = makeSelectChain([{ totalCents: 0, count: 0 }]);
+    const ctx = makeCtx({ select: chain.select } as never, ['manager']);
+    const caller = adminRouter.createCaller(ctx);
+
+    const result = await caller.getRevenueDetails({
+      start: new Date('2026-07-01'),
+      end: new Date('2026-07-31'),
+    });
+    expect(result).toBeDefined();
+    expect(result.totalRevenueCents).toBe(0);
+  });
+
+  it('listAuditLog throws FORBIDDEN for staff-only caller', async () => {
+    // listAuditLog uses findMany + a count select
+    const findMany = vi.fn().mockResolvedValue([]);
+    const chain = makeSelectChain([{ count: 0 }]);
+    const ctx = makeCtx(
+      { query: { auditLog: { findMany } }, select: chain.select } as never,
+      ['staff'],
+    );
+    const caller = adminRouter.createCaller(ctx);
+
+    await expect(
+      caller.listAuditLog({}),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(findMany).not.toHaveBeenCalled();
+    expect(chain.select).not.toHaveBeenCalled();
+  });
+
+  it('listAuditLog succeeds for manager caller', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const chain = makeSelectChain([{ count: 0 }]);
+    const ctx = makeCtx(
+      { query: { auditLog: { findMany } }, select: chain.select } as never,
+      ['manager'],
+    );
+    const caller = adminRouter.createCaller(ctx);
+
+    const result = await caller.listAuditLog({});
+    expect(result).toBeDefined();
+    expect(result.items).toEqual([]);
+    expect(result.total).toBe(0);
   });
 });

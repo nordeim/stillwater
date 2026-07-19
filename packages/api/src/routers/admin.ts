@@ -13,7 +13,7 @@
 
 import { z } from 'zod';
 import { eq, and, gte, lte, sql, ilike, or, desc } from 'drizzle-orm';
-import { router, staffProcedure, ownerProcedure } from '../trpc';
+import { router, staffProcedure, ownerProcedure, managerProcedure } from '../trpc';
 import {
   members,
   classes,
@@ -57,7 +57,7 @@ export const adminRouter = router({
    * Phase 7 will replace this stub with a real SUM over paymentEvents.
    * For now returns the count of processed payments in the window.
    */
-  getRevenue: staffProcedure
+  getRevenue: managerProcedure
     .input(
       z.object({
         start: z.coerce.date(),
@@ -270,7 +270,7 @@ export const adminRouter = router({
    * Revenue details: MRR (last 12 months), churn rate, attendance metrics (Phase 9 F9-11).
    * Replaces the stub getRevenue with real calculations from payment_events.
    */
-  getRevenueDetails: staffProcedure
+  getRevenueDetails: managerProcedure
     .input(
       z.object({
         start: z.coerce.date().optional(),
@@ -427,7 +427,7 @@ export const adminRouter = router({
   /**
    * List audit log entries with filters (manager+ only). Phase 9 F9-20.
    */
-  listAuditLog: staffProcedure
+  listAuditLog: managerProcedure
     .input(
       z.object({
         staffMemberId: z.string().uuid().optional(),

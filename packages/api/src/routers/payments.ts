@@ -15,7 +15,7 @@
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure, staffProcedure } from '../trpc';
+import { router, protectedProcedure, managerProcedure } from '../trpc';
 import { members } from '@stillwater/db';
 import { createCustomerPortalSession, listInvoices } from '@stillwater/payments';
 
@@ -131,13 +131,19 @@ export const paymentsRouter = router({
     }),
 
   /**
-   * D12 STUB — initiate a refund for a payment. Staff only.
+   * D12 STUB — initiate a refund for a payment. Manager+ only (V13-4 fix).
    *
    * v1 scope: refunds are handled via Stripe Dashboard only.
    * In-app refund UI is deferred to v2. The createRefund helper exists
    * in @stillwater/payments (F7-07) but is not wired here until v2.
+   *
+   * V13-4 fix (2026-07-19): Changed from staffProcedure to managerProcedure.
+   * The RBAC matrix (PAD §9.2) requires manager+ for refund initiation.
+   * Even though this is a D12 stub that throws PRECONDITION_FAILED, the
+   * tier must be correct so that when v2 wires it up, the tier is already
+   * enforced. Staff should not be able to initiate refunds.
    */
-  refund: staffProcedure
+  refund: managerProcedure
     .input(
       z.object({
         paymentIntentId: z.string().min(1).max(200),
