@@ -1,16 +1,32 @@
+import { and, eq, gte, lte, asc } from 'drizzle-orm';
+
+import { db , classSessions } from '@stillwater/db';
+
 import type { Metadata } from 'next';
 
 import { ScheduleGrid } from '@/components/marketing/ScheduleGrid';
 import { withTimeout } from '@/lib/async/withTimeout';
-import { apiCaller } from '@/lib/trpc/server';
+
 
 export const metadata: Metadata = {
   title: 'Schedule',
   description: 'View our weekly class schedule and book your next session.',
 };
 
-// Live data — always fresh (no ISR)
-export const dynamic = 'force-dynamic';
+// V13-1 fix: ISR with 5-min revalidate (NOT force-dynamic).
+// force-dynamic opts the page out of static rendering entirely → streams
+// the response → 5s session timeout + 8s data timeout > 10s Vercel limit
+// → "Loading…" hang. ISR with short revalidate gives near-live freshness
+// without the streaming penalty.
+export const revalidate = 300; // 5 minutes
+
+interface ScheduleSession {
+  id: string;
+  startsAt: Date;
+  class: { title: string };
+  instructor: { slug: string };
+  room: { name: string };
+}
 
 export default async function SchedulePage() {
   // Get start of current week (Sunday)
@@ -19,26 +35,30 @@ export default async function SchedulePage() {
   weekStart.setDate(now.getDate() - now.getDay());
   weekStart.setHours(0, 0, 0, 0);
 
-  const caller = await apiCaller();
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+
+  // V13-1: Query DB directly (NOT via apiCaller — see header comment).
   // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
   const sessions = await withTimeout(
-    caller.schedule.getWeek({ weekStart }).catch(() => []),
+    db.query.classSessions
+      .findMany({
+        where: and(
+          gte(classSessions.startsAt, weekStart),
+          lte(classSessions.startsAt, weekEnd),
+          eq(classSessions.status, 'scheduled'),
+        ),
+        with: { class: true, instructor: true, room: true },
+        orderBy: asc(classSessions.startsAt),
+      })
+      .catch(() => []),
     8_000,
     [],
   );
 
-  // Group sessions by date (YYYY-MM-DD)
-  // Note: Drizzle 0.45 relational query types infer as `never` for nested `with`
-  // (SKILL §9.9 Gotcha 27). We cast to the expected shape for rendering.
-  interface ScheduleSession {
-    id: string;
-    startsAt: Date;
-    class: { title: string };
-    instructor: { slug: string };
-    room: { name: string };
-  }
   const typedSessions = sessions as unknown as ScheduleSession[];
 
+  // Group sessions by date (YYYY-MM-DD)
   const grouped = new Map<string, ScheduleSession[]>();
   for (const session of typedSessions) {
     const dateKey = session.startsAt.toISOString().split('T')[0];

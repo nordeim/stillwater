@@ -1,11 +1,24 @@
 /**
  * F12-01 — Production home page (PATCHED — replaces Phase 4 stub)
  *
- * Server component orchestrating all 9 sections from the mockup.
- * ISR revalidate = 3600 (1 hour). Parallel fetch (tRPC + Sanity).
+ * V13-1 fix (2026-07-19): Bypass apiCaller(), query DB directly.
+ *   The v1-v12 audit saga fixed slug routes (/instructors/[slug], /blog/[slug])
+ *   to query the DB directly. The 4 index routes (/, /schedule, /instructors,
+ *   /pricing) were never fixed, causing live-site "Loading…" hang because:
+ *     1. apiCaller() → headers() → opts page out of static rendering
+ *     2. createContext() → getSessionWithTimeout() = 5s
+ *     3. withTimeout(8s) on data fetch = 8s
+ *     4. Total 13s > Vercel's 10s function timeout → stream cut short
  *
- * Source: MEP Phase 12 F12-01.
+ * Server component orchestrating all 9 sections from the mockup.
+ * ISR revalidate = 3600 (1 hour). Parallel fetch (DB queries).
+ *
+ * Source: MEP Phase 12 F12-01 + SKILL Lesson 112 (V12-1 pattern extended to index routes).
  */
+
+import { and, asc, eq, gte, lte } from 'drizzle-orm';
+
+import { db , classSessions, instructors, membershipPlans } from '@stillwater/db';
 
 import type { Metadata } from 'next';
 
@@ -21,7 +34,7 @@ import { StudioSpaceSection } from '@/components/marketing/StudioSpaceSection';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { withTimeout } from '@/lib/async/withTimeout';
 import { yogaStudioSchema } from '@/lib/seo/schemas';
-import { apiCaller } from '@/lib/trpc/server';
+
 
 export const metadata: Metadata = {
   title: 'Stillwater Yoga Studio — Mindful Movement in SE Portland',
@@ -33,17 +46,73 @@ export const metadata: Metadata = {
 // ISR — revalidate every 1 hour
 export const revalidate = 3600;
 
-export default async function HomePage() {
-  const caller = await apiCaller();
+interface ScheduleSession {
+  id: string;
+  startsAt: Date;
+  class: { title: string };
+  instructor: { slug: string };
+  room: { name: string } | null;
+}
 
-  // Parallel fetch: schedule + instructors + membership plans.
-  // withTimeout (8s) prevents stuck Suspense fallbacks when the neon-http
-  // driver hangs on a cold Neon compute endpoint or network stall. The
-  // .catch() handles rejection; withTimeout handles indefinite hang.
-  const [sessions, instructors, membershipPlans] = await Promise.all([
-    withTimeout(caller.schedule.getWeek({ weekStart: getWeekStart() }).catch(() => []), 8_000, []),
-    withTimeout(caller.instructors.list().catch(() => []), 8_000, []),
-    withTimeout(caller.memberships.getPlans().catch(() => []), 8_000, []),
+interface InstructorSummary {
+  id: string;
+  name: string;
+  slug: string;
+  bio?: string | null;
+}
+
+interface PlanSummary {
+  id: string;
+  name: string;
+  priceCents: number;
+  interval: string;
+  classCreditsPerCycle: number | null;
+}
+
+export default async function HomePage() {
+  // V13-1: Query DB directly (NOT via apiCaller — apiCaller uses headers()
+  // which opts the page out of static rendering → dynamic streaming →
+  // 5s session timeout + 8s data timeout > 10s Vercel limit → Loading… hang).
+  // Parallel fetch with withTimeout (8s) for build/request resilience.
+  const [sessions, instructorList, planList] = await Promise.all([
+    withTimeout(
+      db.query.classSessions
+        .findMany({
+          where: and(
+            gte(classSessions.startsAt, getWeekStart()),
+            lte(classSessions.startsAt, getWeekEnd()),
+            eq(classSessions.status, 'scheduled'),
+          ),
+          with: { class: true, instructor: true, room: true },
+          orderBy: classSessions.startsAt,
+        })
+        .catch(() => []),
+      8_000,
+      [],
+    ),
+    withTimeout(
+      db.query.instructors
+        .findMany({
+          where: and(
+            eq(instructors.isActive, true),
+            eq(instructors.published, true),
+          ),
+          orderBy: [asc(instructors.sortOrder), asc(instructors.slug)],
+        })
+        .catch(() => []),
+      8_000,
+      [],
+    ),
+    withTimeout(
+      db.query.membershipPlans
+        .findMany({
+          where: eq(membershipPlans.isActive, true),
+          orderBy: [asc(membershipPlans.sortOrder), asc(membershipPlans.name)],
+        })
+        .catch(() => []),
+      8_000,
+      [],
+    ),
   ]);
 
   return (
@@ -63,13 +132,28 @@ export default async function HomePage() {
       <Philosophy />
 
       {/* 4. Schedule (§ 02) */}
-      <ScheduleSection sessions={sessions as unknown[]} />
+      <ScheduleSection sessions={sessions as ScheduleSession[]} />
 
       {/* 5. Instructors (§ 03) */}
-      <InstructorsSection instructors={(instructors as unknown[]).map((i) => i as { id: string; name: string; slug: string; bio?: string | null })} />
+      <InstructorsSection
+        instructors={(instructorList as InstructorSummary[]).map((i) => ({
+          id: i.id,
+          name: i.name,
+          slug: i.slug,
+          bio: i.bio ?? null,
+        }))}
+      />
 
       {/* 6. Membership (§ 04) */}
-      <MembershipSection plans={(membershipPlans as unknown[]).map((p) => p as { id: string; name: string; priceCents: number; interval: string; classCreditsPerCycle: number | null })} />
+      <MembershipSection
+        plans={(planList as PlanSummary[]).map((p) => ({
+          id: p.id,
+          name: p.name,
+          priceCents: p.priceCents,
+          interval: p.interval,
+          classCreditsPerCycle: p.classCreditsPerCycle,
+        }))}
+      />
 
       {/* 7. Studio Space (§ 05) */}
       <StudioSpaceSection />
@@ -83,5 +167,11 @@ export default async function HomePage() {
 function getWeekStart(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getWeekEnd(): Date {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
   return d;
 }

@@ -1,7 +1,11 @@
+import { eq, asc } from 'drizzle-orm';
+
+import { db , membershipPlans } from '@stillwater/db';
+
 import type { Metadata } from 'next';
 
 import { withTimeout } from '@/lib/async/withTimeout';
-import { apiCaller } from '@/lib/trpc/server';
+
 
 export const metadata: Metadata = {
   title: 'Pricing',
@@ -131,17 +135,22 @@ const FALLBACK_PLANS: Plan[] = [
 ];
 
 export default async function PricingPage() {
-  const caller = await apiCaller();
-  // v8 P2 fix: .catch(() => []) is applied BEFORE withTimeout so that fast DB
+  // V13-1 fix: Query DB directly (NOT via apiCaller — see header comment).
+  // .catch(() => []) is applied BEFORE withTimeout so that fast DB
   // errors (e.g., connection refused) return [] immediately without waiting
   // for the 8s timeout. withTimeout then handles the slow-but-not-erroring
   // case (e.g., cold Neon compute endpoint). The order is intentional:
-  //   1. caller.memberships.getPlans() — the tRPC query (may throw or hang)
+  //   1. db.query.membershipPlans.findMany() — the Drizzle query (may throw or hang)
   //   2. .catch(() => []) — converts thrown errors to empty array (fast-fail)
   //   3. withTimeout(..., 8_000, []) — races against 8s timeout (slow-fail)
   // If the order were reversed, a fast DB error would wait 8s before returning.
   const dbPlans = await withTimeout(
-    caller.memberships.getPlans().catch(() => []),
+    db.query.membershipPlans
+      .findMany({
+        where: eq(membershipPlans.isActive, true),
+        orderBy: [asc(membershipPlans.sortOrder), asc(membershipPlans.name)],
+      })
+      .catch(() => []),
     8_000,
     [],
   );
@@ -149,7 +158,7 @@ export default async function PricingPage() {
   // M1 fix: Use fallback plans when DB is unreachable or empty.
   // This ensures /pricing always shows the 3 plans with real prices ($28/$149/$220),
   // matching the mockup and the home page MembershipSection behavior.
-  const plans: Plan[] = dbPlans.length > 0 ? dbPlans : FALLBACK_PLANS;
+  const plans: Plan[] = (dbPlans as Plan[]).length > 0 ? (dbPlans as Plan[]) : FALLBACK_PLANS;
 
   if (plans.length === 0) {
     return (

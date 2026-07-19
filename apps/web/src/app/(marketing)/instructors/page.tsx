@@ -1,9 +1,13 @@
 import Link from 'next/link';
 
+import { and, eq, asc } from 'drizzle-orm';
+
+import { db , instructors } from '@stillwater/db';
+
 import type { Metadata } from 'next';
 
 import { withTimeout } from '@/lib/async/withTimeout';
-import { apiCaller } from '@/lib/trpc/server';
+
 
 export const metadata: Metadata = {
   title: 'Instructors',
@@ -13,14 +17,32 @@ export const metadata: Metadata = {
 // ISR — revalidate every 24 hours
 export const revalidate = 86400;
 
+interface InstructorSummary {
+  id: string;
+  slug: string;
+  specialties: string[] | null;
+  bio: string | null;
+}
+
 export default async function InstructorsPage() {
-  const caller = await apiCaller();
+  // V13-1 fix: Query DB directly (NOT via apiCaller — apiCaller uses headers()
+  // which opts the page out of static rendering → streaming → Loading… hang).
   // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
-  const instructors = await withTimeout(
-    caller.instructors.list().catch(() => []),
+  const instructorList = await withTimeout(
+    db.query.instructors
+      .findMany({
+        where: and(
+          eq(instructors.isActive, true),
+          eq(instructors.published, true),
+        ),
+        orderBy: [asc(instructors.sortOrder), asc(instructors.slug)],
+      })
+      .catch(() => []),
     8_000,
     [],
   );
+
+  const instructorsTyped = instructorList as unknown as InstructorSummary[];
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-16">
@@ -36,11 +58,11 @@ export default async function InstructorsPage() {
         </h1>
       </header>
 
-      {instructors.length === 0 ? (
+      {instructorsTyped.length === 0 ? (
         <p className="text-stone-600">No instructors yet.</p>
       ) : (
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
-          {instructors.map((instructor, index) => (
+          {instructorsTyped.map((instructor, index) => (
             <Link
               key={instructor.id}
               href={`/instructors/${instructor.slug}`}
