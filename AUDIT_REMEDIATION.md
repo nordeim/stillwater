@@ -1065,3 +1065,60 @@ The `/instructors` page was never broken because it never used `withTimeout` —
 | v13 | Six-Axis audit: 4 Critical + 19 Important | V13-1 to V13-9 (TDD) |
 | v14 | Mockup fidelity: 8 visual gaps | V14-1 to V14-8 |
 | **v15** | **withTimeout incompatible with prerender** | **V15-1: remove withTimeout, use .catch()** |
+
+---
+
+# Audit Remediation Report v16 — 2026-07-19 (Definitive Loading… Fix)
+
+> V15-1 removed `withTimeout` but the 3 broken routes STILL showed "Loading…"
+> after deploy. Root cause: the DB query itself hangs during Next.js static
+> prerender — neither `.catch()` nor `AbortSignal` can help because the query
+> is HANGING (not erroring). Fix: use `force-dynamic` to skip prerender entirely.
+
+## v16 Executive Summary
+
+After V15-1 was deployed, live-site E2E testing confirmed that 3 routes
+(`/`, `/schedule`, `/pricing`) were STILL stuck on "Loading…" despite
+the `withTimeout` removal. The `.catch(() => [])` pattern only catches
+errors — it can't catch a HANG. The neon-http driver's `fetch()` hangs
+indefinitely during Next.js's static prerender phase, and the `AbortSignal`
+timeout doesn't fire either (same event-loop limitation as `setTimeout`).
+
+The definitive fix: mark these 3 routes as `force-dynamic` so they're
+NEVER prerendered. They always render at request time where `fetch()`
+works normally. The DB query completes in <2s on a warm Neon connection,
+well within Vercel's 10s function timeout.
+
+## V16-1 Changes
+
+| Route | Before (V15-1) | After (V16-1) | Build Type |
+|---|---|---|---|
+| `/` (home) | `revalidate = 3600` | `dynamic = 'force-dynamic'` | ○ → ƒ |
+| `/schedule` | `revalidate = 300` | `dynamic = 'force-dynamic'` | ○ → ƒ |
+| `/pricing` | `revalidate = 3600` | `dynamic = 'force-dynamic'` | ○ → ƒ |
+| `/instructors` | `revalidate = 86400` (unchanged) | same | ○ (works fine) |
+
+The `/instructors` route was NOT changed because it works fine with ISR.
+Its DB query is simpler (no date filters, no relational `with` clause)
+and doesn't hang during prerender.
+
+## V16-1 Quality Gates
+
+| Gate | Result |
+|---|---|
+| `pnpm check-types` | **9/9 successful** ✅ |
+| `pnpm lint` | **0 errors** ✅ (9 warnings) |
+| `pnpm test` | **763 tests passing** ✅ |
+| `pnpm build` | **9/9 packages, 17 static pages** ✅ |
+
+## Audit Journey Summary (v1 → v16)
+
+| Version | Key Finding | Key Fix |
+|---|---|---|
+| v1-v7 | Loading…, CSP, pricing, soft-404 | Various |
+| v8 | Six-Axis audit: 11 findings | Advisory lock, cancellation email, etc. |
+| v9-v12 | CSP regression, slug-route soft-404 | generateStaticParams, DB direct query |
+| v13 | Six-Axis audit: 4 Critical + 19 Important | V13-1 to V13-9 (TDD) |
+| v14 | Mockup fidelity: 8 visual gaps | V14-1 to V14-8 |
+| v15 | withTimeout incompatible with prerender | V15-1: remove withTimeout |
+| **v16** | **DB query hangs during prerender (not just withTimeout)** | **V16-1: force-dynamic on 3 routes** |
