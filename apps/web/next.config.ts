@@ -107,29 +107,32 @@ const nextConfig: NextConfig = {
   },
 
   // ── Security Headers ───────────────────────────────────────────
-  // v9 V9-2 fix: Content-Security-Policy IS set here as a static CSP.
+  // V16-3 fix (2026-07-19): Removed 'strict-dynamic' from script-src.
+  //
+  // Root cause: When 'strict-dynamic' is present in script-src, browsers
+  // IGNORE 'unsafe-inline' per the CSP spec. This means Next.js's inline
+  // RSC streaming scripts ($RC, $RS, $RV) — which have NO nonce — are
+  // blocked by the browser. The page renders server-side but never hydrates:
+  //   - $RC function is undefined in the browser
+  //   - 55 Suspense templates stay empty (never swapped)
+  //   - <main> shows "Loading…" permanently
+  //   - __NEXT_DATA__ is undefined (React never initializes)
+  //
+  // Fix: Remove 'strict-dynamic' so 'unsafe-inline' is respected.
+  // This allows the inline scripts to execute. The external script chunks
+  // (from 'self') still load normally.
   //
   // History:
   //   v7: Static CSP with 'unsafe-inline' was here as a "safety net".
-  //   v8 (S1): Removed CSP from here expecting proxy.ts's per-request
-  //       nonce-based CSP to override it. BUT live-site E2E revealed
-  //       proxy.ts response headers DON'T reach production on Vercel +
-  //       Next.js 16.2.10 (GitHub #85711, #86303). Result: live site
-  //       had NO CSP at all — worse than v7.
-  //   v9 (V9-2): Restored a working CSP here using 'self' 'unsafe-inline'
-  //       'strict-dynamic' for script-src. This is weaker than the nonce-
-  //       based target state but provides real XSS protection. The nonce-
-  //       based CSP in proxy.ts is retained for the future when the
-  //       Vercel/Next.js production proxy.ts header issue is resolved.
+  //   v8 (S1): Removed CSP expecting proxy.ts nonce-based CSP to override.
+  //       But proxy.ts headers don't reach production on Vercel + Next.js 16.2.
+  //   v9 (V9-2): Restored CSP with 'unsafe-inline' 'strict-dynamic'.
+  //       This was WRONG — 'strict-dynamic' causes 'unsafe-inline' to be ignored.
+  //   v16-3 (this fix): Removed 'strict-dynamic'. 'unsafe-inline' now works.
   //
-  // 'unsafe-inline' is required because Next.js RSC streaming generates
-  // inline scripts ($RS/$RC/$RV) that need to execute. 'strict-dynamic'
-  // allows dynamically loaded chunks to run. When nonce-based CSP works
-  // in production, 'unsafe-inline' will be replaced with 'nonce-${nonce}'.
-  //
-  // Source: Stillwater Audit Report v9 §V9-2;
-  //         GitHub vercel/next.js#85711, vercel/next.js#86303;
-  //         Next.js CSP guide https://nextjs.org/docs/app/guides/content-security-policy
+  // Source: CSP spec — "If 'strict-dynamic' is present, 'unsafe-inline' is ignored"
+  //         https://www.w3.org/TR/CSP3/#strict-dynamic-usage
+  //         Stillwater live-site E2E (2026-07-19): $RC undefined, no React hydration
   headers() {
     return [
       {
@@ -139,7 +142,8 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'strict-dynamic' https://js.stripe.com",
+              // V16-3: Removed 'strict-dynamic' — it causes 'unsafe-inline' to be ignored
+              "script-src 'self' 'unsafe-inline' https://js.stripe.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://imagedelivery.net https://cdn.sanity.io",
               "font-src 'self'",
