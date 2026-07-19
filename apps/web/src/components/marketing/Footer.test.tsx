@@ -24,13 +24,15 @@ describe('Footer', () => {
     expect(matches.length).toBeGreaterThan(0);
   });
 
-  it('renders social links (Instagram, Facebook)', () => {
+  // V14-5 fix: Updated from (Instagram, Facebook) to (Instagram, YouTube)
+  // to match the mockup's social platform choice.
+  it('renders social links (Instagram, YouTube)', () => {
     render(<Footer />);
     const instagramLinks = screen.getAllByRole('link', { name: /instagram/i });
     expect(instagramLinks.length).toBeGreaterThan(0);
 
-    const facebookLinks = screen.getAllByRole('link', { name: /facebook/i });
-    expect(facebookLinks.length).toBeGreaterThan(0);
+    const youtubeLinks = screen.getAllByRole('link', { name: /youtube/i });
+    expect(youtubeLinks.length).toBeGreaterThan(0);
   });
 
   it('renders navigation links with correct hrefs', () => {

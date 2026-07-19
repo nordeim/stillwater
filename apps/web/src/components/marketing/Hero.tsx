@@ -17,6 +17,7 @@ import {
   HERO_HEADLINE_LINES,
   HERO_EMPHASIS_WORD,
   HERO_INTRO,
+  HERO_INTRO_EMPHASIS,
   HERO_META_STATS,
   HERO_CTAS,
 } from '@/lib/marketing/copy';
@@ -78,9 +79,16 @@ export function Hero() {
           ))}
         </div>
 
-        {/* Intro */}
+        {/* Intro — V14-3 fix: restored mockup's full 2-sentence intro with <strong> emphasis */}
         <p className="mt-8 max-w-md text-base leading-[1.75] text-stone-500">
-          {HERO_INTRO}
+          {HERO_INTRO.split(HERO_INTRO_EMPHASIS).map((part, i, arr) => (
+            <span key={i}>
+              {part}
+              {i < arr.length - 1 && (
+                <strong className="font-medium text-stone-700">{HERO_INTRO_EMPHASIS}</strong>
+              )}
+            </span>
+          ))}
         </p>
 
         {/* CTAs */}
