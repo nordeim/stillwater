@@ -1122,3 +1122,61 @@ and doesn't hang during prerender.
 | v14 | Mockup fidelity: 8 visual gaps | V14-1 to V14-8 |
 | v15 | withTimeout incompatible with prerender | V15-1: remove withTimeout |
 | **v16** | **DB query hangs during prerender (not just withTimeout)** | **V16-1: force-dynamic on 3 routes** |
+
+---
+
+# Audit Remediation Report v16-2 — 2026-07-19 (React Compiler Suspense Fix)
+
+> V16-1 made the 3 broken routes `force-dynamic`, but they STILL showed
+> "Loading…" in the browser. Deep HTML inspection revealed 55 empty nested
+> Suspense templates caused by the React Compiler. Fix: disable React Compiler.
+
+## v16-2 Root Cause Analysis
+
+After V16-1 was deployed, live-site E2E testing via agent-browser confirmed
+that the 3 routes (`/`, `/schedule`, `/pricing`) were STILL stuck on
+"Loading…" despite being `force-dynamic`.
+
+Deep HTML inspection revealed:
+- **55 Suspense templates** in the HTML (B:0 + P:1 through P:35 + more)
+- **ALL empty** (0 bytes content)
+- Only **1 `$RC` call** (`B:0 <- S:0`), but `S:0` itself contained empty `P:1`
+- The other **53 templates had NO `$RC` calls** — never resolved
+- Browser DOM: `$RC` function was `undefined` (scripts didn't execute properly)
+- Hidden div `S:0` content: `<template id="P:1"></template>` (nested unresolved)
+
+**Root cause:** The React Compiler (`reactCompiler: true` in `next.config.ts`)
+was creating excessive nested Suspense boundaries for each async DB query
+inside `Promise.all()`. Each `db.query.findMany()` call got its own Suspense
+boundary, and the compiler's optimization prevented them from resolving
+during streaming.
+
+## V16-2 Fix
+
+Disabled React Compiler: `reactCompiler: true` → `reactCompiler: false`
+
+The page's own `await Promise.all([...])` resolves all queries before
+rendering, so no Suspense boundaries are needed. Disabling the compiler
+eliminates the nested Suspense templates.
+
+## V16-2 Quality Gates
+
+| Gate | Result |
+|---|---|
+| `pnpm check-types` | **9/9 successful** ✅ |
+| `pnpm lint` | **0 errors** ✅ (9 warnings) |
+| `pnpm test` | **763 tests passing** ✅ |
+| `pnpm build` | **9/9 packages** ✅ (home route ƒ Dynamic) |
+
+## Audit Journey Summary (v1 → v16-2)
+
+| Version | Key Finding | Key Fix |
+|---|---|---|
+| v1-v7 | Loading…, CSP, pricing, soft-404 | Various |
+| v8 | Six-Axis audit: 11 findings | Advisory lock, cancellation email, etc. |
+| v9-v12 | CSP regression, slug-route soft-404 | generateStaticParams, DB direct query |
+| v13 | Six-Axis audit: 4 Critical + 19 Important | V13-1 to V13-9 (TDD) |
+| v14 | Mockup fidelity: 8 visual gaps | V14-1 to V14-8 |
+| v15 | withTimeout incompatible with prerender | V15-1: remove withTimeout |
+| v16-1 | DB query hangs during prerender | V16-1: force-dynamic on 3 routes |
+| **v16-2** | **React Compiler creates nested Suspense that never resolves** | **V16-2: disable React Compiler** |
