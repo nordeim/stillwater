@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
   // ── React Compiler (stable in Next.js 16) ──────────────────────
   reactCompiler: true,
 
+  // ── Hide X-Powered-By header (security: don't leak framework) ──
+  // Audit 2026-07-19: previously leaked "X-Powered-By: Next.js" in
+  // production responses. Disabled per OWASP information-hiding guidance.
+  poweredByHeader: false,
+
   // ── Allowed Dev Origins ───────────────────────────────────────
   // Permits these origins to use the dev server (HMR, error overlay)
   // when accessed via a non-default host.

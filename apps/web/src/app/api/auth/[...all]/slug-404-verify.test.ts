@@ -48,9 +48,7 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
     });
 
     it('v10 V10-1: generateStaticParams does NOT use apiCaller (fails in SSG)', () => {
-      const generateStaticParamsBlock = instructorSlugPage.match(
-        /export async function generateStaticParams[\s\S]*?\n\}/,
-      );
+      const generateStaticParamsBlock = /export async function generateStaticParams[\s\S]*?\n\}/.exec(instructorSlugPage);
       expect(generateStaticParamsBlock).not.toBeNull();
       expect(generateStaticParamsBlock![0]).not.toContain('apiCaller');
     });
@@ -60,9 +58,7 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
       // This made dynamicParams=false ineffective + impossible to debug.
       // v11 keeps the try/catch (needed for build resilience) BUT adds a
       // console.error so the build log shows WHY [] was returned.
-      const generateStaticParamsBlock = instructorSlugPage.match(
-        /export async function generateStaticParams[\s\S]*?\n\}/,
-      );
+      const generateStaticParamsBlock = /export async function generateStaticParams[\s\S]*?\n\}/.exec(instructorSlugPage);
       expect(generateStaticParamsBlock).not.toBeNull();
       expect(generateStaticParamsBlock![0]).toContain('console.error');
       expect(generateStaticParamsBlock![0]).toContain('generateStaticParams');
@@ -71,9 +67,7 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
     it('v11 V11-1: generateStaticParams uses withTimeout (build resilience)', () => {
       // v11 wraps the DB query in withTimeout to avoid hanging on cold
       // Neon compute during build. Same pattern as the marketing pages.
-      const generateStaticParamsBlock = instructorSlugPage.match(
-        /export async function generateStaticParams[\s\S]*?\n\}/,
-      );
+      const generateStaticParamsBlock = /export async function generateStaticParams[\s\S]*?\n\}/.exec(instructorSlugPage);
       expect(generateStaticParamsBlock).not.toBeNull();
       expect(generateStaticParamsBlock![0]).toContain('withTimeout');
     });
@@ -112,9 +106,7 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
       // to query the DB directly (no headers() → static → 404 works).
       // Check that the page body function doesn't contain apiCaller CALLS
       // (comments mentioning apiCaller are OK).
-      const pageBodyMatch = instructorSlugPage.match(
-        /export default async function InstructorDetailPage[\s\S]*?^}/m,
-      );
+      const pageBodyMatch = /export default async function InstructorDetailPage[\s\S]*?^}/m.exec(instructorSlugPage);
       expect(pageBodyMatch).not.toBeNull();
       // Remove comment lines before checking
       const bodyWithoutComments = pageBodyMatch![0]
@@ -124,9 +116,7 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
     });
 
     it('v12 V12-1: page body uses withTimeout for DB query (resilience)', () => {
-      const pageBodyMatch = instructorSlugPage.match(
-        /export default async function InstructorDetailPage[\s\S]*?^}/m,
-      );
+      const pageBodyMatch = /export default async function InstructorDetailPage[\s\S]*?^}/m.exec(instructorSlugPage);
       expect(pageBodyMatch).not.toBeNull();
       expect(pageBodyMatch![0]).toContain('withTimeout');
     });
@@ -151,9 +141,9 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
 
     it('calls notFound() in multiple places (defense-in-depth)', () => {
       expect(blogSlugPage).toContain('notFound()');
-      const matches = blogSlugPage.match(/notFound\(\)/g);
-      expect(matches).not.toBeNull();
-      expect(matches!.length).toBeGreaterThanOrEqual(2);
+      // matchAll returns an iterator of all matches (exec only returns first)
+      const matches = [...blogSlugPage.matchAll(/notFound\(\)/g)];
+      expect(matches.length).toBeGreaterThanOrEqual(2);
     });
   });
 });

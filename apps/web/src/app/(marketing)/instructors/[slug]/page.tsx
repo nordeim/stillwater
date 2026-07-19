@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 
-import type { Metadata } from 'next';
+import { db } from '@stillwater/db';
 
-import { db, instructors } from '@stillwater/db';
+import type { Metadata } from 'next';
 
 import { withTimeout } from '@/lib/async/withTimeout';
 
