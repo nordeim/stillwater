@@ -1,7 +1,7 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-19 (post-audit reconciliation)
-> Status: Phases 0–12 ✅ complete · v8 ✅ · v9 ✅ · v10 ✅ · v11 ✅ · v12 ✅ (page body uses db directly) · **2026-07-19 Six-Axis Audit ✅** (4 Critical, 19 Important findings documented in `/home/z/my-project/download/audit/`)
+> **Updated:** 2026-07-19 (post-v13 Six-Axis Audit remediation)
+> Status: Phases 0–12 ✅ complete · v8 ✅ · v9 ✅ · v10 ✅ · v11 ✅ · v12 ✅ · **v13 ✅** (Six-Axis Audit: 4 Critical + 19 Important findings fixed via TDD — see `AUDIT_REMEDIATION.md` v13 section)
 
 ## What it is
 
@@ -123,16 +123,16 @@ These are the files you can actually `cat` and `test` today:
 
 ---
 
-## Live quality gates (2026-07-19, post-audit reconciliation)
+## Live quality gates (2026-07-19, post-v13 Six-Axis Audit remediation)
 
 Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 
 | Gate | Result |
 |---|---|
 | `pnpm check-types` | **9/9 successful** ✅ |
-| `pnpm lint` | **2/2 successful** ✅ (0 errors, 9 intentional warnings) — **2026-07-19 fix:** removed 7 undocumented lint errors (unused `instructors` import + 5× `prefer-regexp-exec` violations in slug-404-verify.test.ts) |
-| `pnpm test` | **729 tests passing** ✅ (131 db + 102 auth + 123 api + 43 payments + 215 web + 71 email + 44 workers) — **2026-07-19 reconciliation:** actual count is 729, not the previously-documented "~651" |
-| `pnpm build` | **✅ 9/9 packages, 16 static pages** (verified 2026-07-19) ✅ |
+| `pnpm lint` | **2/2 successful** ✅ (0 errors, 9 intentional warnings) |
+| `pnpm test` | **764 tests passing** ✅ (131 db + 102 auth + 137 api + 47 payments + 231 web + 71 email + 45 workers) — **v13 added 35 new tests** (16 V13-1 + 2 V13-2 + 1 V13-3 + 7 V13-4 + 5 V13-5 + 4 V13-6) |
+| `pnpm build` | **✅ 9/9 packages, 17 static pages** (verified 2026-07-19) ✅ — **v13 converted 4 routes from ƒ Dynamic → ○ Static** (/, /schedule, /instructors, /pricing) |
 
 > ⚠️ **Lint flake note:** `pnpm lint` (default parallel turborepo run) can intermittently fail with *"not found by the project service"* parsing errors on test files. This is a typescript-eslint `projectService` concurrency collision (two ESLint language-service instances racing), **not a code defect** — confirmed by running lint serially (`pnpm turbo run lint --concurrency=1` → 2/2 green) or per-package. Code is correct.
 
