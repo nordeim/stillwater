@@ -582,7 +582,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | —     | **Post-deploy remediation (2026-07-12)**           | ✅ Complete   | —         |
 | **Total** |                                                | **100% complete** | **~54 days** |
 
-> **2026-07-12 Remediation**: Fixed 5 Critical findings from comprehensive code review audit — Drizzle `relations()` definitions (RQB runtime crash), SSE POST→GET fix (EventSource API), cron dedup columns (duplicate emails), `BETTER_AUTH_SECRET` fail-fast guard (session forgery), `.env.local` untracked (secret leakage). 8 new cron fan-out tests added. **651 tests passing** (was 643). See [`CLAUDE.md`](./CLAUDE.md) Gotchas 90–94.
+> **2026-07-19 Remediation (v8→v16-3)**: Comprehensive Six-Axis audit + live-site remediation. Fixed: index routes DB direct query (V13-1), waitlist promotion payload (V13-2), claim URL domain (V13-3), RBAC managerProcedure tier (V13-4), credit consumption in bookings.book (V13-5), Stripe webhook handlers (V13-6), Cloudflare env var (V13-7), glassmorphism removal (V13-8), outline-hidden (V13-9), mockup fidelity restoration (V14-1 to V14-8), withTimeout removal (V15-1), force-dynamic on 3 routes (V16-1), React Compiler disabled (V16-2), CSP strict-dynamic removed (V16-3 — **the definitive Loading… fix**). **763 tests passing**. **Live site fully operational** — confirmed via agent-browser E2E. See [`AUDIT_REMEDIATION.md`](./AUDIT_REMEDIATION.md) for full v1→v16-3 history.
 
 > See [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) for the full ~260-file inventory, per-file TDD checklists, 45 reconciled discrepancies (D1–D45), and 10 resolved Open Questions.
 
@@ -618,7 +618,7 @@ pnpm db:migrate    # Apply to current DATABASE_URL_UNPOOLED
 | `proxy.ts` not running                                        | Verify `config.matcher` excludes `_next/static`, `_next/image`, and asset extensions. See `apps/web/proxy.ts`. |
 | `proxy.ts` crashes with "Edge runtime cannot access database" | Do NOT call `auth.api.getSession()` in `proxy.ts`. Use `getSessionCookie()` (cookie-only). Full validation in Server Component layouts (ADR-009). |
 | Tailwind v4 classes not applying                              | Verify `globals.css` imports `@stillwater/ui/globals` BEFORE `tailwindcss`; `@theme` block maps every token. |
-| Dev server returns 500 on every page                          | `babel-plugin-react-compiler` not installed. Run `pnpm add -F @stillwater/web babel-plugin-react-compiler`. Required by `reactCompiler: true` in `next.config.ts`. |
+| Dev server returns 500 on every page                          | `babel-plugin-react-compiler` not installed. NOTE: React Compiler is DISABLED (V16-2: `reactCompiler: false`). If re-enabling, run `pnpm add -F @stillwater/web babel-plugin-react-compiler` first. |
 | `pnpm check-types` fails TS2345 in `packages/config`          | t3-env `createEnv()` missing `clientPrefix`. Add `clientPrefix: 'NEXT_PUBLIC_'` and pass schema inline (not as separate variable). |
 | `pnpm check-types` fails TS2353/TS2322 in `trigger.config.ts` | Trigger.dev v4 type changes: use `machine: "micro"` (string literal canonical form). Env vars via dashboard/CLI, not `trigger.config.ts`. |
 | `pnpm check-types` fails TS1295 in workers                    | `verbatimModuleSyntax` requires ESM. Add `"type": "module"` to `services/workers/package.json`. |
@@ -663,7 +663,7 @@ COMMIT    → Atomic commit: "<type>(<scope>): <subject>"
 | Framework        | Convention                                                                                  |
 |------------------|---------------------------------------------------------------------------------------------|
 | Next.js 16       | `proxy.ts` replaces `middleware.ts` (exported function must be named `proxy`)               |
-| React 19         | No `forwardRef` (use `ref` prop directly); React Compiler enabled (`reactCompiler: true`)   |
+| React 19         | No `forwardRef` (use `ref` prop directly); React Compiler DISABLED (V16-2: `reactCompiler: false`)   |
 | Tailwind v4      | CSS-first config via `@theme` directive; `tailwind.config.ts` only for content paths + plugins |
 | TypeScript       | `strict: true` + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`; no `any` (use `unknown`) |
 | Drizzle ORM      | Schema in TypeScript (no `.prisma` file); `drizzle-kit generate` then `migrate`             |

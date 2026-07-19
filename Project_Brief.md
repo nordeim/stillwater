@@ -1,7 +1,7 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-19 (post-v13 Six-Axis Audit remediation)
-> Status: Phases 0–12 ✅ complete · v8 ✅ · v9 ✅ · v10 ✅ · v11 ✅ · v12 ✅ · **v13 ✅** (Six-Axis Audit: 4 Critical + 19 Important findings fixed via TDD — see `AUDIT_REMEDIATION.md` v13 section)
+> **Updated:** 2026-07-19 (post-v16-3 live-site remediation)
+> Status: Phases 0–12 ✅ complete · v8–v12 ✅ · v13 ✅ (Six-Axis Audit) · v14 ✅ (Mockup fidelity) · v15 ✅ · **v16-1 to v16-3 ✅** (Loading… definitively fixed — live site fully operational)
 
 ## What it is
 
@@ -123,29 +123,43 @@ These are the files you can actually `cat` and `test` today:
 
 ---
 
-## Live quality gates (2026-07-19, post-v13 Six-Axis Audit remediation)
+## Live quality gates (2026-07-19, post-v16-3 remediation)
 
 Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 
 | Gate | Result |
 |---|---|
 | `pnpm check-types` | **9/9 successful** ✅ |
-| `pnpm lint` | **2/2 successful** ✅ (0 errors, 9 intentional warnings) |
-| `pnpm test` | **764 tests passing** ✅ (131 db + 102 auth + 137 api + 47 payments + 231 web + 71 email + 45 workers) — **v13 added 35 new tests** (16 V13-1 + 2 V13-2 + 1 V13-3 + 7 V13-4 + 5 V13-5 + 4 V13-6) |
-| `pnpm build` | **✅ 9/9 packages, 17 static pages** (verified 2026-07-19) ✅ — **v13 converted 4 routes from ƒ Dynamic → ○ Static** (/, /schedule, /instructors, /pricing) |
+| `pnpm lint` | **0 errors** ✅ (9 intentional warnings) |
+| `pnpm test` | **763 tests passing** ✅ (131 db + 102 auth + 137 api + 47 payments + 230 web + 71 email + 45 workers) |
+| `pnpm build` | **✅ 9/9 packages, 17 static pages** (verified 2026-07-19) ✅ |
+
+### Live site status (2026-07-19, post-v16-3)
+
+**✅ ALL 6 marketing routes fully operational** at `https://stillwater.jesspete.shop/`:
+- `/` (home) — Hero + schedule + philosophy + instructors + membership + studio + CTA ✅
+- `/schedule` — Weekly class cards with times/instructors/rooms ✅
+- `/instructors` — Portraits + bios (mei-tanaka, james-harlow, aiko-mori) ✅
+- `/pricing` — Membership comparison table ✅
+- `/about` — Studio story ✅
+- `/blog` — Empty state ✅
+
+3 instructor detail pages (SSG) + auth + API endpoints also confirmed working.
+
+Screenshots: `docs/e2e-screenshots/`
 
 > ⚠️ **Lint flake note:** `pnpm lint` (default parallel turborepo run) can intermittently fail with *"not found by the project service"* parsing errors on test files. This is a typescript-eslint `projectService` concurrency collision (two ESLint language-service instances racing), **not a code defect** — confirmed by running lint serially (`pnpm turbo run lint --concurrency=1` → 2/2 green) or per-package. Code is correct.
 
 Test breakdown (approximate — run `pnpm test` for the authoritative count):
-- `packages/db` — 19 test files / **131 tests**
+- `packages/db` — 18 test files / **131 tests**
 - `packages/auth` — 4 test files / **102 tests**
-- `packages/api` — 14 test files / **119 tests** (bookings.test.ts expanded for v8 C1/C2/C3)
-- `packages/payments` — 7 test files / **43 tests**
-- `apps/web` — 31 test files / **189+ tests** (added next-config-csp-verify, slug-404-verify, A1 SSE test, S2 webhook test)
-- `packages/email` — 17 test files (13 template + 3 component + send) / **71 tests**
-- `services/workers` — 12 test files / **44 tests** (added booking-cancellation.test.ts)
+- `packages/api` — 13 test files / **137 tests** (V13-2 cancel + V13-4 RBAC + V13-5 credit consumption)
+- `packages/payments` — 7 test files / **47 tests** (V13-6 checkout.session.completed + charge.refunded)
+- `apps/web` — 33 test files / **230 tests** (V13-1 index-routes + V14 Footer + slug-404-verify)
+- `packages/email` — 17 test files / **71 tests**
+- `services/workers` — 12 test files / **45 tests** (V13-3 claim URL domain fix)
 
-Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). ISR revalidate times: `/about` = 1d, `/blog` = 1h. (Home `/` exports `revalidate = 3600` in source but renders dynamic (ƒ) in the observed build — likely opted into on-demand rendering; verify in CI.) (`pnpm build` verified 2026-07-12: 9/9 packages, 16 static pages, 0 errors.)
+Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). V16-1: `/`, `/schedule`, `/pricing` are `force-dynamic` (ƒ) to prevent prerender Suspense hang. `/instructors`, `/about`, `/blog` are static (○) or SSG (●). V16-2: React Compiler disabled. V16-3: CSP `strict-dynamic` removed. (`pnpm build` verified 2026-07-19: 9/9 packages, 17 static pages, 0 errors.)
 
 ---
 
@@ -157,7 +171,7 @@ Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog
 | 2-layer auth (cookie-only proxy + full RBAC in layouts) | ✅ Implemented | `apps/web/proxy.ts` (Layer 1) + `apps/web/src/lib/auth.ts` (Layer 2) |
 | RBAC permission matrix (13 × 6 roles) | ✅ Implemented | `packages/auth/src/rbac.ts` |
 | Zod at every boundary | ✅ Implemented | `env.ts`, tRPC `input` schemas, rate-limit middleware |
-| React Compiler | ✅ Enabled | `apps/web/next.config.ts` — `reactCompiler: true` |
+| React Compiler | ❌ Disabled (V16-2) | `apps/web/next.config.ts` — `reactCompiler: false` (was `true`; disabled because it created excessive nested Suspense boundaries that prevented React hydration) |
 | Sentry source maps | ✅ Enabled | `apps/web/next.config.ts` — `withSentryConfig` wrapper (upload in CI; no-op locally when `SENTRY_AUTH_TOKEN` unset) |
 | Library discipline (Radix/shadcn only) | ✅ Enforced | `packages/ui` imports from `@radix-ui/*` |
 | Self-hosted fonts (zero FOUT) | ✅ Enforced | `packages/ui/src/fonts/` |
@@ -178,16 +192,16 @@ Known intentional stub (not a gap): `payments.refund` remains a thin D12 wrapper
 
 ## Things worth flagging
 
-- **Stray `error.txt` (resolved).** A `error.txt` build/`pnpm start` log was committed to the repo root via an "Add files via upload" commit by a non-agent author during the 2026-07-12 window. It has since been **removed and gitignored** (`error.txt` added to `.gitignore`). The earlier `app_start_log.txt` / `diff_output.txt` artifacts are not present in the current tree.
-- **Docs aligned through Phase 12; refreshed 2026-07-17 after v8 audit remediation.** Implementation matches AGENTS.md v2.9.0 / CLAUDE.md v2.9.0 / MEP v1.8.0. All 13 phases complete + v8 audit remediation complete. Verify against the live test suite (~700 tests ✅), not just the docs. See `AUDIT_REMEDIATION.md` for the v1→v8 remediation history.
-- **Migrations are canonical.** Six migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup), `0005_add_price_cents.sql` (membership_plans.price_cents — v4 pricing bug fix). The two-migration sequence (`0000_chemical_obadiah_stane.sql` + `0001_supreme_sabretooth.sql`) referenced in older PAD callouts was historical and deleted during Phase 1–2 remediation. All six current migrations apply successfully via `pnpm db:migrate`.
-- **P0 production fix history (v1→v8).** Live site at `https://stillwater.jesspete.shop/` had 4 of 8 marketing routes (`/`, `/schedule`, `/instructors`, `/pricing`) stuck on a Suspense "Loading…" fallback indefinitely. The remediation unfolded over 8 versions (see `AUDIT_REMEDIATION.md` for the full v1→v7 history; v8 is documented below):
-  - **v1 (2026-07-14):** Added `withTimeout` utility (`apps/web/src/lib/async/withTimeout.ts`) + wrapped all 4 marketing pages' tRPC data fetches in `withTimeout(..., 8_000, [])` so pages render with empty arrays after 8s instead of hanging. Defensive resilience.
-  - **v2 (2026-07-14):** Per-request CSP nonce in `proxy.ts` — the static CSP in `next.config.ts` was blocking RSC streaming inline scripts.
-  - **v3 (2026-07-14):** Pricing bug — `membership_plans` table had no `price_cents` column. Added migration `0005_add_price_cents.sql` + seed update.
-  - **v4 (2026-07-14):** Migration journal desync — registered `0005` in `_journal.json`.
-  - **v5 (2026-07-14):** Seed `onConflictDoNothing` → $0 prices. Changed to `onConflictDoUpdate`.
-  - **v6 (2026-07-15):** `/pricing` empty when DB down. Added `FALLBACK_PLANS` constant.
-  - **v7 (2026-07-15):** Soft-404 HTTP 200 (PPR streaming). Added `experimental_ppr = false` to `/instructors/[slug]` and `/blog/[slug]`. Also: `/about` placeholder text → customer-facing copy.
-  - **v8 (2026-07-17):** Systematic Six-Axis audit remediation. See `Stillwater_Codebase_Audit_Report.pdf` and the v8 section of `AUDIT_REMEDIATION.md`. Fixed: S1 (CSP regression — removed static CSP from `next.config.ts headers()` that was overriding `proxy.ts`), C1 (bookings.cancel missing advisory lock), C2 (missing cancellation email — added `booking-cancellation` worker task), C3 (inconsistent fire-and-forget), A1 (SSE error logging), S2 (env() validation), S3 (Zod UUID), C4/C5/AX1 (ternary both-branches-identical bugs), R2 (comment clarity), P2 (comment). 0 Critical, 2 High (live-deploy drift, fixed in source), 5 Medium, 6 Low, 4 Nit. All fixes TDD with regression tests.
+- **Docs aligned through v16-3; refreshed 2026-07-19.** Implementation matches the latest codebase. All 13 phases complete + v8→v16-3 audit remediation complete. See `AUDIT_REMEDIATION.md` for the full v1→v16-3 remediation history. Live site confirmed operational via agent-browser E2E on 2026-07-19.
+- **Migrations are canonical.** Six migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup), `0005_add_price_cents.sql` (membership_plans.price_cents — v4 pricing bug fix). All six current migrations apply successfully via `pnpm db:migrate`.
+- **P0 production fix history (v1→v16-3).** Live site at `https://stillwater.jesspete.shop/` had 4 of 8 marketing routes (`/`, `/schedule`, `/instructors`, `/pricing`) stuck on a Suspense "Loading…" fallback indefinitely. The remediation unfolded over 16+ versions (see `AUDIT_REMEDIATION.md` for the full history):
+  - **v1–v7 (2026-07-14 to 2026-07-15):** Defensive fixes (withTimeout, CSP nonce, pricing column, migration journal, seed, fallback plans, PPR disable).
+  - **v8 (2026-07-17):** Systematic Six-Axis audit remediation (11 findings fixed).
+  - **v9–v12 (2026-07-17):** CSP restoration, generateStaticParams, DB direct query for slug routes.
+  - **v13 (2026-07-19):** Six-Axis audit: 4 Critical + 19 Important (index routes DB direct, waitlist promotion, RBAC tiers, credit consumption, Stripe webhook handlers, Cloudflare env, glassmorphism, outline-hidden).
+  - **v14 (2026-07-19):** Mockup fidelity restoration (Footer address/phone/email/hours, Hero copy/stats, section titles, CTA Band, marquee names).
+  - **v15 (2026-07-19):** Removed withTimeout (doesn't fire during prerender).
+  - **v16-1 (2026-07-19):** force-dynamic on 3 routes (DB query hangs during prerender).
+  - **v16-2 (2026-07-19):** Disabled React Compiler (created excessive nested Suspense boundaries).
+  - **v16-3 (2026-07-19):** Removed `strict-dynamic` from CSP — **THE definitive fix**: `strict-dynamic` caused browsers to ignore `unsafe-inline`, blocking Next.js's inline `$RC` scripts and preventing React hydration.
 

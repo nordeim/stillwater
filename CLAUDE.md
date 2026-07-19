@@ -3,14 +3,14 @@ IMPORTANT: File is read fresh for every conversation. Be brief and practical.
 project_type: nextjs-monorepo
 version: 3.0.0
 framework_version: "Next.js 16.2, React 19.2.7, Tailwind v4.3, tRPC v11, Drizzle 0.45, Better Auth 1.6.23, Stripe 22.3 (Dahlia), Trigger.dev v4"
-last_updated: 2026-07-12
+last_updated: 2026-07-19
 ---
 
 # Stillwater
 
 Enterprise-grade yoga studio management platform. Turborepo monorepo combining a public marketing surface (Next.js 16 + Sanity CMS, ISR), a member booking application (real-time seat availability via SSE), an RBAC-gated admin surface, Stripe subscription billing, and Trigger.dev v4 background jobs.
 
-**Tech Stack**: Next.js 16.2 (App Router, Turbopack, React Compiler), React 19.2.7, TypeScript 5.9.0 strict, Tailwind CSS v4.3, tRPC v11, Drizzle ORM 0.45, PostgreSQL 17 (Neon), Better Auth 1.6.23, Trigger.dev v4 (SDK import path is `@trigger.dev/sdk` root — see Gotchas), Stripe 22.3 ("Dahlia" API), Sanity CMS v3, React Email 6.6 + Resend 6.17, pnpm 11.9 workspaces.
+**Tech Stack**: Next.js 16.2 (App Router, Turbopack, React Compiler DISABLED per V16-2), React 19.2.7, TypeScript 5.9.0 strict, Tailwind CSS v4.3, tRPC v11, Drizzle ORM 0.45, PostgreSQL 17 (Neon), Better Auth 1.6.23, Trigger.dev v4 (SDK import path is `@trigger.dev/sdk` root — see Gotchas), Stripe 22.3 ("Dahlia" API), Sanity CMS v3, React Email 6.6 + Resend 6.17, pnpm 11.9 workspaces.
 
 **Canonical Sources** (read in this order when in doubt — precedence: design specs → visual guidance → tech stack → architecture culmination → derived working copy):
 1. `design.md` — requirement specifications + original architectural critique (some sections superseded by ADRs — warnings inline)
@@ -21,7 +21,7 @@ Enterprise-grade yoga studio management platform. Turborepo monorepo combining a
 6. `scaffolding_files.md` — Phase 0 ready-to-paste configs (39 files) — **HISTORICAL: Phase 0 complete; actual files on disk are canonical**
 7. `react_email_suggestion.md` / `pnpm_install_fix.md` — post-hoc ecosystem discovery docs (cited in MEP D43/D44)
 
-**Phase 0–12 Status**: ✅ ALL 13 PHASES COMPLETE + post-deploy remediation. Phase 0: scaffold + design tokens. Phase 1: 18 tables (15 domain + 3 Better Auth) + 8 enums + 5 critical indexes via Drizzle (migrations `0000`–`0003`). Phase 2: Better Auth v1.6.23 + RBAC + 2-layer auth. Phase 3: 10 tRPC routers (~42 procedures) with advisory lock booking, rate limiting, 4 access tiers, web integration. Phase 4: Sanity CMS + 8 content types + Studio app, GROQ queries with `published == true`, Zod validation, Cloudflare Images signer, webhook→ISR with HMAC, 8 ISR marketing pages, 11 shadcn components, `transpilePackages` build fix (ADR-011). Phase 5: SSE endpoint (`/api/schedule/stream`, maxDuration=300, **GET not POST** — EventSource API is GET-only), `useSessionAvailability` hook (3 reconnection attempts), 5 booking UI components, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index. Phase 6: Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components, CSV export utility, `memberships.getMySubscription` plan join. Phase 7: Stripe payment integration — `@stillwater/payments` package (7 source files, 43 tests), Stripe webhook route with idempotent `pg_advisory_xact_lock` handler, all tRPC procedures unstubbed, ADR-010 accepted (Resend Native Templates). Phase 8: Background jobs + email — `@stillwater/email` package (19 source files, 71 tests), `@stillwater/workers` package (12 source files, 33→41 tests: 11 Trigger.dev v4 tasks, **class-reminder-24h/1h now cron fan-out with dedup** — see Gotcha 90), integration wiring. Phase 9: Admin surface (RBAC-gated) — 11 admin pages, 9 admin components, 12 admin tRPC procedures, `audit_log` table (migration `0003`), 7 shadcn components, `cmdk` dependency, 5 E2E specs. Phase 10: Observability (Sentry + PostHog 18 events + Axiom + Checkly 3 checks, **`withSentryConfig` wrapper added** — see Gotcha 91). Phase 11: WCAG AAA audit + SEO (robots, sitemap, manifest, 4 OG images, JSON-LD, SkipLink, SrOnly, focus-utils). Phase 12: Landing page port (19 marketing components, 3 hooks, mobile nav drawer, scroll progress bar). **Post-deploy remediation (2026-07-12)**: Drizzle `relations()` defined (migration `0004` adds `reminder24hSentAt` + `reminder1hSentAt` dedup columns), `BETTER_AUTH_SECRET` fail-fast guard, `.env.local` untracked, `class.name→class.title` sweep complete, SSE POST→GET fix, booking reminder cron dedup, `activeSubscription` wired, `withSentryConfig` wrapper, 10 SKILL factual corrections. **651 tests passing** (117 db + 102 auth + 118 api + 43 payments + 159 web + 71 email + 41 workers). All quality gates green: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (651/651), `pnpm build` ✅ (9/9 packages, 16 static pages — requires real Sanity credentials).
+**Phase 0–12 Status**: ✅ ALL 13 PHASES COMPLETE + v8→v16-3 audit remediation. **763 tests passing** (131 db + 102 auth + 137 api + 47 payments + 230 web + 71 email + 45 workers). All quality gates green: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 warnings), `pnpm test` ✅ (763/763), `pnpm build` ✅ (9/9 packages, 17 static pages). **Live site fully operational** at `https://stillwater.jesspete.shop/` — confirmed via agent-browser E2E on 2026-07-19 (all 6 marketing routes + 3 instructor detail pages + auth + API). V16-1: 3 routes `force-dynamic`. V16-2: React Compiler disabled. V16-3: CSP `strict-dynamic` removed. See `AUDIT_REMEDIATION.md` for full v1→v16-3 history.
 
 ---
 
@@ -93,7 +93,7 @@ Follow this six-phase workflow for all implementation tasks:
 - **App Router**: Use `app/` directory for all routes and layouts
 - **`proxy.ts` NOT `middleware.ts`**: Next.js 16 renamed middleware to proxy; exported function must be named `proxy` (ADR-009)
 - **Server Components by default**: Add `'use client'` only when interactivity needed (state, effects, event handlers)
-- **React Compiler**: Enabled via `reactCompiler: true` in `next.config.ts` — no `useMemo`/`useCallback` unless profiler evidence
+- **React Compiler**: DISABLED via `reactCompiler: false` in `next.config.ts` (V16-2) — was creating nested Suspense boundaries that prevented hydration. Do NOT re-enable without verifying upstream fix.
 - **Turbopack**: Default bundler in dev (`next dev --turbopack`) and prod (`next build`)
 - **`serverExternalPackages`** (top-level, NOT `experimental.serverComponentsExternalPackages`): `@neondatabase/serverless`, `drizzle-orm`, `better-auth`
 - **Next.js Image**: Use `<Image>` for all images with explicit `width` + `height` (CLS prevention); `priority` ONLY on above-fold LCP

@@ -4,7 +4,7 @@
 > Every line below is hard-earned context that an agent would likely get wrong without it.
 > For the full project briefing, see [`CLAUDE.md`](./CLAUDE.md). For architecture, see [`PAD.md`](./PAD.md).
 >
-> **Updated:** 2026-07-12 (v3.0.0) — ALL 13 PHASES COMPLETE + post-deploy remediation (651 tests, 0 failures). Quality gates fully green: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 intentional warnings), `pnpm test` ✅ (651/651), `pnpm build` ✅ (9/9 packages, 16 static pages — requires real Sanity credentials). **2026-07-12 remediation**: fixed 5 Critical findings from code review audit — Drizzle `relations()` defined (Gotcha 90), SSE POST→GET fix (Gotcha 91), cron dedup columns (Gotcha 92), `BETTER_AUTH_SECRET` fail-fast guard (Gotcha 93), `.env.local` untracked + pre-commit hook (Gotcha 94). 8 new cron fan-out tests. 5 new gotchas (90-94). Total: 94 gotchas.
+> **Updated:** 2026-07-19 (v16-3) — ALL 13 PHASES COMPLETE + v8→v16-3 audit remediation (763 tests, 0 failures). Quality gates: `pnpm check-types` ✅ (9/9), `pnpm lint` ✅ (0 errors, 9 warnings), `pnpm test` ✅ (763/763), `pnpm build` ✅ (9/9 packages, 17 static pages). **Live site fully operational** — confirmed via agent-browser E2E on 2026-07-19. React Compiler DISABLED (V16-2). CSP `strict-dynamic` REMOVED (V16-3). 3 routes use `force-dynamic` (V16-1). See `AUDIT_REMEDIATION.md` for full v1→v16-3 history.
 
 ---
 
@@ -16,7 +16,7 @@
 | pnpm | **11.9.0** (`^11.0.0`) | pnpm 9.x is EOL. Root `package.json` `packageManager` field pins this. |
 | TypeScript | **5.9.0** (`^5.9.0`) | Do NOT upgrade to 6.x. Required for `erasableSyntaxOnly` + `verbatimModuleSyntax`. |
 | ESLint | **9.39.4** (`^9.39.4`) | Do NOT upgrade to v10. `eslint-plugin-react` and `eslint-plugin-import` have no v10 versions. |
-| Next.js | 16.2.10 (`^16.2.10`) | App Router, Turbopack, React Compiler (`reactCompiler: true`) |
+| Next.js | 16.2.10 (`^16.2.10`) | App Router, Turbopack. React Compiler DISABLED (V16-2: `reactCompiler: false` — was causing nested Suspense hydration failure) |
 | React | 19.2.7 (`^19.2.7`) | CVE-2025-55182 floor — never downgrade below 19.2.3 |
 | Tailwind CSS | 4.3.2 (`^4.3.2`) | CSS-first `@theme` in `globals.css`; no `tailwind.config.js` needed |
 | tRPC | v11 (`^11.18.0`) | Server caller for RSC, React Query for client |
@@ -195,9 +195,9 @@ const nextConfig = {
 };
 ```
 
-### 11. `reactCompiler: true` requires `babel-plugin-react-compiler`
+### 11. React Compiler DISABLED (V16-2) — do NOT re-enable
 
-`next.config.ts` has `reactCompiler: true`. This requires `babel-plugin-react-compiler` to be installed as a devDependency in `apps/web`. Without it, every page returns HTTP 500. Already installed as `^1.0.0` — do NOT remove it.
+`next.config.ts` has `reactCompiler: false` (was `true` until V16-2). The React Compiler was creating excessive nested Suspense boundaries for async DB queries in Server Components, preventing React hydration on the live site. The `babel-plugin-react-compiler` package is still installed as a devDependency — do NOT remove it (harmless when compiler is disabled). Do NOT re-enable `reactCompiler: true` without first verifying that the nested Suspense issue is resolved upstream.
 
 ### 12. t3-env `createEnv()` — pass schema inline, not as variable
 
