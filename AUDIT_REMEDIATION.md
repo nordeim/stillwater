@@ -971,3 +971,97 @@ primitive files (16 occurrences).
 | v11 | Silent try/catch in generateStaticParams | Added console.error |
 | v12 | Page body used apiCaller | Query DB directly |
 | **v13** | **Six-Axis audit: 4 Critical + 19 Important** | **V13-1 to V13-9 (this report)** |
+
+---
+
+# Audit Remediation Report v15 — 2026-07-19 (withTimeout Prerender Fix)
+
+> Post-v14 live-site E2E testing revealed that 3 of 8 marketing routes
+> (/, /schedule, /pricing) were STILL stuck on "Loading…" despite the V13-1
+> fix making them static. Root cause: `withTimeout` uses `setTimeout` which
+> doesn't fire during Next.js static prerendering.
+
+## v15 Executive Summary
+
+The V13-1 fix (commit `2f78209`) successfully converted 4 index routes from
+Dynamic (ƒ) to Static (○) in the build output. The V14 fixes (commit `a7d6be4`)
+restored mockup fidelity for the Footer, Hero, CTA Band, and copy.
+
+However, live-site E2E testing via agent-browser on 2026-07-19 revealed that
+3 routes STILL showed "Loading…" in `<main>` despite being marked as static:
+
+| Route | Build Type | HTML Size | `<main>` Content | Status |
+|---|---|---|---|---|
+| `/` | ○ Static | 145KB | "Loading…" (empty Suspense template) | 🔴 BROKEN |
+| `/schedule` | ○ Static | 85KB | "Loading…" (empty Suspense template) | 🔴 BROKEN |
+| `/pricing` | ○ Static | 50KB | "Loading…" (empty Suspense template) | 🔴 BROKEN |
+| `/instructors` | ○ Static | 35KB | Real content (mei tanaka, Vinyasa...) | ✅ WORKING |
+| `/about` | ○ Static | 31KB | Real content (About Stillwater...) | ✅ WORKING |
+| `/blog` | ○ Static | 29KB | Real content (No blog posts yet...) | ✅ WORKING |
+
+## V15-1 Root Cause Analysis
+
+The `withTimeout` utility (`apps/web/src/lib/async/withTimeout.ts`) uses
+`Promise.race` between the DB query and a `setTimeout`-based timeout promise.
+
+During Next.js static prerendering:
+1. The page component calls `withTimeout(db.query.findMany(...).catch(() => []), 8_000, [])`
+2. The DB query hangs (neon-http driver fetch doesn't complete during prerender)
+3. `.catch(() => [])` doesn't fire (the query is hanging, not erroring)
+4. `setTimeout(() => resolve(fallback), 8_000)` is scheduled
+5. **BUT setTimeout doesn't fire during prerender** — the prerender process
+   has a limited execution context that doesn't process timer callbacks
+6. The Suspense boundary is committed with an empty `<template id="B:0">`
+7. The page is marked as "static" but the main content is permanently "Loading…"
+
+## V15-1 Fix
+
+**Removed `withTimeout` wrapper** from all 3 broken routes. Use plain
+`.catch(() => [])` instead:
+
+```typescript
+// BEFORE (V13-1 — broken):
+const sessions = await withTimeout(
+  db.query.classSessions.findMany({...}).catch(() => []),
+  8_000,
+  [],
+);
+
+// AFTER (V15-1 — fixed):
+const sessions = await db.query.classSessions
+  .findMany({...})
+  .catch(() => []);
+```
+
+This works because:
+1. `.catch(() => [])` catches DB errors (ECONNREFUSED, query failures) → returns `[]`
+2. The DB driver's own `AbortSignal.timeout(10_000)` (in `packages/db/src/index.ts:75-80`) handles hangs — this uses the Web API `AbortSignal` which DOES work during prerender (unlike `setTimeout`)
+3. No dependency on `setTimeout` or `Promise.race`
+
+The `/instructors` page was never broken because it never used `withTimeout` — it used plain `.catch(() => [])` from the start.
+
+## V15-1 Changes
+
+- `apps/web/src/app/(marketing)/page.tsx`: Removed `withTimeout` + import; 3 DB queries now use plain `.catch(() => [])`
+- `apps/web/src/app/(marketing)/schedule/page.tsx`: Same fix
+- `apps/web/src/app/(marketing)/pricing/page.tsx`: Same fix
+- `apps/web/src/app/api/auth/[...all]/index-routes-no-apiCaller.test.ts`: Updated test from `expect(source).toContain('withTimeout')` to `expect(source).toContain('.catch(() => [])')`
+
+## V15-1 Quality Gates
+
+| Gate | Result |
+|---|---|
+| `pnpm check-types` | **9/9 successful** ✅ |
+| `pnpm lint` | **2/2 successful** ✅ (0 errors, 9 warnings) |
+| `pnpm test` | **764 tests passing** ✅ |
+
+## Audit Journey Summary (v1 → v15)
+
+| Version | Key Finding | Key Fix |
+|---|---|---|
+| v1-v7 | Loading…, CSP, pricing, soft-404 | Various |
+| v8 | Six-Axis audit: 11 findings | Advisory lock, cancellation email, etc. |
+| v9-v12 | CSP regression, slug-route soft-404 | generateStaticParams, DB direct query |
+| v13 | Six-Axis audit: 4 Critical + 19 Important | V13-1 to V13-9 (TDD) |
+| v14 | Mockup fidelity: 8 visual gaps | V14-1 to V14-8 |
+| **v15** | **withTimeout incompatible with prerender** | **V15-1: remove withTimeout, use .catch()** |
