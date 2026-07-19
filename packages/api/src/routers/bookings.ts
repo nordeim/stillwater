@@ -24,11 +24,11 @@
  */
 
 import { z } from 'zod';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, asc } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 import { router, protectedProcedure, staffProcedure } from '../trpc';
 import { rateLimit } from '../middleware/rateLimit';
-import { classSessions, enrollments } from '@stillwater/db';
+import { classSessions, enrollments, waitlistEntries } from '@stillwater/db';
 
 // Rate limit: max 10 bookings per minute per user (MEP acceptance criteria)
 const bookingRateLimit = rateLimit({ limit: 10, window: '1 m' });
@@ -180,7 +180,25 @@ export const bookingsRouter = router({
    *     matching bookings.book — so a Trigger.dev outage doesn't fail
    *     the cancellation.
    *
-   * Source: Stillwater Audit Report v1.0 §5 C1/C2/C3; ADR-004.
+   * V13-2 fix (2026-07-19, C2 root-cause):
+   *   The v8 C2 fix sent { sessionId, cancelledEnrollmentId } to the
+   *   waitlist-promotion worker, but the worker expects { waitlistEntryId }.
+   *   Result: the worker ALWAYS returned "Waitlist entry not found" and no
+   *   promotion email was ever sent. Next person on waitlist was NEVER
+   *   promoted.
+   *
+   *   Root cause: the v8 C2 fix moved the DB promotion work INTO the worker
+   *   (per the worker's docstring), but never actually implemented it there.
+   *   The worker was a stateless email-sender that expected the tRPC layer
+   *   to do the promotion + pass the entry ID.
+   *
+   *   Fix: do the promotion INSIDE the transaction (atomic with the cancel):
+   *     1. Find next-in-line waitlist entry (status='waiting', lowest position)
+   *     2. If found: set status='offered', notifiedAt=now, expiresAt=now+2h
+   *     3. Trigger worker with { waitlistEntryId: <id> } (correct payload shape)
+   *     4. Worker remains stateless — just sends the WaitlistOffer email
+   *
+   * Source: Stillwater Audit Report v1.0 §5 C1/C2/C3; ADR-004; Phase B audit C2.
    */
   cancel: protectedProcedure
     .input(z.object({ enrollmentId: z.string().uuid() }))
@@ -193,7 +211,7 @@ export const bookingsRouter = router({
         });
       }
 
-      const updated = await ctx.db.transaction(async (tx) => {
+      const { updatedEnrollment, promotedWaitlistEntryId } = await ctx.db.transaction(async (tx) => {
         // C1 fix: Acquire advisory lock keyed by session UUID.
         // We don't know the sessionId until AFTER the update, but the lock
         // must serialize concurrent cancellations against the same session.
@@ -242,26 +260,54 @@ export const bookingsRouter = router({
           });
         }
 
-        return result;
+        // V13-2 fix: Find next-in-line waitlist entry (status='waiting',
+        // lowest position) and promote to 'offered' with a 2-hour claim window.
+        // This must happen INSIDE the transaction so it's atomic with the
+        // cancellation and protected by the advisory lock.
+        const nextInLine = await tx.query.waitlistEntries.findFirst({
+          where: and(
+            eq(waitlistEntries.sessionId, existing.sessionId),
+            eq(waitlistEntries.status, 'waiting'),
+          ),
+          orderBy: asc(waitlistEntries.position),
+        });
+
+        if (nextInLine) {
+          const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2h window
+          await tx
+            .update(waitlistEntries)
+            .set({
+              status: 'offered',
+              notifiedAt: new Date(),
+              expiresAt,
+            })
+            .where(eq(waitlistEntries.id, nextInLine.id));
+          return { updatedEnrollment: result, promotedWaitlistEntryId: nextInLine.id };
+        }
+
+        return { updatedEnrollment: result, promotedWaitlistEntryId: null };
       });
 
-      // C2+C3 fix: Trigger both jobs POST-COMMIT (fire-and-forget per C3).
-      // If Trigger.dev is unreachable, the cancellation still succeeds —
-      // Trigger.dev retries handle the rest.
-      ctx.jobs.trigger('waitlist-promotion', {
-        sessionId: updated.sessionId,
-        cancelledEnrollmentId: updated.id,
-      }).catch(() => {
-        // C3: Job trigger failure shouldn't fail the cancellation — Trigger.dev retries
-      });
+      // V13-2 fix: Only trigger waitlist-promotion worker if a waitlist entry
+      // was actually promoted. The worker is stateless — it just sends the
+      // WaitlistOffer email using the entry ID we pass it.
+      if (promotedWaitlistEntryId) {
+        ctx.jobs.trigger('waitlist-promotion', {
+          waitlistEntryId: promotedWaitlistEntryId,
+        }).catch(() => {
+          // C3: Job trigger failure shouldn't fail the cancellation — Trigger.dev retries
+        });
+      }
+
+      // C2 fix: Trigger booking-cancellation worker (sends BookingCancellation email)
       ctx.jobs.trigger('booking-cancellation', {
-        enrollmentId: updated.id,
+        enrollmentId: updatedEnrollment.id,
         memberId,
       }).catch(() => {
         // C3: Job trigger failure shouldn't fail the cancellation — Trigger.dev retries
       });
 
-      return updated;
+      return updatedEnrollment;
     }),
 
   /**

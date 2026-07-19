@@ -80,8 +80,41 @@ describe('waitlist-promotion (JOB-004)', () => {
       className: 'Vinyasa Flow',
       sessionDate: expect.any(String),
       expiresAt: expect.any(String),
-      claimUrl: expect.stringContaining('book/claim?session=sess-1&entry=wl-1'),
+      // V13-3 fix: claim URL must use the production domain (stillwater.jesspete.shop),
+      // NOT the placeholder stillwater.yoga. The old URL would 404 in production.
+      claimUrl: expect.stringContaining('stillwater.jesspete.shop/book/claim?session=sess-1&entry=wl-1'),
     });
+  });
+
+  it('V13-3: claim URL does NOT use the placeholder stillwater.yoga domain', async () => {
+    const { waitlistPromotion } = await import('./waitlist-promotion');
+    const entryFixture = {
+      id: 'wl-2',
+      status: 'offered',
+      sessionId: 'sess-2',
+      memberId: 'mem-2',
+      position: 1,
+      expiresAt: new Date('2026-07-10T12:00:00Z'),
+      session: {
+        id: 'sess-2',
+        startsAt: new Date('2026-07-10T10:00:00Z'),
+        class: { id: 'cls-2', title: 'Yin Yoga' },
+        instructor: { id: 'inst-2', slug: 'james-harlow' },
+      },
+      member: {
+        id: 'mem-2',
+        displayName: 'John Smith',
+        user: { id: 'usr-2', email: 'john@example.com' },
+      },
+    };
+    mockWaitlistFindFirst.mockResolvedValue(entryFixture);
+    mockSendWaitlistOffer.mockResolvedValue(undefined);
+
+    await waitlistPromotion.run({ waitlistEntryId: 'wl-2' });
+
+    const callArgs = mockSendWaitlistOffer.mock.calls[0][0] as { claimUrl: string };
+    expect(callArgs.claimUrl).not.toContain('stillwater.yoga');
+    expect(callArgs.claimUrl).toMatch(/^https:\/\/stillwater\.jesspete\.shop\//);
   });
 
   it('returns sent:false when entry is not found', async () => {

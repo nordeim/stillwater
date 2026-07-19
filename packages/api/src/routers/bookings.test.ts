@@ -89,6 +89,10 @@ const enrollmentFixture = {
 /**
  * Build a mock `tx` (or `db`) with all the methods the book/cancel/checkIn
  * mutations touch. Each behavior is configurable via the `overrides` arg.
+ *
+ * V13-2 fix (2026-07-19): Added waitlistEntries mock for cancel-promotes-next
+ * behavior. The cancel mutation now finds the next-in-line waitlist entry
+ * inside the transaction and updates its status to 'offered'.
  */
 function makeTx(overrides: {
   session?: unknown;
@@ -100,6 +104,10 @@ function makeTx(overrides: {
   existingEnrollmentForCancel?: unknown;
   // v8 C2 fix: cancel mutation returns the updated enrollment.
   updatedEnrollment?: unknown;
+  // V13-2 fix: cancel mutation finds the next-in-line waitlist entry.
+  // Set nextWaitlistEntry to control the waitlist-promotion path.
+  // undefined = no waitlist entry (no promotion). null = explicit no entry.
+  nextWaitlistEntry?: unknown;
 } = {}) {
   const execute = vi.fn().mockResolvedValue([{ pg_advisory_xact_lock: '' }]);
   const findFirstSession = vi.fn().mockResolvedValue(overrides.session === undefined ? sessionFixture : overrides.session);
@@ -110,6 +118,10 @@ function makeTx(overrides: {
     }
     return Promise.resolve(overrides.existingEnrollment ?? undefined);
   });
+  // V13-2: waitlist findFirst for cancel's next-in-line lookup
+  const findFirstWaitlist = vi.fn().mockResolvedValue(
+    overrides.nextWaitlistEntry === undefined ? undefined : overrides.nextWaitlistEntry,
+  );
   const where = vi.fn().mockResolvedValue([{ count: overrides.enrolledCount ?? 0 }]);
   const from = vi.fn().mockReturnValue({ where });
   const select = vi.fn().mockReturnValue({ from });
@@ -127,7 +139,13 @@ function makeTx(overrides: {
   );
   const whereUpdate = vi.fn().mockReturnValue({ returning: returningUpdate });
   const setUpdate = vi.fn().mockReturnValue({ where: whereUpdate });
-  const update = vi.fn().mockReturnValue({ set: setUpdate });
+  const update = vi.fn().mockImplementation(() => ({ set: setUpdate }));
+
+  // V13-2: waitlist update — separate spies so we can assert the promotion
+  // set call had { status: 'offered', notifiedAt, expiresAt }.
+  // The first update() call is for the enrollment; the second is for waitlist.
+  // To keep the mock simple, we route both through the same update() fn.
+  // The waitlist set call is asserted via setUpdate.mock.calls[1][0].
 
   return {
     tx: {
@@ -135,6 +153,7 @@ function makeTx(overrides: {
       query: {
         classSessions: { findFirst: findFirstSession },
         enrollments: { findFirst: findFirstEnrollment },
+        waitlistEntries: { findFirst: findFirstWaitlist },
       },
       select,
       insert,
@@ -144,6 +163,7 @@ function makeTx(overrides: {
       execute,
       findFirstSession,
       findFirstEnrollment,
+      findFirstWaitlist,
       where,
       from,
       select,
@@ -293,11 +313,20 @@ describe('bookingsRouter.cancel', () => {
     vi.clearAllMocks();
   });
 
-  it('cancels the caller own enrollment, acquires advisory lock, and triggers waitlist-promotion + booking-cancellation (v8 C1+C2+C3 fix)', async () => {
+  it('cancels the caller own enrollment, acquires advisory lock, and triggers waitlist-promotion + booking-cancellation (v8 C1+C2+C3 + V13-2 fix)', async () => {
+    // V13-2: Provide a next-in-line waitlist entry to trigger promotion.
+    const waitlistEntryFixture = {
+      id: '66666666-6666-4666-8666-666666666666',
+      sessionId: SESSION_ID,
+      memberId: 'member-2',
+      position: 1,
+      status: 'waiting',
+    };
     // Pre-lock findFirst returns the enrollment (with sessionId for the lock key)
     const { tx, spies } = makeTx({
       existingEnrollmentForCancel: { id: ENROLLMENT_ID, sessionId: SESSION_ID },
       updatedEnrollment: { ...enrollmentFixture, status: 'cancelled', cancelledAt: new Date() },
+      nextWaitlistEntry: waitlistEntryFixture,
     });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);
@@ -311,15 +340,22 @@ describe('bookingsRouter.cancel', () => {
     expect(spies.execute).toHaveBeenCalledTimes(1);
     // Pre-lock findFirst to get sessionId
     expect(spies.findFirstEnrollment).toHaveBeenCalledTimes(1);
-    // Update called once
-    expect(spies.update).toHaveBeenCalledTimes(1);
+    // Enrollment update called once (set status='cancelled')
+    expect(spies.update).toHaveBeenCalledTimes(2); // enrollment + waitlist
     expect(spies.setUpdate.mock.calls[0][0]).toMatchObject({ status: 'cancelled' });
     expect(spies.setUpdate.mock.calls[0][0]).toHaveProperty('cancelledAt');
+    // V13-2 fix: waitlist entry promoted to 'offered' with expiresAt
+    expect(spies.findFirstWaitlist).toHaveBeenCalledTimes(1);
+    expect(spies.setUpdate.mock.calls[1][0]).toMatchObject({
+      status: 'offered',
+      notifiedAt: expect.any(Date),
+      expiresAt: expect.any(Date),
+    });
     // C2 fix: both waitlist-promotion AND booking-cancellation triggered
     expect(ctx.jobs.trigger).toHaveBeenCalledTimes(2);
+    // V13-2 fix: waitlist-promotion now receives { waitlistEntryId } (was { sessionId, cancelledEnrollmentId })
     expect(ctx.jobs.trigger).toHaveBeenCalledWith('waitlist-promotion', {
-      sessionId: SESSION_ID,
-      cancelledEnrollmentId: ENROLLMENT_ID,
+      waitlistEntryId: waitlistEntryFixture.id,
     });
     expect(ctx.jobs.trigger).toHaveBeenCalledWith('booking-cancellation', {
       enrollmentId: ENROLLMENT_ID,
@@ -327,10 +363,40 @@ describe('bookingsRouter.cancel', () => {
     });
   });
 
-  it('C3 fix: job triggers are fire-and-forget (do not throw if Trigger.dev is unreachable)', async () => {
+  it('V13-2: cancel does NOT trigger waitlist-promotion when no waitlist entries exist', async () => {
     const { tx } = makeTx({
       existingEnrollmentForCancel: { id: ENROLLMENT_ID, sessionId: SESSION_ID },
       updatedEnrollment: { ...enrollmentFixture, status: 'cancelled', cancelledAt: new Date() },
+      nextWaitlistEntry: undefined, // No waitlist entries
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
+    const caller = bookingsRouter.createCaller(ctx);
+
+    const result = await caller.cancel({ enrollmentId: ENROLLMENT_ID });
+
+    expect(result.status).toBe('cancelled');
+    // Only booking-cancellation triggered (no waitlist-promotion)
+    expect(ctx.jobs.trigger).toHaveBeenCalledTimes(1);
+    expect(ctx.jobs.trigger).toHaveBeenCalledWith('booking-cancellation', {
+      enrollmentId: ENROLLMENT_ID,
+      memberId: MEMBER_ID,
+    });
+    expect(ctx.jobs.trigger).not.toHaveBeenCalledWith('waitlist-promotion', expect.anything());
+  });
+
+  it('C3 fix: job triggers are fire-and-forget (do not throw if Trigger.dev is unreachable)', async () => {
+    const waitlistEntryFixture = {
+      id: '66666666-6666-4666-8666-666666666666',
+      sessionId: SESSION_ID,
+      memberId: 'member-2',
+      position: 1,
+      status: 'waiting',
+    };
+    const { tx } = makeTx({
+      existingEnrollmentForCancel: { id: ENROLLMENT_ID, sessionId: SESSION_ID },
+      updatedEnrollment: { ...enrollmentFixture, status: 'cancelled', cancelledAt: new Date() },
+      nextWaitlistEntry: waitlistEntryFixture,
     });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);

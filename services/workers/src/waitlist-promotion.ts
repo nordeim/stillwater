@@ -87,7 +87,12 @@ export const waitlistPromotion = task({
 });
 
 function buildClaimUrl(sessionId: string, waitlistEntryId: string): string {
-  return `https://stillwater.yoga/book/claim?session=${sessionId}&entry=${waitlistEntryId}`;
+  // V13-3 fix (2026-07-19): Use the actual production domain
+  // (stillwater.jesspete.shop) instead of the placeholder stillwater.yoga.
+  // The old URL would 404 in production, breaking the waitlist claim flow.
+  // Allow env override for preview/staging environments.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://stillwater.jesspete.shop';
+  return `${appUrl}/book/claim?session=${sessionId}&entry=${waitlistEntryId}`;
 }
 
 function formatSessionDate(date: Date): string {
