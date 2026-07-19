@@ -10,8 +10,13 @@ export const metadata: Metadata = {
   description: 'Membership plans and class packages for every practice.',
 };
 
-// ISR — revalidate every hour
-export const revalidate = 3600;
+// V16-1 fix (2026-07-19): Use force-dynamic instead of ISR revalidate.
+// Root cause: Next.js auto-wraps async Server Components in <Suspense>.
+// During static prerender, if the DB query hangs, the Suspense fallback
+// ("Loading…") is committed permanently. force-dynamic ensures the page
+// always renders at request time where fetch() works normally.
+// No apiCaller() → no headers() → no streaming → complete HTML returned.
+export const dynamic = 'force-dynamic';
 
 /**
  * Format a price in cents as a USD string: 2800 → "$28", 14900 → "$149"

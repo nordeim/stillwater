@@ -12,12 +12,13 @@ export const metadata: Metadata = {
   description: 'View our weekly class schedule and book your next session.',
 };
 
-// V13-1 fix: ISR with 5-min revalidate (NOT force-dynamic).
-// force-dynamic opts the page out of static rendering entirely → streams
-// the response → 5s session timeout + 8s data timeout > 10s Vercel limit
-// → "Loading…" hang. ISR with short revalidate gives near-live freshness
-// without the streaming penalty.
-export const revalidate = 300; // 5 minutes
+// V16-1 fix (2026-07-19): Use force-dynamic instead of ISR revalidate.
+// Root cause: Next.js auto-wraps async Server Components in <Suspense>.
+// During static prerender, if the DB query hangs, the Suspense fallback
+// ("Loading…") is committed permanently. force-dynamic ensures the page
+// always renders at request time where fetch() works normally.
+// No apiCaller() → no headers() → no streaming → complete HTML returned.
+export const dynamic = 'force-dynamic';
 
 interface ScheduleSession {
   id: string;

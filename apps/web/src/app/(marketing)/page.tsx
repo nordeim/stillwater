@@ -2,18 +2,22 @@
  * F12-01 — Production home page (PATCHED — replaces Phase 4 stub)
  *
  * V13-1 fix: Bypass apiCaller(), query DB directly.
- * V15-1 fix (2026-07-19): Remove withTimeout wrapper — it uses setTimeout
- *   which doesn't fire during Next.js static prerendering, causing the
- *   Suspense fallback to be committed permanently. The DB driver's own
- *   10s AbortSignal timeout (neonConfig.fetchFunction) is sufficient.
- *   The .catch(() => []) handles all error cases (DB unreachable, query
- *   timeout, etc.) and returns empty arrays so the page renders with
- *   fallback content instead of hanging on "Loading…".
+ * V15-1 fix: Remove withTimeout (setTimeout doesn't fire during prerender).
+ * V16-1 fix (2026-07-19): Use force-dynamic instead of ISR revalidate.
+ *   Root cause: Next.js auto-wraps async Server Components in <Suspense>.
+ *   During static prerender, if the DB query hangs (neon-http fetch doesn't
+ *   complete during build), the Suspense fallback ("Loading…") is committed
+ *   permanently as the page's static HTML. Neither .catch() nor AbortSignal
+ *   can help because the query is HANGING (not erroring).
+ *   Fix: mark the page as force-dynamic so it's NEVER prerendered. It always
+ *   renders at request time where fetch() + setTimeout work normally. The
+ *   DB query completes in <2s on a warm Neon connection, well within
+ *   Vercel's 10s function timeout. No apiCaller() → no headers() → no
+ *   streaming → the page returns complete HTML.
  *
  * Server component orchestrating all 9 sections from the mockup.
- * ISR revalidate = 3600 (1 hour). Parallel fetch (DB queries).
  *
- * Source: MEP Phase 12 F12-01 + V15-1 root-cause analysis.
+ * Source: MEP Phase 12 F12-01 + V16-1 root-cause analysis.
  */
 
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
@@ -42,8 +46,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
-// ISR — revalidate every 1 hour
-export const revalidate = 3600;
+// V16-1: force-dynamic — always render at request time (never prerender).
+// This prevents the Suspense fallback from being committed permanently.
+export const dynamic = 'force-dynamic';
 
 interface ScheduleSession {
   id: string;

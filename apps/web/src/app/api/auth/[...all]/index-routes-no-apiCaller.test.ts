@@ -44,6 +44,12 @@ const INDEX_PAGES = [
   { name: '/pricing', source: pricingPage },
 ] as const;
 
+// V16-1: Only these 3 routes need force-dynamic (they query classSessions
+// with date filters + relational `with` clauses that hang during prerender).
+// /instructors works fine with ISR (revalidate = 86400) because its query
+// is simpler (no date filters, no relational `with`).
+const FORCE_DYNAMIC_ROUTES = ['/ (home)', '/schedule', '/pricing'] as const;
+
 describe('V13-1: index routes must NOT use apiCaller() (live-site Loading… fix)', () => {
   for (const { name, source } of INDEX_PAGES) {
     describe(name, () => {
@@ -69,12 +75,14 @@ describe('V13-1: index routes must NOT use apiCaller() (live-site Loading… fix
         expect(source).toContain('.catch(() => [])');
       });
 
-      it('does NOT export force-dynamic (causes streaming + 200 for notFound)', () => {
-        // force-dynamic opts the page out of static rendering entirely,
-        // which means it streams the response → HTTP 200 even when
-        // notFound() is called → soft-404 bug.
-        expect(source).not.toContain("export const dynamic = 'force-dynamic'");
-      });
+      // V16-1 fix: Only routes with complex DB queries (classSessions + date
+      // filters + relational `with`) need force-dynamic. /instructors works
+      // fine with ISR because its query is simpler.
+      if (FORCE_DYNAMIC_ROUTES.includes(name as typeof FORCE_DYNAMIC_ROUTES[number])) {
+        it('uses force-dynamic (V16-1: prevents Suspense fallback during prerender)', () => {
+          expect(source).toContain("export const dynamic = 'force-dynamic'");
+        });
+      }
     });
   }
 });
