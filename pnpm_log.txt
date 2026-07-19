@@ -1,16 +1,31 @@
-$ docker compose -f docker-compose.yml down -v postgres
-WARN[0000] /home/project/stillwater/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
-[+] Running 3/3
- ✔ Container stillwater_postgres      Removed                                                                                                                                                                                          0.3s 
- ✔ Volume stillwater_postgres_data    Removed                                                                                                                                                                                          0.1s 
- ✔ Network stillwater_stillwater_net  Removed                                                                                                                                                                                          0.3s 
+$ pnpm install
+Scope: all 14 workspace projects
+Already up to date
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 11.9.0 → 11.15.0.    │
+   │   Changelog: https://pnpm.io/v/11.15.0   │
+   │     To update, run: pnpm add -g pnpm     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+Done in 673ms using pnpm v11.9.0
 (venv) pete@pop-os:/home/project/stillwater
-$ docker compose -f docker-compose.yml up -d postgres
-WARN[0000] /home/project/stillwater/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
-[+] Running 3/3
- ✔ Network stillwater_stillwater_net  Created                                                                                                                                                                                          0.2s 
- ✔ Volume stillwater_postgres_data    Created                                                                                                                                                                                          0.1s 
- ✔ Container stillwater_postgres      Started                                                                                                                                                                                          2.1s 
+$ pnpm db:setup
+$ bash scripts/db-setup.sh
+🌱 Stillwater database setup
+
+  ✅ .env.local already exists.
+
+  ✅ DATABASE_URL_UNPOOLED is set in .env.local
+
+  ✅ Postgres container is running
+
+✅ Setup complete. Next steps:
+   pnpm db:migrate     # Apply database migrations
+   pnpm db:seed        # Seed base demo data
+   pnpm db:seed:e2e    # Seed E2E test data (on top of base)
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm db:migrate
 $ turbo db:migrate --filter=@stillwater/db
@@ -28,18 +43,18 @@ $ turbo db:migrate --filter=@stillwater/db
    • Running db:migrate in 1 packages
    • Remote caching disabled
 
-@stillwater/db:db:migrate: cache bypass, force executing d1480a5716587e1c
+@stillwater/db:db:migrate: cache bypass, force executing 9dcf70e3c8f206be
 @stillwater/db:db:migrate: $ drizzle-kit migrate
 @stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
 @stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
-@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
-@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ suppress logs { quiet: true }
+@stillwater/db:db:migrate: ◇ injected env (34) from ../../.env.local // tip: ⌘ enable debugging { debug: true }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
 @stillwater/db:db:migrate: Using 'pg' driver for database querying
 [✓] migrations applied successfully!
 
  Tasks:    1 successful, 1 total
 Cached:    0 cached, 1 total
-  Time:    1.854s 
+  Time:    1.897s 
 
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm db:seed
@@ -58,17 +73,17 @@ $ turbo db:seed --filter=@stillwater/db
    • Running db:seed in 1 packages
    • Remote caching disabled
 
-@stillwater/db:db:migrate: cache bypass, force executing d1480a5716587e1c
+@stillwater/db:db:migrate: cache bypass, force executing 9dcf70e3c8f206be
 @stillwater/db:db:migrate: $ drizzle-kit migrate
 @stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
 @stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
-@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
-@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ◈ encrypted .env [www.dotenvx.com]
+@stillwater/db:db:migrate: ◇ injected env (34) from ../../.env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ◈ secrets for agents [www.dotenvx.com]
 @stillwater/db:db:migrate: Using 'pg' driver for database querying
 [✓] migrations applied successfully!
-@stillwater/db:db:seed: cache bypass, force executing 693184eea05f5f55
+@stillwater/db:db:seed: cache bypass, force executing c6cbb6e201a93efb
 @stillwater/db:db:seed: $ tsx src/seed/index.ts
-@stillwater/db:db:seed: ◇ injected env (31) from ../../.env.local // tip: ⌁ auth for agents [www.vestauth.com]
+@stillwater/db:db:seed: ◇ injected env (34) from ../../.env.local // tip: ◈ encrypted .env [www.dotenvx.com]
 @stillwater/db:db:seed: 🌱 Seeding Stillwater development data...
 @stillwater/db:db:seed: 
 @stillwater/db:db:seed:   Inserting 5 users...
@@ -96,7 +111,7 @@ $ turbo db:seed --filter=@stillwater/db
 
  Tasks:    2 successful, 2 total
 Cached:    0 cached, 2 total
-  Time:    2.881s 
+  Time:    3.156s 
 
 (venv) pete@pop-os:/home/project/stillwater
 $ pnpm db:seed:e2e
@@ -115,9 +130,9 @@ $ turbo db:seed:e2e --filter=@stillwater/db
    • Running db:seed:e2e in 1 packages
    • Remote caching disabled
 
-@stillwater/db:db:seed:e2e: cache bypass, force executing ea7324442df2cd69
+@stillwater/db:db:seed:e2e: cache bypass, force executing 23ba2cb9c2246142
 @stillwater/db:db:seed:e2e: $ tsx src/seed/e2e.ts
-@stillwater/db:db:seed:e2e: ◇ injected env (31) from ../../.env.local // tip: ⌘ enable debugging { debug: true }
+@stillwater/db:db:seed:e2e: ◇ injected env (34) from ../../.env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
 @stillwater/db:db:seed:e2e: 🌱 Seeding E2E test data (layers on top of base seed)...
 @stillwater/db:db:seed:e2e: 
 @stillwater/db:db:seed:e2e:   Inserting 5 E2E test users...
@@ -145,46 +160,12 @@ $ turbo db:seed:e2e --filter=@stillwater/db
 
  Tasks:    1 successful, 1 total
 Cached:    0 cached, 1 total
-  Time:    1.434s 
+  Time:    1.367s 
 
+$ rm -rf .next */.next */*/.next
 (venv) pete@pop-os:/home/project/stillwater
-$ vi pnpm_log_3.txt
+$ diff .env.local apps/web/.env.local 
 (venv) pete@pop-os:/home/project/stillwater
-$ docker ps
-CONTAINER ID   IMAGE                                 COMMAND                  CREATED          STATUS                            PORTS                                         NAMES
-af3049632f24   postgres:17-alpine                    "docker-entrypoint.s…"   16 minutes ago   Up 16 minutes (healthy)           0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp   stillwater_postgres
-5ddc275efb9c   pgvector/pgvector:0.8.1-pg16-trixie   "docker-entrypoint.s…"   5 months ago     Restarting (137) 18 seconds ago                                                 vectordb
-5ce8f509a499   getmeili/meilisearch:v1.12.3          "tini -- /bin/sh -c …"   5 months ago     Restarting (137) 9 seconds ago                                                  chat-meilisearch
-(venv) pete@pop-os:/home/project/stillwater
-$ pnpm db:migrate
-$ turbo db:migrate --filter=@stillwater/db
-╭───────────────────────────────────────────────────────────────────────────╮
-│                                                                           │
-│                    Update available v2.10.4 ≫ v2.10.5                     │
-│    Changelog: https://github.com/vercel/turborepo/releases/tag/v2.10.5    │
-│           Run "pnpm dlx @turbo/codemod@latest update" to update           │
-│                                                                           │
-│          Follow @turborepo for updates: https://x.com/turborepo           │
-╰───────────────────────────────────────────────────────────────────────────╯
-• turbo 2.10.4
-
-   • Packages in scope: @stillwater/db
-   • Running db:migrate in 1 packages
-   • Remote caching disabled
-
-@stillwater/db:db:migrate: cache bypass, force executing d1480a5716587e1c
-@stillwater/db:db:migrate: $ drizzle-kit migrate
-@stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
-@stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
-@stillwater/db:db:migrate: ◇ injected env (31) from ../../.env.local // tip: ⌘ enable debugging { debug: true }
-@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ◈ secrets for agents [www.dotenvx.com]
-@stillwater/db:db:migrate: Using 'pg' driver for database querying
-[✓] migrations applied successfully!
-
- Tasks:    1 successful, 1 total
-Cached:    0 cached, 1 total
-  Time:    1.635s 
-
 $ pnpm build
 $ turbo build
 ╭───────────────────────────────────────────────────────────────────────────╮
@@ -201,30 +182,23 @@ $ turbo build
    • Running build in 13 packages
    • Remote caching disabled
 
-@stillwater/studio:build: cache miss, executing 3fe24ce0685c86bc
-@stillwater/db:build: cache miss, executing 55a9b6e6edfa9d2d
-@stillwater/config:build: cache miss, executing 2547cbad28c39a03
-@stillwater/ui:build: cache miss, executing b45f744e03b59fff
-@stillwater/ui:build: $ tsc --build
+@stillwater/db:build: cache hit, replaying logs 55a9b6e6edfa9d2d
 @stillwater/db:build: $ tsc --build
+@stillwater/ui:build: cache hit, replaying logs b45f744e03b59fff
+@stillwater/config:build: cache hit, replaying logs 2547cbad28c39a03
 @stillwater/config:build: $ tsc --build
-@stillwater/studio:build: $ sanity build
-@stillwater/email:build: cache miss, executing ecbe774454c1ff48
-@stillwater/payments:build: cache miss, executing 9c3e84edd93fe71e
-@stillwater/auth:build: cache miss, executing 3d92407b1e798ab3
-@stillwater/payments:build: $ tsc --build
-@stillwater/email:build: $ tsc --build
+@stillwater/ui:build: $ tsc --build
+@stillwater/email:build: cache hit, replaying logs ecbe774454c1ff48
+@stillwater/auth:build: cache hit, replaying logs 3d92407b1e798ab3
 @stillwater/auth:build: $ tsc --build
-@stillwater/api:build: cache miss, executing 9c1fb6eb0cf0c9e6
+@stillwater/payments:build: cache hit, replaying logs 9c3e84edd93fe71e
+@stillwater/email:build: $ tsc --build
+@stillwater/payments:build: $ tsc --build
+@stillwater/api:build: cache hit, replaying logs 9c1fb6eb0cf0c9e6
 @stillwater/api:build: $ tsc --build
-@stillwater/web:build: cache miss, executing ac546f8c103e64b4
-@stillwater/web:build: $ next build
-@stillwater/web:build: ▲ Next.js 16.2.10 (Turbopack)
-@stillwater/web:build: - Environments: .env.local
-@stillwater/web:build: - Experiments (use with caution):
-@stillwater/web:build:   · clientTraceMetadata
-@stillwater/web:build: 
-@stillwater/web:build:   Creating an optimized production build ...
+@stillwater/web:build: cache miss, executing 8418f16f91b9a12b
+@stillwater/studio:build: cache hit, replaying logs 3fe24ce0685c86bc
+@stillwater/studio:build: $ sanity build
 @stillwater/studio:build: 
 @stillwater/studio:build: 
 @stillwater/studio:build:    ╭──────────────────────────────────────╮
@@ -236,15 +210,24 @@ $ turbo build
 @stillwater/studio:build:    ╰──────────────────────────────────────╯
 @stillwater/studio:build: 
 @stillwater/studio:build: 
-@stillwater/web:build: ✓ Compiled successfully in 24.6s
-✓ Completed runAfterProductionCompile in 448ms
-@stillwater/web:build: ✓ Finished TypeScript in 15.9s 
-⚠ Using edge runtime on a page currently disables static generation for that page
 @stillwater/studio:build:  ›   Warning: Declared version of styled-components (^6.1.13) is not compatible with the version required by sanity (^6.1.15). This might cause problems!
 ✔ Clean output folder (93ms)
+✔ Build Sanity Studio (38324ms)
+@stillwater/studio:build: 
+@stillwater/web:build: $ next build
+@stillwater/web:build: ▲ Next.js 16.2.10 (Turbopack)
+@stillwater/web:build: - Environments: .env.local
+@stillwater/web:build: - Experiments (use with caution):
+@stillwater/web:build:   · clientTraceMetadata
+@stillwater/web:build: 
+@stillwater/web:build:   Creating an optimized production build ...
+@stillwater/web:build: ✓ Compiled successfully in 27.7s
+✓ Completed runAfterProductionCompile in 442ms
+@stillwater/web:build: ✓ Finished TypeScript in 17.3s 
+⚠ Using edge runtime on a page currently disables static generation for that page
 @stillwater/web:build: ✓ Collecting page data using 3 workers in 4.2s 
-✓ Generating static pages using 3 workers (20/20) in 686ms
-@stillwater/web:build: ✓ Finalizing page optimization in 8ms 
+✓ Generating static pages using 3 workers (20/20) in 907ms
+@stillwater/web:build: ✓ Finalizing page optimization in 14ms 
 @stillwater/web:build: 
 @stillwater/web:build: Route (app)                                     Revalidate  Expire
 @stillwater/web:build: ┌ ○ /                                                   1h      1y
@@ -298,12 +281,10 @@ $ turbo build
 @stillwater/web:build: ƒ  (Dynamic)  server-rendered on demand
 @stillwater/web:build: 
 @stillwater/web:build: 
-✔ Build Sanity Studio (38324ms)
-@stillwater/studio:build: 
 
  Tasks:    9 successful, 9 total
-Cached:    0 cached, 9 total
-  Time:    1m28.627s 
+Cached:    8 cached, 9 total
+  Time:    53.663s 
 
 (venv) pete@pop-os:/home/project/stillwater
 $ cd apps/web/
@@ -316,13 +297,13 @@ $ next build
   · clientTraceMetadata
 
   Creating an optimized production build ...
-✓ Compiled successfully in 24.5s
-✓ Completed runAfterProductionCompile in 378ms
-✓ Finished TypeScript in 15.8s    
+✓ Compiled successfully in 28.0s
+✓ Completed runAfterProductionCompile in 475ms
+✓ Finished TypeScript in 17.8s    
 ⚠ Using edge runtime on a page currently disables static generation for that page
-✓ Collecting page data using 3 workers in 3.9s    
-✓ Generating static pages using 3 workers (20/20) in 787ms
-✓ Finalizing page optimization in 8ms    
+✓ Collecting page data using 3 workers in 4.3s    
+✓ Generating static pages using 3 workers (20/20) in 937ms
+✓ Finalizing page optimization in 9ms    
 
 Route (app)                                     Revalidate  Expire
 ┌ ○ /                                                   1h      1y
@@ -375,4 +356,11 @@ Route (app)                                     Revalidate  Expire
 ●  (SSG)      prerendered as static HTML (uses generateStaticParams)
 ƒ  (Dynamic)  server-rendered on demand
 
+(venv) pete@pop-os:/home/project/stillwater/apps/web
+$ pnpm start
+$ next start
+▲ Next.js 16.2.10
+- Local:         http://localhost:3000
+- Network:       http://192.168.2.132:3000
+✓ Ready in 189ms
 
