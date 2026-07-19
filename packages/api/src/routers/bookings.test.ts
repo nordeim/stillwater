@@ -93,6 +93,11 @@ const enrollmentFixture = {
  * V13-2 fix (2026-07-19): Added waitlistEntries mock for cancel-promotes-next
  * behavior. The cancel mutation now finds the next-in-line waitlist entry
  * inside the transaction and updates its status to 'offered'.
+ *
+ * V13-5 fix (2026-07-19): Added memberSubscriptions + classPackages mocks
+ * for credit consumption in book(). The book mutation now verifies the
+ * member has an active subscription with credits > 0 OR a credit pack with
+ * remaining credits, and decrements accordingly.
  */
 function makeTx(overrides: {
   session?: unknown;
@@ -108,6 +113,13 @@ function makeTx(overrides: {
   // Set nextWaitlistEntry to control the waitlist-promotion path.
   // undefined = no waitlist entry (no promotion). null = explicit no entry.
   nextWaitlistEntry?: unknown;
+  // V13-5 fix: book mutation looks up active subscription to check credits.
+  // undefined = no active subscription (will fall through to credit pack).
+  // null = explicit "no subscription" (different from undefined for clarity).
+  activeSubscription?: unknown;
+  // V13-5 fix: book mutation looks up credit pack as fallback.
+  // undefined = no credit pack (will throw PAYMENT_REQUIRED).
+  activeCreditPack?: unknown;
 } = {}) {
   const execute = vi.fn().mockResolvedValue([{ pg_advisory_xact_lock: '' }]);
   const findFirstSession = vi.fn().mockResolvedValue(overrides.session === undefined ? sessionFixture : overrides.session);
@@ -121,6 +133,14 @@ function makeTx(overrides: {
   // V13-2: waitlist findFirst for cancel's next-in-line lookup
   const findFirstWaitlist = vi.fn().mockResolvedValue(
     overrides.nextWaitlistEntry === undefined ? undefined : overrides.nextWaitlistEntry,
+  );
+  // V13-5: subscription findFirst for book's credit check
+  const findFirstSubscription = vi.fn().mockResolvedValue(
+    overrides.activeSubscription === undefined ? undefined : overrides.activeSubscription,
+  );
+  // V13-5: credit pack findFirst for book's fallback credit check
+  const findFirstCreditPack = vi.fn().mockResolvedValue(
+    overrides.activeCreditPack === undefined ? undefined : overrides.activeCreditPack,
   );
   const where = vi.fn().mockResolvedValue([{ count: overrides.enrolledCount ?? 0 }]);
   const from = vi.fn().mockReturnValue({ where });
@@ -154,6 +174,8 @@ function makeTx(overrides: {
         classSessions: { findFirst: findFirstSession },
         enrollments: { findFirst: findFirstEnrollment },
         waitlistEntries: { findFirst: findFirstWaitlist },
+        memberSubscriptions: { findFirst: findFirstSubscription },
+        classPackages: { findFirst: findFirstCreditPack },
       },
       select,
       insert,
@@ -164,6 +186,8 @@ function makeTx(overrides: {
       findFirstSession,
       findFirstEnrollment,
       findFirstWaitlist,
+      findFirstSubscription,
+      findFirstCreditPack,
       where,
       from,
       select,
@@ -189,7 +213,11 @@ function makeTransactionTx(tx: unknown) {
 
 describe('bookingsRouter.book — happy path', () => {
   it('acquires advisory lock, checks capacity, and inserts enrollment', async () => {
-    const { tx, spies } = makeTx({ enrolledCount: 5 });
+    // V13-5: provide an active subscription with credits so the credit check passes
+    const { tx, spies } = makeTx({
+      enrolledCount: 5,
+      activeSubscription: { id: 'sub-1', memberId: MEMBER_ID, creditsRemaining: 10 },
+    });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);
     const caller = bookingsRouter.createCaller(ctx);
@@ -213,9 +241,184 @@ describe('bookingsRouter.book — happy path', () => {
   });
 });
 
+/**
+ * V13-5 (2026-07-19, Phase B audit C3 fix): Credit consumption in bookings.book.
+ *
+ * The book mutation was inserting enrollments without checking if the member
+ * has an active subscription with credits, or a credit pack with remaining
+ * credits. Any authenticated member could book unlimited sessions for free.
+ *
+ * Fix: inside the transaction (after capacity check, before insert):
+ *   1. Look up active subscription (status='active', currentPeriodEnd > now)
+ *   2. If subscription has creditsRemaining > 0: decrement + set packageCreditId=null
+ *   3. Else: look up credit pack (usedCredits < totalCredits, not expired)
+ *   4. If credit pack found: increment usedCredits + set packageCreditId=pack.id
+ *   5. Else: throw PAYMENT_REQUIRED
+ *
+ * Source: Phase B audit C3; PAD §8.4 bookings.book; design.md Layer 4.
+ */
+describe('bookingsRouter.book — V13-5 credit consumption (C3 fix)', () => {
+  it('BOOK-004: consumes one subscription credit on successful booking', async () => {
+    const { tx, spies } = makeTx({
+      enrolledCount: 5,
+      activeSubscription: {
+        id: 'sub-1',
+        memberId: MEMBER_ID,
+        creditsRemaining: 10,
+        status: 'active',
+      },
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
+    const caller = bookingsRouter.createCaller(ctx);
+
+    const result = await caller.book({ sessionId: SESSION_ID });
+
+    expect(result).toEqual(enrollmentFixture);
+    // V13-5: subscription lookup happened
+    expect(spies.findFirstSubscription).toHaveBeenCalledTimes(1);
+    // V13-5: credit pack lookup did NOT happen (subscription was sufficient)
+    expect(spies.findFirstCreditPack).not.toHaveBeenCalled();
+    // V13-5: subscription credits decremented via update()
+    //   First update() call: subscription decrement
+    //   (No second update — enrollment is an INSERT, not an update)
+    expect(spies.update).toHaveBeenCalledTimes(1);
+    expect(spies.setUpdate.mock.calls[0][0]).toMatchObject({
+      creditsRemaining: 9, // 10 - 1
+    });
+    // V13-5: enrollment insert does NOT set packageCreditId (subscription, not pack)
+    expect(spies.values.mock.calls[0][0]).toMatchObject({
+      sessionId: SESSION_ID,
+      memberId: MEMBER_ID,
+      status: 'confirmed',
+      packageCreditId: null,
+    });
+  });
+
+  it('BOOK-004-alt: falls back to credit pack when subscription has 0 credits', async () => {
+    const { tx, spies } = makeTx({
+      enrolledCount: 5,
+      activeSubscription: {
+        id: 'sub-1',
+        memberId: MEMBER_ID,
+        creditsRemaining: 0, // No subscription credits left
+        status: 'active',
+      },
+      activeCreditPack: {
+        id: 'pack-1',
+        memberId: MEMBER_ID,
+        totalCredits: 10,
+        usedCredits: 3,
+        expiresAt: new Date('2026-12-31'),
+      },
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
+    const caller = bookingsRouter.createCaller(ctx);
+
+    const result = await caller.book({ sessionId: SESSION_ID });
+
+    expect(result).toEqual(enrollmentFixture);
+    // V13-5: both lookups happened (subscription then credit pack)
+    expect(spies.findFirstSubscription).toHaveBeenCalledTimes(1);
+    expect(spies.findFirstCreditPack).toHaveBeenCalledTimes(1);
+    // V13-5: credit pack usedCredits incremented via update()
+    expect(spies.update).toHaveBeenCalledTimes(1);
+    expect(spies.setUpdate.mock.calls[0][0]).toMatchObject({
+      usedCredits: 4, // 3 + 1
+    });
+    // V13-5: enrollment insert sets packageCreditId to the pack's id
+    expect(spies.values.mock.calls[0][0]).toMatchObject({
+      sessionId: SESSION_ID,
+      memberId: MEMBER_ID,
+      status: 'confirmed',
+      packageCreditId: 'pack-1',
+    });
+  });
+
+  it('BOOK-004-unlimited: subscription with null creditsRemaining (unlimited plan) does not decrement', async () => {
+    const { tx, spies } = makeTx({
+      enrolledCount: 5,
+      activeSubscription: {
+        id: 'sub-unlimited',
+        memberId: MEMBER_ID,
+        creditsRemaining: null, // Unlimited plan — no decrement
+        status: 'active',
+      },
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
+    const caller = bookingsRouter.createCaller(ctx);
+
+    const result = await caller.book({ sessionId: SESSION_ID });
+
+    expect(result).toEqual(enrollmentFixture);
+    // V13-5: subscription lookup happened
+    expect(spies.findFirstSubscription).toHaveBeenCalledTimes(1);
+    // V13-5: credit pack lookup did NOT happen (unlimited subscription)
+    expect(spies.findFirstCreditPack).not.toHaveBeenCalled();
+    // V13-5: NO update() call — unlimited plan doesn't decrement
+    expect(spies.update).not.toHaveBeenCalled();
+    // V13-5: enrollment insert does NOT set packageCreditId
+    expect(spies.values.mock.calls[0][0]).toMatchObject({
+      packageCreditId: null,
+    });
+  });
+
+  it('BOOK-005: throws PAYMENT_REQUIRED when no active subscription AND no credit pack', async () => {
+    const { tx, spies } = makeTx({
+      enrolledCount: 5,
+      activeSubscription: undefined, // No active subscription
+      activeCreditPack: undefined,   // No credit pack
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
+    const caller = bookingsRouter.createCaller(ctx);
+
+    await expect(caller.book({ sessionId: SESSION_ID })).rejects.toMatchObject({
+      code: 'PAYMENT_REQUIRED',
+    });
+    // V13-5: both lookups happened
+    expect(spies.findFirstSubscription).toHaveBeenCalledTimes(1);
+    expect(spies.findFirstCreditPack).toHaveBeenCalledTimes(1);
+    // V13-5: NO insert (booking rejected)
+    expect(spies.insert).not.toHaveBeenCalled();
+  });
+
+  it('BOOK-005-alt: throws PAYMENT_REQUIRED when subscription credits = 0 AND no credit pack', async () => {
+    const { tx, spies } = makeTx({
+      enrolledCount: 5,
+      activeSubscription: {
+        id: 'sub-1',
+        memberId: MEMBER_ID,
+        creditsRemaining: 0,
+        status: 'active',
+      },
+      activeCreditPack: undefined, // No credit pack fallback
+    });
+    const transaction = makeTransactionTx(tx);
+    const ctx = makeCtx({ transaction } as never);
+    const caller = bookingsRouter.createCaller(ctx);
+
+    await expect(caller.book({ sessionId: SESSION_ID })).rejects.toMatchObject({
+      code: 'PAYMENT_REQUIRED',
+    });
+    expect(spies.insert).not.toHaveBeenCalled();
+  });
+});
+
 describe('bookingsRouter.book — error cases', () => {
+  // V13-5: All error-case tests that reach the capacity check must provide
+  // an activeSubscription so the credit check doesn't fail first.
+  // Tests that fail BEFORE the credit check (NOT_FOUND, CONFLICT on double-book,
+  // FORBIDDEN, UNAUTHORIZED) don't need it.
+  const ACTIVE_SUB = { id: 'sub-1', memberId: MEMBER_ID, creditsRemaining: 10, status: 'active' };
+
   it('throws NOT_FOUND when session does not exist', async () => {
-    const { tx } = makeTx({ session: null });
+    const { tx } = makeTx({
+      session: null,
+      activeSubscription: ACTIVE_SUB,
+    });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);
     const caller = bookingsRouter.createCaller(ctx);
@@ -227,6 +430,7 @@ describe('bookingsRouter.book — error cases', () => {
   it('throws CONFLICT when session is not scheduled', async () => {
     const { tx } = makeTx({
       session: { ...sessionFixture, status: 'cancelled' },
+      activeSubscription: ACTIVE_SUB,
     });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);
@@ -237,7 +441,10 @@ describe('bookingsRouter.book — error cases', () => {
   });
 
   it('throws CONFLICT when member is already enrolled', async () => {
-    const { tx } = makeTx({ existingEnrollment: enrollmentFixture });
+    const { tx } = makeTx({
+      existingEnrollment: enrollmentFixture,
+      activeSubscription: ACTIVE_SUB,
+    });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);
     const caller = bookingsRouter.createCaller(ctx);
@@ -247,7 +454,10 @@ describe('bookingsRouter.book — error cases', () => {
   });
 
   it('throws CONFLICT when session is full (enrolledCount >= capacity)', async () => {
-    const { tx } = makeTx({ enrolledCount: 20 }); // capacity is 20 from sessionFixture
+    const { tx } = makeTx({
+      enrolledCount: 20, // capacity is 20 from sessionFixture
+      activeSubscription: ACTIVE_SUB,
+    });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);
     const caller = bookingsRouter.createCaller(ctx);
@@ -278,6 +488,7 @@ describe('bookingsRouter.book — error cases', () => {
     const { tx, spies } = makeTx({
       session: { ...sessionFixture, overrideCapacity: 5 },
       enrolledCount: 4,
+      activeSubscription: ACTIVE_SUB,
     });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);
@@ -297,6 +508,7 @@ describe('bookingsRouter.book — error cases', () => {
         room: { id: '44444444-4444-4444-4444-444444444444', capacity: 10 },
       },
       enrolledCount: 9,
+      activeSubscription: ACTIVE_SUB,
     });
     const transaction = makeTransactionTx(tx);
     const ctx = makeCtx({ transaction } as never);

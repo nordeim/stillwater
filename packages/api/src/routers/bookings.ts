@@ -24,11 +24,17 @@
  */
 
 import { z } from 'zod';
-import { eq, and, sql, asc } from 'drizzle-orm';
+import { eq, and, sql, asc, gt, or, isNull } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 import { router, protectedProcedure, staffProcedure } from '../trpc';
 import { rateLimit } from '../middleware/rateLimit';
-import { classSessions, enrollments, waitlistEntries } from '@stillwater/db';
+import {
+  classSessions,
+  enrollments,
+  waitlistEntries,
+  memberSubscriptions,
+  classPackages,
+} from '@stillwater/db';
 
 // Rate limit: max 10 bookings per minute per user (MEP acceptance criteria)
 const bookingRateLimit = rateLimit({ limit: 10, window: '1 m' });
@@ -128,13 +134,91 @@ export const bookingsRouter = router({
           });
         }
 
-        // 5. Insert enrollment
+        // V13-5 fix (2026-07-19, Phase B audit C3): Credit consumption.
+        // Before inserting the enrollment, verify the member has an active
+        // subscription with credits > 0, OR a credit pack with remaining
+        // credits. Decrement accordingly. Throw PAYMENT_REQUIRED if neither.
+        // This MUST be inside the transaction (atomic with the insert) and
+        // protected by the advisory lock (prevents race conditions where two
+        // concurrent bookings both see credits=1 and both succeed).
+        //
+        // Logic:
+        //   1. Look up active subscription (status='active')
+        //   2. If subscription found AND creditsRemaining === null: unlimited
+        //      plan — no decrement, no credit pack lookup, proceed to insert.
+        //   3. If subscription found AND creditsRemaining > 0: decrement by 1,
+        //      proceed to insert with packageCreditId=null.
+        //   4. Else (no subscription, OR subscription credits === 0): look up
+        //      credit pack (usedCredits < totalCredits, not expired).
+        //   5. If credit pack found: increment usedCredits by 1, set packageCreditId.
+        //   6. Else: throw PAYMENT_REQUIRED.
+        //
+        // Source: Phase B audit C3; PAD §8.4 bookings.book; design.md Layer 4.
+        let packageCreditId: string | null = null;
+
+        const subscription = await tx.query.memberSubscriptions.findFirst({
+          where: and(
+            eq(memberSubscriptions.memberId, memberId),
+            eq(memberSubscriptions.status, 'active'),
+          ),
+        });
+
+        // Determine if we need to fall back to a credit pack
+        const hasUnlimitedSubscription = !!subscription && subscription.creditsRemaining === null;
+        const hasSubscriptionCredits = !!subscription
+          && subscription.creditsRemaining !== null
+          && subscription.creditsRemaining > 0;
+
+        if (hasUnlimitedSubscription) {
+          // Unlimited plan — no decrement, no credit pack lookup
+          // (packageCreditId stays null)
+        } else if (hasSubscriptionCredits) {
+          // Decrement subscription credits
+          await tx
+            .update(memberSubscriptions)
+            .set({ creditsRemaining: (subscription!.creditsRemaining as number) - 1 })
+            .where(eq(memberSubscriptions.id, subscription!.id));
+          // packageCreditId stays null (subscription, not credit pack)
+        } else {
+          // No subscription, OR subscription credits exhausted — try credit pack
+          const creditPack = await tx.query.classPackages.findFirst({
+            where: and(
+              eq(classPackages.memberId, memberId),
+              // has remaining credits: usedCredits < totalCredits
+              sql`${classPackages.usedCredits} < ${classPackages.totalCredits}`,
+              // not expired: expiresAt > now OR expiresAt IS NULL
+              or(
+                gt(classPackages.expiresAt, new Date()),
+                isNull(classPackages.expiresAt),
+              ),
+            ),
+            orderBy: asc(classPackages.expiresAt), // use soonest-expiring first
+          });
+
+          if (creditPack) {
+            await tx
+              .update(classPackages)
+              .set({ usedCredits: creditPack.usedCredits + 1 })
+              .where(eq(classPackages.id, creditPack.id));
+            packageCreditId = creditPack.id;
+          } else {
+            // No subscription credits AND no credit pack — can't book
+            throw new TRPCError({
+              code: 'PAYMENT_REQUIRED',
+              message:
+                'No active subscription or credit pack available. Purchase a plan to book classes.',
+            });
+          }
+        }
+
+        // 5. Insert enrollment (V13-5: now with packageCreditId if from credit pack)
         const [created] = await tx
           .insert(enrollments)
           .values({
             sessionId: input.sessionId,
             memberId,
             status: 'confirmed',
+            packageCreditId,
           })
           .returning();
 
