@@ -4,8 +4,6 @@ import { db , membershipPlans } from '@stillwater/db';
 
 import type { Metadata } from 'next';
 
-import { withTimeout } from '@/lib/async/withTimeout';
-
 
 export const metadata: Metadata = {
   title: 'Pricing',
@@ -135,25 +133,15 @@ const FALLBACK_PLANS: Plan[] = [
 ];
 
 export default async function PricingPage() {
-  // V13-1 fix: Query DB directly (NOT via apiCaller — see header comment).
-  // .catch(() => []) is applied BEFORE withTimeout so that fast DB
-  // errors (e.g., connection refused) return [] immediately without waiting
-  // for the 8s timeout. withTimeout then handles the slow-but-not-erroring
-  // case (e.g., cold Neon compute endpoint). The order is intentional:
-  //   1. db.query.membershipPlans.findMany() — the Drizzle query (may throw or hang)
-  //   2. .catch(() => []) — converts thrown errors to empty array (fast-fail)
-  //   3. withTimeout(..., 8_000, []) — races against 8s timeout (slow-fail)
-  // If the order were reversed, a fast DB error would wait 8s before returning.
-  const dbPlans = await withTimeout(
-    db.query.membershipPlans
-      .findMany({
-        where: eq(membershipPlans.isActive, true),
-        orderBy: [asc(membershipPlans.sortOrder), asc(membershipPlans.name)],
-      })
-      .catch(() => []),
-    8_000,
-    [],
-  );
+  // V15-1: Query DB directly with .catch(() => []) fallback (NO withTimeout).
+  // The DB driver's own 10s AbortSignal timeout handles hangs.
+  // .catch(() => []) ensures the page always renders (with fallback plans if DB fails).
+  const dbPlans = await db.query.membershipPlans
+    .findMany({
+      where: eq(membershipPlans.isActive, true),
+      orderBy: [asc(membershipPlans.sortOrder), asc(membershipPlans.name)],
+    })
+    .catch(() => []);
 
   // M1 fix: Use fallback plans when DB is unreachable or empty.
   // This ensures /pricing always shows the 3 plans with real prices ($28/$149/$220),

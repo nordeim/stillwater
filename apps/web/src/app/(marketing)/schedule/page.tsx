@@ -5,7 +5,6 @@ import { db , classSessions } from '@stillwater/db';
 import type { Metadata } from 'next';
 
 import { ScheduleGrid } from '@/components/marketing/ScheduleGrid';
-import { withTimeout } from '@/lib/async/withTimeout';
 
 
 export const metadata: Metadata = {
@@ -38,23 +37,20 @@ export default async function SchedulePage() {
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 7);
 
-  // V13-1: Query DB directly (NOT via apiCaller — see header comment).
-  // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
-  const sessions = await withTimeout(
-    db.query.classSessions
-      .findMany({
-        where: and(
-          gte(classSessions.startsAt, weekStart),
-          lte(classSessions.startsAt, weekEnd),
-          eq(classSessions.status, 'scheduled'),
-        ),
-        with: { class: true, instructor: true, room: true },
-        orderBy: asc(classSessions.startsAt),
-      })
-      .catch(() => []),
-    8_000,
-    [],
-  );
+  // V15-1: Query DB directly with .catch(() => []) fallback (NO withTimeout).
+  // The DB driver's own 10s AbortSignal timeout handles hangs.
+  // .catch(() => []) ensures the page always renders (with empty data if DB fails).
+  const sessions = await db.query.classSessions
+    .findMany({
+      where: and(
+        gte(classSessions.startsAt, weekStart),
+        lte(classSessions.startsAt, weekEnd),
+        eq(classSessions.status, 'scheduled'),
+      ),
+      with: { class: true, instructor: true, room: true },
+      orderBy: asc(classSessions.startsAt),
+    })
+    .catch(() => []);
 
   const typedSessions = sessions as unknown as ScheduleSession[];
 

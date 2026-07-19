@@ -62,8 +62,11 @@ describe('V13-1: index routes must NOT use apiCaller() (live-site Loading… fix
         expect(source).toMatch(/from\s+['"]@stillwater\/db['"]/);
       });
 
-      it('uses withTimeout for DB queries (build resilience)', () => {
-        expect(source).toContain('withTimeout');
+      // V15-1 fix: Removed withTimeout requirement — withTimeout uses setTimeout
+      // which doesn't fire during Next.js static prerendering. Pages now use
+      // plain .catch(() => []) which relies on the DB driver's own AbortSignal timeout.
+      it('uses .catch(() => []) for DB query resilience (V15-1: replaced withTimeout)', () => {
+        expect(source).toContain('.catch(() => [])');
       });
 
       it('does NOT export force-dynamic (causes streaming + 200 for notFound)', () => {
