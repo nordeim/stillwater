@@ -1180,3 +1180,69 @@ eliminates the nested Suspense templates.
 | v15 | withTimeout incompatible with prerender | V15-1: remove withTimeout |
 | v16-1 | DB query hangs during prerender | V16-1: force-dynamic on 3 routes |
 | **v16-2** | **React Compiler creates nested Suspense that never resolves** | **V16-2: disable React Compiler** |
+
+---
+
+# Audit Remediation Report v16-3 — 2026-07-19 (CSP strict-dynamic Hydration Fix)
+
+> **THE REAL ROOT CAUSE of the Loading… issue.** V16-1 (force-dynamic) and
+> V16-2 (disable React Compiler) were necessary but insufficient. The actual
+> cause: CSP `'strict-dynamic'` causes browsers to ignore `'unsafe-inline'`,
+> blocking Next.js's inline `$RC` scripts. React never hydrates.
+
+## v16-3 Root Cause Analysis
+
+After V16-2 was deployed, live-site E2E via agent-browser confirmed:
+- `$RC` function: `undefined` (defined in HTML inline script but not executing)
+- `__NEXT_DATA__`: `undefined` (React never initialized)
+- 55 empty Suspense templates (never swapped)
+- 56 hidden divs with real content (never made visible)
+- No console errors, no CSP violation reports
+
+**Root cause:** The CSP had `'unsafe-inline' 'strict-dynamic'` in `script-src`.
+Per the CSP spec (W3C CSP3 §strict-dynamic-usage): **when `'strict-dynamic'`
+is present, `'unsafe-inline'` is IGNORED.** This means all inline scripts
+without a nonce are blocked — including Next.js's `$RC`/`$RS`/`$RV` streaming
+scripts that swap hidden content into Suspense templates and bootstrap React.
+
+The page was server-rendered correctly (146KB HTML with real content in
+hidden divs) but NEVER hydrated client-side. The Suspense fallback ("Loading…")
+stayed visible permanently.
+
+## V16-3 Fix
+
+Removed `'strict-dynamic'` from `script-src` in `next.config.ts`:
+```
+// Before (BROKEN):
+"script-src 'self' 'unsafe-inline' 'strict-dynamic' https://js.stripe.com"
+
+// After (FIXED):
+"script-src 'self' 'unsafe-inline' https://js.stripe.com"
+```
+
+`'unsafe-inline'` is now respected, allowing inline scripts to execute.
+External script chunks (from `'self'`) still load normally.
+
+## V16-3 Quality Gates
+
+| Gate | Result |
+|---|---|
+| `pnpm test` | **763 tests passing** ✅ |
+| `pnpm build` | **9/9 packages** ✅ (home route ƒ Dynamic) |
+
+## The Full Loading… Saga (v1 → v16-3)
+
+The "Loading…" issue had **3 compounding root causes**, each requiring a
+separate fix:
+
+| Version | Fix | What It Addressed |
+|---|---|---|
+| V13-1 | Bypass `apiCaller()`, query DB directly | Eliminated `headers()` → dynamic streaming → Vercel timeout |
+| V15-1 | Remove `withTimeout` | Eliminated `setTimeout` not firing during prerender |
+| V16-1 | `force-dynamic` on 3 routes | Eliminated prerender entirely (DB query hangs during build) |
+| V16-2 | Disable React Compiler | Reduced nested Suspense templates (but not the root cause) |
+| **V16-3** | **Remove `'strict-dynamic'` from CSP** | **THE actual fix — allows inline scripts to execute, React hydrates** |
+
+V16-1 and V16-2 were necessary infrastructure fixes (the pages need to be
+dynamic, and the React Compiler was creating unnecessary Suspense boundaries),
+but V16-3 is the fix that actually makes the page content visible to users.
