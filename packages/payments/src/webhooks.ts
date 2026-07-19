@@ -37,12 +37,15 @@ import {
   memberSubscriptions,
   members,
   membershipPlans,
+  classPackages,
 } from '@stillwater/db';
 import type {
   StripeWebhookEvent,
   StripeWebhookResult,
   StripeSubscriptionEvent,
   StripeInvoiceEvent,
+  StripeCheckoutSessionObject,
+  StripeChargeObject,
 } from './types';
 
 /**
@@ -161,6 +164,18 @@ async function dispatchEvent(
       break;
     case 'invoice.payment_action_required':
       // No-op — email sent in Phase 8 (payment-failed-notify job)
+      break;
+    case 'checkout.session.completed':
+      // V13-6 fix (2026-07-19): Record credit pack purchases.
+      // Fires when a member completes a one-off credit pack purchase
+      // (not a subscription). The handler creates a class_packages row.
+      await handleCheckoutSessionCompleted(event, tx);
+      break;
+    case 'charge.refunded':
+      // V13-6 fix (2026-07-19): Refund audit trail.
+      // No DB update needed beyond the payment_events insert (which happens
+      // automatically after dispatchEvent returns). The refund amount is
+      // captured in the payload jsonb for reporting/reconciliation.
       break;
   }
 }
@@ -373,4 +388,69 @@ function isUniqueViolation(err: unknown): boolean {
     return (err as { code: string }).code === '23505';
   }
   return false;
+}
+
+/**
+ * V13-6 fix (2026-07-19, Phase B audit S5): Handler for checkout.session.completed.
+ *
+ * Fires when a member completes a one-off credit pack purchase via Stripe
+ * Checkout (mode='payment', NOT mode='subscription'). The handler:
+ *   1. Finds the member by stripeCustomerId
+ *   2. Reads the credit pack details from the session metadata
+ *      (set by the checkout creation flow: packageType, credits)
+ *   3. Inserts a class_packages row with totalCredits = metadata.credits,
+ *      usedCredits = 0, stripePaymentIntentId = session.payment_intent
+ *
+ * If the member is not found or metadata is missing, the handler is a no-op
+ * (the event is still recorded as processed in payment_events for audit).
+ *
+ * Source: Phase B audit S5; PAD §15.3;
+ *         https://stripe.com/docs/webhooks (checkout.session.completed).
+ */
+async function handleCheckoutSessionCompleted(
+  event: { data: { object: StripeCheckoutSessionObject } },
+  tx: DrizzleDB | Parameters<Parameters<DrizzleDB['transaction']>[0]>[0],
+): Promise<void> {
+  const session = event.data.object;
+
+  // Find the member by stripeCustomerId
+  const member = await tx.query.members.findFirst({
+    where: eq(members.stripeCustomerId, session.customer),
+  });
+  if (!member) {
+    // Member not found — can't create a class_packages record.
+    // The event is still recorded as processed (idempotency).
+    return;
+  }
+
+  // Read credit pack details from session metadata.
+  // The checkout creation flow (memberships router or future credit-packs
+  // router) sets these when creating the Stripe Checkout Session.
+  const credits = session.metadata?.credits;
+  const packageType = session.metadata?.packageType ?? 'Credit Pack';
+
+  if (!credits) {
+    // No credits metadata — not a credit pack purchase (could be a
+    // subscription checkout, which is handled by subscription events).
+    // Skip class_packages insert.
+    return;
+  }
+
+  const totalCredits = parseInt(credits, 10);
+  if (Number.isNaN(totalCredits) || totalCredits <= 0) {
+    // Invalid credits value — skip insert (audit record still created).
+    return;
+  }
+
+  // Insert the class_packages record
+  await tx.insert(classPackages).values({
+    memberId: member.id,
+    name: packageType,
+    totalCredits,
+    usedCredits: 0,
+    purchasedAt: new Date(),
+    // Credit packs expire 90 days from purchase (per mockup §04 "use within 90 days")
+    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+    stripePaymentIntentId: session.payment_intent ?? null,
+  });
 }

@@ -1,8 +1,8 @@
 /**
  * F7-02 — Stripe webhook event types
  *
- * Discriminated union for the 7 Stripe event types handled by the
- * Stillwater webhook handler (per PAD §15.3 + MEP F7-04).
+ * Discriminated union for the 9 Stripe event types handled by the
+ * Stillwater webhook handler (per PAD §15.3 + MEP F7-04 + V13-6 fix).
  *
  * These types are intentionally minimal — they describe only the fields
  * the webhook handler reads. Stripe's actual event payloads are much
@@ -14,7 +14,7 @@
  * The top-level `subscription.current_period_end` was deprecated in
  * Basil 2025-03-31; use `items.data[0].current_period_end` instead.
  *
- * Events handled (7):
+ * Events handled (9):
  *   1. customer.subscription.created       -> Create MemberSubscription record
  *   2. customer.subscription.updated       -> Sync status, period dates
  *   3. customer.subscription.deleted       -> Mark subscription cancelled
@@ -22,8 +22,10 @@
  *   5. invoice.payment_failed              -> Mark past_due, trigger retry email
  *   6. invoice.payment_action_required     -> Send 3DS authentication email
  *   7. customer.subscription.trial_will_end -> Send trial ending notification
+ *   8. checkout.session.completed          -> Record credit pack purchase (V13-6)
+ *   9. charge.refunded                     -> Record refund event (V13-6)
  *
- * Source: MEP F7-02, PAD §15.3, SKILL §20.7.
+ * Source: MEP F7-02, PAD §15.3, SKILL §20.7, V13-6 fix (2026-07-19).
  */
 
 /**
@@ -64,7 +66,59 @@ export interface StripeInvoiceObject {
 }
 
 /**
- * Discriminated union of the 7 Stripe event types handled by Stillwater.
+ * Minimal shape of a Stripe Checkout Session object as consumed by the webhook
+ * handler (V13-6 fix, 2026-07-19).
+ *
+ * Used for `checkout.session.completed` events — fires when a member completes
+ * a one-off credit pack purchase (not a subscription). The handler records the
+ * purchase in the `class_packages` table.
+ *
+ * Fields:
+ *   - `id`: Stripe checkout session ID (cs_test_... or cs_live_...)
+ *   - `customer`: Stripe customer ID (cus_...) — used to find the member
+ *   - `payment_intent`: Stripe PaymentIntent ID (pi_...) — used to link
+ *   - `amount_total`: Total in cents (e.g., 22000 = $220.00)
+ *   - `metadata`: Stripe metadata dict. Stillwater sets `packageType` and
+ *     `credits` on checkout sessions created for credit pack purchases.
+ */
+export interface StripeCheckoutSessionObject {
+  id: string;
+  customer: string;
+  payment_intent: string | null;
+  amount_total: number | null;
+  currency: string | null;
+  metadata?: {
+    packageType?: string;
+    credits?: string;
+    [key: string]: string | undefined;
+  } | null;
+}
+
+/**
+ * Minimal shape of a Stripe Charge object as consumed by the webhook handler
+ * (V13-6 fix, 2026-07-19).
+ *
+ * Used for `charge.refunded` events — fires when a refund is issued (via
+ * Stripe Dashboard or API). The handler records the refund in the
+ * `payment_events` table for audit purposes.
+ *
+ * Fields:
+ *   - `id`: Stripe charge ID (ch_...)
+ *   - `payment_intent`: Stripe PaymentIntent ID (pi_...) — links to original
+ *   - `amount_refunded`: Total refunded in cents (0 if not refunded)
+ *   - `refunded`: Boolean — true if fully refunded
+ */
+export interface StripeChargeObject {
+  id: string;
+  payment_intent: string | null;
+  amount_refunded: number;
+  refunded: boolean;
+  currency: string;
+}
+
+/**
+ * Discriminated union of the 9 Stripe event types handled by Stillwater
+ * (7 original + 2 added in V13-6 fix, 2026-07-19).
  *
  * The `type` field is the discriminant. Use `event.type` in a switch
  * statement to narrow to the specific variant.
@@ -104,6 +158,16 @@ export type StripeWebhookEvent =
       id: string;
       type: 'invoice.payment_action_required';
       data: { object: StripeInvoiceObject };
+    }
+  | {
+      id: string;
+      type: 'checkout.session.completed';
+      data: { object: StripeCheckoutSessionObject };
+    }
+  | {
+      id: string;
+      type: 'charge.refunded';
+      data: { object: StripeChargeObject };
     };
 
 /**
@@ -137,8 +201,10 @@ export type StripeWebhookResult =
   | { received: false; reason: string };
 
 /**
- * The 7 Stripe event types handled by Stillwater, as a readonly array.
+ * The 9 Stripe event types handled by Stillwater, as a readonly array.
  * Useful for runtime validation (e.g., asserting an event type is one we handle).
+ *
+ * V13-6 fix (2026-07-19): Added 'checkout.session.completed' + 'charge.refunded'.
  */
 export const HANDLED_STRIPE_EVENT_TYPES = [
   'customer.subscription.created',
@@ -148,6 +214,8 @@ export const HANDLED_STRIPE_EVENT_TYPES = [
   'invoice.paid',
   'invoice.payment_failed',
   'invoice.payment_action_required',
+  'checkout.session.completed',
+  'charge.refunded',
 ] as const;
 
 export type HandledStripeEventType = (typeof HANDLED_STRIPE_EVENT_TYPES)[number];

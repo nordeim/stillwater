@@ -27,6 +27,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { DrizzleDB } from '@stillwater/db';
+import { paymentEvents, classPackages } from '@stillwater/db';
 import type { StripeWebhookEvent } from './types';
 import { handleStripeWebhook } from './webhooks';
 
@@ -414,5 +415,148 @@ describe('handleStripeWebhook — advisory lock (ADR-004)', () => {
     // as bookings.test.ts). The SQL content is verified by code review
     // + integration tests against a real database.
     expect(spies.execute).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * V13-6 (2026-07-19, Phase B audit S5 fix): Missing Stripe webhook handlers.
+ *
+ * The dispatchEvent switch only covered 7 events. Two were missing:
+ *   - checkout.session.completed — needed for credit pack purchases (one-off)
+ *   - charge.refunded            — needed for refund audit trail
+ *
+ * Without these handlers, credit pack purchases don't reconcile to the
+ * class_packages table, and refunds don't update payment_events.status.
+ *
+ * Fix: add 2 cases to dispatchEvent + 2 handler functions.
+ *
+ * Source: Phase B audit S5; PAD §15.3 (Stripe webhook events);
+ *         https://stripe.com/docs/webhooks (event types reference).
+ */
+describe('V13-6: handleStripeWebhook — checkout.session.completed (credit pack purchase)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('records credit pack purchase in class_packages table', async () => {
+    const { handleStripeWebhook } = await import('./webhooks');
+    const existingMember = {
+      id: MEMBER_ID,
+      userId: 'user-1',
+      stripeCustomerId: CUSTOMER_ID,
+    };
+    const { tx, spies } = makeTx({ existingMember });
+    const db = makeDb(tx);
+
+    const event: StripeWebhookEvent = {
+      id: 'evt_checkout_001',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_001',
+          customer: CUSTOMER_ID,
+          payment_intent: 'pi_test_001',
+          amount_total: 22000, // $220.00
+          currency: 'usd',
+          metadata: {
+            packageType: '10-class-pack',
+            credits: '10',
+          },
+        },
+      },
+    };
+
+    const result = await handleStripeWebhook(event, db);
+
+    expect(result.received).toBe(true);
+    // V13-6: should have TWO inserts:
+    //   1. class_packages (the credit pack purchase)
+    //   2. payment_events (the idempotency record)
+    expect(spies.insert).toHaveBeenCalledTimes(2);
+    // The first insert should be the class_packages table (by reference)
+    const firstInsertArg = spies.insert.mock.calls[0]?.[0];
+    expect(firstInsertArg).toBe(classPackages);
+  });
+
+  it('skips class_packages insert when member not found (only idempotency record)', async () => {
+    const { handleStripeWebhook } = await import('./webhooks');
+    // existingMember is undefined by default
+    const { tx, spies } = makeTx({ existingMember: undefined });
+    const db = makeDb(tx);
+
+    const event: StripeWebhookEvent = {
+      id: 'evt_checkout_002',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_002',
+          customer: 'cus_unknown_customer',
+          payment_intent: 'pi_test_002',
+          amount_total: 22000,
+          currency: 'usd',
+          metadata: { packageType: '10-class-pack', credits: '10' },
+        },
+      },
+    };
+
+    const result = await handleStripeWebhook(event, db);
+
+    expect(result.received).toBe(true);
+    // V13-6: only ONE insert (payment_events for idempotency, NO class_packages)
+    expect(spies.insert).toHaveBeenCalledTimes(1);
+    const onlyInsertArg = spies.insert.mock.calls[0]?.[0];
+    expect(onlyInsertArg).toBe(paymentEvents);
+  });
+});
+
+describe('V13-6: handleStripeWebhook — charge.refunded (refund audit)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('records refund event in payment_events table (audit trail)', async () => {
+    const { handleStripeWebhook } = await import('./webhooks');
+    const { tx, spies } = makeTx();
+    const db = makeDb(tx);
+
+    const event: StripeWebhookEvent = {
+      id: 'evt_refund_001',
+      type: 'charge.refunded',
+      data: {
+        object: {
+          id: 'ch_test_001',
+          payment_intent: 'pi_test_001',
+          amount_refunded: 22000, // $220.00 fully refunded
+          refunded: true,
+          currency: 'usd',
+        },
+      },
+    };
+
+    const result = await handleStripeWebhook(event, db);
+
+    expect(result.received).toBe(true);
+    // V13-6: payment_events insert happens (audit record)
+    expect(spies.insert).toHaveBeenCalled();
+  });
+
+  it('handles partial refunds (amount_refunded < original)', async () => {
+    const { handleStripeWebhook } = await import('./webhooks');
+    const { tx } = makeTx();
+    const db = makeDb(tx);
+
+    const event: StripeWebhookEvent = {
+      id: 'evt_refund_002',
+      type: 'charge.refunded',
+      data: {
+        object: {
+          id: 'ch_test_002',
+          payment_intent: 'pi_test_002',
+          amount_refunded: 11000, // $110.00 partial refund
+          refunded: false, // not fully refunded
+          currency: 'usd',
+        },
+      },
+    };
+
+    const result = await handleStripeWebhook(event, db);
+
+    expect(result.received).toBe(true);
   });
 });

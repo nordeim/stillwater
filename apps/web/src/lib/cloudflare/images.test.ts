@@ -6,7 +6,9 @@ describe('Cloudflare Images URL signer', () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
-    delete process.env.CLOUDFLARE_IMAGES_KEY;
+    // V13-7: renamed from CLOUDFLARE_IMAGES_KEY to CLOUDFLARE_IMAGES_TOKEN
+    delete process.env.CLOUDFLARE_IMAGES_TOKEN;
+    delete process.env.CLOUDFLARE_IMAGES_KEY; // clean up old name too (transition period)
     delete process.env.CLOUDFLARE_ACCOUNT_ID;
   });
 
@@ -21,7 +23,7 @@ describe('Cloudflare Images URL signer', () => {
     expect(mod.getSignedImageUrl).toBeDefined();
   });
 
-  it('returns null when CLOUDFLARE_IMAGES_KEY is missing (null fallback)', async () => {
+  it('returns null when CLOUDFLARE_IMAGES_TOKEN is missing (null fallback)', async () => {
     const { getSignedImageUrl } = await import('./images');
     const url = getSignedImageUrl('image-id-123', { width: 800 });
     expect(url).toBeNull();
@@ -29,7 +31,7 @@ describe('Cloudflare Images URL signer', () => {
 
   it('returns a signed URL when env vars are present', async () => {
     process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
-    process.env.CLOUDFLARE_IMAGES_KEY = 'test-key';
+    process.env.CLOUDFLARE_IMAGES_TOKEN = 'test-key';
 
     const { getSignedImageUrl } = await import('./images');
     const url = getSignedImageUrl('image-id-123', { width: 800 });
@@ -43,7 +45,7 @@ describe('Cloudflare Images URL signer', () => {
 
   it('supports format=auto for AVIF/WebP negotiation', async () => {
     process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
-    process.env.CLOUDFLARE_IMAGES_KEY = 'test-key';
+    process.env.CLOUDFLARE_IMAGES_TOKEN = 'test-key';
 
     const { getSignedImageUrl } = await import('./images');
     const url = getSignedImageUrl('image-id', { width: 1200, format: 'auto' });
@@ -52,7 +54,7 @@ describe('Cloudflare Images URL signer', () => {
 
   it('uses default expiry of 1 hour when not specified', async () => {
     process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
-    process.env.CLOUDFLARE_IMAGES_KEY = 'test-key';
+    process.env.CLOUDFLARE_IMAGES_TOKEN = 'test-key';
 
     const { getSignedImageUrl } = await import('./images');
     const url = getSignedImageUrl('image-id', { width: 800 });

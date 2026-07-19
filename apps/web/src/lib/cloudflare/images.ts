@@ -8,6 +8,12 @@ import { createHmac } from 'crypto';
  * NEVER import this module in a Client Component — the 'server-only' guard
  * prevents accidental client-side usage (which would leak the signing key).
  *
+ * V13-7 fix (2026-07-19, Phase B audit S6): Aligned env var name with the
+ * t3-env schema in packages/config/src/env.ts. The code previously read
+ * `CLOUDFLARE_IMAGES_KEY` but the env schema defines `CLOUDFLARE_IMAGES_TOKEN`.
+ * This mismatch caused image URL signing to always return null in production
+ * (the env var was never found). Renamed to `CLOUDFLARE_IMAGES_TOKEN` to match.
+ *
  * Per SKILL §15.6: Uses `process.env` directly with null fallback (NOT env module).
  *
  * Usage:
@@ -28,17 +34,21 @@ export interface ImageUrlOptions {
 
 /**
  * Generate a signed Cloudflare Images URL.
- * Returns null when CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_IMAGES_KEY is missing.
+ * Returns null when CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_IMAGES_TOKEN is missing.
+ *
+ * V13-7: env var renamed from CLOUDFLARE_IMAGES_KEY → CLOUDFLARE_IMAGES_TOKEN
+ * to match the t3-env schema (packages/config/src/env.ts:45,105,171).
  */
 export function getSignedImageUrl(
   imageId: string,
   options: ImageUrlOptions = {},
 ): string | null {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const imagesKey = process.env.CLOUDFLARE_IMAGES_KEY;
+  // V13-7: renamed from CLOUDFLARE_IMAGES_KEY to CLOUDFLARE_IMAGES_TOKEN
+  const imagesToken = process.env.CLOUDFLARE_IMAGES_TOKEN;
 
   // Null fallback per SKILL §15.6
-  if (!accountId || !imagesKey) {
+  if (!accountId || !imagesToken) {
     return null;
   }
 
@@ -58,7 +68,7 @@ export function getSignedImageUrl(
 
   // Cloudflare Images signing: HMAC-SHA256 of the path + query string
   const signingString = `/${imageId}?${paramString}`;
-  const sig = createHmac('sha256', imagesKey)
+  const sig = createHmac('sha256', imagesToken)
     .update(signingString)
     .digest('hex');
 

@@ -43,7 +43,10 @@ export function MobileNavDrawer() {
 
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-40 bg-stone-900/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out"
+          // V13-8 fix (2026-07-19, Phase B audit A1): Removed backdrop-blur-sm
+          // (glassmorphism is a banned pattern per SKILL §1.3). Replaced with
+          // a solid bg-stone-900/80 overlay for the same dimming effect.
+          className="fixed inset-0 z-40 bg-stone-900/80 data-[state=open]:animate-in data-[state=closed]:animate-out"
         />
         <Dialog.Content
           className="fixed right-0 top-0 z-50 h-full w-80 max-w-[85vw] bg-sand-50 p-6 shadow-none"
