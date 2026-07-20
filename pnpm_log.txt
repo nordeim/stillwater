@@ -1,25 +1,167 @@
-$ rm -rf .next */.next */*/.next
+$ pnpm db:setup
+$ bash scripts/db-setup.sh
+🌱 Stillwater database setup
+
+  ✅ .env.local already exists.
+
+  ✅ DATABASE_URL_UNPOOLED is set in .env.local
+
+  ✅ Postgres container is running
+
+✅ Setup complete. Next steps:
+   pnpm db:migrate     # Apply database migrations
+   pnpm db:seed        # Seed base demo data
+   pnpm db:seed:e2e    # Seed E2E test data (on top of base)
 (venv) pete@pop-os:/home/project/stillwater
-$ git pull
-remote: Enumerating objects: 19, done.
-remote: Counting objects: 100% (19/19), done.
-remote: Compressing objects: 100% (4/4), done.
-Unpacking objects: 100% (19/19), 5.11 KiB | 74.00 KiB/s, done.
-remote: Total 19 (delta 13), reused 19 (delta 13), pack-reused 0 (from 0)
-From github.com:nordeim/stillwater
-   2fbcc99..9395404  main       -> origin/main
-Updating 2fbcc99..9395404
-Fast-forward
- AUDIT_REMEDIATION.md                                                 | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- apps/web/src/app/(marketing)/page.tsx                                | 27 ++++++++++++++++-----------
- apps/web/src/app/(marketing)/pricing/page.tsx                        |  9 +++++++--
- apps/web/src/app/(marketing)/schedule/page.tsx                       | 13 +++++++------
- apps/web/src/app/api/auth/[...all]/index-routes-no-apiCaller.test.ts | 20 ++++++++++++++------
- 5 files changed, 101 insertions(+), 25 deletions(-)
+$ pnpm db:migrate
+$ turbo db:migrate --filter=@stillwater/db
+╭───────────────────────────────────────────────────────────────────────────╮
+│                                                                           │
+│                    Update available v2.10.4 ≫ v2.10.5                     │
+│    Changelog: https://github.com/vercel/turborepo/releases/tag/v2.10.5    │
+│           Run "pnpm dlx @turbo/codemod@latest update" to update           │
+│                                                                           │
+│          Follow @turborepo for updates: https://x.com/turborepo           │
+╰───────────────────────────────────────────────────────────────────────────╯
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/db
+   • Running db:migrate in 1 packages
+   • Remote caching disabled
+
+@stillwater/db:db:migrate: cache bypass, force executing 9dcf70e3c8f206be
+@stillwater/db:db:migrate: $ drizzle-kit migrate
+@stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
+@stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
+@stillwater/db:db:migrate: ◇ injected env (34) from ../../.env.local // tip: ⌘ suppress logs { quiet: true }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ override existing { override: true }
+@stillwater/db:db:migrate: Using 'pg' driver for database querying
+[✓] migrations applied successfully!
+
+ Tasks:    1 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    1.729s 
+
 (venv) pete@pop-os:/home/project/stillwater
-$ git pull
-Already up to date.
+$ pnpm db:seed
+$ turbo db:seed --filter=@stillwater/db
+╭───────────────────────────────────────────────────────────────────────────╮
+│                                                                           │
+│                    Update available v2.10.4 ≫ v2.10.5                     │
+│    Changelog: https://github.com/vercel/turborepo/releases/tag/v2.10.5    │
+│           Run "pnpm dlx @turbo/codemod@latest update" to update           │
+│                                                                           │
+│          Follow @turborepo for updates: https://x.com/turborepo           │
+╰───────────────────────────────────────────────────────────────────────────╯
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/db
+   • Running db:seed in 1 packages
+   • Remote caching disabled
+
+@stillwater/db:db:migrate: cache bypass, force executing 9dcf70e3c8f206be
+@stillwater/db:db:migrate: $ drizzle-kit migrate
+@stillwater/db:db:migrate: No config path provided, using default 'drizzle.config.ts'
+@stillwater/db:db:migrate: Reading config file '/home/project/stillwater/packages/db/drizzle.config.ts'
+@stillwater/db:db:migrate: ◇ injected env (34) from ../../.env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+@stillwater/db:db:migrate: ◇ injected env (0) from ../../.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+@stillwater/db:db:migrate: Using 'pg' driver for database querying
+[✓] migrations applied successfully!
+@stillwater/db:db:seed: cache bypass, force executing c6cbb6e201a93efb
+@stillwater/db:db:seed: $ tsx src/seed/index.ts
+@stillwater/db:db:seed: ◇ injected env (34) from ../../.env.local // tip: ⌘ suppress logs { quiet: true }
+@stillwater/db:db:seed: 🌱 Seeding Stillwater development data...
+@stillwater/db:db:seed: 
+@stillwater/db:db:seed:   Inserting 5 users...
+@stillwater/db:db:seed:   Inserting 5 members...
+@stillwater/db:db:seed:   Inserting role assignments...
+@stillwater/db:db:seed:   Inserting 3 instructors...
+@stillwater/db:db:seed:   Inserting 4 class styles...
+@stillwater/db:db:seed:   Inserting 4 classes...
+@stillwater/db:db:seed:   Inserting 2 rooms...
+@stillwater/db:db:seed:   Inserting 7 sessions (one per day for the next week)...
+@stillwater/db:db:seed:   Inserting 3 membership plans...
+@stillwater/db:db:seed: 
+@stillwater/db:db:seed: ✅ Seed complete. Summary:
+@stillwater/db:db:seed:      5 members, 3 instructors, 4 class styles, 4 classes,
+@stillwater/db:db:seed:      2 rooms, 7 sessions, 3 membership plans
+@stillwater/db:db:seed: 
+@stillwater/db:db:seed:   Demo login emails:
+@stillwater/db:db:seed:      maya.chen@stillwater.test — roles: member
+@stillwater/db:db:seed:      mei.tanaka@stillwater.test — roles: member, instructor
+@stillwater/db:db:seed:      james.harlow@stillwater.test — roles: member, instructor
+@stillwater/db:db:seed:      aiko.mori@stillwater.test — roles: member, instructor
+@stillwater/db:db:seed:      alex.rivera@stillwater.test — roles: member, staff, manager, owner
+@stillwater/db:db:seed: 
+@stillwater/db:db:seed: 🌱 Seed script finished successfully.
+
+ Tasks:    2 successful, 2 total
+Cached:    0 cached, 2 total
+  Time:    3.052s 
+
 (venv) pete@pop-os:/home/project/stillwater
+$ pnpm db:seed:e2e
+$ turbo db:seed:e2e --filter=@stillwater/db
+╭───────────────────────────────────────────────────────────────────────────╮
+│                                                                           │
+│                    Update available v2.10.4 ≫ v2.10.5                     │
+│    Changelog: https://github.com/vercel/turborepo/releases/tag/v2.10.5    │
+│           Run "pnpm dlx @turbo/codemod@latest update" to update           │
+│                                                                           │
+│          Follow @turborepo for updates: https://x.com/turborepo           │
+╰───────────────────────────────────────────────────────────────────────────╯
+• turbo 2.10.4
+
+   • Packages in scope: @stillwater/db
+   • Running db:seed:e2e in 1 packages
+   • Remote caching disabled
+
+@stillwater/db:db:seed:e2e: cache bypass, force executing 23ba2cb9c2246142
+@stillwater/db:db:seed:e2e: $ tsx src/seed/e2e.ts
+@stillwater/db:db:seed:e2e: ◇ injected env (34) from ../../.env.local // tip: ⌘ override existing { override: true }
+@stillwater/db:db:seed:e2e: 🌱 Seeding E2E test data (layers on top of base seed)...
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e:   Inserting 5 E2E test users...
+@stillwater/db:db:seed:e2e:   Inserting 5 E2E test members...
+@stillwater/db:db:seed:e2e:   Inserting role assignments...
+@stillwater/db:db:seed:e2e:   Inserting 60 E2E sessions (14 days)...
+@stillwater/db:db:seed:e2e:   Inserting 5 pre-existing enrollments...
+@stillwater/db:db:seed:e2e:   Inserting 1 pre-existing waitlist entry...
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e: ✅ E2E seed complete. Summary:
+@stillwater/db:db:seed:e2e:      5 E2E members, 60 sessions,
+@stillwater/db:db:seed:e2e:      5 enrollments, 1 waitlist entries
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e:   E2E test accounts (magic-link email login):
+@stillwater/db:db:seed:e2e:      e2e.member@stillwater.test     — Booking flow (no pre-existing data)
+@stillwater/db:db:seed:e2e:      e2e.booker@stillwater.test     — Dashboard with 1 upcoming enrollment
+@stillwater/db:db:seed:e2e:      e2e.waitlist@stillwater.test   — Waitlist page with 1 waiting entry
+@stillwater/db:db:seed:e2e:      e2e.cancel@stillwater.test     — Cancel-flow (has 1 cancellable enrollment)
+@stillwater/db:db:seed:e2e:      e2e.history@stillwater.test    — History page with 3 past attended sessions
+@stillwater/db:db:seed:e2e:      alex.rivera@stillwater.test    — Admin pages (owner role — full access)
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e:   💡 Run `pnpm db:seed` first if base data is missing.
+@stillwater/db:db:seed:e2e: 
+@stillwater/db:db:seed:e2e: 🌱 E2E seed script finished successfully.
+
+ Tasks:    1 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    1.306s 
+
+$ pnpm install
+Scope: all 14 workspace projects
+Already up to date
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 11.9.0 → 11.15.1.    │
+   │   Changelog: https://pnpm.io/v/11.15.1   │
+   │     To update, run: pnpm add -g pnpm     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+Done in 971ms using pnpm v11.9.0
+
 $ pnpm build
 $ turbo build
 ╭───────────────────────────────────────────────────────────────────────────╮
@@ -36,12 +178,16 @@ $ turbo build
    • Running build in 13 packages
    • Remote caching disabled
 
-@stillwater/studio:build: cache hit, replaying logs 3fe24ce0685c86bc
-@stillwater/studio:build: $ sanity build
+@stillwater/ui:build: cache hit, replaying logs b45f744e03b59fff
 @stillwater/config:build: cache hit, replaying logs 2547cbad28c39a03
-@stillwater/config:build: $ tsc --build
 @stillwater/db:build: cache hit, replaying logs 55a9b6e6edfa9d2d
+@stillwater/config:build: $ tsc --build
+@stillwater/ui:build: $ tsc --build
 @stillwater/db:build: $ tsc --build
+@stillwater/payments:build: cache hit, replaying logs 9c3e84edd93fe71e
+@stillwater/studio:build: cache hit, replaying logs 3fe24ce0685c86bc
+@stillwater/payments:build: $ tsc --build
+@stillwater/studio:build: $ sanity build
 @stillwater/studio:build: 
 @stillwater/studio:build: 
 @stillwater/studio:build:    ╭──────────────────────────────────────╮
@@ -55,19 +201,15 @@ $ turbo build
 @stillwater/studio:build: 
 @stillwater/studio:build:  ›   Warning: Declared version of styled-components (^6.1.13) is not compatible with the version required by sanity (^6.1.15). This might cause problems!
 ✔ Clean output folder (93ms)
-✔ Build Sanity Studio (38324ms)
-@stillwater/studio:build: 
-@stillwater/ui:build: cache hit, replaying logs b45f744e03b59fff
-@stillwater/ui:build: $ tsc --build
 @stillwater/auth:build: cache hit, replaying logs 3d92407b1e798ab3
 @stillwater/auth:build: $ tsc --build
-@stillwater/payments:build: cache hit, replaying logs 9c3e84edd93fe71e
-@stillwater/payments:build: $ tsc --build
 @stillwater/email:build: cache hit, replaying logs ecbe774454c1ff48
 @stillwater/email:build: $ tsc --build
+✔ Build Sanity Studio (38324ms)
+@stillwater/studio:build: 
 @stillwater/api:build: cache hit, replaying logs 9c1fb6eb0cf0c9e6
 @stillwater/api:build: $ tsc --build
-@stillwater/web:build: cache miss, executing 965d193713978b62
+@stillwater/web:build: cache miss, executing c2e2a2bd6eb53b01
 @stillwater/web:build: $ next build
 @stillwater/web:build: ▲ Next.js 16.2.10 (Turbopack)
 @stillwater/web:build: - Environments: .env.local
@@ -75,12 +217,12 @@ $ turbo build
 @stillwater/web:build:   · clientTraceMetadata
 @stillwater/web:build: 
 @stillwater/web:build:   Creating an optimized production build ...
-@stillwater/web:build: ✓ Compiled successfully in 42s
-✓ Completed runAfterProductionCompile in 465ms
-@stillwater/web:build: ✓ Finished TypeScript in 27.8s 
+@stillwater/web:build: ✓ Compiled successfully in 23.9s
+✓ Completed runAfterProductionCompile in 387ms
+@stillwater/web:build: ✓ Finished TypeScript in 16.5s 
 ⚠ Using edge runtime on a page currently disables static generation for that page
-@stillwater/web:build: ✓ Collecting page data using 3 workers in 7.6s 
-✓ Generating static pages using 3 workers (17/17) in 638ms
+@stillwater/web:build: ✓ Collecting page data using 3 workers in 4.1s 
+✓ Generating static pages using 3 workers (17/17) in 637ms
 @stillwater/web:build: ✓ Finalizing page optimization in 22ms 
 @stillwater/web:build: 
 @stillwater/web:build: Route (app)                                     Revalidate  Expire
@@ -138,7 +280,7 @@ $ turbo build
 
  Tasks:    9 successful, 9 total
 Cached:    8 cached, 9 total
-  Time:    1m22.546s 
+  Time:    48.934s 
 
 (venv) pete@pop-os:/home/project/stillwater
 $ cd apps/web/
@@ -151,13 +293,13 @@ $ next build
   · clientTraceMetadata
 
   Creating an optimized production build ...
-✓ Compiled successfully in 28.2s
-✓ Completed runAfterProductionCompile in 438ms
-✓ Finished TypeScript in 17.8s    
+✓ Compiled successfully in 22.8s
+✓ Completed runAfterProductionCompile in 414ms
+✓ Finished TypeScript in 16.8s    
 ⚠ Using edge runtime on a page currently disables static generation for that page
-✓ Collecting page data using 3 workers in 4.6s    
-✓ Generating static pages using 3 workers (17/17) in 688ms
-✓ Finalizing page optimization in 9ms    
+✓ Collecting page data using 3 workers in 4.1s    
+✓ Generating static pages using 3 workers (17/17) in 703ms
+✓ Finalizing page optimization in 24ms    
 
 Route (app)                                     Revalidate  Expire
 ┌ ƒ /
@@ -216,5 +358,5 @@ $ next start
 ▲ Next.js 16.2.10
 - Local:         http://localhost:3000
 - Network:       http://192.168.2.132:3000
-✓ Ready in 195ms
+✓ Ready in 188ms
 
