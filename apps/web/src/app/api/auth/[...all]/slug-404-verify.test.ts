@@ -120,6 +120,44 @@ describe('V10-1: slug routes must return 200 for valid + 404 for invalid slugs',
       expect(pageBodyMatch).not.toBeNull();
       expect(pageBodyMatch![0]).toContain('withTimeout');
     });
+
+    it('V17-5: generateMetadata + page body eager-load user relation (for proper title)', () => {
+      // V17-5 fix: Previously the <title> used `instructor.slug.replace(/-/g, ' ')`
+      // which produced lowercase names like "mei tanaka" instead of the proper
+      // display name "Mei Tanaka" (which lives on `users.name`).
+      // The fix: eager-load the `user` relation via `with: { user: true }` and
+      // use `instructor.user.name ?? instructor.slug.replace(/-/g, ' ')`.
+      //
+      // Source: STILLWATER_AUDIT_REPORT.md §7 Finding #10
+      const generateMetadataMatch = /export async function generateMetadata[\s\S]*?\n\}/.exec(instructorSlugPage);
+      expect(generateMetadataMatch).not.toBeNull();
+      const generateMetadataBlock = generateMetadataMatch![0];
+      // The query must include `with: { user: true }` to eager-load the user.
+      expect(generateMetadataBlock).toMatch(/with:\s*\{[^}]*\buser\b[^}]*\}/);
+    });
+
+    it('V17-5: generateMetadata uses user.name (NOT slug.replace) for the title', () => {
+      // The title should be derived from `instructor.user.name` (properly
+      // capitalized) with a fallback to `slug.replace(/-/g, ' ')` only if
+      // user.name is null.
+      const generateMetadataMatch = /export async function generateMetadata[\s\S]*?\n\}/.exec(instructorSlugPage);
+      expect(generateMetadataMatch).not.toBeNull();
+      const generateMetadataBlock = generateMetadataMatch![0];
+      // The title assignment must reference user.name (with optional chaining
+      // or nullish coalescing for the fallback).
+      expect(generateMetadataBlock).toMatch(/user\.name/);
+      // The fallback to slug.replace is acceptable (defensive) but should
+      // only be the secondary source.
+      expect(generateMetadataBlock).toMatch(/\?\?/); // nullish coalescing for fallback
+    });
+
+    it('V17-5: page body H1 uses user.name (NOT slug.replace)', () => {
+      // The visible H1 in the page body should also use user.name.
+      const pageBodyMatch = /export default async function InstructorDetailPage[\s\S]*?^}/m.exec(instructorSlugPage);
+      expect(pageBodyMatch).not.toBeNull();
+      const pageBody = pageBodyMatch![0];
+      expect(pageBody).toMatch(/user\.name/);
+    });
   });
 
   describe('blog/[slug]/page.tsx', () => {

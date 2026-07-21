@@ -89,6 +89,8 @@ describe('HeroNextClass — V17-3 CLS prevention', () => {
 
   it('RESERVES minimum height in the populated state to match (V17-3)', () => {
     // Mock the tRPC client to return a session for this test.
+    // Cast to unknown first to bypass the strict useQuery return type
+    // (the real type is inferred from the tRPC router and is complex).
     mockUseQuery.mockReturnValue({
       data: [
         {
@@ -101,7 +103,7 @@ describe('HeroNextClass — V17-3 CLS prevention', () => {
           room: { capacity: 12 },
         },
       ],
-    });
+    } as unknown as ReturnType<typeof mockUseQuery>);
 
     const { container } = render(<HeroNextClass />);
     const populatedDiv = container.querySelector(

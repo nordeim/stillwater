@@ -84,6 +84,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  // V17-5 fix: eager-load `user` to get the properly-capitalized display
+  // name (e.g. "Mei Tanaka" instead of "mei tanaka" from slug.replace).
+  // Falls back to slug.replace if user.name is null (defensive).
+  // Source: STILLWATER_AUDIT_REPORT.md §7 Finding #10
   const instructor = await withTimeout(
     db.query.instructors.findFirst({
       where: (instructors, { eq, and }) =>
@@ -92,6 +96,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           eq(instructors.isActive, true),
           eq(instructors.published, true),
         ),
+      with: { user: true },
     }),
     8_000,
     null,
@@ -101,9 +106,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     notFound();
   }
 
+  // V17-5: Use user.name (properly capitalized) with slug fallback.
+  const displayName = instructor.user.name ?? instructor.slug.replace(/-/g, ' ');
   return {
-    title: instructor.slug.replace(/-/g, ' '),
-    description: instructor.bio ?? `Meet ${instructor.slug.replace(/-/g, ' ')}`,
+    title: displayName,
+    description: instructor.bio ?? `Meet ${displayName}`,
   };
 }
 
@@ -112,6 +119,7 @@ export default async function InstructorDetailPage({ params }: PageProps) {
 
   // v12 V12-1: Query DB directly (not via apiCaller) + withTimeout.
   // This avoids headers() → page can be static → notFound() sets 404.
+  // V17-5: Eager-load `user` for the properly-capitalized display name.
   const instructor = await withTimeout(
     db.query.instructors.findFirst({
       where: (instructors, { eq, and }) =>
@@ -120,6 +128,7 @@ export default async function InstructorDetailPage({ params }: PageProps) {
           eq(instructors.isActive, true),
           eq(instructors.published, true),
         ),
+      with: { user: true },
     }),
     8_000,
     null,
@@ -128,6 +137,9 @@ export default async function InstructorDetailPage({ params }: PageProps) {
   if (!instructor) {
     notFound();
   }
+
+  // V17-5: Use user.name (properly capitalized) with slug fallback.
+  const displayName = instructor.user.name ?? instructor.slug.replace(/-/g, ' ');
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
@@ -146,7 +158,7 @@ export default async function InstructorDetailPage({ params }: PageProps) {
             className="mt-2 text-5xl font-light capitalize text-stone-900"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            {instructor.slug.replace(/-/g, ' ')}
+            {displayName}
           </h1>
 
           {instructor.specialties && instructor.specialties.length > 0 && (

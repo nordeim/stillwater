@@ -94,7 +94,7 @@ function parseNextConfigCsp(): Map<string, string[]> {
     if (parts.length === 0) continue;
     const [name, ...sources] = parts;
     // Some directives have no sources (e.g. "upgrade-insecure-requests").
-    directives.set(name, sources);
+    if (name) directives.set(name, sources);
   }
 
   return directives;
@@ -249,11 +249,12 @@ describe('next.config.ts CSP — V17-2 behavior-based verification', () => {
     it('documents the V16-3 root cause (strict-dynamic causes unsafe-inline to be ignored)', () => {
       // The comment block must explain WHY 'strict-dynamic' was removed.
       expect(nextConfigContent).toContain('V16-3');
-      expect(nextConfigContent).toMatch(/strict-dynamic.*ignored|ignored.*strict-dynamic/is);
+      // Use [\s\S] instead of . with /s flag (target is ES2017, /s requires ES2018+)
+      expect(nextConfigContent).toMatch(/strict-dynamic[\s\S]*ignored|ignored[\s\S]*strict-dynamic/i);
     });
 
     it('cites the W3C CSP3 spec', () => {
-      expect(nextConfigContent).toMatch(/w3\.org.*CSP3|CSP3.*w3\.org/is);
+      expect(nextConfigContent).toMatch(/w3\.org[\s\S]*CSP3|CSP3[\s\S]*w3\.org/i);
     });
   });
 });
