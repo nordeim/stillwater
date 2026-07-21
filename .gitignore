@@ -5,12 +5,16 @@ node_modules/
 .pnp.js
 
 # ─── Environment ───────────────────────────────────────────
+# V17-1 fix: Both dot-prefixed (.env.local) AND non-dot (env.local) variants
+# are ignored. The non-dot variants were previously committed by accident
+# because only `.env.local` (with leading dot) was matched. See
+# AUDIT_REMEDIATION.md §v17 Fix #1 for the full incident write-up.
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
-# NOTE: .env.example is COMMITTED intentionally — never add secrets to it
+.env.*.local
+env.local
+env.*.local
+# NOTE: .env.example is COMMITTED intentionally — never add secrets to it.
 
 # ─── Build Outputs ─────────────────────────────────────────
 .next/
