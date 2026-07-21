@@ -314,20 +314,46 @@ export const adminRouter = router({
       const churnRate = totalSubs > 0 ? (cancelledCount / totalSubs) * 100 : 0;
 
       // Attendance: avg class size + no-show rate
-      const attendanceRows = await ctx.db
-        .select({
-          avgSize: sql<number>`coalesce(avg(session_size), 0)::float`,
-          noShows: sql<number>`count(*) filter (where status = 'no_show')::int`,
-          totalEnrollments: sql<number>`count(*)::int`,
-        })
-        .from(
-          sql`(select enrollments.session_id, count(*) as session_size from enrollments where enrollments.status in ('confirmed', 'attended') group by enrollments.session_id) as session_counts`,
-        )
-        .crossJoin(sql`enrollments`);
+      //
+      // V17-4 fix (2026-07-21): Removed the `.crossJoin(sql\`enrollments\`)`
+      // that produced a cartesian product (N sessions × M enrollments = N×M
+      // rows). The crossJoin caused:
+      //   - totalEnrollments = N×M (WRONG — should be M, the count of ALL
+      //     enrollments)
+      //   - noShows = (count of no_shows) × N (WRONG — should be just count
+      //     of no_shows)
+      //   - avgClassSize: mathematically still correct (N×M cancels out),
+      //     but the query was needlessly expensive.
+      //
+      // The fix: split into 2 parallel queries — one for avgClassSize
+      // (grouped subquery) and one for noShows + totalEnrollments (direct
+      // count on enrollments table). No crossJoin.
+      //
+      // Source: STILLWATER_AUDIT_REPORT.md §7 Finding #7
+      const [avgSizeRows, countRows] = await Promise.all([
+        // Avg class size: group enrollments by session, then avg the group
+        // sizes. Only counts 'confirmed' + 'attended' enrollments (skips
+        // 'cancelled' + 'no_show').
+        ctx.db
+          .select({
+            avgSize: sql<number>`coalesce(avg(session_size), 0)::float`,
+          })
+          .from(
+            sql`(select count(*) as session_size from enrollments where enrollments.status in ('confirmed', 'attended') group by enrollments.session_id) as session_counts`,
+          ),
+        // Total + no-show counts directly from enrollments table. Counts
+        // ALL enrollment statuses (confirmed, attended, cancelled, no_show).
+        ctx.db
+          .select({
+            noShows: sql<number>`count(*) filter (where status = 'no_show')::int`,
+            totalEnrollments: sql<number>`count(*)::int`,
+          })
+          .from(sql`enrollments`),
+      ]);
 
-      const avgClassSize = attendanceRows[0]?.avgSize ?? 0;
-      const noShows = attendanceRows[0]?.noShows ?? 0;
-      const totalEnrollments = attendanceRows[0]?.totalEnrollments ?? 0;
+      const avgClassSize = avgSizeRows[0]?.avgSize ?? 0;
+      const noShows = countRows[0]?.noShows ?? 0;
+      const totalEnrollments = countRows[0]?.totalEnrollments ?? 0;
       const noShowRate = totalEnrollments > 0 ? (noShows / totalEnrollments) * 100 : 0;
 
       return {

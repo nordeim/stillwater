@@ -417,3 +417,116 @@ describe('V13-4: RBAC tier enforcement — manager+ procedures reject staff call
     expect(result.total).toBe(0);
   });
 });
+
+describe('V17-4: getRevenueDetails cartesian-join bug fix', () => {
+  /**
+   * V17-4 fix: The previous implementation used `.crossJoin(sql\`enrollments\`)`
+   * on a subquery that produced N rows (one per session with confirmed/attended
+   * enrollments). CROSS JOIN with `enrollments` (M rows) produced N×M rows.
+   *
+   * This caused:
+   *   - totalEnrollments = N×M (WRONG — should be M, the count of all enrollments)
+   *   - noShows = (count of no_shows) × N (WRONG — should be just count of no_shows)
+   *   - avgClassSize: mathematically still correct (N×M cancels out), but
+   *     the query is needlessly expensive.
+   *
+   * The fix: split into 2 parallel queries — one for avgClassSize (grouped
+   * subquery) and one for noShows + totalEnrollments (direct count on
+   * enrollments table). No crossJoin.
+   *
+   * Source: STILLWATER_AUDIT_REPORT.md §7 Finding #7
+   */
+
+  it('does NOT call crossJoin on any query chain (V17-4)', async () => {
+    // Set up 3 separate chains: mrrRows, churnRows, attendanceRows.
+    // After V17-4, the attendance chain should NOT call crossJoin.
+    const mrrChain = makeSelectChain([{ totalCents: 0, count: 0 }]);
+    const churnChain = makeSelectChain([{ cancelled: 0, total: 0 }]);
+    // After fix: attendance chain has 2 sub-queries (avg + counts), each
+    // without crossJoin. We'll provide 2 chains for Promise.all.
+    const avgSizeChain = makeSelectChain([{ avgSize: 0 }]);
+    const countChain = makeSelectChain([{ noShows: 0, totalEnrollments: 0 }]);
+
+    let callIdx = 0;
+    const select = vi.fn(() => {
+      const chains = [mrrChain, churnChain, avgSizeChain, countChain];
+      return chains[callIdx++].select();
+    });
+
+    const ctx = makeCtx({ select } as never, ['manager']);
+    const caller = adminRouter.createCaller(ctx);
+
+    await caller.getRevenueDetails({
+      start: new Date('2026-07-01'),
+      end: new Date('2026-07-31'),
+    });
+
+    // CRITICAL: crossJoin must NOT be called on any chain.
+    expect(mrrChain.crossJoin).not.toHaveBeenCalled();
+    expect(churnChain.crossJoin).not.toHaveBeenCalled();
+    expect(avgSizeChain.crossJoin).not.toHaveBeenCalled();
+    expect(countChain.crossJoin).not.toHaveBeenCalled();
+  });
+
+  it('returns correct totalEnrollments + noShows (not cartesian product) (V17-4)', async () => {
+    // Mock data:
+    //   - 10 total enrollments, 2 of which are no_shows → noShowRate = 20%
+    //   - avg class size = 8.0 (from subquery)
+    //   - revenue = 0 (no payments in range)
+    //   - churn = 0/5 = 0%
+    const mrrChain = makeSelectChain([{ totalCents: 0, count: 0 }]);
+    const churnChain = makeSelectChain([{ cancelled: 0, total: 5 }]);
+    const avgSizeChain = makeSelectChain([{ avgSize: 8.0 }]);
+    const countChain = makeSelectChain([{ noShows: 2, totalEnrollments: 10 }]);
+
+    let callIdx = 0;
+    const select = vi.fn(() => {
+      const chains = [mrrChain, churnChain, avgSizeChain, countChain];
+      return chains[callIdx++].select();
+    });
+
+    const ctx = makeCtx({ select } as never, ['manager']);
+    const caller = adminRouter.createCaller(ctx);
+
+    const result = await caller.getRevenueDetails({
+      start: new Date('2026-07-01'),
+      end: new Date('2026-07-31'),
+    });
+
+    // CRITICAL: totalEnrollments must be 10 (not 10 × N where N is the
+    // number of distinct sessions — which is what the crossJoin bug would
+    // produce).
+    expect(result.totalSubs).toBe(5); // sanity check — churn chain
+    expect(result.cancelledSubs).toBe(0);
+    // avgClassSize + noShows + totalEnrollments are NOT in the return shape
+    // directly, but noShowRate IS (derived from noShows / totalEnrollments).
+    // With noShows=2 and totalEnrollments=10, noShowRate = 20.
+    expect(result.noShowRate).toBe(20);
+    expect(result.avgClassSize).toBe(8.0);
+  });
+
+  it('handles empty enrollments table without dividing by zero (V17-4)', async () => {
+    const mrrChain = makeSelectChain([{ totalCents: 0, count: 0 }]);
+    const churnChain = makeSelectChain([{ cancelled: 0, total: 0 }]);
+    const avgSizeChain = makeSelectChain([{ avgSize: 0 }]);
+    const countChain = makeSelectChain([{ noShows: 0, totalEnrollments: 0 }]);
+
+    let callIdx = 0;
+    const select = vi.fn(() => {
+      const chains = [mrrChain, churnChain, avgSizeChain, countChain];
+      return chains[callIdx++].select();
+    });
+
+    const ctx = makeCtx({ select } as never, ['manager']);
+    const caller = adminRouter.createCaller(ctx);
+
+    const result = await caller.getRevenueDetails({
+      start: new Date('2026-07-01'),
+      end: new Date('2026-07-31'),
+    });
+
+    // When totalEnrollments = 0, noShowRate should be 0 (not NaN).
+    expect(result.noShowRate).toBe(0);
+    expect(Number.isNaN(result.noShowRate)).toBe(false);
+  });
+});
