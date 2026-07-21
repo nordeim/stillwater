@@ -28,6 +28,28 @@
  * runtimes — cookie-only check is recommended regardless for performance and
  * to avoid DB round-trips on every request. Do NOT call auth.api.getSession()
  * here. See PAD § 9.4 + ADR-009 for route protection logic.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ * V17-2 (2026-07-21): PRODUCTION NO-OP STATUS — RETAINED FOR FUTURE USE
+ * ─────────────────────────────────────────────────────────────────────
+ * Per V9-2 fix comment in next.config.ts, the response headers set by
+ * proxy.ts DO NOT reach production on Vercel + Next.js 16.2.10 (GitHub
+ * issues vercel/next.js#85711, vercel/next.js#86303 — proxy.ts response
+ * headers are dropped in production). The PRODUCTION Content-Security-Policy
+ * is shipped by `next.config.ts` `headers()` instead, which uses
+ * `'unsafe-inline'` (without `'strict-dynamic'` — V16-3 fix).
+ *
+ * The nonce-based CSP machinery in this file is RETAINED as a no-op for
+ * the future: when Vercel/Next.js fixes the proxy.ts response-header drop
+ * issue, we can switch to nonce-based CSP (more secure than `'unsafe-inline'`)
+ * by removing the next.config.ts CSP and relying on proxy.ts.
+ *
+ * Per SKILL.md Lesson 108: "Keep proxy.ts's nonce-based CSP as a no-op
+ * for the future."
+ *
+ * DO NOT DELETE this nonce machinery — it is intentional defense-in-depth.
+ * DO NOT assume this CSP is active in production — verify via the response
+ * headers on the live site (https://stillwater.jesspete.shop/).
  */
 
 import { type NextRequest, NextResponse } from "next/server";
