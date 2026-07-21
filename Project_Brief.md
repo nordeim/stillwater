@@ -1,7 +1,7 @@
 # Project Brief — Stillwater
 
-> **Updated:** 2026-07-19 (post-v16-3 live-site remediation)
-> Status: Phases 0–12 ✅ complete · v8–v12 ✅ · v13 ✅ (Six-Axis Audit) · v14 ✅ (Mockup fidelity) · v15 ✅ · **v16-1 to v16-3 ✅** (Loading… definitively fixed — live site fully operational)
+> **Updated:** 2026-07-21 (post-v17 comprehensive code review remediation)
+> Status: Phases 0–12 ✅ complete · v8–v12 ✅ · v13 ✅ (Six-Axis Audit) · v14 ✅ (Mockup fidelity) · v15 ✅ · **v16-1 to v16-3 ✅** (Loading… definitively fixed — live site fully operational) · **v17-1 to v17-10 ✅** (11 audit findings remediated via TDD — see AUDIT_REMEDIATION.md §v17)
 
 ## What it is
 
@@ -14,16 +14,16 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 - **Phase 0 (Scaffold):** Complete. Turborepo + pnpm workspaces, 7 shared packages, 11 tooling configs, Docker Compose setup, and the full design system (self-hosted fonts, CSS tokens).
 - **Phase 1 (Database):** Complete. 18 tables (15 domain + 3 Better Auth) Drizzle schema, 8 enums, 12 indexes (8 standard + 4 unique; the 5 Phase 1 'critical' indexes are a labelled subset), 6 migrations (`0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql` + `0004_huge_hawkeye.sql` + `0005_add_price_cents.sql`), idempotent seed, dynamic driver selection.
 - **Phase 2 (Auth & RBAC):** Complete. Better Auth v1.6.23 with Google OAuth, Magic Link, `customSession` plugin. RBAC matrix (13×6). 2-layer auth (proxy.ts + layout guards).
-- **Phase 3 (API / tRPC):** Complete. 10 routers, ~42 procedures, 4 access tiers, advisory lock booking, rate limiting, full web integration.
+- **Phase 3 (API / tRPC):** Complete. 10 routers, ~42 procedures, 5 access tiers (public/protected/staff/manager/owner — V13-4 added `managerProcedure`), advisory lock booking, rate limiting (V17-6 escaped ILIKE wildcards), full web integration.
 - **Phase 4 (Marketing):** Complete. Sanity CMS client + 8 content type schemas, Sanity Studio app (`apps/studio/`), GROQ query registry with `published == true` filter, Zod response validation, Cloudflare Images signer, webhook→ISR revalidation with HMAC verification, 8 ISR-backed marketing pages (home, schedule, instructors list + detail, pricing, blog list + detail, about), MarketingNav + Footer with Editorial Calm design, skip-to-content link, error/loading boundaries, 11 shadcn/ui components with anti-generic patches (no shadows, `--radius: 0`).
 
-- **Phase 5 (Booking):** Complete. SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling), `useSessionAvailability` hook (3 reconnection attempts, exponential backoff), 5 booking UI components (SeatAvailability, BookingButton, BookingConfirmation, WaitlistButton, BookingFlow) + `useBookingMutation` hook, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index.
+- **Phase 5 (Booking):** Complete. SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling, V17-10 per-IP concurrent connection rate limit of 5), `useSessionAvailability` hook (3 reconnection attempts, exponential backoff), 5 booking UI components (SeatAvailability, BookingButton, BookingConfirmation, WaitlistButton, BookingFlow) + `useBookingMutation` hook, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index.
 
 - **Phase 6 (Dashboard):** Complete. Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components (MembershipStatusCard, CreditUsageWidget, UpcomingClassesWidget, ProfileSummaryCard, ProfileEditForm, ManageMembershipPanel, EnrollmentHistoryTable), CSV export utility, `memberships.getMySubscription` plan join, `memberships.resume` implemented (unstubbed in Phase 7).
 
 **Phase 7 (Payments):** Complete. `@stillwater/payments` package (8 source files: client, types, subscriptions, webhooks, invoices, credit-packs, refunds, index) with 43 tests; Stripe webhook route `/api/webhooks/stripe/route.ts` (body as TEXT, HMAC verification, idempotent via `pg_advisory_xact_lock`); `CheckoutButton` component + `lib/stripe/utils.ts`; tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`); `payments.refund` retained as D12 stub; ADR-010 accepted (Resend Native Templates for email).
 
-**Phase 8 (Background Jobs & Email):** Complete. `@stillwater/workers` package — 11 Trigger.dev v4 task files (`attendance-summary`, `booking-confirmation`, `class-cancellation-notify`, `class-reminder-1h`, `class-reminder-24h`, `membership-credit-grant`, `membership-expiry-warn`, `payment-failed-notify`, `waitlist-expiry`, `waitlist-promotion`, `weekly-digest`), `trigger.config.ts` (root `@trigger.dev/sdk` import, `machine: "micro"`, `build.external` without `build.env`), 33 tests. `@stillwater/email` package — 13 React Email v6 templates + 3 shared components (`EmailLayout`, `EmailButton`, `EmailFooter`), dual-path `send.ts` (`sendEmail` for Server Components, `sendEmailNative` for workers per ADR-010), `template-ids.ts`, `send-helpers.ts`, 71 tests. Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` unset), `bookings.book` triggers `booking-confirmation` (fire-and-forget); `class-reminder-24h`/`class-reminder-1h` run as **cron jobs** (every 15min / 5min) with idempotent dedup via `reminder24hSentAt`/`reminder1hSentAt`, `bookings.cancel` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe `invoice.payment_failed` → `payment-failed-notify` post-commit.
+**Phase 8 (Background Jobs & Email):** Complete. `@stillwater/workers` package — 12 Trigger.dev v4 task files (`attendance-summary`, `booking-confirmation`, `booking-cancellation` [added V8 audit C2], `class-cancellation-notify`, `class-reminder-1h`, `class-reminder-24h`, `membership-credit-grant`, `membership-expiry-warn`, `payment-failed-notify`, `waitlist-expiry`, `waitlist-promotion`, `weekly-digest`), `trigger.config.ts` (root `@trigger.dev/sdk` import, `machine: "micro"`, `build.external` without `build.env`), 45 tests. `@stillwater/email` package — 13 React Email v6 templates + 3 shared components (`EmailLayout`, `EmailButton`, `EmailFooter`), dual-path `send.ts` (`sendEmail` for Server Components, `sendEmailNative` for workers per ADR-010), `template-ids.ts`, `send-helpers.ts`, 71 tests. `@stillwater/config/site` shared constants module (V17-8 — single source of truth for studio address + phone + email, used by Footer, JSON-LD, and worker emails). Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` unset), `bookings.book` triggers `booking-confirmation` (fire-and-forget); `class-reminder-24h`/`class-reminder-1h` run as **cron jobs** (every 15min / 5min) with idempotent dedup via `reminder24hSentAt`/`reminder1hSentAt`, `bookings.cancel` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe `invoice.payment_failed` → `payment-failed-notify` post-commit.
 
 **Phase 9 (Admin Surface):** ✅ Complete. 11 admin pages, 9 admin components, 12 admin tRPC procedures; `audit_log` table (migration `0003_audit_log_phase9.sql`) with 3 indexes; 7 additional shadcn/ui components (table, form, input, textarea, checkbox, calendar, command) — 18 total; `cmdk` dependency; 5 admin E2E specs.
 
@@ -40,18 +40,18 @@ Stillwater is an enterprise-grade platform for a single yoga studio (Southeast P
 | Phase | Status | Quick Summary |
 |---|---|---|
 | 0 — Scaffold | ✅ Complete | Monorepo, tooling, Docker, design tokens |
-| 1 — DB Schema | ✅ Complete | 18 tables (15 domain + 3 Better Auth), 8 enums, 12 indexes, 4 migrations, seed |
+| 1 — DB Schema | ✅ Complete | 18 tables (15 domain + 3 Better Auth), 8 enums, 12 indexes, 6 migrations, seed |
 | 2 — Auth & RBAC | ✅ Complete | Better Auth, Google OAuth, Magic Link, RBAC matrix |
-| 3 — tRPC API | ✅ Complete | 10 routers, ~42 procedures, advisory locks, rate limiting |
-| 4 — Marketing | ✅ Complete | Sanity CMS, 8 ISR pages, webhook, Cloudflare Images, shadcn/ui |
-| 5 — Booking | ✅ Complete | SSE endpoint, booking UI, useSessionAvailability hook, booking page |
+| 3 — tRPC API | ✅ Complete | 10 routers, ~42 procedures, 5 access tiers (V13-4), advisory locks, rate limiting (V17-6 ILIKE escape) |
+| 4 — Marketing | ✅ Complete | Sanity CMS v6 + client v7, 8 ISR pages, webhook, Cloudflare Images, shadcn/ui |
+| 5 — Booking | ✅ Complete | SSE endpoint (V17-10 per-IP rate limit), booking UI, useSessionAvailability hook, booking page |
 | 6 — Dashboard | ✅ Complete | Member dashboard, profile editing, membership status, enrollment history, CSV export |
 | 7 — Payments | ✅ Complete | Stripe subscriptions + credit packs (@stillwater/payments, webhook, CheckoutButton, unstubbed tRPC) |
-| 8 — Background Jobs | ✅ Complete | 11 Trigger.dev tasks (33 tests) + 13 email templates (71 tests) |
-| 9 — Admin Surface | ✅ Complete | 11 admin pages, 9 components, 12 procedures, audit_log table, 18 shadcn/ui total |
+| 8 — Background Jobs | ✅ Complete | 12 Trigger.dev tasks (45 tests) + 13 email templates (71 tests) + @stillwater/config/site (V17-8) |
+| 9 — Admin Surface | ✅ Complete | 11 admin pages, 9 components, 12 procedures (V17-4 fixed getRevenueDetails cartesian-join), audit_log table, 18 shadcn/ui total |
 | 10 — Observability | ✅ Complete | Sentry + PostHog (18 events) + Axiom + Checkly (3 checks) |
-| 11 — Accessibility | ✅ Complete | WCAG AAA audit, SEO, OG images, JSON‑LD |
-| 12 — Landing Page | ✅ Complete | Port static mockup to Next.js production (19 components, 3 hooks) |
+| 11 — Accessibility | ✅ Complete | WCAG AAA audit, SEO (V17-5 instructor title fix), OG images, JSON‑LD (V17-8 SITE address) |
+| 12 — Landing Page | ✅ Complete | Port static mockup to Next.js production (19 components, 3 hooks, V17-3 CLS fix) |
 
 ---
 
@@ -123,7 +123,7 @@ These are the files you can actually `cat` and `test` today:
 
 ---
 
-## Live quality gates (2026-07-19, post-v16-3 remediation)
+## Live quality gates (2026-07-21, post-v17 remediation)
 
 Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 
@@ -131,10 +131,10 @@ Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
 |---|---|
 | `pnpm check-types` | **9/9 successful** ✅ |
 | `pnpm lint` | **0 errors** ✅ (9 intentional warnings) |
-| `pnpm test` | **763 tests passing** ✅ (131 db + 102 auth + 137 api + 47 payments + 230 web + 71 email + 45 workers) |
+| `pnpm test` | **~798 tests passing** ✅ (131 db + 102 auth + 147 api + 47 payments + 9 config + 254 web + 71 email + 45 workers — V17 added 35 new tests across CSP/CLS/cartesian-join/instructor-title/ilike/studio-layout/SITE-constants/SSE-rate-limit) |
 | `pnpm build` | **✅ 9/9 packages, 17 static pages** (verified 2026-07-19) ✅ |
 
-### Live site status (2026-07-19, post-v16-3)
+### Live site status (2026-07-19, post-v16-3 — V17 fixes NOT yet deployed)
 
 **✅ ALL 6 marketing routes fully operational** at `https://stillwater.jesspete.shop/`:
 - `/` (home) — Hero + schedule + philosophy + instructors + membership + studio + CTA ✅
@@ -151,15 +151,16 @@ Screenshots: `docs/e2e-screenshots/`
 > ⚠️ **Lint flake note:** `pnpm lint` (default parallel turborepo run) can intermittently fail with *"not found by the project service"* parsing errors on test files. This is a typescript-eslint `projectService` concurrency collision (two ESLint language-service instances racing), **not a code defect** — confirmed by running lint serially (`pnpm turbo run lint --concurrency=1` → 2/2 green) or per-package. Code is correct.
 
 Test breakdown (approximate — run `pnpm test` for the authoritative count):
-- `packages/db` — 18 test files / **131 tests**
+- `packages/db` — 19 test files / **131 tests**
 - `packages/auth` — 4 test files / **102 tests**
-- `packages/api` — 13 test files / **137 tests** (V13-2 cancel + V13-4 RBAC + V13-5 credit consumption)
+- `packages/api` — 15 test files / **147 tests** (V13-2 cancel + V13-4 RBAC + V13-5 credit + V17-4 cartesian-join fix + V17-6 ilike escape)
 - `packages/payments` — 7 test files / **47 tests** (V13-6 checkout.session.completed + charge.refunded)
-- `apps/web` — 33 test files / **230 tests** (V13-1 index-routes + V14 Footer + slug-404-verify)
+- `packages/config` — 1 test file / **9 tests** (NEW — V17-8 SITE constants)
+- `apps/web` — 37 test files / **254 tests** (V13-1 index-routes + V14 Footer + slug-404-verify + V17-2 CSP rewrite + V17-3 HeroNextClass CLS + V17-5 instructor title + V17-7 studio layout + V17-10 SSE rate limit)
 - `packages/email` — 17 test files / **71 tests**
 - `services/workers` — 12 test files / **45 tests** (V13-3 claim URL domain fix)
 
-Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). V16-1: `/`, `/schedule`, `/pricing` are `force-dynamic` (ƒ) to prevent prerender Suspense hang. `/instructors`, `/about`, `/blog` are static (○) or SSG (●). V16-2: React Compiler disabled. V16-3: CSP `strict-dynamic` removed. (`pnpm build` verified 2026-07-19: 9/9 packages, 17 static pages, 0 errors.)
+Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). V16-1: `/`, `/schedule`, `/pricing` are `force-dynamic` (ƒ) to prevent prerender Suspense hang. `/instructors`, `/about`, `/blog` are static (○) or SSG (●). V16-2: React Compiler disabled. V16-3: CSP `strict-dynamic` removed. V17-1: leaked `env.local` files removed from git tracking. V17-2: CSP tests rewritten to verify behavior. V17-3: CLS fix (HeroNextClass skeleton + Cormorant font-display optional). V17-4: getRevenueDetails cartesian-join bug fixed. V17-5: instructor title uses user.name. V17-6: ILIKE wildcards escaped. V17-7: data-session attribute removed. V17-8: studio address centralized in @stillwater/config/site. V17-10: SSE per-IP rate limiting. (`pnpm build` verified 2026-07-19: 9/9 packages, 17 static pages, 0 errors.)
 
 ---
 
@@ -192,7 +193,7 @@ Known intentional stub (not a gap): `payments.refund` remains a thin D12 wrapper
 
 ## Things worth flagging
 
-- **Docs aligned through v16-3; refreshed 2026-07-19.** Implementation matches the latest codebase. All 13 phases complete + v8→v16-3 audit remediation complete. See `AUDIT_REMEDIATION.md` for the full v1→v16-3 remediation history. Live site confirmed operational via agent-browser E2E on 2026-07-19.
+- **Docs aligned through v17; refreshed 2026-07-21.** Implementation matches the latest codebase. All 13 phases complete + v8→v16-3 audit remediation complete + v17 comprehensive code review remediation complete (11 findings fixed via TDD). See `AUDIT_REMEDIATION.md` for the full v1→v17 remediation history. Live site confirmed operational via agent-browser E2E on 2026-07-19 (V17 fixes committed but NOT yet deployed — repo owner must deploy + rotate leaked secrets).
 - **Migrations are canonical.** Six migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup), `0005_add_price_cents.sql` (membership_plans.price_cents — v4 pricing bug fix). All six current migrations apply successfully via `pnpm db:migrate`.
 - **P0 production fix history (v1→v16-3).** Live site at `https://stillwater.jesspete.shop/` had 4 of 8 marketing routes (`/`, `/schedule`, `/instructors`, `/pricing`) stuck on a Suspense "Loading…" fallback indefinitely. The remediation unfolded over 16+ versions (see `AUDIT_REMEDIATION.md` for the full history):
   - **v1–v7 (2026-07-14 to 2026-07-15):** Defensive fixes (withTimeout, CSP nonce, pricing column, migration journal, seed, fallback plans, PPR disable).
@@ -204,4 +205,9 @@ Known intentional stub (not a gap): `payments.refund` remains a thin D12 wrapper
   - **v16-1 (2026-07-19):** force-dynamic on 3 routes (DB query hangs during prerender).
   - **v16-2 (2026-07-19):** Disabled React Compiler (created excessive nested Suspense boundaries).
   - **v16-3 (2026-07-19):** Removed `strict-dynamic` from CSP — **THE definitive fix**: `strict-dynamic` caused browsers to ignore `unsafe-inline`, blocking Next.js's inline `$RC` scripts and preventing React hydration.
+- **v17 comprehensive code review remediation (2026-07-21).** Systematic Six-Axis audit identified 11 outstanding issues; all remediated via TDD in 8 atomic commits. See `AUDIT_REMEDIATION.md §v17` for the full report. Critical fixes:
+  - **V17-1 (P0 Security):** Production secrets (`BETTER_AUTH_SECRET`, `SANITY_API_TOKEN`, `SANITY_WEBHOOK_SECRET`) were committed to the public GitHub repo via `env.local` files (no leading dot — gitignore missed them). Files removed from git tracking, .gitignore strengthened, pre-commit hook updated. **Repo owner must rotate secrets + scrub git history.**
+  - **V17-2 (Critical Tests):** CSP tests rewritten to verify behavior (parsed directives) instead of file content (string matching). Old tests passed even after V16-3 fix removed `'strict-dynamic'` — false confidence on a security-critical control.
+  - **V17-3 (Critical UX):** CLS = 0.465 on home page (9× above target) fixed via HeroNextClass `min-h-[280px]` skeleton + Cormorant `font-display: optional`. Verification requires live deploy.
+  - **V17-4–V17-10 (Important):** getRevenueDetails cartesian-join bug, instructor title lowercase, ILIKE wildcard escape, data-session DOM leak, studio address centralization, SSE rate limiting. See `AUDIT_REMEDIATION.md §v17` for details.
 
