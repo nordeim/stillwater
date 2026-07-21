@@ -120,4 +120,81 @@ describe('SSE schedule stream endpoint', () => {
     expect(String(callArgs?.[0] ?? '')).toMatch(/SSE|getSeatAvailability|seat/i);
     consoleErrorSpy.mockRestore();
   });
+
+  // V17-10 fix: SSE endpoint must enforce per-IP rate limiting to prevent
+  // DoS via excessive concurrent connections. Each connection polls the DB
+  // every 10s for up to 5 min — 100 concurrent connections = 600 DB
+  // queries/min. Without rate limiting, a malicious client could exhaust
+  // the DB connection pool.
+  describe('V17-10: per-IP rate limiting', () => {
+    beforeEach(() => {
+      // Reset the in-memory counter between tests
+      vi.resetModules();
+    });
+
+    it('returns 429 when per-IP concurrent connection limit is exceeded (V17-10)', async () => {
+      mockGetSession.mockResolvedValue({
+        id: 'session-1',
+        enrolledCount: 5,
+        class: { maxCapacity: 10 },
+        room: { capacity: 10 },
+        overrideCapacity: null,
+      });
+
+      const { GET, MAX_CONCURRENT_SSE_PER_IP = 5 } = await import('./route');
+
+      // Open MAX_CONCURRENT_SSE_PER_IP connections from the same IP
+      const reqs = Array.from({ length: MAX_CONCURRENT_SSE_PER_IP }, () =>
+        new Request('http://localhost:3000/api/schedule/stream?sessionId=00000000-0000-4000-8000-000000000001', {
+          headers: { 'x-forwarded-for': '203.0.113.1' },
+        }),
+      );
+      const responses = await Promise.all(reqs.map((r) => GET(r)));
+      for (const res of responses) {
+        expect(res.status).toBe(200);
+      }
+
+      // The next connection from the same IP should be rejected
+      const overflowReq = new Request('http://localhost:3000/api/schedule/stream?sessionId=00000000-0000-4000-8000-000000000001', {
+        headers: { 'x-forwarded-for': '203.0.113.1' },
+      });
+      const overflowRes = await GET(overflowReq);
+      expect(overflowRes.status).toBe(429);
+      expect(overflowRes.headers.get('retry-after')).toBeTruthy();
+    });
+
+    it('allows connections from different IPs independently (V17-10)', async () => {
+      mockGetSession.mockResolvedValue({
+        id: 'session-1',
+        enrolledCount: 5,
+        class: { maxCapacity: 10 },
+        room: { capacity: 10 },
+        overrideCapacity: null,
+      });
+
+      const { GET, MAX_CONCURRENT_SSE_PER_IP = 5 } = await import('./route');
+
+      // Open MAX_CONCURRENT_SSE_PER_IP connections from IP A
+      const reqsA = Array.from({ length: MAX_CONCURRENT_SSE_PER_IP }, () =>
+        new Request('http://localhost:3000/api/schedule/stream?sessionId=00000000-0000-4000-8000-000000000001', {
+          headers: { 'x-forwarded-for': '203.0.113.1' },
+        }),
+      );
+      await Promise.all(reqsA.map((r) => GET(r)));
+
+      // A connection from IP B should still succeed
+      const reqB = new Request('http://localhost:3000/api/schedule/stream?sessionId=00000000-0000-4000-8000-000000000001', {
+        headers: { 'x-forwarded-for': '198.51.100.1' },
+      });
+      const resB = await GET(reqB);
+      expect(resB.status).toBe(200);
+    });
+
+    it('exports MAX_CONCURRENT_SSE_PER_IP constant (V17-10)', async () => {
+      const mod = await import('./route');
+      expect(mod.MAX_CONCURRENT_SSE_PER_IP).toBeDefined();
+      expect(typeof mod.MAX_CONCURRENT_SSE_PER_IP).toBe('number');
+      expect(mod.MAX_CONCURRENT_SSE_PER_IP).toBeGreaterThanOrEqual(1);
+    });
+  });
 });

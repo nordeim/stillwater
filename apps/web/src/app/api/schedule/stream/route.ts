@@ -91,6 +91,57 @@ function formatSSEEvent(data: SeatAvailabilityEvent): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
+// ── V17-10 fix: per-IP concurrent SSE connection rate limiting ────────
+// Prevents DoS via excessive concurrent SSE connections. Each connection
+// polls the DB every 10s for up to 5 min — 100 concurrent connections
+// from one IP = 600 DB queries/min, which could exhaust the connection
+// pool.
+//
+// IMPLEMENTATION NOTES:
+// - In-memory counter (per server instance). On Vercel serverless, each
+//   instance has its own counter — a determined attacker could bypass
+//   by hitting different instances. This is a defense-in-depth measure,
+//   not a hard limit. For a hard limit, upgrade to Redis-based counting
+//   (see SKILL §15.7 fail-open rate limiter pattern).
+// - Counter is decremented on connection close (abort signal) so the
+//   limit tracks CONCURRENT connections, not total.
+// - Limit of 5 per IP is generous for legitimate use (a single user
+//   typically opens 1-2 SSE connections at a time) but blocks rapid
+//   script-driven concurrent opens.
+//
+// Source: STILLWATER_AUDIT_REPORT.md §7 Finding #6;
+//         SKILL §15.7 Pattern: Fail-Open Rate Limiter
+export const MAX_CONCURRENT_SSE_PER_IP = 5;
+
+const sseConnectionCounts = new Map<string, number>();
+
+function getClientIp(request: Request): string {
+  // x-forwarded-for is set by Vercel/Cloudflare — first IP is the client
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0]!.trim();
+  }
+  return 'unknown';
+}
+
+function acquireSseSlot(ip: string): boolean {
+  const current = sseConnectionCounts.get(ip) ?? 0;
+  if (current >= MAX_CONCURRENT_SSE_PER_IP) {
+    return false;
+  }
+  sseConnectionCounts.set(ip, current + 1);
+  return true;
+}
+
+function releaseSseSlot(ip: string): void {
+  const current = sseConnectionCounts.get(ip) ?? 0;
+  if (current <= 1) {
+    sseConnectionCounts.delete(ip);
+  } else {
+    sseConnectionCounts.set(ip, current - 1);
+  }
+}
+
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const sessionId = url.searchParams.get('sessionId');
@@ -109,9 +160,28 @@ export async function GET(request: Request): Promise<Response> {
     );
   }
 
+  // V17-10: per-IP concurrent connection rate limit
+  const clientIp = getClientIp(request);
+  if (!acquireSseSlot(clientIp)) {
+    return Response.json(
+      {
+        error: 'Too many concurrent SSE connections from your IP. Close existing connections and try again.',
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': '60',
+          'X-RateLimit-Limit': String(MAX_CONCURRENT_SSE_PER_IP),
+          'X-RateLimit-Resource': 'sse-concurrent-per-ip',
+        },
+      },
+    );
+  }
+
   // Verify session exists before starting the stream
   const initialData = await getSeatAvailability(sessionId);
   if (!initialData) {
+    releaseSseSlot(clientIp);
     return Response.json(
       { error: 'Session not found' },
       { status: 404 },
@@ -138,10 +208,11 @@ export async function GET(request: Request): Promise<Response> {
         });
       }, 10_000);
 
-      // Clean up on abort (client disconnect)
+      // Clean up on abort (client disconnect) — V17-10: release the slot
       request.signal.addEventListener('abort', () => {
         clearInterval(interval);
         controller.close();
+        releaseSseSlot(clientIp);
       });
     },
   });
