@@ -60,7 +60,10 @@ export function HeroNextClass() {
 
   if (!upcoming) {
     return (
-      <div className="border border-stone-200 bg-sand-warm p-6">
+      <div
+        data-testid="hero-next-class-empty"
+        className="min-h-[280px] border border-stone-200 bg-sand-warm p-6"
+      >
         <p
           className="text-xs uppercase tracking-[0.2em] text-stone-500"
           style={{ fontFamily: 'var(--font-mono)' }}
@@ -100,7 +103,7 @@ export function HeroNextClass() {
   const spotsLabel = `${String(spotsAvailable)} of ${String(capacity)} spots available`;
 
   return (
-    <div className="border border-stone-200 bg-sand-warm p-6">
+    <div className="min-h-[280px] border border-stone-200 bg-sand-warm p-6">
       <p
         className="text-xs uppercase tracking-[0.2em] text-stone-500"
         style={{ fontFamily: 'var(--font-mono)' }}
