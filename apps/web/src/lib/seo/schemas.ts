@@ -4,8 +4,16 @@
  * Builders for YogaStudio, Article, Person, and Breadcrumb schemas.
  * All follow schema.org spec.
  *
- * Source: MEP Phase 11 F11-10, PAD §23.2.
+ * V17-8 fix (2026-07-21): Defaults now use the shared SITE constant from
+ * @stillwater/config/site (single source of truth for address + phone +
+ * email). Previously the default streetAddress was a fabricated
+ * '123 SE Division St' that didn't match the Footer's corrected value.
+ *
+ * Source: MEP Phase 11 F11-10, PAD §23.2;
+ *         STILLWATER_AUDIT_REPORT.md §7 Finding #9
  */
+
+import { SITE } from '@stillwater/config/site';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -27,21 +35,23 @@ export function yogaStudioSchema(input: YogaStudioSchemaInput = {}): Record<stri
   return {
     '@context': 'https://schema.org',
     '@type': 'YogaStudio',
-    name: input.name ?? 'Stillwater Yoga Studio',
+    name: input.name ?? SITE.name,
     description: 'A sanctuary for mindful movement in Southeast Portland. Book Vinyasa, Ashtanga, Yin, and Restorative classes online.',
     url: BASE_URL,
-    telephone: input.telephone ?? '',
+    // V17-8: Default telephone uses SITE constant (was empty string).
+    telephone: input.telephone ?? SITE.phone,
     address: {
       '@type': 'PostalAddress',
-      streetAddress: input.address?.streetAddress ?? '123 SE Division St',
-      addressLocality: input.address?.addressLocality ?? 'Portland',
-      addressRegion: input.address?.addressRegion ?? 'OR',
-      postalCode: input.address?.postalCode ?? '97202',
-      addressCountry: 'US',
+      // V17-8: Defaults use SITE.address (was fabricated '123 SE Division St').
+      streetAddress: input.address?.streetAddress ?? SITE.address.street,
+      addressLocality: input.address?.addressLocality ?? SITE.address.city,
+      addressRegion: input.address?.addressRegion ?? SITE.address.region,
+      postalCode: input.address?.postalCode ?? SITE.address.postalCode,
+      addressCountry: SITE.address.country,
     },
     openingHours: input.openingHours ?? ['Mo-Su 06:00-21:00'],
     priceRange: input.priceRange ?? '$$',
-    hasMap: input.hasMap ?? `https://maps.google.com/?q=Stillwater+Yoga+Portland`,
+    hasMap: input.hasMap ?? `https://maps.google.com/?q=${encodeURIComponent(SITE.address.full)}`,
   };
 }
 

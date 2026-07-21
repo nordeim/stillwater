@@ -124,9 +124,13 @@ export const FOOTER_HOURS = [
 
 // V14-2 fix (2026-07-19): Restored correct address from mockup.
 // Was "123 SE Division Street" (fabricated); mockup has "2847 SE Division Street".
-export const FOOTER_ADDRESS = '2847 SE Division Street, Portland, OR 97202';
-export const FOOTER_PHONE = '(503) 321-4950';
-export const FOOTER_EMAIL = 'hello@stillwater.studio';
+// V17-8 fix (2026-07-21): Re-exported from @stillwater/config/site for
+// single source of truth. JSON-LD + worker emails now use the same value.
+import { SITE } from '@stillwater/config/site';
+
+export const FOOTER_ADDRESS = SITE.address.full;
+export const FOOTER_PHONE = SITE.phone;
+export const FOOTER_EMAIL = SITE.email;
 
 // V14-2 fix: Brand text for footer (from mockup line 2606)
 export const FOOTER_BRAND_TEXT =

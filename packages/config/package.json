@@ -14,6 +14,10 @@
     "./jobs-client": {
       "@stillwater/source": "./src/jobs-client.ts",
       "default": "./src/jobs-client.ts"
+    },
+    "./site": {
+      "@stillwater/source": "./src/site.ts",
+      "default": "./src/site.ts"
     }
   },
   "main": "./src/index.ts",

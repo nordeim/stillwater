@@ -23,6 +23,10 @@ import { sql } from 'drizzle-orm';
 
 import { db, enrollments } from '@stillwater/db';
 import { sendClassReminder24h } from '@stillwater/email';
+// V17-8: Use shared SITE constant for the studio address (single source
+// of truth). Previously hardcoded as '123 SE Division Street, Portland, OR
+// 97202' (fabricated) — didn't match the Footer's corrected value.
+import { SITE } from '@stillwater/config/site';
 
 interface SessionWithEnrollmentsData {
   id: string;
@@ -98,7 +102,7 @@ export const classReminder24h = task({
             className: session.class.title,
             sessionDate: formatSessionDate(session.startsAt),
             instructor: session.instructor.slug,
-            studioAddress: '123 SE Division Street, Portland, OR 97202',
+            studioAddress: SITE.address.full,
           });
 
           // Mark as sent (atomic — only updates rows where still null,
@@ -165,7 +169,7 @@ async function sendSingleReminder(sessionId: string, memberId: string) {
     className: enrollment.session.class.title,
     sessionDate: formatSessionDate(enrollment.session.startsAt),
     instructor: enrollment.session.instructor.slug,
-    studioAddress: '123 SE Division Street, Portland, OR 97202',
+    studioAddress: SITE.address.full,
   });
 
   // Mark as sent
