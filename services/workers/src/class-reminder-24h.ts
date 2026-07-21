@@ -21,12 +21,12 @@
 import { task } from '@trigger.dev/sdk';
 import { sql } from 'drizzle-orm';
 
-import { db, enrollments } from '@stillwater/db';
-import { sendClassReminder24h } from '@stillwater/email';
 // V17-8: Use shared SITE constant for the studio address (single source
 // of truth). Previously hardcoded as '123 SE Division Street, Portland, OR
 // 97202' (fabricated) — didn't match the Footer's corrected value.
 import { SITE } from '@stillwater/config/site';
+import { db, enrollments } from '@stillwater/db';
+import { sendClassReminder24h } from '@stillwater/email';
 
 interface SessionWithEnrollmentsData {
   id: string;

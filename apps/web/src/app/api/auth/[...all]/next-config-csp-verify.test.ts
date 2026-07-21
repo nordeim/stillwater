@@ -63,7 +63,7 @@ function parseNextConfigCsp(): Map<string, string[]> {
   let withoutComments = '';
   let inString: false | '"' | "'" | '`' = false;
   for (let j = 0; j < arrayLiteral.length; j++) {
-    const ch = arrayLiteral[j];
+    const ch = arrayLiteral[j]!; // non-null: j < arrayLiteral.length guarantees defined
     if (!inString && (ch === '"' || ch === "'" || ch === '`')) {
       inString = ch;
       withoutComments += ch;
@@ -86,7 +86,7 @@ function parseNextConfigCsp(): Map<string, string[]> {
   const directives = new Map<string, string[]>();
   let match: RegExpExecArray | null;
   while ((match = stringPattern.exec(withoutComments)) !== null) {
-    const literal = match[1] as string;
+    const literal = match[1]!; // non-null: regex group 1 always defined when match is non-null
     // Each string is one directive (e.g. "script-src 'self' 'unsafe-inline'").
     // Split on whitespace. Empty strings + the join separator ("; ") are
     // skipped by the parts.length check.

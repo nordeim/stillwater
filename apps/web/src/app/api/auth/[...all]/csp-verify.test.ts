@@ -98,7 +98,7 @@ function getBuildCspHeaderBody(): string {
   let result = '';
   let inString: false | '"' | "'" | '`' = false;
   for (let j = 0; j < body.length; j++) {
-    const ch = body[j];
+    const ch = body[j]!; // non-null: j < body.length guarantees defined
     if (!inString && (ch === '"' || ch === "'" || ch === '`')) {
       inString = ch;
       result += ch;
