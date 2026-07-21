@@ -141,7 +141,7 @@ describe('SSE schedule stream endpoint', () => {
         overrideCapacity: null,
       });
 
-      const { GET, MAX_CONCURRENT_SSE_PER_IP = 5 } = await import('./route');
+      const { GET, MAX_CONCURRENT_SSE_PER_IP } = await import('./route');
 
       // Open MAX_CONCURRENT_SSE_PER_IP connections from the same IP
       const reqs = Array.from({ length: MAX_CONCURRENT_SSE_PER_IP }, () =>
@@ -172,7 +172,7 @@ describe('SSE schedule stream endpoint', () => {
         overrideCapacity: null,
       });
 
-      const { GET, MAX_CONCURRENT_SSE_PER_IP = 5 } = await import('./route');
+      const { GET, MAX_CONCURRENT_SSE_PER_IP } = await import('./route');
 
       // Open MAX_CONCURRENT_SSE_PER_IP connections from IP A
       const reqsA = Array.from({ length: MAX_CONCURRENT_SSE_PER_IP }, () =>

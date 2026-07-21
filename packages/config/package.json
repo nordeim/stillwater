@@ -26,7 +26,9 @@
     "build": "tsc --build",
     "dev": "tsc --build --watch",
     "clean": "rm -rf dist .turbo",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@t3-oss/env-core": "^0.13.11",
@@ -36,6 +38,7 @@
   "devDependencies": {
     "@stillwater/typescript-config": "workspace:*",
     "@types/node": "^26.1.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.9"
   }
 }
