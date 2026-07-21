@@ -10,7 +10,13 @@
  *
  * NEVER wrap in try/catch — it catches the redirect (SKILL §5.7).
  *
- * Source: MEP Phase 2 F2-16, SKILL §5.7 Layout-Level Auth Guards.
+ * V17-7 fix (2026-07-21): Removed the user-id data attribute from the
+ * wrapping div. The attribute leaked the user's UUID into the DOM with
+ * no functional benefit (it wasn't read anywhere). Removing it follows
+ * the principle of least exposure.
+ *
+ * Source: MEP Phase 2 F2-16, SKILL §5.7 Layout-Level Auth Guards;
+ *         STILLWATER_AUDIT_REPORT.md §7 Finding #13
  */
 
 import { requireAuth } from '@/lib/auth';
@@ -20,9 +26,12 @@ export default async function StudioLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await requireAuth();
+  // V17-7: requireAuth() is still called for its side effect (throws
+  // NEXT_REDIRECT if unauthenticated). The session is unused now that
+  // the user-id attribute was removed, but the call must remain.
+  await requireAuth();
   return (
-    <div className="studio-shell" data-session={session.user.id}>
+    <div className="studio-shell">
       <main id="main-content">{children}</main>
     </div>
   );

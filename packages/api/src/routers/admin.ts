@@ -23,7 +23,7 @@ import {
   roleAssignments,
   auditLog,
 } from '@stillwater/db';
-import { users } from '@stillwater/db';
+import { escapeIlikePattern } from '../lib/ilike';
 
 export const adminRouter = router({
   /**
@@ -125,8 +125,8 @@ export const adminRouter = router({
       if (input.search) {
         conditions.push(
           or(
-            ilike(classes.title, `%${input.search}%`),
-            ilike(classes.slug, `%${input.search}%`),
+            ilike(classes.title, `%${escapeIlikePattern(input.search)}%`),
+            ilike(classes.slug, `%${escapeIlikePattern(input.search)}%`),
           ),
         );
       }
@@ -204,8 +204,8 @@ export const adminRouter = router({
       if (input.search) {
         conditions.push(
           or(
-            ilike(members.displayName, `%${input.search}%`),
-            ilike(members.notes, `%${input.search}%`),
+            ilike(members.displayName, `%${escapeIlikePattern(input.search)}%`),
+            ilike(members.notes, `%${escapeIlikePattern(input.search)}%`),
           ),
         );
       }
