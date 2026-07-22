@@ -1,213 +1,242 @@
-# Project Brief — Stillwater
+Please check whether you have committed the following changes. Then meticulously plan to continue from there.
 
-> **Updated:** 2026-07-21 (post-v17 comprehensive code review remediation)
-> Status: Phases 0–12 ✅ complete · v8–v12 ✅ · v13 ✅ (Six-Axis Audit) · v14 ✅ (Mockup fidelity) · v15 ✅ · **v16-1 to v16-3 ✅** (Loading… definitively fixed — live site fully operational) · **v17-1 to v17-10 ✅** (11 audit findings remediated via TDD — see AUDIT_REMEDIATION.md §v17)
+I'll systematically continue the work. Let me start by setting up my task list, re-cloning the repo (it was wiped between sessions), and verifying the V17 deployment.
+Repo was wiped. Let me re-clone it.
+All 11 V17 commits are present. Now let me set up the SSH key + verify the wrapper works, and install pnpm + dependencies.
+SSH wrapper works. Now let me install pnpm + dependencies.
+Dependencies installed. Now let me read the AUDIT_REMEDIATION.md v17 section to review the outstanding issues list, and in parallel run agent-browser on the live site.
+Now let me dispatch the agent-browser E2E in parallel while I review the V17 outstanding issues list and codebase.
+**Excellent news — V17 fixes are fully deployed and verified!** Key results:
+- **CLS dropped from 0.465 → 0.000** (target was < 0.05) — V17-3 fix works perfectly
+- All instructor titles properly capitalized — V17-5 ✅
+- JSON-LD + Footer addresses both show "2847 SE Division Street" — V17-8 ✅
+- CSP has `'unsafe-inline'` and NO `'strict-dynamic'` — V17-2 ✅
+- No new regressions found
 
-## What it is
+Now let me review the V17 Outstanding Issues list (12 deferred items) and scan the codebase for any new issues.
+Now I have the V17 outstanding issues list. Let me analyze each to determine which are actionable in this V18 cycle:
 
-Stillwater is an enterprise-grade platform for a single yoga studio (Southeast Portland). It's not a SaaS — it's one studio's bespoke operations system: public marketing site, member class-booking, staff/admin tools, Stripe subscriptions, and background email/job processing. The whole product is wrapped around an "Editorial Calm" design identity (warm mineral palette: stone/clay/water/sand — no gradients, no drop shadows, no pill buttons).
+**Analysis of the 12 V17 Outstanding Issues:**
+1. **Rotate leaked secrets** — Repo owner task (cannot do remotely) — but I should verify whether they were rotated
+2. **Scrub git history** — Repo owner task (cannot do safely without coordination)
+3. **15 `as any` casts in workers** — Drizzle 0.45 RQB type-inference issue; can be partially mitigated with a typed wrapper
+4. **No `next/image` usage** — Major refactor; can tackle a high-impact subset (instructor portraits, hero images)
+5. **No Redis caching layer** — Architecture change; defer
+6. **13/16 shadcn/ui primitives on `forwardRef`** — Consistency miss; can migrate in a focused pass
+7. **proxy.ts CSP no-op** — Intentional, documented — leave alone
+8. **SSE rate limit per-instance** — Architecture change; defer
+9. **3 routes `force-dynamic`** — Worth attempting to revert now that V16-3 fixed the actual root cause
+10. **neon-http not pooled** — Architecture change; defer
+11. **PAD.md / MEP.md / Brief.md stale** — Doc-only, can do
+12. **SKILL.md 4 stale locations** — Doc-only, can do
 
-## Current build state (the honest picture)
+Let me also scan the codebase proactively for any NEW issues I haven't seen yet — let me dispatch an Explore agent in parallel with my own analysis.
+Excellent — the scan revealed **6 Critical issues + many Important issues**. Most importantly, the scan found that **V17-5 and V17-8 were INCOMPLETE** — there are 4 more slug-replace locations and the EmailFooter still has the fabricated address.
 
-**All 13 phases (0–12) are complete and green. v8 audit remediation (2026-07-17) is complete.**
+Let me now validate the critical findings myself before planning.
+Let me validate each critical finding in parallel batches.
+All 5 critical findings confirmed. Let me also validate Critical #6 (EmailFooter still has fabricated address) and the V17-5 incomplete findings:
+All findings confirmed. Let me check a few more important findings — the dashboard profile type, the admin schedule page structure, the booking-confirmation worker, and the home page InstructorSection component:
+Confirmed — `getProfile` only fetches from `members` table, doesn't eager-load `user`. So the dashboard doesn't have access to `user.email`. The fix is to eager-load `user` in `getProfile` and pass `profile.user.email` to the card.
 
-- **Phase 0 (Scaffold):** Complete. Turborepo + pnpm workspaces, 7 shared packages, 11 tooling configs, Docker Compose setup, and the full design system (self-hosted fonts, CSS tokens).
-- **Phase 1 (Database):** Complete. 18 tables (15 domain + 3 Better Auth) Drizzle schema, 8 enums, 12 indexes (8 standard + 4 unique; the 5 Phase 1 'critical' indexes are a labelled subset), 6 migrations (`0000_dear_dagger.sql` + `0001_equal_iron_lad.sql` + `0002_lyrical_cargill.sql` + `0003_audit_log_phase9.sql` + `0004_huge_hawkeye.sql` + `0005_add_price_cents.sql`), idempotent seed, dynamic driver selection.
-- **Phase 2 (Auth & RBAC):** Complete. Better Auth v1.6.23 with Google OAuth, Magic Link, `customSession` plugin. RBAC matrix (13×6). 2-layer auth (proxy.ts + layout guards).
-- **Phase 3 (API / tRPC):** Complete. 10 routers, ~42 procedures, 5 access tiers (public/protected/staff/manager/owner — V13-4 added `managerProcedure`), advisory lock booking, rate limiting (V17-6 escaped ILIKE wildcards), full web integration.
-- **Phase 4 (Marketing):** Complete. Sanity CMS client + 8 content type schemas, Sanity Studio app (`apps/studio/`), GROQ query registry with `published == true` filter, Zod response validation, Cloudflare Images signer, webhook→ISR revalidation with HMAC verification, 8 ISR-backed marketing pages (home, schedule, instructors list + detail, pricing, blog list + detail, about), MarketingNav + Footer with Editorial Calm design, skip-to-content link, error/loading boundaries, 11 shadcn/ui components with anti-generic patches (no shadows, `--radius: 0`).
+Let me also check the admin schedule page and the home page InstructorSection to understand the full scope:
+Confirmed: `schedule.getWeek` does `with: { class: true, instructor: true, room: true }` — but `instructor: true` does NOT nested-eager-load `user`, so `instructor.name` is undefined (instructors table only has `slug`, not `name`). And `class: true` gives `class.title` (not `class.name`). The admin schedule page casts to `{ name: string }` which is wrong.
 
-- **Phase 5 (Booking):** Complete. SSE endpoint (`/api/schedule/stream`, maxDuration=300, 10s polling, V17-10 per-IP concurrent connection rate limit of 5), `useSessionAvailability` hook (3 reconnection attempts, exponential backoff), 5 booking UI components (SeatAvailability, BookingButton, BookingConfirmation, WaitlistButton, BookingFlow) + `useBookingMutation` hook, `(studio)/book/[sessionId]` page, `ScheduleGrid` with Book CTA, Toaster mounted, waitlist unique index.
+Let me check the remaining critical files quickly:
+Confirmed — `instructors.list` doesn't eager-load `user`, so `ins.name` is undefined. The fix is to add `with: { user: true }` to the query and update consumers to use `user.name`.
 
-- **Phase 6 (Dashboard):** Complete. Member dashboard (`/dashboard`, `/profile`, `/membership`, `/history`), 7 dashboard components (MembershipStatusCard, CreditUsageWidget, UpcomingClassesWidget, ProfileSummaryCard, ProfileEditForm, ManageMembershipPanel, EnrollmentHistoryTable), CSV export utility, `memberships.getMySubscription` plan join, `memberships.resume` implemented (unstubbed in Phase 7).
+Let me also check the admin member detail page payment history:
+Confirmed — `paymentEvents` has no `amountCents` column. The amount lives in `payload` jsonb. Let me check the booking-confirmation worker and the EmailFooter:
+Confirmed all findings. Let me also check the email templates' hardcoded URLs and the existing tests for these files:
+I have all the validation I need. Now let me also verify the home page instructors query (to understand what fields it currently returns):
+Confirmed — the home page `instructors` query doesn't `with: { user: true }`, so `i.name` is undefined. This means the live site's home page Instructors section is showing blank names. But the V17 verification showed the home page renders fine — let me check if maybe the `InstructorRow` component handles undefined name gracefully:
+Confirmed — `InstructorRow` renders `{instructor.name}` directly. If `name` is undefined, React renders nothing (empty). So the home page Instructors section shows blank `<h3>` elements. Let me verify this on the live site:
+**CONFIRMED — there are 3 empty h3 elements on the live home page** — exactly the 3 instructor names in the Instructors section that are blank because `i.name` is undefined. This is a real production-visible bug.
 
-**Phase 7 (Payments):** Complete. `@stillwater/payments` package (8 source files: client, types, subscriptions, webhooks, invoices, credit-packs, refunds, index) with 43 tests; Stripe webhook route `/api/webhooks/stripe/route.ts` (body as TEXT, HMAC verification, idempotent via `pg_advisory_xact_lock`); `CheckoutButton` component + `lib/stripe/utils.ts`; tRPC procedures unstubbed (`memberships.subscribe/cancel/pause/resume` + `payments.getPortalUrl/getInvoices`); `payments.refund` retained as D12 stub; ADR-010 accepted (Resend Native Templates for email).
+Let me close the browser and now I have enough validation to plan the V18 remediation.
+## V18 Remediation Plan
 
-**Phase 8 (Background Jobs & Email):** Complete. `@stillwater/workers` package — 12 Trigger.dev v4 task files (`attendance-summary`, `booking-confirmation`, `booking-cancellation` [added V8 audit C2], `class-cancellation-notify`, `class-reminder-1h`, `class-reminder-24h`, `membership-credit-grant`, `membership-expiry-warn`, `payment-failed-notify`, `waitlist-expiry`, `waitlist-promotion`, `weekly-digest`), `trigger.config.ts` (root `@trigger.dev/sdk` import, `machine: "micro"`, `build.external` without `build.env`), 45 tests. `@stillwater/email` package — 13 React Email v6 templates + 3 shared components (`EmailLayout`, `EmailButton`, `EmailFooter`), dual-path `send.ts` (`sendEmail` for Server Components, `sendEmailNative` for workers per ADR-010), `template-ids.ts`, `send-helpers.ts`, 71 tests. `@stillwater/config/site` shared constants module (V17-8 — single source of truth for studio address + phone + email, used by Footer, JSON-LD, and worker emails). Integration: `getJobsClient` in `@stillwater/config` (stub fallback when `TRIGGER_SECRET_KEY` unset), `bookings.book` triggers `booking-confirmation` (fire-and-forget); `class-reminder-24h`/`class-reminder-1h` run as **cron jobs** (every 15min / 5min) with idempotent dedup via `reminder24hSentAt`/`reminder1hSentAt`, `bookings.cancel` → `waitlist-promotion`, `memberships.cancel/pause` send emails, Stripe `invoice.payment_failed` → `payment-failed-notify` post-commit.
+Based on my validation, here is the comprehensive plan. Let me update my todos and present the plan.
 
-**Phase 9 (Admin Surface):** ✅ Complete. 11 admin pages, 9 admin components, 12 admin tRPC procedures; `audit_log` table (migration `0003_audit_log_phase9.sql`) with 3 indexes; 7 additional shadcn/ui components (table, form, input, textarea, checkbox, calendar, command) — 18 total; `cmdk` dependency; 5 admin E2E specs.
+### V18 Plan Summary (Validated Against Codebase)
 
-**Phase 10 (Observability):** ✅ Complete. Sentry + PostHog (18 events) + Axiom + Checkly (3 checks).
+**Critical Fixes (must-fix, user-visible on live site):**
+1. **V18-1:** Home page instructor names blank (3 empty `<h3>` on live site) — eager-load `user` in instructors query, pass `user.name`
+2. **V18-2:** Dashboard shows phone as email — eager-load `user` in `members.getProfile`, pass `profile.user.email`
+3. **V18-3:** Admin schedule page shows "Untitled class" + blank instructor — fix casts to use `class.title` + eager-load `instructor.user.name`
+4. **V18-4:** Admin instructors page shows blank names — eager-load `user` in `instructors.list`, use `user.name`
+5. **V18-5:** Admin member detail shows "$NaN" for payments — extract amount from `payload` jsonb instead of nonexistent `amountCents` column
+6. **V18-6:** EmailFooter still has fabricated "123 SE Division Street" (V17-8 incomplete) — import `SITE.address.full`
 
-**Phase 11 (Accessibility & SEO):** ✅ Complete. WCAG AAA audit + SEO (robots, sitemap, manifest, 4 OG images, JSON‑LD, SkipLink, SrOnly, focus‑utils).
+**Important Fixes (V17 incompletes + high-value):**
+7. **V18-7:** Complete V17-5 — fix 4 remaining `slug.replace` locations (book page, admin dashboard, instructors list page, ScheduleGrid, booking-confirmation worker)
+8. **V18-8:** Replace 7 hardcoded `https://stillwater.studio` URLs in email templates with `process.env.NEXT_PUBLIC_APP_URL` (or a shared constant)
+9. **V18-9:** Fix `members.getProfile` to eager-load `user` (supports V18-2)
+10. **V18-10:** Fix `instructors.list` + `instructors.getBySlug` to eager-load `user` (supports V18-1, V18-4)
+11. **V18-11:** Fix `schedule.getWeek` + `schedule.getSession` to nested-eager-load `instructor.user` (supports V18-3 + book page + ScheduleGrid)
 
-**Phase 12 (Landing Page):** ✅ Complete. Landing page port — 19 marketing components, 3 hooks, mobile nav drawer, scroll progress bar.
+**Minor Fixes (low-risk, high-value):**
+12. **V18-12:** Fix HeroNextClass misleading spots indicator (hardcoded `spotsTaken = 0` → either remove indicator or fetch live count)
+13. **V18-13:** Apply V17-8 SITE constant to admin settings page (hardcoded studio name/location)
 
----
+**Defer (architectural — separate epic):**
+- Schema fixes (FK on `packageCreditId`, partial unique index on waitlist, audit-log retention, unique constraint on `members.userId`)
+- Missing audit log writes across routers (large scope — 5+ routers)
+- Missing state checks in `memberships`/`sessions` mutations
+- Missing `loading.tsx`/`error.tsx` boundaries (13 routes)
+- Missing e2e tests for auth-gated routes
+- Worker idempotency gaps (`waitlist-expiry`, `class-cancellation-notify`)
+- `as any` casts in workers (needs Drizzle 1.0)
+- `force-dynamic` routes (needs DB-hang investigation)
+- 156 inline `style={{ fontFamily }}` (mechanical refactor)
+Now let me execute the plan. I'll start with the foundational router fixes (V18-9, V18-10, V18-11) since they unblock the page fixes. Let me begin with the `instructors.list` + `instructors.getBySlug` eager-load `user` fix.
 
-## Phase completion table
+## V18-10: Eager-load `user` in instructors router
+Let me add TDD tests for V18-10 (eager-load `user` in instructors router):
+Now let me also add a test for `getBySlug` eager-loading user:
+Now run the tests to confirm TDD RED phase:
+TDD RED confirmed (2 new tests failing). Now apply the fix (GREEN phase):
+All 9 tests pass. Now let me also fix `members.getProfile` to eager-load `user` (V18-9 — needed for V18-2 dashboard fix):
+Let me add a TDD test for V18-9 (getProfile eager-loads user):
+Now apply the fix to `members.getProfile`:
+Now let me also fix `schedule.getWeek` + `schedule.getSession` to nested-eager-load `instructor.user` (V18-11). Let me check the existing schedule test:
+I need to update the schedule test to reflect the new `with: { class: true, instructor: { with: { user: true } }, room: true }` shape:
+Let me also check the getSession test to see if it asserts the `with` shape:
+The getSession tests don't assert the `with` shape, so they won't break. Now let me apply the fix to `schedule.ts`:
+All 24 tests pass. Now let me commit these foundational router fixes, then proceed to the page-level fixes.
+Now let me proceed with the page-level fixes. Let me start with V18-1 (home page instructor names) and V18-2 (dashboard email=phone) since they're the most user-visible.
+## V18-1: Fix home page instructor names
 
-| Phase | Status | Quick Summary |
-|---|---|---|
-| 0 — Scaffold | ✅ Complete | Monorepo, tooling, Docker, design tokens |
-| 1 — DB Schema | ✅ Complete | 18 tables (15 domain + 3 Better Auth), 8 enums, 12 indexes, 6 migrations, seed |
-| 2 — Auth & RBAC | ✅ Complete | Better Auth, Google OAuth, Magic Link, RBAC matrix |
-| 3 — tRPC API | ✅ Complete | 10 routers, ~42 procedures, 5 access tiers (V13-4), advisory locks, rate limiting (V17-6 ILIKE escape) |
-| 4 — Marketing | ✅ Complete | Sanity CMS v6 + client v7, 8 ISR pages, webhook, Cloudflare Images, shadcn/ui |
-| 5 — Booking | ✅ Complete | SSE endpoint (V17-10 per-IP rate limit), booking UI, useSessionAvailability hook, booking page |
-| 6 — Dashboard | ✅ Complete | Member dashboard, profile editing, membership status, enrollment history, CSV export |
-| 7 — Payments | ✅ Complete | Stripe subscriptions + credit packs (@stillwater/payments, webhook, CheckoutButton, unstubbed tRPC) |
-| 8 — Background Jobs | ✅ Complete | 12 Trigger.dev tasks (45 tests) + 13 email templates (71 tests) + @stillwater/config/site (V17-8) |
-| 9 — Admin Surface | ✅ Complete | 11 admin pages, 9 components, 12 procedures (V17-4 fixed getRevenueDetails cartesian-join), audit_log table, 18 shadcn/ui total |
-| 10 — Observability | ✅ Complete | Sentry + PostHog (18 events) + Axiom + Checkly (3 checks) |
-| 11 — Accessibility | ✅ Complete | WCAG AAA audit, SEO (V17-5 instructor title fix), OG images, JSON‑LD (V17-8 SITE address) |
-| 12 — Landing Page | ✅ Complete | Port static mockup to Next.js production (19 components, 3 hooks, V17-3 CLS fix) |
+The home page now gets instructors with `user` eager-loaded (via V18-10). I need to update the page to pass `user.name` instead of the nonexistent `i.name`.
+Now let me write a TDD test for the home page. Since the page is a server component with DB queries, I'll write a structural test that verifies the page source uses `user?.name`. Let me check the existing test patterns for similar pages:
+Good — there's an existing structural test pattern. Let me write a V18-1 test that verifies the home page uses `user?.name`:
+All 3 tests pass. Now let me also fix V18-2 (dashboard email=phone) and write a test:
+Now I need to check if there's a `profile` type cast that needs updating. Let me look at the full page to see if there's a typed interface for profile:
+The `profile` variable isn't typed via a custom interface — it's inferred from `caller.members.getProfile()`. Since I added `with: { user: true }` to the procedure, the inferred type now includes `user`. The `profile.user?.email` access should type-check correctly. Let me verify:
+Type-check passes. Now let me write a TDD test for V18-2:
+All 5 tests pass. Let me commit V18-1 + V18-2 and move on to V18-3 (admin schedule page):
+## V18-3: Fix admin schedule page (class.title + instructor.user.name)
+Now update the rendering — change `session.class?.name` → `session.class?.title` and `session.instructor?.name` → `session.instructor?.user?.name`:
+Now let me also check if the `ScheduleCalendar` component (which receives `typedSessions`) needs updating:
+Now let me write the V18-3 test and verify everything passes:
+All 7 V18-3 tests pass + type-check passes. Now let me handle V18-4 (admin instructors page) and V18-5 (admin member detail $NaN) — let me do them together since they're both admin pages.
 
----
+## V18-4: Fix admin instructors page
+Now update the rendering — `{ins.name}` → `{ins.user?.name ?? ins.slug}`:
+## V18-5: Fix admin member detail $NaN
 
-## What exists on disk (verified)
+Let me look at the member detail page to understand how to extract the amount from `payload`:
+Let me check how `getRevenueDetails` (already fixed in V17-4) extracts the amount from `payload` jsonb — I should use the same pattern:
+The amount is in `payload->>'amount_received'`. For the member detail page, the `paymentHistory` comes from somewhere — let me check the procedure:
+The `paymentHistory` returns raw `paymentEvents` rows which have `payload` (jsonb) but no `amountCents` column. The fix is to extract the amount from `payload.amount_received` on the client side. Let me update the page:
+Now let me write TDD tests for V18-4 + V18-5 and verify everything:
+The test for "fallback to 0" failed because my regex `:\s*0\s*\)` didn't match the actual code. Let me look at the actual code and fix the test:
+The local variable is `amountCents` (not `payment.amountCents`). Let me fix the test regex:
+All 7 tests pass. Let me commit V18-3 + V18-4 + V18-5:
+Now let me handle V18-6 (EmailFooter fabricated address — V17-8 incomplete) and V18-7 (4 remaining slug.replace locations) together since they're both "complete the V17 fix" items.
 
-These are the files you can actually `cat` and `test` today:
+## V18-6: Fix EmailFooter fabricated address
+Now I need to check if `@stillwater/email` has `@stillwater/config` as a dependency:
+Good — `@stillwater/config` is already a dependency. Let me also check the EmailFooter test to see if it needs updating:
+The existing test checks for "Portland" + "OR" which still pass with the new SITE constant. Let me add a V18-6 test that asserts the correct address:
+I removed the `STUDIO_NAME` constant but it's still referenced elsewhere in the file (the copyright line). Let me check:
+All 5 tests pass. Now let me handle V18-7 (4 remaining slug.replace locations). Let me look at each:
 
-### Database & Schema
-- `packages/db/src/schema/*.ts` — 18 Drizzle tables across 16 schema files: `users`, `members`, `instructors`, `classStyles`, `classes`, `rooms`, `classSessions`, `enrollments`, `waitlistEntries`, `memberSubscriptions`, `membershipPlans`, `classPackages`, `paymentEvents`, `roleAssignments`, `auditLog`, `account`, `session`, `verification`. **Note:** PAD.md / SKILL.md / AGENTS.md / CLAUDE.md now cite **18 tables** (corrected from the earlier 14-table undercount); verified via `pgTable` declarations — migration `0000_dear_dagger.sql` contains all 18 `CREATE TABLE` statements.
-- `packages/db/src/schema/relations.ts` — Drizzle Relational Query Builder (RQB) `relations()` definitions for all FK pairs (one/many); wired into `drizzle(..., { schema })`. Enables nested `with: { class: true, instructor: true, ... }` queries (used by admin/book pages) and removes the `referencedTable` runtime error. Added in the 2026-07-12 remediation.
-- `packages/db/src/schema/enums.ts` — 8 enums (class level, membership status, seat status, etc.).
-- `packages/db/drizzle/migrations/` — 5 migrations: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup). Regenerated after `ALTER COLUMN` silent-failure fix (Phase 1–2 remediation). All five applied successfully via `pnpm db:migrate`.
-- `packages/db/src/seed/index.ts` + `seed/env.ts` — Idempotent seed script loading synthetic demo data (5 users, 5 members, 3 instructors, 4 class styles, 4 classes, 2 rooms, 7 sessions, 3 membership plans). Loads `.env.local` before importing `db`.
-- `packages/db/src/index.ts` — Dynamic driver: `pg.Pool` for local Docker, `neon-http` for Neon URLs.
-- `packages/db/src/index.test.ts` + `schema/*.test.ts` — 17 test files, 117 tests.
+## V18-7: Complete V17-5 — fix 4 remaining slug.replace locations
+Let me check each location. The `(marketing)/page.tsx:135` + `instructors/[slug]/page.tsx:110,142` are the V18-1 + V17-5 fixes (they use `user.name ?? slug.replace` as fallback — that's correct). The remaining unfixed locations are:
+1. `(marketing)/instructors/page.tsx:82` — instructors list page
+2. `(admin)/admin/page.tsx:132` — admin dashboard
+3. `components/marketing/ScheduleGrid.tsx:44` — schedule grid (used by home + schedule pages)
+4. `services/workers/src/booking-confirmation.ts:70` — worker (passes slug as instructor name to email)
 
-### Authentication & Authorization
-- `packages/auth/src/config.ts` — Better Auth config (Google OAuth, Magic Link, Drizzle adapter).
-- `packages/auth/src/rbac.ts` — Permission matrix (13 permissions × 6 roles).
-- `packages/auth/src/client.ts` — Typed `authClient` with `magicLinkClient` plugin.
-- `packages/auth/src/types.ts` — `ActiveSubscriptionSummary` and session enrichment types.
-- `apps/web/src/lib/auth.ts` — Server helpers: `getSession()`, `requireAuth()`, `requireRole()` (Layer 2 of 2-layer auth).
-- `apps/web/proxy.ts` — Next.js 16 `proxy` function: `getSessionCookie()` only, no DB, no RBAC (Layer 1).
-- `packages/auth/src/*.test.ts` — 4 test files, 102 tests.
+Let me check what data each has available:
+Now let me check the instructors list page to see if it uses the tRPC procedure (which now eager-loads user) or queries DB directly:
+The instructors list page queries the DB directly (not via tRPC). I need to add `with: { user: true }` to this query too. Let me fix it:
+Now update the rendering:
+Now let me fix the admin dashboard (line 132). Let me check its data source:
+The admin dashboard uses `caller.schedule.getWeek` which now (V18-11) eager-loads `instructor.user`. Let me update the cast + rendering:
+Now update the rendering (line 132):
+Now let me fix the ScheduleGrid component (line 44). Let me check its props interface:
+Now let me fix the booking-confirmation worker:
+Now update the query to nested-eager-load `instructor.user` and the `sendBookingConfirmation` call to use `user.name`:
+Now let me write a TDD test for V18-7 and verify everything:
+The path to the worker file is wrong. Let me fix it:
+Let me count the directory depth: `apps/web/src/app/api/auth/[...all]/` is 7 levels deep from the repo root. So from the test file, `../../../../../../` goes up to the repo root, then `services/workers/src/`. Let me fix:
+Let me count more carefully. The test file is at:
+`/home/z/my-project/stillwater/apps/web/src/app/api/auth/[...all]/v18-7-slug-replace-locations.test.ts`
 
-### API Layer
-- `packages/api/src/routers/*.ts` — 10 routers: `admin`, `bookings`, `classes`, `instructors`, `members`, `memberships`, `payments`, `schedule`, `sessions`, `waitlist`.
-- `packages/api/src/trpc.ts` — 4 procedure tiers: `publicProcedure`, `protectedProcedure`, `staffProcedure`, `ownerProcedure`.
-- `packages/api/src/root.ts` — Root router merging all 10 routers.
-- `packages/api/src/context.ts` — tRPC context with session injection.
-- `packages/api/src/middleware/rateLimit.ts` — Upstash Redis rate limiting on `bookings.book`.
-- `packages/api/src/*.test.ts` — 13 test files, 118 tests (integration test requires Docker).
+From `[...all]/` to repo root:
+- `[...all]/` → `auth/` (1)
+- `auth/` → `api/` (2)
+- `api/` → `app/` (3)
+- `app/` → `src/` (4)
+- `src/` → `web/` (5)
+- `web/` → `apps/` (6)
+- `apps/` → repo root (7)
 
-### Web App
-- `apps/web/src/app/api/auth/[...all]/route.ts` — Better Auth catch-all handler.
-- `apps/web/src/app/api/trpc/[trpc]/route.ts` — tRPC HTTP handler.
-- `apps/web/src/app/api/webhooks/stripe/route.ts` — Stripe webhook handler (Phase 7; body as TEXT, HMAC verification).
-- `apps/web/src/lib/trpc/server.ts` — RSC server caller.
-- `apps/web/src/lib/trpc/client.tsx` — React Query + tRPC client provider.
-- `apps/web/src/lib/trpc/query-keys.ts` — Query key factory.
-- `apps/web/src/**/*.test.ts` + `apps/web/src/**/*.test.tsx` — 28 test files, 159 tests.
+So I need `../../../../../../../` (7 levels up) to reach the repo root. Let me fix:
+All 8 V18-7 tests pass. Let me verify type-check + workers tests still pass:
+All green. Let me commit V18-6 + V18-7:
+Now let me handle V18-8 (email template hardcoded URLs), V18-12 (HeroNextClass spots indicator), and V18-13 (admin settings SITE constant).
 
-### Payments & Stripe (Phase 7)
-- `packages/payments/src/*.ts` — 8 source files (client, types, subscriptions, webhooks, invoices, credit-packs, refunds, index), 43 tests.
-- `apps/web/src/lib/stripe/utils.ts` + `apps/web/src/components/membership/CheckoutButton.tsx` — checkout helpers + button.
-- `packages/api/src/routers/memberships.ts` / `payments.ts` — `subscribe`/`cancel`/`pause`/`resume` + `getPortalUrl`/`getInvoices` implemented (Phase 7); `payments.refund` retained as D12 stub.
+## V18-8: Replace hardcoded stillwater.studio URLs in email templates
+I need a shared constant for the app URL. Let me check what's already available in `@stillwater/config`:
+The env var is `NEXT_PUBLIC_APP_URL`. But email templates run in Node.js (not browser), so `NEXT_PUBLIC_APP_URL` is accessible via `process.env`. However, the email package shouldn't depend on Next.js env vars directly. Let me add an `APP_URL` to the SITE constant in `@stillwater/config/site`:
+Now let me update the site.test.ts to cover the new `url` field, then update all 7 email templates:
+All 11 site tests pass. Now let me update all 7 email templates. I'll do them in a batch:
+Let me update each template. I'll use `sed` for the simple URL replacements and add the import:
+Now I need to handle the URL replacements carefully — the `sed` replaced the string literals with template literals, but the surrounding quotes need to change from `'` to backtick. Let me check each file:
+The `const scheduleUrl = '${SITE.url}/schedule'` is wrong — it's a string literal, not a template literal. I need to change the quotes to backticks. Let me fix each:
+Now fix the WelcomeMember href (it's in JSX, needs `{` braces):
+Now fix the PaymentFailed template (mailto + email):
+ let me verify no more hardcoded stillwater.studio URLs remain (excluding tests):
+No more hardcoded URLs. Let me run the email tests to verify:
+All 72 email tests pass (was 71 — the new V18-6 EmailFooter test added 1). Let me also verify type-check:
+All green. Now let me handle V18-12 (HeroNextClass spots indicator) and V18-13 (admin settings SITE constant) quickly.
 
-### Background Jobs (Phase 8)
-- `services/workers/trigger.config.ts` — Trigger.dev v4 config (root `@trigger.dev/sdk` import, `machine: "micro"`, `build.external` without `build.env`).
-- `services/workers/src/*.ts` — 11 task files: `attendance-summary`, `booking-confirmation`, `class-cancellation-notify`, `class-reminder-1h`, `class-reminder-24h`, `membership-credit-grant`, `membership-expiry-warn`, `payment-failed-notify`, `waitlist-expiry`, `waitlist-promotion`, `weekly-digest` (each with per-task `maxDuration` + retry).
-- `services/workers/src/*.test.ts` — 11 test files, 33 tests.
+## V18-12: Fix HeroNextClass misleading spots indicator
+The spots indicator shows 12 bars all in `bg-stone-200` (none filled) and says "12 spots available" — which is misleading because it implies we know the live count. The cleanest fix is to remove the spots indicator entirely and replace with a simple "Reserve Spot →" CTA (which already exists). This is also more honest — we don't have the live count without an extra query.
+Now I need to clean up the unused constants (`DEFAULT_CAPACITY`, `SPOTS_BAR_COUNT`) and update the test. Let me check:
+The constants are no longer used. Let me remove them:
+Now let me run the HeroNextClass tests to verify they still pass (the V17-3 tests checked for min-h-[280px] which is still present):
+All 3 HeroNextClass tests pass. Now let me handle V18-13 (admin settings SITE constant) quickly.
 
-### Email (Phase 8)
-- `packages/email/src/templates/*.tsx` — 13 React Email v6 templates (BookingConfirmation, BookingCancellation, ClassReminder24h, ClassReminder1h, ClassCancellation, MembershipRenewal, MembershipPaused, MembershipCancellation, PaymentFailed, WaitlistOffer, WaitlistExpired, WeeklyDigest, WelcomeMember).
-- `packages/email/src/components/*.tsx` — 3 shared components (EmailLayout, EmailButton, EmailFooter).
-- `packages/email/src/send.ts` — dual-path sender (`sendEmail` for Server Components, `sendEmailNative` for workers per ADR-010).
-- `packages/email/src/template-ids.ts` + `packages/email/src/send-helpers.ts` — template ID registry + 13 send-helpers.
-- `packages/email/src/*.test.tsx` — 13 template tests + 3 component tests = 71 tests.
+## V18-13: Apply SITE constant to admin settings page
+Now let me run the full quality gates to verify everything passes:
+Tests + check-types pass (18/20 successful), but lint has 10 errors. Let me see what they are:
+I have lint errors in 3 files:
+1. `admin/members/[id]/page.tsx` — dot notation + unnecessary type assertions (V18-5)
+2. `admin/settings/page.tsx` — import order (V18-13)
+3. Some file with unnecessary conditional (let me find it)
+ files with errors. Let me fix them:
 
-### Config & Infrastructure
-- `packages/config/src/env.ts` — t3-env Zod-validated schema covering **34 environment variables** with build-context env fallbacks.
-- `.npmrc` + `pnpm-workspace.yaml` — `@stillwater/source` custom condition declared in both.
-- `docker-compose.yml` — Postgres 17 + Redis 7 + Adminer.
-- `infrastructure/postgres/init/00-create-extensions.sql` — Docker init (uuid-ossp + pgcrypto).
+1. `admin/members/[id]/page.tsx` — use dot notation + remove unnecessary type assertions
+2. `admin/settings/page.tsx` — fix import order
+3. `dashboard/page.tsx` — the `profile.user?.email` is flagged because `user` is now always defined (non-nullable) per the V18-9 eager-load. Let me fix:
+Wait — `Record<string, unknown>` doesn't allow dot notation access for arbitrary keys. The lint error is because `amount_received` is a valid identifier. But TypeScript with `Record<string, unknown>` should allow `payment.payload?.amount_received`. Let me check if the type-check still passes:
+Type-check passes. Now fix the settings page import order:
+Now fix the dashboard `profile.user?.email` — since V18-9 eager-loads `user` with `with: { user: true }`, the type is non-nullable. But the cast in the dashboard might still mark it as optional. Let me check:
+The lint says `profile.user?.email` has an unnecessary conditional because `user` is now always defined (non-nullable) per the V18-9 eager-load. Let me simplify to `profile.user.email`:
+Now I need to update the V18-2 test since it expected `profile.user?.email` but now it's `profile.user.email`:
+Now let me re-run lint + the affected tests:
+2 remaining lint errors + 1 test failure. Let me check the settings page import order and the dashboard unnecessary conditional:
+The settings page needs an empty line between import groups, and the dashboard `profile.user.email ?? ''` has an unnecessary `?? ''` because `email` is non-nullable. Let me fix:
+Now update the V18-2 test to match (no `?? ''`):
+Now fix the V18-5 test — the dot notation change broke the regex. Let me check:
+The V18-5 test regex was `payload\??\?\.\[?['"]amount_received` which expected bracket notation. Now it's dot notation. Let me fix:
+Tests pass but lint still fails. Let me check what's left:
+The settings page still has import order issues — I removed the empty line but the rule wants an empty line BETWEEN groups. `@stillwater/config/site` is one group, `next` type import is another, `@/lib/trpc/server` is another. Let me check the import order rule:
+I see — the convention is: external imports first (next, react-email, etc.), then a blank line, then internal `@/` imports. `@stillwater/config/site` is a workspace package (external-like). Let me look at how the email package does it:
+So the pattern is: external imports, blank line, `@stillwater/*` imports. Let me fix the settings page:
+The rule wants `@stillwater/config/site` BEFORE `next` type import. Let me reorder:
+The issue is `@stillwater/config/site` (value import) and `next` (type import) are in different groups but no empty line between them. Let me add the empty line:
+Lint passes (0 errors). Now let me run the full quality gates one final time:
+**ALL 20 TASKS SUCCESSFUL** — check-types + lint + test all pass across all packages. Let me get the final test count:
+**848 tests passing** total (was 815 after V17 — added 33 new tests in V18). Let me commit the V18-8 + V18-12 + V18-13 batch:
+All V18 code fixes are committed. Now let me update the documentation.
+## Phase: Documentation Sync
 
-### Design System
-- `packages/ui/src/fonts/` — Self-hosted Cormorant Garamond, DM Sans, JetBrains Mono (`.woff2`).
-- `packages/ui/src/index.ts` — CSS design token exports (colors, typography, spacing, motion).
-
----
-
-## Live quality gates (2026-07-21, post-v17 remediation)
-
-Run `pnpm check-types`, `pnpm lint`, `pnpm test`, and `pnpm build`.
-
-| Gate | Result |
-|---|---|
-| `pnpm check-types` | **9/9 successful** ✅ |
-| `pnpm lint` | **0 errors** ✅ (9 intentional warnings) |
-| `pnpm test` | **~798 tests passing** ✅ (131 db + 102 auth + 147 api + 47 payments + 9 config + 254 web + 71 email + 45 workers — V17 added 35 new tests across CSP/CLS/cartesian-join/instructor-title/ilike/studio-layout/SITE-constants/SSE-rate-limit) |
-| `pnpm build` | **✅ 9/9 packages, 17 static pages** (verified 2026-07-19) ✅ |
-
-### Live site status (2026-07-19, post-v16-3 — V17 fixes NOT yet deployed)
-
-**✅ ALL 6 marketing routes fully operational** at `https://stillwater.jesspete.shop/`:
-- `/` (home) — Hero + schedule + philosophy + instructors + membership + studio + CTA ✅
-- `/schedule` — Weekly class cards with times/instructors/rooms ✅
-- `/instructors` — Portraits + bios (mei-tanaka, james-harlow, aiko-mori) ✅
-- `/pricing` — Membership comparison table ✅
-- `/about` — Studio story ✅
-- `/blog` — Empty state ✅
-
-3 instructor detail pages (SSG) + auth + API endpoints also confirmed working.
-
-Screenshots: `docs/e2e-screenshots/`
-
-> ⚠️ **Lint flake note:** `pnpm lint` (default parallel turborepo run) can intermittently fail with *"not found by the project service"* parsing errors on test files. This is a typescript-eslint `projectService` concurrency collision (two ESLint language-service instances racing), **not a code defect** — confirmed by running lint serially (`pnpm turbo run lint --concurrency=1` → 2/2 green) or per-package. Code is correct.
-
-Test breakdown (approximate — run `pnpm test` for the authoritative count):
-- `packages/db` — 19 test files / **131 tests**
-- `packages/auth` — 4 test files / **102 tests**
-- `packages/api` — 15 test files / **147 tests** (V13-2 cancel + V13-4 RBAC + V13-5 credit + V17-4 cartesian-join fix + V17-6 ilike escape)
-- `packages/payments` — 7 test files / **47 tests** (V13-6 checkout.session.completed + charge.refunded)
-- `packages/config` — 1 test file / **9 tests** (NEW — V17-8 SITE constants)
-- `apps/web` — 37 test files / **254 tests** (V13-1 index-routes + V14 Footer + slug-404-verify + V17-2 CSP rewrite + V17-3 HeroNextClass CLS + V17-5 instructor title + V17-7 studio layout + V17-10 SSE rate limit)
-- `packages/email` — 17 test files / **71 tests**
-- `services/workers` — 12 test files / **45 tests** (V13-3 claim URL domain fix)
-
-Build output: marketing routes (8: home, schedule, instructors×2, pricing, blog×2, about) + studio (5) + admin (11, RBAC-gated) + auth (2) + API routes (trpc, auth catch-all, schedule/stream, sanity/webhook, `/api/webhooks/stripe`). V16-1: `/`, `/schedule`, `/pricing` are `force-dynamic` (ƒ) to prevent prerender Suspense hang. `/instructors`, `/about`, `/blog` are static (○) or SSG (●). V16-2: React Compiler disabled. V16-3: CSP `strict-dynamic` removed. V17-1: leaked `env.local` files removed from git tracking. V17-2: CSP tests rewritten to verify behavior. V17-3: CLS fix (HeroNextClass skeleton + Cormorant font-display optional). V17-4: getRevenueDetails cartesian-join bug fixed. V17-5: instructor title uses user.name. V17-6: ILIKE wildcards escaped. V17-7: data-session attribute removed. V17-8: studio address centralized in @stillwater/config/site. V17-10: SSE per-IP rate limiting. (`pnpm build` verified 2026-07-19: 9/9 packages, 17 static pages, 0 errors.)
-
----
-
-## Notable architectural commitments (now implemented vs pending)
-
-| Commitment | Status | Where it's enforced |
-|---|---|---|
-| PostgreSQL advisory locks for booking | ✅ Implemented | `packages/api/src/routers/bookings.ts` uses `pg_advisory_xact_lock()` |
-| 2-layer auth (cookie-only proxy + full RBAC in layouts) | ✅ Implemented | `apps/web/proxy.ts` (Layer 1) + `apps/web/src/lib/auth.ts` (Layer 2) |
-| RBAC permission matrix (13 × 6 roles) | ✅ Implemented | `packages/auth/src/rbac.ts` |
-| Zod at every boundary | ✅ Implemented | `env.ts`, tRPC `input` schemas, rate-limit middleware |
-| React Compiler | ❌ Disabled (V16-2) | `apps/web/next.config.ts` — `reactCompiler: false` (was `true`; disabled because it created excessive nested Suspense boundaries that prevented React hydration) |
-| Sentry source maps | ✅ Enabled | `apps/web/next.config.ts` — `withSentryConfig` wrapper (upload in CI; no-op locally when `SENTRY_AUTH_TOKEN` unset) |
-| Library discipline (Radix/shadcn only) | ✅ Enforced | `packages/ui` imports from `@radix-ui/*` |
-| Self-hosted fonts (zero FOUT) | ✅ Enforced | `packages/ui/src/fonts/` |
-| Idempotent Stripe webhooks | ✅ Implemented | `packages/payments/src/webhooks.ts` + `/api/webhooks/stripe` (Phase 7; `pg_advisory_xact_lock`) |
-| WCAG 2.2 AAA | ✅ Implemented | `packages/web/src/components/a11y/*` + focus-utils (Phase 11) |
-| E2E testing | ✅ Implemented | 7 Playwright specs: booking + accessibility + 5 admin |
-| Background jobs (Trigger.dev tasks + Resend Native Templates) | ✅ Implemented | `services/workers/src/*` + `packages/email/src/*` (Phase 8) |
-
----
-
-## What is NOT yet built
-
-Nothing remains from the original 13‑phase plan — all phases (0–12) are complete and green.
-
-Known intentional stub (not a gap): `payments.refund` remains a thin D12 wrapper per ADR‑010 / Phase 7 scope; full refund logic is deferred by design.
-
----
-
-## Things worth flagging
-
-- **Docs aligned through v17; refreshed 2026-07-21.** Implementation matches the latest codebase. All 13 phases complete + v8→v16-3 audit remediation complete + v17 comprehensive code review remediation complete (11 findings fixed via TDD). See `AUDIT_REMEDIATION.md` for the full v1→v17 remediation history. Live site confirmed operational via agent-browser E2E on 2026-07-19 (V17 fixes committed but NOT yet deployed — repo owner must deploy + rotate leaked secrets).
-- **Migrations are canonical.** Six migrations define the current DB state: `0000_dear_dagger.sql` (initial 18-table schema), `0001_equal_iron_lad.sql` (instructors.published column), `0002_lyrical_cargill.sql` (waitlist unique index `idx_waitlist_session_member`), `0003_audit_log_phase9.sql` (audit_log table), `0004_huge_hawkeye.sql` (enrollments `reminder_24h_sent_at` / `reminder_1h_sent_at` for cron-reminder dedup), `0005_add_price_cents.sql` (membership_plans.price_cents — v4 pricing bug fix). All six current migrations apply successfully via `pnpm db:migrate`.
-- **P0 production fix history (v1→v16-3).** Live site at `https://stillwater.jesspete.shop/` had 4 of 8 marketing routes (`/`, `/schedule`, `/instructors`, `/pricing`) stuck on a Suspense "Loading…" fallback indefinitely. The remediation unfolded over 16+ versions (see `AUDIT_REMEDIATION.md` for the full history):
-  - **v1–v7 (2026-07-14 to 2026-07-15):** Defensive fixes (withTimeout, CSP nonce, pricing column, migration journal, seed, fallback plans, PPR disable).
-  - **v8 (2026-07-17):** Systematic Six-Axis audit remediation (11 findings fixed).
-  - **v9–v12 (2026-07-17):** CSP restoration, generateStaticParams, DB direct query for slug routes.
-  - **v13 (2026-07-19):** Six-Axis audit: 4 Critical + 19 Important (index routes DB direct, waitlist promotion, RBAC tiers, credit consumption, Stripe webhook handlers, Cloudflare env, glassmorphism, outline-hidden).
-  - **v14 (2026-07-19):** Mockup fidelity restoration (Footer address/phone/email/hours, Hero copy/stats, section titles, CTA Band, marquee names).
-  - **v15 (2026-07-19):** Removed withTimeout (doesn't fire during prerender).
-  - **v16-1 (2026-07-19):** force-dynamic on 3 routes (DB query hangs during prerender).
-  - **v16-2 (2026-07-19):** Disabled React Compiler (created excessive nested Suspense boundaries).
-  - **v16-3 (2026-07-19):** Removed `strict-dynamic` from CSP — **THE definitive fix**: `strict-dynamic` caused browsers to ignore `unsafe-inline`, blocking Next.js's inline `$RC` scripts and preventing React hydration.
-- **v17 comprehensive code review remediation (2026-07-21).** Systematic Six-Axis audit identified 11 outstanding issues; all remediated via TDD in 8 atomic commits. See `AUDIT_REMEDIATION.md §v17` for the full report. Critical fixes:
-  - **V17-1 (P0 Security):** Production secrets (`BETTER_AUTH_SECRET`, `SANITY_API_TOKEN`, `SANITY_WEBHOOK_SECRET`) were committed to the public GitHub repo via `env.local` files (no leading dot — gitignore missed them). Files removed from git tracking, .gitignore strengthened, pre-commit hook updated. **Repo owner must rotate secrets + scrub git history.**
-  - **V17-2 (Critical Tests):** CSP tests rewritten to verify behavior (parsed directives) instead of file content (string matching). Old tests passed even after V16-3 fix removed `'strict-dynamic'` — false confidence on a security-critical control.
-  - **V17-3 (Critical UX):** CLS = 0.465 on home page (9× above target) fixed via HeroNextClass `min-h-[280px]` skeleton + Cormorant `font-display: optional`. Verification requires live deploy.
-  - **V17-4–V17-10 (Important):** getRevenueDetails cartesian-join bug, instructor title lowercase, ILIKE wildcard escape, data-session DOM leak, studio address centralization, SSE rate limiting. See `AUDIT_REMEDIATION.md §v17` for details.
-
+Let me append the v18 section to AUDIT_REMEDIATION.md and update Project_Brief.md:
+Now let me update Project_Brief.md with the V18 status:
+Now let me update the "Things worth flagging" section + the test counts. Let me find the test count section:
+Now let me add a V18 note to the "Things worth flagging" section. Let me find it:
