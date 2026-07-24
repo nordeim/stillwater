@@ -2,7 +2,13 @@
  * F12-03 — Live "Next Class" card
  *
  * Client component. Fetches today's soonest session via tRPC.
- * 12-bar spots indicator. CTA links to /book/[sessionId].
+ * CTA links to /book/[sessionId].
+ *
+ * V19-12 fix: removed the misleading 12-bar spots indicator.
+ * Previously the component showed "N of N spots available" with 12 bars
+ * all in bg-stone-200 (none filled) because spotsTaken was hardcoded to 0.
+ * Without a live enrollment count, the indicator was dishonest. Replaced
+ * with a simple "Reserve Spot →" CTA (which already existed below).
  *
  * Source: MEP Phase 12 F12-03.
  */
@@ -14,11 +20,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 import { trpc } from '@/lib/trpc/client';
-
-// Default capacity used for the spots indicator when the session
-// doesn't have an explicit overrideCapacity or room capacity.
-const DEFAULT_CAPACITY = 12;
-const SPOTS_BAR_COUNT = 12;
 
 export function HeroNextClass() {
   const [weekStart, setWeekStart] = useState<Date | null>(null);
@@ -52,10 +53,8 @@ export function HeroNextClass() {
     ?.[0] as {
       id: string;
       startsAt: Date;
-      overrideCapacity?: number | null;
-      class?: { title: string; maxCapacity?: number | null };
-      instructor?: { name: string };
-      room?: { capacity?: number | null };
+      class?: { title: string };
+      instructor?: { user?: { name: string | null } | null };
     } | undefined;
 
   if (!upcoming) {
@@ -90,17 +89,7 @@ export function HeroNextClass() {
     hour12: true,
   });
 
-  // Calculate capacity and spots (was hardcoded as 4/12 taken)
-  const capacity =
-    upcoming.overrideCapacity ??
-    upcoming.class?.maxCapacity ??
-    upcoming.room?.capacity ??
-    DEFAULT_CAPACITY;
-  // Without a live enrollment count (requires getSession query), show
-  // a neutral "spots available" state rather than a fake number.
-  const spotsAvailable = capacity;
-  const spotsTaken = 0; // Conservative — no live count without an extra query
-  const spotsLabel = `${String(spotsAvailable)} of ${String(capacity)} spots available`;
+  const instructorName = upcoming.instructor?.user?.name;
 
   return (
     <div className="min-h-[280px] border border-stone-200 bg-sand-warm p-6">
@@ -118,30 +107,8 @@ export function HeroNextClass() {
       </p>
       <p className="mt-1 text-sm text-stone-500">
         {sessionTime}
-        {upcoming.instructor?.name && ` · with ${upcoming.instructor.name}`}
+        {instructorName && ` · with ${instructorName}`}
       </p>
-
-      {/* Spots indicator (12-bar) */}
-      <div className="mt-6">
-        <div className="flex gap-1" role="img" aria-label={spotsLabel}>
-          {Array.from({ length: SPOTS_BAR_COUNT }, (_, i) => (
-            <span
-              key={i}
-              className={
-                i < spotsTaken
-                  ? 'h-3 w-3 bg-clay-400'
-                  : 'h-3 w-3 bg-stone-200'
-              }
-            />
-          ))}
-        </div>
-        <p
-          className="mt-2 text-xs text-stone-500"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          {spotsAvailable} spots available
-        </p>
-      </div>
 
       <Link
         href={`/book/${upcoming.id}`}

@@ -28,6 +28,8 @@ export default async function AdminSchedulePage() {
   const sessions = await caller.schedule.getWeek({ weekStart });
 
   // Cast for Drizzle relational type inference (SKILL §9.9 Gotcha 27)
+  // V19-3/V19-6 fix: class.title (not class.name) + instructor.user.name
+  // (instructors table has only slug, not name; name lives on users).
   interface ScheduleSession {
     id: string;
     startsAt: Date;
@@ -35,8 +37,8 @@ export default async function AdminSchedulePage() {
     status: string;
     overrideCapacity: number | null;
     isVirtual: boolean;
-    class?: { id: string; name: string; level: string };
-    instructor?: { id: string; name: string };
+    class?: { id: string; title: string; level: string };
+    instructor?: { id: string; slug: string; user?: { name: string | null } | null };
     room?: { id: string; name: string } | null;
   }
   const typedSessions = sessions as unknown as ScheduleSession[];
@@ -98,11 +100,11 @@ export default async function AdminSchedulePage() {
                     })}
                   </span>
                   <span className="text-sm text-stone-700">
-                    {session.class?.name ?? 'Untitled class'}
+                    {session.class?.title ?? 'Untitled class'}
                   </span>
-                  {session.instructor?.name && (
+                  {session.instructor?.user?.name && (
                     <span className="text-xs text-stone-500">
-                      with {session.instructor.name}
+                      with {session.instructor.user.name}
                     </span>
                   )}
                 </div>

@@ -13,6 +13,7 @@
 import { Text, Heading, Hr, Section } from 'react-email';
 import { EmailLayout } from '../components/EmailLayout';
 import { EmailButton } from '../components/EmailButton';
+import { SITE } from '@stillwater/config/site';
 
 export interface WeeklyDigestProps {
   memberName: string;
@@ -31,7 +32,7 @@ export function WeeklyDigest({
   upcomingClasses,
   announcements,
 }: WeeklyDigestProps) {
-  const scheduleUrl = 'https://stillwater.studio/schedule';
+  const scheduleUrl = `${SITE.url}/schedule`;
 
   return (
     <EmailLayout previewText="Your week at Stillwater ✦">

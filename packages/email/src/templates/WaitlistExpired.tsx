@@ -12,6 +12,7 @@
 import { Text, Heading, Hr } from 'react-email';
 import { EmailLayout } from '../components/EmailLayout';
 import { EmailButton } from '../components/EmailButton';
+import { SITE } from '@stillwater/config/site';
 
 export interface WaitlistExpiredProps {
   memberName: string;
@@ -22,7 +23,7 @@ export function WaitlistExpired({
   memberName,
   className,
 }: WaitlistExpiredProps) {
-  const scheduleUrl = 'https://stillwater.studio/schedule';
+  const scheduleUrl = `${SITE.url}/schedule`;
 
   return (
     <EmailLayout previewText="Your spot offer has expired">

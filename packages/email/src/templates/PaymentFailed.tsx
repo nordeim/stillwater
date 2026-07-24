@@ -12,6 +12,7 @@
 import { Text, Heading, Hr } from 'react-email';
 import { EmailLayout } from '../components/EmailLayout';
 import { EmailButton } from '../components/EmailButton';
+import { SITE } from '@stillwater/config/site';
 
 export interface PaymentFailedProps {
   memberName: string;
@@ -43,8 +44,8 @@ export function PaymentFailed({
       </Text>
       <Text style={textStyle}>
         If you have any questions, please contact the studio at{' '}
-        <a href="mailto:hello@stillwater.studio" style={linkStyle}>
-          hello@stillwater.studio
+        <a href={`mailto:${SITE.email}`} style={linkStyle}>
+          {SITE.email}
         </a>
         .
       </Text>

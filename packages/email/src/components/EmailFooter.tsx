@@ -12,20 +12,26 @@
 
 import { Section, Text, Link } from 'react-email';
 
+import { SITE } from '@stillwater/config/site';
+
 const COLORS = {
   stone400: '#8C7B6E',
   stone700: '#3D3832',
   sandWarm: '#EDE5D8',
 } as const;
 
+// V19-6 fix: previously hardcoded '123 SE Division Street' (FABRICATED address).
+// The website footer (V17-8) correctly shows '2847 SE Division Street' — but
+// email footers still shipped the fabricated address. CAN-SPAM Act §7703
+// requires commercial emails to include the sender's physical postal address.
+// Now sourced from the shared SITE constant (single source of truth).
+const STUDIO_NAME = SITE.name;
 const STUDIO_ADDRESS = {
-  line1: '123 SE Division Street',
-  city: 'Portland',
-  state: 'OR',
-  zip: '97202',
-} as const;
-
-const STUDIO_NAME = 'Stillwater Yoga Studio';
+  line1: SITE.address.street,
+  city: SITE.address.city,
+  state: SITE.address.region,
+  zip: SITE.address.postalCode,
+};
 
 export function EmailFooter() {
   const currentYear = new Date().getFullYear();

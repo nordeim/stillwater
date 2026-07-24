@@ -70,7 +70,7 @@ export default async function DashboardPage() {
         <div className="space-y-8">
           <ProfileSummaryCard
             displayName={profile.displayName}
-            email={profile.phone ?? ''}
+            email={profile.user.email}
             joinedAt={new Date(profile.joinedAt)}
           />
           {typedSubscription && (

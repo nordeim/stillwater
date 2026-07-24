@@ -50,6 +50,11 @@ export interface SiteAddress {
 export interface SiteConstants {
   /** Studio name: "Stillwater Yoga Studio" */
   readonly name: string;
+  /** Canonical public app URL (no trailing slash). Used by email templates + OG tags.
+   *  V19-8 fix: previously email templates hardcoded 'https://stillwater.studio'
+   *  (a domain we don't own). Now they use SITE.url so the URLs point to the
+   *  actual deployment (configurable via NEXT_PUBLIC_APP_URL env var). */
+  readonly url: string;
   /** Full mailing address */
   readonly address: SiteAddress;
   /** Phone: "(503) 321-4950" */
@@ -60,6 +65,7 @@ export interface SiteConstants {
 
 export const SITE: SiteConstants = {
   name: 'Stillwater Yoga Studio',
+  url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://stillwater.jesspete.shop',
   address: {
     full: '2847 SE Division Street, Portland, OR 97202',
     street: '2847 SE Division Street',

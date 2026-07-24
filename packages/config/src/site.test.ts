@@ -60,4 +60,11 @@ describe('V17-8: shared site constants (single source of truth)', () => {
   it('email is the V14-2 footer value', () => {
     expect(SITE.email).toBe('hello@stillwater.studio');
   });
+
+  // V19-8: SITE.url added for email templates (was hardcoded 'https://stillwater.studio')
+  it('exports a url field for email templates (V19-8)', () => {
+    expect(SITE.url).toBeDefined();
+    expect(typeof SITE.url).toBe('string');
+    expect(SITE.url.startsWith('http')).toBe(true);
+  });
 });

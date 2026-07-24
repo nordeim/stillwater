@@ -19,6 +19,10 @@ export const instructorsRouter = router({
    * Used by the public /instructors page.
    *
    * Phase 4: filters published == true per SKILL §7.5.1.
+   *
+   * V19-4: eager-load `user` so consumers can display the instructor's name
+   * (the instructors table has only `slug`, not `name`; name lives on `users`).
+   * Unblocks V18-1 (home page), V18-4 (admin instructors), V18-7 (slug-as-name).
    */
   list: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.query.instructors.findMany({
@@ -26,6 +30,7 @@ export const instructorsRouter = router({
         eq(instructors.isActive, true),
         eq(instructors.published, true),
       ),
+      with: { user: true },
       orderBy: [asc(instructors.sortOrder), asc(instructors.slug)],
     });
   }),
@@ -35,12 +40,15 @@ export const instructorsRouter = router({
    * Used by the public /instructors/[slug] page.
    *
    * Phase 4: filters published == true per SKILL §7.5.1.
+   *
+   * V19-4: eager-load `user` so the detail page can display user.name + user.email.
    */
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string().min(1).max(120) }))
     .query(async ({ ctx, input }) => {
       const instructor = await ctx.db.query.instructors.findFirst({
         where: eq(instructors.slug, input.slug),
+        with: { user: true },
       });
 
       if (!instructor || !instructor.isActive || !instructor.published) {

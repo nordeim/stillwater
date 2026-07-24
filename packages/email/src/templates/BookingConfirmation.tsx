@@ -13,6 +13,7 @@
 import { Text, Heading, Hr } from 'react-email';
 import { EmailLayout } from '../components/EmailLayout';
 import { EmailButton } from '../components/EmailButton';
+import { SITE } from '@stillwater/config/site';
 
 export interface BookingConfirmationProps {
   memberName: string;
@@ -29,8 +30,8 @@ export function BookingConfirmation({
   instructor,
   sessionId,
 }: BookingConfirmationProps) {
-  const cancelUrl = `https://stillwater.studio/book/${sessionId}?cancel=true`;
-  const calendarUrl = `https://stillwater.studio/book/${sessionId}?calendar=true`;
+  const cancelUrl = `${SITE.url}/book/${sessionId}?cancel=true`;
+  const calendarUrl = `${SITE.url}/book/${sessionId}?calendar=true`;
 
   return (
     <EmailLayout previewText={`You're booked: ${className} on ${sessionDate}`}>

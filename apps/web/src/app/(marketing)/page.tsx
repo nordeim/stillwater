@@ -54,15 +54,15 @@ interface ScheduleSession {
   id: string;
   startsAt: Date;
   class: { title: string };
-  instructor: { slug: string };
+  instructor: { slug: string; user?: { name: string | null } | null };
   room: { name: string } | null;
 }
 
 interface InstructorSummary {
   id: string;
-  name: string;
   slug: string;
   bio?: string | null;
+  user?: { name: string | null } | null;
 }
 
 interface PlanSummary {
@@ -77,6 +77,8 @@ export default async function HomePage() {
   // V15-1: Query DB directly with .catch(() => []) fallback (NO withTimeout).
   // The DB driver's own 10s AbortSignal timeout handles hangs.
   // .catch(() => []) ensures the page always renders (with empty data if DB fails).
+  // V19-6: nested-eager-load instructor.user so ScheduleGrid can display
+  // instructor.user.name (not slug). V19-4: eager-load user on instructors.
   const [sessions, instructorList, planList] = await Promise.all([
     db.query.classSessions
       .findMany({
@@ -85,7 +87,11 @@ export default async function HomePage() {
           lte(classSessions.startsAt, getWeekEnd()),
           eq(classSessions.status, 'scheduled'),
         ),
-        with: { class: true, instructor: true, room: true },
+        with: {
+          class: true,
+          instructor: { with: { user: true } },
+          room: true,
+        },
         orderBy: classSessions.startsAt,
       })
       .catch(() => []),
@@ -95,6 +101,7 @@ export default async function HomePage() {
           eq(instructors.isActive, true),
           eq(instructors.published, true),
         ),
+        with: { user: true },
         orderBy: [asc(instructors.sortOrder), asc(instructors.slug)],
       })
       .catch(() => []),
@@ -129,7 +136,7 @@ export default async function HomePage() {
       <InstructorsSection
         instructors={(instructorList as InstructorSummary[]).map((i) => ({
           id: i.id,
-          name: i.name,
+          name: i.user?.name ?? i.slug,
           slug: i.slug,
           bio: i.bio ?? null,
         }))}

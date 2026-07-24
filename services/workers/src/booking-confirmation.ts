@@ -23,7 +23,7 @@ interface EnrollmentWithEmailData {
   session: {
     startsAt: Date;
     class: { title: string };
-    instructor: { slug: string };
+    instructor: { slug: string; user?: { name: string | null } | null };
   };
   member: {
     displayName: string;
@@ -45,10 +45,12 @@ export const bookingConfirmation = task({
     // 'never' without defineRelations(). Cast to expected shape.
     // Per workers tsconfig: NodeNext + verbatimModuleSyntax means we can't
     // import schema tables directly — use callback syntax for `where`.
+    // V19-7 fix: nested-eager-load instructor.user so we can pass the
+    // instructor's display name (not slug) to the email template.
     const enrollment = (await (db.query.enrollments as any).findFirst({
       where: (e: any, { eq }: any) => eq(e.id, payload.enrollmentId),
       with: {
-        session: { with: { class: true, instructor: true } },
+        session: { with: { class: true, instructor: { with: { user: true } } } },
         member: { with: { user: true } },
       },
     })) as EnrollmentWithEmailData | undefined;
@@ -67,7 +69,9 @@ export const bookingConfirmation = task({
       memberName: enrollment.member.displayName,
       className: enrollment.session.class.title,
       sessionDate: formatSessionDate(enrollment.session.startsAt),
-      instructor: enrollment.session.instructor.slug,
+      instructor:
+        enrollment.session.instructor.user?.name ??
+        enrollment.session.instructor.slug,
       sessionId: enrollment.sessionId,
     });
 

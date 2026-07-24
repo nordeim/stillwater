@@ -62,6 +62,19 @@ describe('instructorsRouter.list', () => {
     const callArg = findMany.mock.calls[0][0];
     expect(callArg.where).toBeDefined();
   });
+
+  // V19-4: eager-load user so instructor display name is available
+  // (the instructors table has only slug, not name; name lives on users)
+  it('eager-loads user relation (V19-4 — unblocks V18-1, V18-4, V18-7)', async () => {
+    const findMany = vi.fn().mockResolvedValue([instructorFixture]);
+    const ctx = makeCtx({
+      query: { instructors: { findMany } } as never,
+    });
+    const caller = instructorsRouter.createCaller(ctx);
+    await caller.list();
+    const callArg = findMany.mock.calls[0][0];
+    expect(callArg.with).toEqual({ user: true });
+  });
 });
 
 describe('instructorsRouter.getBySlug', () => {
@@ -107,5 +120,17 @@ describe('instructorsRouter.getBySlug', () => {
     await expect(
       caller.getBySlug({ slug: 'jane-doe' }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  // V19-4: eager-load user so instructor detail page can show user.name
+  it('eager-loads user relation (V19-4 — unblocks V18-7 instructor detail)', async () => {
+    const findFirst = vi.fn().mockResolvedValue(instructorFixture);
+    const ctx = makeCtx({
+      query: { instructors: { findFirst } } as never,
+    });
+    const caller = instructorsRouter.createCaller(ctx);
+    await caller.getBySlug({ slug: 'jane-doe' });
+    const callArg = findFirst.mock.calls[0][0];
+    expect(callArg.with).toEqual({ user: true });
   });
 });

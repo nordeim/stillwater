@@ -56,7 +56,13 @@ describe('scheduleRouter.getWeek', () => {
     // The where clause filters by date range + status='scheduled'
     const call = findMany.mock.calls[0][0];
     expect(call).toHaveProperty('with');
-    expect(call.with).toEqual({ class: true, instructor: true, room: true });
+    // V19-6: nested eager-load instructor.user so consumers can display
+    // the instructor's name (instructors table has only slug, not name).
+    expect(call.with).toEqual({
+      class: true,
+      instructor: { with: { user: true } },
+      room: true,
+    });
   });
 
   it('returns empty array when no sessions match', async () => {
@@ -89,6 +95,13 @@ describe('scheduleRouter.getSession', () => {
 
     expect(result.id).toBe(sessionFixture.id);
     expect(result.enrolledCount).toBe(5);
+    // V19-6: getSession also nested-eager-loads instructor.user
+    const call = findFirst.mock.calls[0][0];
+    expect(call.with).toEqual({
+      class: true,
+      instructor: { with: { user: true } },
+      room: true,
+    });
   });
 
   it('throws NOT_FOUND when session does not exist', async () => {

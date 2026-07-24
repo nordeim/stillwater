@@ -34,13 +34,15 @@ export default async function AdminInstructorsPage() {
   const instructors = await caller.instructors.list();
 
   // Cast for Drizzle relational type inference (SKILL §9.9 Gotcha 27)
+  // V19-4 fix: eager-load user so we can display user.name (not slug).
+  // The instructors table has only slug, not name; name lives on users.
   interface Instructor {
     id: string;
-    name: string;
     slug: string;
     bio: string | null;
     published: boolean;
     sortOrder: number;
+    user: { name: string | null } | null;
   }
   const typedInstructors = instructors as unknown as Instructor[];
 
@@ -86,7 +88,7 @@ export default async function AdminInstructorsPage() {
               {typedInstructors.map((ins) => (
                 <TableRow key={ins.id}>
                   <TableCell className="font-medium text-stone-900">
-                    {ins.name}
+                    {ins.user?.name ?? ins.slug}
                   </TableCell>
                   <TableCell
                     className="text-stone-600"

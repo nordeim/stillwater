@@ -222,13 +222,18 @@ export default async function AdminMemberDetailPage({ params }: PageProps) {
               </TableHeader>
               <TableBody>
                 {paymentHistory.slice(0, 20).map((p: unknown) => {
+                  // V19-5 fix: payment_events has no top-level amountCents column.
+                  // The amount lives in the Stripe payload jsonb at payload.amount_received
+                  // (in cents). Extract it safely with optional chaining + nullish coalescing.
                   const payment = p as {
                     id: string;
                     type: string;
-                    amountCents: number;
+                    payload: Record<string, unknown> | null;
                     status: string;
                     createdAt: Date;
                   };
+                  const amountCents =
+                    (payment.payload?.amount_received as number | undefined) ?? 0;
                   return (
                     <TableRow key={payment.id}>
                       <TableCell
@@ -246,7 +251,7 @@ export default async function AdminMemberDetailPage({ params }: PageProps) {
                         className="text-stone-600"
                         style={{ fontFamily: 'var(--font-mono)' }}
                       >
-                        ${(payment.amountCents / 100).toFixed(2)}
+                        ${(amountCents / 100).toFixed(2)}
                       </TableCell>
                       <TableCell>
                         <span

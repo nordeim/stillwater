@@ -52,13 +52,16 @@ describe('payment-failed-notify (JOB-009)', () => {
     const memberFixture = {
       id: 'mem-1',
       displayName: 'Jane Doe',
+      stripeCustomerId: 'cus_ABC123',
       user: { id: 'usr-1', email: 'jane@example.com' },
     };
     mockMembersFindFirst.mockResolvedValue(memberFixture);
     mockSendPaymentFailed.mockResolvedValue(undefined);
 
+    // V19-17 fix: payload now uses customerId (not memberId) — matches what
+    // the webhook handler (packages/payments/src/webhooks.ts) actually sends.
     await paymentFailedNotify.run({
-      memberId: 'mem-1',
+      customerId: 'cus_ABC123',
       portalUrl: 'https://billing.stripe.com/session/abc123',
     });
 
@@ -75,7 +78,7 @@ describe('payment-failed-notify (JOB-009)', () => {
     mockMembersFindFirst.mockResolvedValue(undefined);
 
     const result = await paymentFailedNotify.run({
-      memberId: 'missing',
+      customerId: 'cus_MISSING',
       portalUrl: 'https://billing.stripe.com/session/abc123',
     });
 

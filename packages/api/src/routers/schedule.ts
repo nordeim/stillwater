@@ -46,7 +46,7 @@ export const scheduleRouter = router({
         ),
         with: {
           class: true,
-          instructor: true,
+          instructor: { with: { user: true } },
           room: true,
         },
         orderBy: classSessions.startsAt,
@@ -58,6 +58,9 @@ export const scheduleRouter = router({
   /**
    * Get a single session by ID with eager-loaded relations + enrolled count.
    * Throws NOT_FOUND if the session does not exist.
+   *
+   * V19-6: nested-eager-load instructor.user so the booking page + admin
+   * schedule can display instructor.user.name (instructors table has only slug).
    */
   getSession: publicProcedure
     .input(z.object({ sessionId: z.string().uuid() }))
@@ -66,7 +69,7 @@ export const scheduleRouter = router({
         where: eq(classSessions.id, input.sessionId),
         with: {
           class: true,
-          instructor: true,
+          instructor: { with: { user: true } },
           room: true,
         },
       });

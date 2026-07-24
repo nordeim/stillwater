@@ -12,7 +12,7 @@ interface ScheduleSession {
   id: string;
   startsAt: Date;
   class: { title: string };
-  instructor: { slug: string };
+  instructor: { slug: string; user?: { name: string | null } | null };
   room: { name: string };
 }
 
@@ -41,7 +41,7 @@ export function ScheduleGrid({ sessions }: { sessions: ScheduleSession[] }) {
             {session.class.title}
           </h3>
           <p className="mt-1 text-sm text-stone-600">
-            with {session.instructor.slug.replace(/-/g, ' ')}
+            with {session.instructor.user?.name ?? session.instructor.slug.replace(/-/g, ' ')}
           </p>
           <p className="mt-2 text-xs text-stone-500">{session.room.name}</p>
           <Link

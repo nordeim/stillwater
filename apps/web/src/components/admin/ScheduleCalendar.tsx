@@ -39,8 +39,8 @@ interface ScheduleSession {
   status: string;
   overrideCapacity: number | null;
   isVirtual: boolean;
-  class?: { id: string; name: string; level: string };
-  instructor?: { id: string; name: string };
+  class?: { id: string; title: string; level: string };
+  instructor?: { id: string; slug: string; user?: { name: string | null } | null };
   room?: { id: string; name: string } | null;
 }
 
@@ -202,10 +202,10 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
                         draggable
                       >
                         <p className="truncate text-xs font-medium text-stone-900">
-                          {session.class?.name ?? 'Untitled'}
+                          {session.class?.title ?? 'Untitled'}
                         </p>
                         <p className="text-xs text-stone-500">
-                          {session.instructor?.name ?? 'TBA'}
+                          {session.instructor?.user?.name ?? session.instructor?.slug ?? 'TBA'}
                         </p>
                       </div>
                     ) : (
@@ -255,11 +255,11 @@ export function ScheduleCalendar({ weekStart, sessions }: ScheduleCalendarProps)
             <div className="space-y-2 text-sm">
               <p>
                 <span className="text-stone-500">Class:</span>{' '}
-                {selectedSession.class?.name ?? 'Untitled'}
+                {selectedSession.class?.title ?? 'Untitled'}
               </p>
               <p>
                 <span className="text-stone-500">Instructor:</span>{' '}
-                {selectedSession.instructor?.name ?? 'TBA'}
+                {selectedSession.instructor?.user?.name ?? selectedSession.instructor?.slug ?? 'TBA'}
               </p>
               <p>
                 <span className="text-stone-500">Starts:</span>{' '}

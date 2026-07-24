@@ -11,6 +11,8 @@
 
 import type { Metadata } from 'next';
 
+import { SITE } from '@stillwater/config/site';
+
 import { apiCaller } from '@/lib/trpc/server';
 
 export const metadata: Metadata = {
@@ -61,7 +63,7 @@ export default async function AdminSettingsPage() {
             >
               Studio Name
             </p>
-            <p className="mt-1 text-sm text-stone-900">Stillwater Yoga Studio</p>
+            <p className="mt-1 text-sm text-stone-900">{SITE.name}</p>
           </div>
           <div>
             <p
@@ -70,7 +72,7 @@ export default async function AdminSettingsPage() {
             >
               Location
             </p>
-            <p className="mt-1 text-sm text-stone-900">Southeast Portland, OR</p>
+            <p className="mt-1 text-sm text-stone-900">{SITE.address.full}</p>
           </div>
         </div>
         <p className="mt-4 text-xs text-stone-500">

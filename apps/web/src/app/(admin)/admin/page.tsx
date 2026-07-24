@@ -33,6 +33,7 @@ export default async function AdminDashboardPage() {
   ]);
 
   // Filter to today's sessions only
+  // V19-6 fix: instructor now has nested user relation (user.name)
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   const todaysSessions = (weekSchedule as {
@@ -40,7 +41,7 @@ export default async function AdminDashboardPage() {
     startsAt: Date;
     status: string;
     class: { title: string } | null;
-    instructor: { slug: string } | null;
+    instructor: { slug: string; user?: { name: string | null } | null } | null;
   }[]).filter((s) => {
     const sessionDate = new Date(s.startsAt).toISOString().split('T')[0];
     return sessionDate === today && s.status === 'scheduled';
@@ -127,7 +128,12 @@ export default async function AdminDashboardPage() {
                   <span className="text-sm text-stone-700">
                     {session.class?.title ?? 'Untitled class'}
                   </span>
-                  {session.instructor?.slug && (
+                  {session.instructor?.user?.name && (
+                    <span className="text-xs text-stone-500">
+                      with {session.instructor.user.name}
+                    </span>
+                  )}
+                  {!session.instructor?.user?.name && session.instructor?.slug && (
                     <span className="text-xs text-stone-500">
                       with {session.instructor.slug.replace(/-/g, ' ')}
                     </span>

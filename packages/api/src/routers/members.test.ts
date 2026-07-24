@@ -90,6 +90,19 @@ describe('membersRouter.getProfile', () => {
     const caller = membersRouter.createCaller(ctx);
     await expect(caller.getProfile()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
+
+  // V19-5: eager-load user so dashboard can display user.email
+  // (members table has phone, not email; email lives on users)
+  it('eager-loads user relation (V19-5 — unblocks V18-2 dashboard email)', async () => {
+    const findFirst = vi.fn().mockResolvedValue(memberFixture);
+    const ctx = makeCtx({
+      query: { members: { findFirst } } as never,
+    });
+    const caller = membersRouter.createCaller(ctx);
+    await caller.getProfile();
+    const callArg = findFirst.mock.calls[0][0];
+    expect(callArg.with).toEqual({ user: true });
+  });
 });
 
 describe('membersRouter.updateProfile', () => {

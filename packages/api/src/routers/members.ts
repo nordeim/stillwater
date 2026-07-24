@@ -27,6 +27,10 @@ export const membersRouter = router({
   /**
    * Get the caller's own member profile.
    * Throws NOT_FOUND if session.user.memberId is null.
+   *
+   * V19-5: eager-load `user` so the dashboard can display user.email
+   * (the members table has `phone`, not `email`; email lives on `users`).
+   * Unblocks V18-2 (dashboard shows phone as email).
    */
   getProfile: protectedProcedure.query(async ({ ctx }) => {
     const memberId = ctx.session.user.memberId;
@@ -39,6 +43,7 @@ export const membersRouter = router({
 
     const profile = await ctx.db.query.members.findFirst({
       where: eq(members.id, memberId),
+      with: { user: true },
     });
 
     if (!profile) {

@@ -13,6 +13,7 @@
 import { Text, Heading, Hr } from 'react-email';
 import { EmailLayout } from '../components/EmailLayout';
 import { EmailButton } from '../components/EmailButton';
+import { SITE } from '@stillwater/config/site';
 
 export interface MembershipPausedProps {
   memberName: string;
@@ -23,7 +24,7 @@ export function MembershipPaused({
   memberName,
   resumeDate,
 }: MembershipPausedProps) {
-  const dashboardUrl = 'https://stillwater.studio/dashboard';
+  const dashboardUrl = `${SITE.url}/dashboard`;
 
   return (
     <EmailLayout

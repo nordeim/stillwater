@@ -33,18 +33,24 @@ export const paymentFailedNotify = task({
     randomize: true,
   },
   maxDuration: 30,
-  run: async (payload: { memberId: string; portalUrl: string }) => {
+  // V19-17 fix: webhook handler (packages/payments/src/webhooks.ts) passes
+  // { customerId, portalUrl } — but this worker previously expected
+  // { memberId, portalUrl }. The member lookup always returned undefined,
+  // so the PaymentFailed email was NEVER sent. Now we accept customerId
+  // and resolve the member via members.stripeCustomerId inside the worker.
+  run: async (payload: { customerId: string; portalUrl: string }) => {
     // Per SKILL Lesson 69: Drizzle 0.45 relational query types infer as
     // 'never' without defineRelations(). Cast to expected shape.
     // Per workers tsconfig: NodeNext + verbatimModuleSyntax means we can't
     // import schema tables directly — use callback syntax for `where`.
     const member = (await (db.query.members as any).findFirst({
-      where: (m: { id: string }, { eq }: any) => eq(m.id, payload.memberId),
+      where: (m: { stripeCustomerId: string | null }, { eq }: any) =>
+        eq(m.stripeCustomerId, payload.customerId),
       with: { user: true },
     })) as MemberWithUserData | undefined;
 
     if (!member) {
-      return { sent: false, reason: 'Member not found' };
+      return { sent: false, reason: 'Member not found for customerId' };
     }
 
     await sendPaymentFailed({

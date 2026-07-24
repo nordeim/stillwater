@@ -71,7 +71,7 @@ export function ProfileEditForm({
           {...register('displayName')}
           id="displayName"
           type="text"
-          className="mt-2 w-full border border-stone-300 bg-white px-4 py-3 text-stone-900 focus:border-stone-900 focus:outline-none"
+          className="mt-2 w-full border border-stone-300 bg-white px-4 py-3 text-stone-900 focus:border-stone-900 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-water-500 focus-visible:outline-offset-2"
         />
         {errors.displayName && (
           <p className="mt-1 text-xs text-error">{errors.displayName.message}</p>
@@ -86,7 +86,7 @@ export function ProfileEditForm({
           {...register('phone')}
           id="phone"
           type="tel"
-          className="mt-2 w-full border border-stone-300 bg-white px-4 py-3 text-stone-900 focus:border-stone-900 focus:outline-none"
+          className="mt-2 w-full border border-stone-300 bg-white px-4 py-3 text-stone-900 focus:border-stone-900 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-water-500 focus-visible:outline-offset-2"
         />
       </div>
 
@@ -98,7 +98,7 @@ export function ProfileEditForm({
           {...register('emergencyContact')}
           id="emergencyContact"
           type="text"
-          className="mt-2 w-full border border-stone-300 bg-white px-4 py-3 text-stone-900 focus:border-stone-900 focus:outline-none"
+          className="mt-2 w-full border border-stone-300 bg-white px-4 py-3 text-stone-900 focus:border-stone-900 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-water-500 focus-visible:outline-offset-2"
         />
       </div>
 
@@ -110,7 +110,7 @@ export function ProfileEditForm({
           {...register('emergencyPhone')}
           id="emergencyPhone"
           type="tel"
-          className="mt-2 w-full border border-stone-300 bg-white px-4 py-3 text-stone-900 focus:border-stone-900 focus:outline-none"
+          className="mt-2 w-full border border-stone-300 bg-white px-4 py-3 text-stone-900 focus:border-stone-900 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-water-500 focus-visible:outline-offset-2"
         />
       </div>
 

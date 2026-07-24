@@ -13,6 +13,7 @@
 
 import { Text, Heading, Hr } from 'react-email';
 import { EmailLayout } from '../components/EmailLayout';
+import { SITE } from '@stillwater/config/site';
 
 export interface WelcomeMemberProps {
   memberName: string;
@@ -55,7 +56,7 @@ export function WelcomeMember({
         Browse our schedule and book your first class:
       </Text>
       <Text style={textStyle}>
-        <a href="https://stillwater.studio/schedule" style={linkStyle}>
+        <a href={`${SITE.url}/schedule`} style={linkStyle}>
           View schedule →
         </a>
       </Text>

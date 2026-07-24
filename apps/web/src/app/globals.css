@@ -9,6 +9,13 @@
 
 @import '@stillwater/ui/globals';
 @import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* V19-2 fix: tw-animate-css provides the animate-in / fade-in-0 / zoom-in-95 /
+   slide-in-from-* utility classes that Radix UI overlay components
+   (Dialog, DropdownMenu, Popover, Tooltip, Calendar, Select, Command)
+   apply via their data-state attributes. Without this import, all Radix
+   overlay animations were silently failing (no CSS rules generated). */
 
 /* ── Tailwind v4 Theme Mapping ─────────────────────────────── */
 /* Maps Stillwater design tokens to Tailwind's theme namespace
@@ -46,6 +53,11 @@
   --color-water-100: var(--color-water-100);
 
   /* Colors — Sand */
+  /* V19-1 fix: map sand-50 and sand-100 to @theme so bg-sand-50 / text-sand-50
+     / bg-sand-100 / text-sand-100 utilities generate CSS rules. Previously
+     these utilities silently produced NO CSS, rendering text invisible. */
+  --color-sand-50: var(--color-sand-50);
+  --color-sand-100: var(--color-sand-100);
   --color-sand: var(--color-sand);
   --color-sand-warm: var(--color-sand-warm);
   --color-sand-deep: var(--color-sand-deep);

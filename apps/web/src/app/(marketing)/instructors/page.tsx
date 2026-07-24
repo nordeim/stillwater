@@ -22,12 +22,14 @@ interface InstructorSummary {
   slug: string;
   specialties: string[] | null;
   bio: string | null;
+  user: { name: string | null } | null;
 }
 
 export default async function InstructorsPage() {
   // V13-1 fix: Query DB directly (NOT via apiCaller — apiCaller uses headers()
   // which opts the page out of static rendering → streaming → Loading… hang).
   // withTimeout (8s) prevents stuck Suspense when neon-http driver hangs.
+  // V19-7 fix: eager-load user so we can display user.name (not slug).
   const instructorList = await withTimeout(
     db.query.instructors
       .findMany({
@@ -35,6 +37,7 @@ export default async function InstructorsPage() {
           eq(instructors.isActive, true),
           eq(instructors.published, true),
         ),
+        with: { user: true },
         orderBy: [asc(instructors.sortOrder), asc(instructors.slug)],
       })
       .catch(() => []),
@@ -79,7 +82,7 @@ export default async function InstructorsPage() {
                 className="mt-4 text-2xl font-medium capitalize text-stone-900"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
-                {instructor.slug.replace(/-/g, ' ')}
+                {instructor.user?.name ?? instructor.slug.replace(/-/g, ' ')}
               </h2>
               {instructor.specialties && instructor.specialties.length > 0 && (
                 <p className="mt-1 text-sm text-stone-600">

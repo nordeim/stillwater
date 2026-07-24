@@ -32,6 +32,13 @@
   --color-water-100: #E8F0F3;
 
   /* Sand — surfaces */
+  /* V19-1 fix: --color-sand-50 and --color-sand-100 were referenced 100+ times
+     across the codebase (Hero CTA, Footer wordmark, NewsletterForm, SkipLink,
+     Checkbox checkmark, etc.) but NEVER defined. Every primary CTA, the Footer
+     wordmark, all stat values, and the SkipLink text were rendering INVISIBLE
+     (dark inherited text on dark backgrounds). This fix restores visibility. */
+  --color-sand-50: #FAF6EF;
+  --color-sand-100: #F5F0E8;
   --color-sand: #F5F0E8;
   --color-sand-warm: #EDE5D8;
   --color-sand-deep: #E2D8CB;
