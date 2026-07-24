@@ -53,9 +53,38 @@ if (!secret && !isBuildContext) {
 // doesn't throw "You are using the default secret". This secret is NEVER
 // used for actual signing (build context doesn't execute auth flows).
 const effectiveSecret = secret ?? cryptoRandomSecret();
-const baseURL = process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3000';
-const googleClientId = process.env['GOOGLE_CLIENT_ID'] ?? 'placeholder.apps.googleusercontent.com';
-const googleClientSecret = process.env['GOOGLE_CLIENT_SECRET'] ?? 'placeholder';
+
+// V20-4 fix: fail-fast for auth-critical env vars in production.
+// Before V20-4, these silently fell back to 'placeholder' strings —
+// causing the production auth 500 outage (sign-in/magic-link + social
+// both returned HTTP 500 because Google OAuth rejected placeholder creds).
+// Now: in production (non-build), throw with a clear actionable message.
+// NOTE: RESEND_API_KEY is validated in resend-client.ts (imported above),
+// so we only validate the remaining 3 vars here.
+const baseURL = process.env['BETTER_AUTH_URL'];
+const googleClientId = process.env['GOOGLE_CLIENT_ID'];
+const googleClientSecret = process.env['GOOGLE_CLIENT_SECRET'];
+
+if (!isBuildContext) {
+  const missing: string[] = [];
+  if (!baseURL) missing.push('BETTER_AUTH_URL');
+  if (!googleClientId) missing.push('GOOGLE_CLIENT_ID');
+  if (!googleClientSecret) missing.push('GOOGLE_CLIENT_SECRET');
+  if (missing.length > 0) {
+    throw new Error(
+      `[auth] Missing required env var(s): ${missing.join(', ')}. ` +
+        'Set these in your Vercel project settings (or apps/web/.env.local for local dev). ' +
+        'Without them, sign-in (Google OAuth + Magic Link) will return HTTP 500. ' +
+        'See .env.example for the expected values.',
+    );
+  }
+}
+
+// All env vars are now guaranteed non-undefined in production contexts.
+// Fall back to localhost/placeholder ONLY in build/test contexts.
+const effectiveBaseURL = baseURL ?? 'http://localhost:3000';
+const effectiveGoogleClientId = googleClientId ?? 'placeholder.apps.googleusercontent.com';
+const effectiveGoogleClientSecret = googleClientSecret ?? 'placeholder';
 const emailFrom = process.env['EMAIL_FROM'] ?? 'hello@stillwater.studio';
 
 export const auth = betterAuth({
@@ -78,7 +107,7 @@ export const auth = betterAuth({
     },
   }),
   secret: effectiveSecret,
-  baseURL,
+  baseURL: effectiveBaseURL,
   emailAndPassword: { enabled: false },
   // Rate limiting for auth mutations (P0-4 fix).
   // Better Auth has built-in rate limiting that uses the database (not Redis)
@@ -97,8 +126,8 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: googleClientId,
-      clientSecret: googleClientSecret,
+      clientId: effectiveGoogleClientId,
+      clientSecret: effectiveGoogleClientSecret,
       scope: ['email', 'profile'], // OAuth scope minimization (SKILL §5.6.1)
     },
   },

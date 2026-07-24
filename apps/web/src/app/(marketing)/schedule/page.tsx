@@ -24,7 +24,7 @@ interface ScheduleSession {
   id: string;
   startsAt: Date;
   class: { title: string };
-  instructor: { slug: string };
+  instructor: { slug: string; user?: { name: string | null } | null };
   room: { name: string };
 }
 
@@ -41,6 +41,9 @@ export default async function SchedulePage() {
   // V15-1: Query DB directly with .catch(() => []) fallback (NO withTimeout).
   // The DB driver's own 10s AbortSignal timeout handles hangs.
   // .catch(() => []) ensures the page always renders (with empty data if DB fails).
+  // V20-2 fix: nested-eager-load instructor.user so ScheduleGrid can display
+  // instructor.user.name (not slug). V19-6 fixed the tRPC router but this
+  // page queries the DB directly — was missed in V19.
   const sessions = await db.query.classSessions
     .findMany({
       where: and(
@@ -48,7 +51,11 @@ export default async function SchedulePage() {
         lte(classSessions.startsAt, weekEnd),
         eq(classSessions.status, 'scheduled'),
       ),
-      with: { class: true, instructor: true, room: true },
+      with: {
+        class: true,
+        instructor: { with: { user: true } },
+        room: true,
+      },
       orderBy: asc(classSessions.startsAt),
     })
     .catch(() => []);

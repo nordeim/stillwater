@@ -120,7 +120,9 @@ const clientSchema = {
   NEXT_PUBLIC_SANITY_PROJECT_ID: z.string(),
   NEXT_PUBLIC_SANITY_DATASET: z.string(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string(),
-  NEXT_PUBLIC_POSTHOG_HOST: z.string().url(),
+  // V20-5 fix: NEXT_PUBLIC_POSTHOG_HOST removed — PostHog uses a reverse
+  // proxy at '/_analytics' (configured in next.config.ts rewrites), not a
+  // direct host URL. The env var was dead (0 consumers in apps/web/src).
   NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
   NEXT_PUBLIC_CLOUDFLARE_IMAGES_URL: z.string().url(),
 };
@@ -179,7 +181,7 @@ function loadEnv() {
       NEXT_PUBLIC_SANITY_PROJECT_ID: process.env['NEXT_PUBLIC_SANITY_PROJECT_ID'],
       NEXT_PUBLIC_SANITY_DATASET: process.env['NEXT_PUBLIC_SANITY_DATASET'],
       NEXT_PUBLIC_POSTHOG_KEY: process.env['NEXT_PUBLIC_POSTHOG_KEY'],
-      NEXT_PUBLIC_POSTHOG_HOST: process.env['NEXT_PUBLIC_POSTHOG_HOST'],
+      // V20-5: NEXT_PUBLIC_POSTHOG_HOST removed (dead env var — PostHog uses '/_analytics' reverse proxy)
       NEXT_PUBLIC_SENTRY_DSN: process.env['NEXT_PUBLIC_SENTRY_DSN'],
       NEXT_PUBLIC_CLOUDFLARE_IMAGES_URL: process.env['NEXT_PUBLIC_CLOUDFLARE_IMAGES_URL'],
     },

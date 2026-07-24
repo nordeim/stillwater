@@ -9,9 +9,10 @@
  * Source: MEP Phase 9 F9-12.
  */
 
+import { SITE } from '@stillwater/config/site';
+
 import type { Metadata } from 'next';
 
-import { SITE } from '@stillwater/config/site';
 
 import { apiCaller } from '@/lib/trpc/server';
 
